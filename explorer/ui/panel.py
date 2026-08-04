@@ -6,7 +6,8 @@ import tkinter as tk
 import sqlite3
 from typing import Callable
 
-from explorer.utils.th import Frame, Label, Button, ScrollableFrame
+import explorer.utils.th as th
+
 
 from explorer.db.store import ExplorerStore
 from explorer.state import ExplorerState
@@ -33,11 +34,11 @@ class ExplorerPanel:
         self.state = state
         self.on_history_open:Callable[[], None]|None = None # wired up externally by load.py
 
-        self.frame = Frame(parent)
-        self.scroll = ScrollableFrame(self.frame, max_height=VISIBLE_LINES * LINE_HEIGHT_PX)
-        self.scroll.pack(fill="x")
-        self.history_button = Button(self.frame, text="History", command=self._open_history)
-        self.history_button.pack(fill="x")
+        self.frame = th.Frame(parent)
+        self.scroll = th.ScrollableFrame(self.frame, max_height=VISIBLE_LINES * LINE_HEIGHT_PX)
+        self.scroll.pack(fill=tk.X)
+        self.history_button = th.Button(self.frame, text="History", command=self._open_history)
+        self.history_button.pack(fill=tk.X)
 
         self.refresh()
 
@@ -46,7 +47,7 @@ class ExplorerPanel:
             self.on_history_open()
 
     def _line(self, text:str) -> None:
-        Label(self.scroll.interior, text=_truncate(text), anchor="w", justify="left").pack(fill="x")
+        th.Label(self.scroll.interior, text=_truncate(text), anchor="w", justify="left").pack(fill="x")
 
     def refresh(self) -> None:
         self.scroll.clear()
