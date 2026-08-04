@@ -1,0 +1,27 @@
+{
+    "null": [
+        { "event":"Music", "MusicTrack":"Supercruise" }
+    ],
+    "startup": [
+       { "event":"LoadGame", "FID":"F11111111", "Commander":"Testy", "Horizons":true, "Odyssey":true, "Ship":"PantherMkII", "Ship_Localised":"Panther Clipper Mk II", "ShipID":106, "ShipName":"Test", "ShipIdent":"DW-23P", "FuelLevel":128.000000, "FuelCapacity":128.000000, "GameMode":"Open", "Credits":10000009, "Loan":0, "language":"English/UK", "gameversion":"4.3.1.0", "build":"r324607/r0 " },
+        { "event":"Fileheader", "part":1, "language":"English/UK", "Odyssey":true, "gameversion":"4.3.1.0", "build":"r324607/r0 " },
+        { "event":"Startup", "StarSystem":"Bleae Thua ED-D c12-5", "SystemAddress":1458040738922, "StarPos":[-131.46875,4.18750,2019.68750],"Body":"Bleae Thua ED-D c12-5", "BodyID":0 },
+        { "event":"Commander", "FID":"F11111111", "Name":"Someone" }
+    ],
+    "jump": [
+        { "event":"FSDJump", "Taxi":false, "Multicrew":false, "StarSystem":"Bleae Thua ED-D c12-5", "SystemAddress":1458040738922, "StarPos":[-131.46875,4.18750,2019.68750], "SystemAllegiance":"", "SystemEconomy":"$economy_None;", "SystemEconomy_Localised":"None", "SystemSecondEconomy":"$economy_None;", "SystemSecondEconomy_Localised":"None", "SystemGovernment":"$government_None;", "SystemGovernment_Localised":"None", "SystemSecurity":"$GAlAXY_MAP_INFO_state_anarchy;", "SystemSecurity_Localised":"Anarchy", "Population":0, "Body":"Bleae Thua ED-D c12-5", "BodyID":0, "BodyType":"Star", "JumpDist":30.330, "FuelUsed":1.953637, "FuelLevel":25.135729, "SystemFaction":{ "Name":"Brewer Corporation" } },
+        { "event":"Music", "MusicTrack":"Supercruise" },
+        { "event":"FSSSignalDiscovered", "SystemAddress":1458040738922, "SignalName":"[CLB] SV Booze Cruise T9M-33M", "SignalType":"FleetCarrier", "IsStation":true },
+        { "event":"FSSSignalDiscovered", "SystemAddress":1458040738922, "SignalName":"$EXT_PANEL_ColonisationBeacon_Site:#index=1;", "SignalName_Localised":"System Colonisation Beacon", "SignalType":"NavBeacon" },
+        { "event":"FSSDiscoveryScan", "Progress":1.000000, "BodyCount":36, "NonBodyCount":12, "SystemName":"Bleae Thua ED-D c12-5", "SystemAddress":1458040738922 },
+        { "event":"ReservoirReplenished", "FuelMain":24.725729, "FuelReservoir":0.410000 },
+        { "event":"Friends", "Status":"Added", "Name":"NHYO" },
+        { "event":"SupercruiseDestinationDrop", "Type":"[CLB] SV Booze Cruise T9M-33M", "Threat":0, "MarketID":3709409280 },
+        { "event":"SupercruiseExit", "Taxi":false, "Multicrew":false, "StarSystem":"Bleae Thua ED-D c12-5", "SystemAddress":1458040738922, "Body":"Bleae Thua ED-D c12-5 8 b", "BodyID":22, "BodyType":"Planet" },
+        { "event":"NavBeaconScan", "SystemAddress":1458040738922, "NumBodies":46 }
+    ],
+    "cargo": [
+        { "event":"MarketBuy", "MarketID":3709409280, "Type":"steel", "Type_Localised":"Steel", "Count":"{params.count}", "BuyPrice":"{params.price}", "TotalCost":"{params.price * params.count}" },
+        { "timestamp":"2026-04-10T23:11:22Z", "event":"Cargo", "Vessel":"Ship", "Count":"{params.count}" }
+    ]
+}

@@ -1,0 +1,65 @@
+"""
+In-memory session state: "where are we right now" -- current Cmdr/system/body/surface
+context, plus the live position data the overlay radar needs. No DB writes happen here;
+journal/dashboard handlers read and update this directly.
+"""
+from dataclasses import dataclass, field
+
+@dataclass
+class ExplorerState:
+    cmdr:str = ""
+    is_beta:bool = False
+    cmdr_id:int|None = None # DB PK, resolved/cached by journal/dispatch.py each dispatch call
+
+    system_address:int|None = None
+    system_name:str = ""
+    system_id:int|None = None # DB PK for the current system, refreshed on system-change events
+
+    body_id:int|None = None
+    body_name:str = ""
+
+    docked:bool = False
+    landed:bool = False
+    on_foot:bool = False
+    in_srv:bool = False
+    has_lat_long:bool = False
+
+    latitude:float|None = None
+    longitude:float|None = None
+    heading:float|None = None
+    altitude:float|None = None
+    planet_radius:float|None = None
+
+    # Session-only (not persisted): (latitude, longitude) at the moment of each ScanOrganic
+    # sample, keyed by genus, for the overlay radar's per-sample markers. Cleared on
+    # reset_body() -- these positions are meaningless once you've left the body.
+    sample_positions:dict[str, list[tuple[float, float]]] = field(default_factory=dict)
+
+    def reset_body(self) -> None:
+        """ Called on leaving a body / jumping system -- clears body-scoped context. """
+        self.body_id = None
+        self.body_name = ""
+        self.landed = False
+        self.has_lat_long = False
+        self.latitude = None
+        self.longitude = None
+        self.heading = None
+        self.altitude = None
+        self.planet_radius = None
+        self.sample_positions = {}
+
+    @property
+    def exobiology_relevant(self) -> bool:
+        """ Whether the on-body exobiology UI/overlay section is currently relevant. """
+        return self.landed and self.on_foot and self.body_id is not None
+
+    def reset_all(self) -> None:
+        """
+        Reset every field to its default -- a fresh session. Not used during normal plugin
+        operation (a Cmdr's cached cmdr_id/system_id should persist across their whole EDMC
+        session); this exists for tests, which reuse this module-level singleton across
+        multiple TestHarness instances/temp DBs within one process and need real isolation.
+        """
+        self.__dict__.update(ExplorerState().__dict__)
+
+state = ExplorerState()

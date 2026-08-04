@@ -1,0 +1,31 @@
+{
+  "full_walkthrough": [
+    { "event": "LoadGame", "FID": "F11111111", "Commander": "Testy", "Horizons": true, "Odyssey": true, "Credits": 1000000 },
+    { "event": "FSDJump", "StarSystem": "Deltius", "SystemAddress": 999000111, "Body": "Deltius A", "BodyID": 0, "BodyType": "Star", "StarPos": [1.0, 2.0, 3.0] },
+    { "event": "FSSDiscoveryScan", "Progress": 1.0, "BodyCount": 3, "NonBodyCount": 2, "SystemName": "Deltius", "SystemAddress": 999000111 },
+    { "event": "Scan", "ScanType": "AutoScan", "BodyName": "Deltius A", "BodyID": 0, "StarSystem": "Deltius", "SystemAddress": 999000111, "DistanceFromArrivalLS": 0.0, "StarType": "K", "StellarMass": 0.98, "WasDiscovered": false, "WasMapped": false },
+    { "event": "Scan", "ScanType": "Detailed", "BodyName": "Deltius A 1", "BodyID": 1, "StarSystem": "Deltius", "SystemAddress": 999000111, "DistanceFromArrivalLS": 500.0, "PlanetClass": "Metal rich body", "MassEM": 0.6, "TerraformState": "", "Landable": false, "WasDiscovered": false, "WasMapped": false },
+    { "event": "FSSBodySignals", "BodyName": "Deltius A 2", "BodyID": 2, "SystemAddress": 999000111, "Signals": [ { "Type": "$SAA_SignalType_Biological;", "Type_Localised": "Biological", "Count": 3 } ] },
+    { "event": "Scan", "ScanType": "Detailed", "BodyName": "Deltius A 2", "BodyID": 2, "StarSystem": "Deltius", "SystemAddress": 999000111, "DistanceFromArrivalLS": 600.0, "PlanetClass": "High metal content body", "MassEM": 0.3, "TerraformState": "", "Landable": true, "WasDiscovered": false, "WasMapped": false },
+    { "event": "FSSAllBodiesFound", "SystemName": "Deltius", "SystemAddress": 999000111, "Count": 3 },
+    { "event": "SAAScanComplete", "BodyName": "Deltius A 2", "BodyID": 2, "SystemAddress": 999000111, "ProbesUsed": 4, "EfficiencyTarget": 5 },
+    { "event": "SAASignalsFound", "BodyName": "Deltius A 2", "BodyID": 2, "SystemAddress": 999000111,
+      "Signals": [ { "Type": "$SAA_SignalType_Biological;", "Type_Localised": "Biological", "Count": 1 } ],
+      "Genuses": [ { "Genus": "$Codex_Ent_Bacterial_Genus_Name;", "Genus_Localised": "Bacterium" } ] },
+    { "event": "ApproachBody", "Body": "Deltius A 2", "BodyID": 2, "StarSystem": "Deltius", "SystemAddress": 999000111 },
+    { "event": "Touchdown", "Body": "Deltius A 2", "BodyID": 2, "SystemAddress": 999000111, "Latitude": 10.0, "Longitude": 20.0, "PlayerControlled": true },
+    { "event": "ScanOrganic", "ScanType": "Log", "Genus": "$Codex_Ent_Bacterial_Genus_Name;", "Genus_Localised": "Bacterium", "Species": "$Codex_Ent_Bacterial_01_Name;", "Species_Localised": "Bacterium Aurasus", "Variant": "$Codex_Ent_Bacterial_01_W_Name;", "Variant_Localised": "Bacterium Aurasus - Green", "WasLogged": false, "SystemAddress": 999000111, "Body": 2 },
+    { "event": "ScanOrganic", "ScanType": "Sample", "Genus": "$Codex_Ent_Bacterial_Genus_Name;", "Genus_Localised": "Bacterium", "Species": "$Codex_Ent_Bacterial_01_Name;", "Species_Localised": "Bacterium Aurasus", "Variant": "$Codex_Ent_Bacterial_01_W_Name;", "Variant_Localised": "Bacterium Aurasus - Green", "WasLogged": false, "SystemAddress": 999000111, "Body": 2 },
+    { "event": "ScanOrganic", "ScanType": "Sample", "Genus": "$Codex_Ent_Bacterial_Genus_Name;", "Genus_Localised": "Bacterium", "Species": "$Codex_Ent_Bacterial_01_Name;", "Species_Localised": "Bacterium Aurasus", "Variant": "$Codex_Ent_Bacterial_01_W_Name;", "Variant_Localised": "Bacterium Aurasus - Green", "WasLogged": false, "SystemAddress": 999000111, "Body": 2 },
+    { "event": "ScanOrganic", "ScanType": "Analyse", "Genus": "$Codex_Ent_Bacterial_Genus_Name;", "Genus_Localised": "Bacterium", "Species": "$Codex_Ent_Bacterial_01_Name;", "Species_Localised": "Bacterium Aurasus", "Variant": "$Codex_Ent_Bacterial_01_W_Name;", "Variant_Localised": "Bacterium Aurasus - Green", "WasLogged": false, "SystemAddress": 999000111, "Body": 2 },
+    { "event": "Liftoff", "Body": "Deltius A 2", "BodyID": 2, "SystemAddress": 999000111, "PlayerControlled": true },
+    { "event": "SellOrganicData", "MarketID": 128666762,
+      "BioData": [ { "Genus": "$Codex_Ent_Bacterial_Genus_Name;", "Genus_Localised": "Bacterium", "Species": "$Codex_Ent_Bacterial_01_Name;", "Species_Localised": "Bacterium Aurasus", "Variant": "$Codex_Ent_Bacterial_01_W_Name;", "Variant_Localised": "Bacterium Aurasus - Green", "Value": 1000000, "Bonus": 4000000 } ] },
+    { "event": "MultiSellExplorationData", "Discovered": [ { "SystemName": "Deltius", "NumBodies": 3 } ], "BaseValue": 500000, "Bonus": 100000, "TotalEarnings": 600000 }
+  ],
+  "honk_only": [
+    { "event": "LoadGame", "FID": "F11111111", "Commander": "Testy", "Horizons": true, "Odyssey": true, "Credits": 1000000 },
+    { "event": "FSDJump", "StarSystem": "QuietSpace", "SystemAddress": 555000222, "Body": "QuietSpace A", "BodyID": 0, "BodyType": "Star", "StarPos": [1.0, 2.0, 3.0] },
+    { "event": "FSSDiscoveryScan", "Progress": 1.0, "BodyCount": 1, "NonBodyCount": 0, "SystemName": "QuietSpace", "SystemAddress": 555000222 }
+  ]
+}

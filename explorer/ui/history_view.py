@@ -1,0 +1,103 @@
+"""
+History popup: System -> Body -> Species browsable tree, plus a Cmdr totals summary.
+Launched from the compact panel's "History" button.
+
+A Toplevel, not a plugin_prefs tab: prefs' open/close lifecycle doesn't fit a live data
+browser (no natural "refresh while the settings dialog sits closed" hook), and a settings
+notebook tab is too cramped for a multi-column tree. See the implementation plan for the
+full rationale.
+"""
+import tkinter as tk
+
+from explorer.utils.th import TopLevel, Frame, Label
+from explorer.utils.treeviewplus import TreeviewPlus
+
+from explorer.db.store import ExplorerStore
+from explorer.state import ExplorerState
+
+def _credits(value:int|None) -> str:
+    if not value:
+        return "-"
+    if value >= 1_000_000:
+        return f"{value / 1_000_000:.1f}M"
+    if value >= 1_000:
+        return f"{value / 1_000:.0f}k"
+    return str(value)
+
+class HistoryView:
+    """ Owns the (lazily-created) history Toplevel. Call refresh() after any DB change. """
+
+    def __init__(self, parent:tk.Widget, store:ExplorerStore, state:ExplorerState) -> None:
+        self.parent = parent
+        self.store = store
+        self.state = state
+        self.window:tk.Toplevel|None = None
+        self.summary_label:tk.Label|None = None
+        self.tree:TreeviewPlus|None = None
+
+    def open(self) -> None:
+        if self.window is not None and self.window.winfo_exists():
+            self.window.lift()
+            self.refresh()
+            return
+
+        self.window = TopLevel(self.parent)
+        self.window.title("ExplorerLite — History")
+        self.window.protocol("WM_DELETE_WINDOW", self._on_close)
+
+        content = Frame(self.window) # type: ignore[arg-type] -- a Toplevel is a valid Tk master even though th.Frame's hint says tk.Widget
+        content.pack(fill="both", expand=True)
+
+        self.summary_label = Label(content, text="")
+        self.summary_label.pack(fill="x", padx=4, pady=4)
+
+        self.tree = TreeviewPlus(content, columns=("status", "est_value", "actual_value"), show="tree headings")
+        self.tree.heading("#0", text="Name")
+        self.tree.heading("status", text="Status")
+        self.tree.heading("est_value", text="Est. Value", sort_by="num")
+        self.tree.heading("actual_value", text="Actual Value", sort_by="num")
+        self.tree.pack(fill="both", expand=True, padx=4, pady=4)
+
+        self.refresh()
+
+    def _on_close(self) -> None:
+        if self.window is not None:
+            self.window.destroy()
+        self.window = None
+        self.summary_label = None
+        self.tree = None
+
+    def refresh(self) -> None:
+        if self.window is None or not self.window.winfo_exists():
+            return
+        assert self.summary_label is not None and self.tree is not None
+
+        if self.state.cmdr_id is None:
+            self.summary_label.configure(text="No Cmdr yet")
+            for item in self.tree.get_children():
+                self.tree.delete(item)
+            return
+
+        totals = self.store.get_cmdr_totals(self.state.cmdr_id)
+        cart = totals["actual_cartography_credits"] if totals else 0
+        exo = totals["actual_exobiology_credits"] if totals else 0
+        self.summary_label.configure(text=f"Cartography: {_credits(cart)} Cr    Exobiology: {_credits(exo)} Cr")
+
+        for item in self.tree.get_children():
+            self.tree.delete(item)
+
+        for system in self.store.get_history_tree(self.state.cmdr_id):
+            system_iid = self.tree.insert(
+                "", "end", text=system["name"],
+                values=(system["status"], _credits(system["est_value"]), _credits(system["actual_value"])),
+            )
+            for body in system["children"]:
+                body_iid = self.tree.insert(
+                    system_iid, "end", text=body["name"],
+                    values=(body["status"], _credits(body["est_value"]), _credits(body["actual_value"])),
+                )
+                for species in body["children"]:
+                    self.tree.insert(
+                        body_iid, "end", text=species["name"],
+                        values=(species["status"], _credits(species["est_value"]), _credits(species["actual_value"])),
+                    )

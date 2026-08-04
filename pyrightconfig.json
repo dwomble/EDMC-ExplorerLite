@@ -1,0 +1,4 @@
+{
+    "include": ["explorer", "load.py"],
+    "exclude": ["explorer/utils", "**/__pycache__"]
+}
