@@ -2,6 +2,8 @@
 Per-body handlers: FSSBodySignals (pre-DSS signal counts), Scan (body properties + cartography
 value estimate), SAAScanComplete (DSS mapping done), SAASignalsFound (post-DSS exact genus).
 """
+import sqlite3
+
 from config import config # type: ignore
 
 from explorer.db.store import ExplorerStore
@@ -24,12 +26,12 @@ def _exobio_threshold() -> int:
 def on_fss_body_signals(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict:
     if state.system_id is None or state.cmdr_id is None:
         return {}
-    body_id = entry.get("BodyID")
+    body_id:int|None = entry.get("BodyID")
     if body_id is None:
         return {}
-    body_pk = store.get_or_create_body(state.cmdr_id, state.system_id, body_id, entry.get("BodyName", ""))
+    body_pk:int = store.get_or_create_body(state.cmdr_id, state.system_id, body_id, entry.get("BodyName", ""))
 
-    bio_count = 0
+    bio_count:int = 0
     for signal in entry.get("Signals", []):
         if signal.get("Type") == BIO_SIGNAL_TYPE:
             bio_count = signal.get("Count", 0)
@@ -40,18 +42,18 @@ def on_fss_body_signals(store:ExplorerStore, state:ExplorerState, entry:dict) ->
 def on_scan(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict:
     if state.system_id is None or state.cmdr_id is None:
         return {}
-    body_id = entry.get("BodyID")
+    body_id:int|None = entry.get("BodyID")
     if body_id is None:
         return {}
 
-    is_star = "StarType" in entry
-    body_pk = store.get_or_create_body(
+    is_star:bool = "StarType" in entry
+    body_pk:int = store.get_or_create_body(
         state.cmdr_id, state.system_id, body_id, entry.get("BodyName", ""), "Star" if is_star else "Planet"
     )
 
-    scan_value = cartography.estimate_scan_value(entry)
-    mapping_value = cartography.estimate_mapping_value(entry)
-    flagged = max(scan_value, mapping_value) >= _scan_threshold()
+    scan_value:int = cartography.estimate_scan_value(entry)
+    mapping_value:int = cartography.estimate_mapping_value(entry)
+    flagged:bool = max(scan_value, mapping_value) >= _scan_threshold()
 
     store.update_body(
         body_pk,
@@ -70,18 +72,18 @@ def on_scan(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict:
 def on_saa_scan_complete(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict:
     if state.system_id is None or state.cmdr_id is None:
         return {}
-    body_id = entry.get("BodyID")
+    body_id:int|None = entry.get("BodyID")
     if body_id is None:
         return {}
-    body_pk = store.get_or_create_body(state.cmdr_id, state.system_id, body_id, entry.get("BodyName", ""))
+    body_pk:int = store.get_or_create_body(state.cmdr_id, state.system_id, body_id, entry.get("BodyName", ""))
 
-    probes_used = entry.get("ProbesUsed", 0)
-    efficiency_target = entry.get("EfficiencyTarget", 0)
-    efficient = probes_used <= efficiency_target
+    probes_used:int = entry.get("ProbesUsed", 0)
+    efficiency_target:int = entry.get("EfficiencyTarget", 0)
+    efficient:bool = probes_used <= efficiency_target
 
-    body = store.get_body(body_pk)
-    scan_value = body["estimated_scan_value"] if body and body["estimated_scan_value"] is not None else 0
-    mapping_value = cartography.mapping_value_from_scan_value(scan_value, mapped_efficiently=efficient)
+    body:sqlite3.Row|None = store.get_body(body_pk)
+    scan_value:int = body["estimated_scan_value"] if body and body["estimated_scan_value"] is not None else 0
+    mapping_value:int = cartography.mapping_value_from_scan_value(scan_value, mapped_efficiently=efficient)
 
     store.update_body(body_pk, mapped_efficiently=1 if efficient else 0, estimated_mapping_value=mapping_value, mapped_at=now_iso())
     return {"panel": True}
@@ -89,22 +91,22 @@ def on_saa_scan_complete(store:ExplorerStore, state:ExplorerState, entry:dict) -
 def on_saa_signals_found(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict:
     if state.system_id is None or state.cmdr_id is None:
         return {}
-    body_id = entry.get("BodyID")
+    body_id:int|None = entry.get("BodyID")
     if body_id is None:
         return {}
-    body_pk = store.get_or_create_body(state.cmdr_id, state.system_id, body_id, entry.get("BodyName", ""))
+    body_pk:int = store.get_or_create_body(state.cmdr_id, state.system_id, body_id, entry.get("BodyName", ""))
 
-    value_max_overall = 0
+    value_max_overall:int = 0
     for g in entry.get("Genuses", []):
-        genus = g.get("Genus_Localised") or g.get("Genus", "")
+        genus:str = g.get("Genus_Localised") or g.get("Genus", "")
         store.upsert_body_genus(body_pk, genus, None, "SAASignalsFound")
         store.get_or_create_species_progress(body_pk, genus)
 
-        value_range = exobiology.estimate_genus_range(genus)
+        value_range:tuple[int, int]|None = exobiology.estimate_genus_range(genus)
         if value_range is not None:
             value_max_overall = max(value_max_overall, value_range[1])
 
-    flagged_exobio = exobiology.exceeds_threshold(value_max_overall or None, _exobio_threshold())
+    flagged_exobio:bool = exobiology.exceeds_threshold(value_max_overall or None, _exobio_threshold())
     store.update_body(
         body_pk,
         estimated_exobio_value_min=0,

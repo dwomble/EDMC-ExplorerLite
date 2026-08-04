@@ -7,8 +7,8 @@ starting heuristic, explicitly expected to be revisited/tuned once the plugin se
 (see REQUIREMENTS.md's honk-heuristic note) -- not a claim of accuracy.
 """
 
-WORTH_IT_BODY_COUNT = 6
-WORTH_IT_NON_BODY_COUNT = 3
+WORTH_IT_BODY_COUNT:int = 6
+WORTH_IT_NON_BODY_COUNT:int = 3
 
 def assess(body_count:int, non_body_count:int) -> str:
     """ Return a short (panel-friendly) verdict string. """

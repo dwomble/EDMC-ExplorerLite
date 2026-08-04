@@ -15,8 +15,8 @@ _last_exobiology_relevant:bool|None = None
 def on_dashboard_entry(state:ExplorerState, entry:dict) -> dict:
     global _last_exobiology_relevant
 
-    flags = entry.get("Flags", 0)
-    flags2 = entry.get("Flags2", 0)
+    flags:int = entry.get("Flags", 0)
+    flags2:int = entry.get("Flags2", 0)
 
     state.docked = bool(flags & FlagsDocked)
     state.landed = bool(flags & FlagsLanded)
@@ -31,7 +31,7 @@ def on_dashboard_entry(state:ExplorerState, entry:dict) -> dict:
         state.altitude = entry.get("Altitude")
         state.planet_radius = entry.get("PlanetRadius")
 
-    relevant = state.exobiology_relevant
+    relevant:bool = state.exobiology_relevant
     result:dict[str, bool|str] = {"overlay": "radar"} if relevant else {}
     if relevant != _last_exobiology_relevant:
         _last_exobiology_relevant = relevant

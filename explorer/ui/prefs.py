@@ -1,9 +1,10 @@
 """
 Settings pane: the two credit thresholds, overlay toggles, dev-mode flag. Uses myNotebook
 (nb.*) widgets, matching how EDMC's own settings dialog themes plugin_prefs frames -- th.*
-widgets are reserved for the main panel and (later) the history popup.
+widgets are reserved for the main panel and the history popup.
 """
 import tkinter as tk
+from dataclasses import dataclass
 
 import myNotebook as nb # type: ignore
 from config import config # type: ignore
@@ -14,57 +15,51 @@ from explorer.constants import (
     CFG_OVERLAY_ENABLED, CFG_OVERLAY_RADAR_ENABLED, CFG_DEV_MODE,
 )
 
-_scan_threshold_var:tk.StringVar|None = None
-_exobio_threshold_var:tk.StringVar|None = None
-_overlay_enabled_var:tk.BooleanVar|None = None
-_overlay_radar_enabled_var:tk.BooleanVar|None = None
-_dev_mode_var:tk.BooleanVar|None = None
+@dataclass
+class Pref:
+    kind:str # 'threshold' or 'bool'
+    key:str
+    desc:str
+    default:int|bool
+
+PREFS = [
+    Pref('threshold', CFG_SCAN_VALUE_THRESHOLD, "Flag a body's scan/mapping value above (Cr):", DEFAULT_SCAN_VALUE_THRESHOLD),
+    Pref('threshold', CFG_EXOBIO_VALUE_THRESHOLD, "Flag exobiology potential above (Cr):", DEFAULT_EXOBIO_VALUE_THRESHOLD),
+    Pref('bool', CFG_OVERLAY_ENABLED, "Enable overlay", True),
+    Pref('bool', CFG_OVERLAY_RADAR_ENABLED, "Show radar on overlay", True),
+    Pref('bool', CFG_DEV_MODE, "Developer/debug logging", False),
+]
+
+_pref_vars:dict[str, tk.Variable] = {}
 
 def build_prefs(parent:tk.Widget, cmdr:str, is_beta:bool) -> tk.Widget:
-    global _scan_threshold_var, _exobio_threshold_var, _overlay_enabled_var, _overlay_radar_enabled_var, _dev_mode_var
+    global _pref_vars
+    _pref_vars = {}
 
-    frame = nb.Frame(parent)
+    frame:nb.Frame = nb.Frame(parent)
     frame.columnconfigure(1, weight=1)
 
-    _scan_threshold_var = tk.StringVar(value=str(config.get_int(CFG_SCAN_VALUE_THRESHOLD, default=DEFAULT_SCAN_VALUE_THRESHOLD)))
-    _exobio_threshold_var = tk.StringVar(value=str(config.get_int(CFG_EXOBIO_VALUE_THRESHOLD, default=DEFAULT_EXOBIO_VALUE_THRESHOLD)))
-    _overlay_enabled_var = tk.BooleanVar(value=config.get_bool(CFG_OVERLAY_ENABLED, default=True))
-    _overlay_radar_enabled_var = tk.BooleanVar(value=config.get_bool(CFG_OVERLAY_RADAR_ENABLED, default=True))
-    _dev_mode_var = tk.BooleanVar(value=config.get_bool(CFG_DEV_MODE, default=False))
-
-    row = 0
-    nb.Label(frame, text="Flag a body's scan/mapping value above (Cr):").grid(row=row, column=0, sticky="w")
-    nb.EntryMenu(frame, textvariable=_scan_threshold_var, width=12).grid(row=row, column=1, sticky="e")
-
-    row += 1
-    nb.Label(frame, text="Flag exobiology potential above (Cr):").grid(row=row, column=0, sticky="w")
-    nb.EntryMenu(frame, textvariable=_exobio_threshold_var, width=12).grid(row=row, column=1, sticky="e")
-
-    row += 1
-    nb.Checkbutton(frame, text="Enable overlay", variable=_overlay_enabled_var).grid(row=row, column=0, columnspan=2, sticky="w")
-
-    row += 1
-    nb.Checkbutton(frame, text="Show radar on overlay", variable=_overlay_radar_enabled_var).grid(row=row, column=0, columnspan=2, sticky="w")
-
-    row += 1
-    nb.Checkbutton(frame, text="Developer/debug logging", variable=_dev_mode_var).grid(row=row, column=0, columnspan=2, sticky="w")
+    row:int = 0
+    for p in PREFS:
+        match p.kind:
+            case 'threshold':
+                _pref_vars[p.key] = tk.StringVar(value=str(config.get_int(p.key, default=p.default)))
+                nb.Label(frame, text=p.desc).grid(row=row, column=0, sticky=tk.W)
+                nb.EntryMenu(frame, textvariable=_pref_vars[p.key], width=12).grid(row=row, column=1, sticky=tk.E)
+            case 'bool':
+                _pref_vars[p.key] = tk.BooleanVar(value=config.get_bool(p.key, default=p.default))
+                nb.Checkbutton(frame, text=p.desc, variable=_pref_vars[p.key]).grid(row=row, column=0, columnspan=2, sticky=tk.W)
+        row += 1
 
     return frame
 
-def _set_int(key:str, raw:str, default:int) -> None:
-    try:
-        config.set(key, int(raw))
-    except ValueError:
-        config.set(key, default)
-
 def save_prefs(cmdr:str, is_beta:bool) -> None:
-    if _scan_threshold_var is not None:
-        _set_int(CFG_SCAN_VALUE_THRESHOLD, _scan_threshold_var.get(), DEFAULT_SCAN_VALUE_THRESHOLD)
-    if _exobio_threshold_var is not None:
-        _set_int(CFG_EXOBIO_VALUE_THRESHOLD, _exobio_threshold_var.get(), DEFAULT_EXOBIO_VALUE_THRESHOLD)
-    if _overlay_enabled_var is not None:
-        config.set(CFG_OVERLAY_ENABLED, _overlay_enabled_var.get())
-    if _overlay_radar_enabled_var is not None:
-        config.set(CFG_OVERLAY_RADAR_ENABLED, _overlay_radar_enabled_var.get())
-    if _dev_mode_var is not None:
-        config.set(CFG_DEV_MODE, _dev_mode_var.get())
+    for p in PREFS:
+        var = _pref_vars.get(p.key)
+        if var is None:
+            continue
+        match p.kind:
+            case 'threshold':
+                config.set(p.key, int(var.get()) if var.get().isdigit() else p.default)
+            case 'bool':
+                config.set(p.key, var.get())

@@ -107,13 +107,13 @@ def ensure_schema(conn:sqlite3.Connection) -> None:
     """ Create tables if they don't exist yet, and stamp/verify the schema version. """
     conn.executescript(DDL)
 
-    row = conn.execute("SELECT value FROM schema_meta WHERE key = 'version'").fetchone()
+    row:sqlite3.Row|None = conn.execute("SELECT value FROM schema_meta WHERE key = 'version'").fetchone()
     if row is None:
         conn.execute("INSERT INTO schema_meta (key, value) VALUES ('version', ?)", (str(SCHEMA_VERSION),))
         conn.commit()
         return
 
-    stored_version = int(row[0])
+    stored_version:int = int(row[0])
     if stored_version != SCHEMA_VERSION:
         # No migrations exist yet -- once the schema evolves, handle version bumps here.
         raise RuntimeError(f"explorer.sqlite schema version {stored_version} does not match expected {SCHEMA_VERSION}")

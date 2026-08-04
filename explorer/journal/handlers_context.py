@@ -13,7 +13,7 @@ def on_continued(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict:
     return {}
 
 def _enter_system(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict:
-    system_address = entry.get("SystemAddress")
+    system_address:int|None = entry.get("SystemAddress")
     if system_address is None:
         return {}
     state.system_address = system_address

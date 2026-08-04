@@ -11,25 +11,25 @@ involved). Keep the constants isolated here so they're easy to recalibrate later
 touching anything else.
 """
 
-MASS_EXPONENT = 0.2
+MASS_EXPONENT:float = 0.2
 
 # Base credit value per body/star type, before mass scaling. Approximate.
-STAR_BASE_K = {
+STAR_BASE_K:dict[str, int] = {
     "white_dwarf": 33737,
     "neutron_or_black_hole": 54309,
     "default": 2880,
 }
 
-PLANET_BASE_K = {
+PLANET_BASE_K:dict[str, int] = {
     "metal_rich": 52292,
     "water_or_earthlike": 155581,
     "ammonia": 232619,
     "default": 720,
 }
 
-TERRAFORMABLE_BONUS_MULTIPLIER = 1.8 # applied on top of the base k for a Terraformable body
-FIRST_MAPPED_MULTIPLIER = 3.7 # scan value -> full first-discovered+first-mapped+efficient mapping value
-EFFICIENT_MAPPING_BONUS = 1.25
+TERRAFORMABLE_BONUS_MULTIPLIER:float = 1.8 # applied on top of the base k for a Terraformable body
+FIRST_MAPPED_MULTIPLIER:float = 3.7 # scan value -> full first-discovered+first-mapped+efficient mapping value
+EFFICIENT_MAPPING_BONUS:float = 1.25
 
 def _star_category(star_type:str) -> str:
     star_type = (star_type or "").upper()
@@ -59,11 +59,11 @@ def estimate_scan_value(scan_entry:dict) -> int:
     `scan_entry` is a `Scan` journal event dict.
     """
     if "StarType" in scan_entry:
-        k = STAR_BASE_K[_star_category(scan_entry.get("StarType", ""))]
-        mass = scan_entry.get("StellarMass", 1.0)
+        k:int = STAR_BASE_K[_star_category(scan_entry.get("StarType", ""))]
+        mass:float = scan_entry.get("StellarMass", 1.0)
     else:
-        k = PLANET_BASE_K[_planet_category(scan_entry.get("PlanetClass", ""))]
-        mass = scan_entry.get("MassEM", 1.0)
+        k:int = PLANET_BASE_K[_planet_category(scan_entry.get("PlanetClass", ""))]
+        mass:float = scan_entry.get("MassEM", 1.0)
         if scan_entry.get("TerraformState") == "Terraformable":
             k = round(k * TERRAFORMABLE_BONUS_MULTIPLIER)
 
@@ -83,7 +83,7 @@ def estimate_mapping_value(scan_entry:dict, mapped_efficiently:bool = True) -> i
 
 def mapping_value_from_scan_value(scan_value:int, mapped_efficiently:bool = True) -> int:
     """ Same scaling as estimate_mapping_value(), starting from an already-known scan value. """
-    value = round(scan_value * FIRST_MAPPED_MULTIPLIER)
+    value:int = round(scan_value * FIRST_MAPPED_MULTIPLIER)
     if mapped_efficiently:
         value = round(value * EFFICIENT_MAPPING_BONUS)
     return value

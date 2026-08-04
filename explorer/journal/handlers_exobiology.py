@@ -3,6 +3,7 @@ On-body exobiology handlers: ScanOrganic (per-sample progress) and SellOrganicDa
 credits earned, ground truth).
 """
 import json
+import sqlite3
 
 from explorer.db.store import ExplorerStore
 from explorer.state import ExplorerState
@@ -19,22 +20,22 @@ SAMPLE_SCAN_TYPES = ("Log", "Sample")
 def on_scan_organic(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict:
     if state.system_id is None or state.cmdr_id is None:
         return {}
-    body_id = entry.get("Body")
+    body_id:int|None = entry.get("Body")
     if body_id is None:
         return {}
-    body_name = state.body_name if state.body_id == body_id else ""
-    body_pk = store.get_or_create_body(state.cmdr_id, state.system_id, body_id, body_name)
+    body_name:str = state.body_name if state.body_id == body_id else ""
+    body_pk:int = store.get_or_create_body(state.cmdr_id, state.system_id, body_id, body_name)
 
-    genus = entry.get("Genus_Localised") or entry.get("Genus", "")
-    species = entry.get("Species_Localised") or entry.get("Species", "")
-    variant = entry.get("Variant_Localised") or entry.get("Variant", "")
-    scan_type = entry.get("ScanType", "")
+    genus:str = entry.get("Genus_Localised") or entry.get("Genus", "")
+    species:str = entry.get("Species_Localised") or entry.get("Species", "")
+    variant:str = entry.get("Variant_Localised") or entry.get("Variant", "")
+    scan_type:str = entry.get("ScanType", "")
 
-    progress_id = store.get_or_create_species_progress(body_pk, genus)
-    row = store.get_species_progress_row(progress_id)
-    now = now_iso()
+    progress_id:int = store.get_or_create_species_progress(body_pk, genus)
+    row:sqlite3.Row|None = store.get_species_progress_row(progress_id)
+    now:str = now_iso()
 
-    fields = dict(species=species, variant=variant, last_stage=scan_type)
+    fields:dict = dict(species=species, variant=variant, last_stage=scan_type)
 
     if scan_type in SAMPLE_SCAN_TYPES:
         fields["samples_taken"] = (row["samples_taken"] if row else 0) + 1
@@ -50,7 +51,7 @@ def on_scan_organic(store:ExplorerStore, state:ExplorerState, entry:dict) -> dic
     elif scan_type == "Analyse" and (not row or not row["completed_at"]):
         fields["completed_at"] = now
 
-    confirmed_value = exobiology.estimate_confirmed_value(genus, species)
+    confirmed_value:int|None = exobiology.estimate_confirmed_value(genus, species)
     if confirmed_value is not None:
         fields["confirmed_value"] = confirmed_value
 
@@ -60,8 +61,8 @@ def on_scan_organic(store:ExplorerStore, state:ExplorerState, entry:dict) -> dic
 def on_sell_organic_data(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict:
     if state.cmdr_id is None:
         return {}
-    bio_data = entry.get("BioData", [])
-    total = sum(item.get("Value", 0) + item.get("Bonus", 0) for item in bio_data)
+    bio_data:list = entry.get("BioData", [])
+    total:int = sum(item.get("Value", 0) + item.get("Bonus", 0) for item in bio_data)
     if total <= 0:
         return {}
 
@@ -71,9 +72,9 @@ def on_sell_organic_data(store:ExplorerStore, state:ExplorerState, entry:dict) -
     # completed, unsold rows for the same genus+species. Ambiguous if sampled on two bodies
     # before either sale; totals (above) are the ground truth regardless.
     for item in bio_data:
-        genus = item.get("Genus_Localised") or item.get("Genus", "")
-        species = item.get("Species_Localised") or item.get("Species", "")
-        candidates = store.get_unsold_species_progress(state.cmdr_id, genus, species)
+        genus:str = item.get("Genus_Localised") or item.get("Genus", "")
+        species:str = item.get("Species_Localised") or item.get("Species", "")
+        candidates:list[sqlite3.Row] = store.get_unsold_species_progress(state.cmdr_id, genus, species)
         if candidates:
             store.update_species_progress(candidates[0]["id"], sold=1, sold_value=item.get("Value", 0) + item.get("Bonus", 0))
 

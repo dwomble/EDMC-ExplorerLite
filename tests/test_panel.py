@@ -62,6 +62,18 @@ class TestPanelStates:
         assert lines[0].startswith("Deltius —")
         assert any("above threshold" in line for line in lines)
 
+class TestNoDuplicateWidgets:
+    """
+    Regression test for a real bug: th.Base widgets (Button, Checkbutton, ...) only dedupe
+    their light/dark pair in the overridden .grid() -- .pack() falls through to the generic
+    proxy, which calls pack() on BOTH widgets, rendering the "History" button twice.
+    """
+
+    def test_history_button_is_gridded_not_packed(self, plugin:TestHarness) -> None:
+        import load
+        managers = {load.panel.history_button.obj.winfo_manager(), load.panel.history_button.alt.winfo_manager()}
+        assert managers == {"grid", ""} # exactly one of the light/dark pair is actually placed
+
 class TestPrefs:
 
     def test_build_and_save_roundtrip(self, plugin:TestHarness) -> None:
@@ -71,8 +83,8 @@ class TestPrefs:
         frame = prefs_ui.build_prefs(plugin.parent, "Testy", False)
         assert frame is not None
 
-        prefs_ui._scan_threshold_var.set("123456")
-        prefs_ui._overlay_enabled_var.set(False)
+        prefs_ui._pref_vars[CFG_SCAN_VALUE_THRESHOLD].set("123456")
+        prefs_ui._pref_vars[CFG_OVERLAY_ENABLED].set(False)
         prefs_ui.save_prefs("Testy", False)
 
         assert plugin.config.get_int(CFG_SCAN_VALUE_THRESHOLD) == 123456
@@ -83,7 +95,7 @@ class TestPrefs:
         from explorer.constants import CFG_EXOBIO_VALUE_THRESHOLD, DEFAULT_EXOBIO_VALUE_THRESHOLD
 
         prefs_ui.build_prefs(plugin.parent, "Testy", False)
-        prefs_ui._exobio_threshold_var.set("not-a-number")
+        prefs_ui._pref_vars[CFG_EXOBIO_VALUE_THRESHOLD].set("not-a-number")
         prefs_ui.save_prefs("Testy", False)
 
         assert plugin.config.get_int(CFG_EXOBIO_VALUE_THRESHOLD) == DEFAULT_EXOBIO_VALUE_THRESHOLD

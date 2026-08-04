@@ -44,7 +44,7 @@ def plugin_stop() -> None:
     if store:
         store.close()
 
-def plugin_app(parent:tk.Frame):
+def plugin_app(parent:tk.Frame) -> tk.Widget:
     """ Return a TK Frame for adding to the EDMC main window. """
     global panel, history_view
     assert store is not None, "plugin_app called before plugin_start3"
@@ -53,7 +53,7 @@ def plugin_app(parent:tk.Frame):
     panel.on_history_open = history_view.open
     return panel.frame
 
-def plugin_prefs(parent, cmdr:str, is_beta:bool):
+def plugin_prefs(parent:tk.Widget, cmdr:str, is_beta:bool) -> tk.Widget:
     """ Return a TK Frame for adding to the EDMC settings dialog. """
     return prefs_ui.build_prefs(parent, cmdr, is_beta)
 

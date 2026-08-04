@@ -23,20 +23,20 @@ from explorer.state import ExplorerState
 from explorer.valuation import exobiology_data
 from explorer.constants import CFG_OVERLAY_ENABLED, CFG_OVERLAY_RADAR_ENABLED
 
-FRAME_PREFIX = "explorerlite-radar-"
-PLUGIN_GROUP = "EDMC-ExplorerLite"
+FRAME_PREFIX:str = "explorerlite-radar-"
+PLUGIN_GROUP:str = "EDMC-ExplorerLite"
 
-CENTER_X = 640
-CENTER_Y = 480
-RADIUS_PX = 150 # on-screen pixel radius for the radar's max display range
-RING_SEGMENTS = 24
-TTL = 4
+CENTER_X:int = 640
+CENTER_Y:int = 480
+RADIUS_PX:int = 150 # on-screen pixel radius for the radar's max display range
+RING_SEGMENTS:int = 24
+TTL:int = 4
 
-RING_COLOR = "#00ff00"
-ACTIVE_RING_COLOR = "#ffaa00"
-SAMPLE_COLOR = "#00aaff"
-PLAYER_COLOR = "#ffffff"
-HEADING_COLOR = "#ffffff"
+RING_COLOR:str = "#00ff00"
+ACTIVE_RING_COLOR:str = "#ffaa00"
+SAMPLE_COLOR:str = "#00aaff"
+PLAYER_COLOR:str = "#ffffff"
+HEADING_COLOR:str = "#ffffff"
 
 def _circle_points(cx:float, cy:float, r:float) -> list[dict]:
     return [
@@ -46,14 +46,14 @@ def _circle_points(cx:float, cy:float, r:float) -> list[dict]:
 
 def _local_xy_m(lat0:float, lon0:float, lat:float, lon:float, planet_radius_m:float) -> tuple[float, float]:
     """ Flat-earth approximation, meters east (x) / north (y) from (lat0, lon0) -- fine at the scale of exobiology sample distances. """
-    y = math.radians(lat - lat0) * planet_radius_m
-    x = math.radians(lon - lon0) * planet_radius_m * math.cos(math.radians(lat0))
+    y:float = math.radians(lat - lat0) * planet_radius_m
+    x:float = math.radians(lon - lon0) * planet_radius_m * math.cos(math.radians(lat0))
     return x, y
 
 class RadarOverlay:
     def __init__(self, overlay:Overlay) -> None:
-        self.overlay = overlay
-        self._group_defined = False
+        self.overlay:Overlay = overlay
+        self._group_defined:bool = False
 
     def _ensure_group(self) -> None:
         if self._group_defined or not self.overlay.is_modern:
@@ -72,13 +72,13 @@ class RadarOverlay:
         if not state.exobiology_relevant or not state.has_lat_long or state.latitude is None or state.longitude is None:
             return
 
-        genus = self._active_genus(state)
+        genus:str|None = self._active_genus(state)
         if genus is None:
             return
 
         self._ensure_group()
 
-        display_range = self._display_range(genus)
+        display_range:float = self._display_range(genus)
         self._draw_rings(display_range, genus)
         self._draw_heading_tick(state.heading)
         self._draw_player()
@@ -94,17 +94,17 @@ class RadarOverlay:
         return None
 
     def _display_range(self, genus:str) -> float:
-        min_dist = exobiology_data.genus_min_distance(genus) or 200
+        min_dist:int = exobiology_data.genus_min_distance(genus) or 200
         return max(min_dist * 1.5, 100)
 
     def _draw_rings(self, display_range:float, genus:str) -> None:
         for frac in (0.25, 0.5, 0.75, 1.0):
-            r = RADIUS_PX * frac
+            r:float = RADIUS_PX * frac
             self.overlay.send_vect(f"{FRAME_PREFIX}ring-{frac}", _circle_points(CENTER_X, CENTER_Y, r), RING_COLOR, ttl=TTL)
 
-        min_dist = exobiology_data.genus_min_distance(genus)
+        min_dist:int|None = exobiology_data.genus_min_distance(genus)
         if min_dist and min_dist <= display_range:
-            r = RADIUS_PX * (min_dist / display_range)
+            r:float = RADIUS_PX * (min_dist / display_range)
             self.overlay.send_vect(f"{FRAME_PREFIX}ring-active", _circle_points(CENTER_X, CENTER_Y, r), ACTIVE_RING_COLOR, ttl=TTL)
 
     def _draw_player(self) -> None:
@@ -113,19 +113,19 @@ class RadarOverlay:
     def _draw_heading_tick(self, heading:float|None) -> None:
         if heading is None:
             return
-        rad = math.radians(heading)
-        tick_len = RADIUS_PX + 15
-        x2 = round(CENTER_X + math.sin(rad) * tick_len)
-        y2 = round(CENTER_Y - math.cos(rad) * tick_len)
+        rad:float = math.radians(heading)
+        tick_len:int = RADIUS_PX + 15
+        x2:int = round(CENTER_X + math.sin(rad) * tick_len)
+        y2:int = round(CENTER_Y - math.cos(rad) * tick_len)
         self.overlay.send_vect(f"{FRAME_PREFIX}heading", [{"x": CENTER_X, "y": CENTER_Y}, {"x": x2, "y": y2}], HEADING_COLOR, ttl=TTL)
 
     def _draw_samples(self, state:ExplorerState, genus:str, display_range:float) -> None:
-        positions = state.sample_positions.get(genus, [])
+        positions:list[tuple[float, float]] = state.sample_positions.get(genus, [])
         if not positions or state.planet_radius is None or state.latitude is None or state.longitude is None:
             return
-        px_per_m = RADIUS_PX / display_range
+        px_per_m:float = RADIUS_PX / display_range
         for i, (lat, lon) in enumerate(positions):
             x, y = _local_xy_m(state.latitude, state.longitude, lat, lon, state.planet_radius)
-            sx = round(CENTER_X + x * px_per_m)
-            sy = round(CENTER_Y - y * px_per_m)
+            sx:int = round(CENTER_X + x * px_per_m)
+            sy:int = round(CENTER_Y - y * px_per_m)
             self.overlay.send_shape(f"{FRAME_PREFIX}sample-{i}", "rect", SAMPLE_COLOR, SAMPLE_COLOR, sx - 3, sy - 3, 6, 6, ttl=TTL)

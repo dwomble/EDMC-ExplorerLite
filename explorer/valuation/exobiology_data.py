@@ -207,17 +207,17 @@ SPECIES_VALUE:dict[str, dict[str, int]] = {
 }
 
 # Confirmed: total payout for a first-logged sample = base value x 5 (i.e. base + 4x bonus).
-FIRST_LOGGED_BONUS_MULTIPLIER = 5
+FIRST_LOGGED_BONUS_MULTIPLIER:int = 5
 
 def genus_min_distance(genus:str) -> int|None:
     return GENUS_MIN_DISTANCE_M.get(genus)
 
 def genus_value_range(genus:str) -> tuple[int, int]|None:
     """ (min, max) base credit value across all known species of a genus, or None if unknown. """
-    species = SPECIES_VALUE.get(genus)
+    species:dict[str, int]|None = SPECIES_VALUE.get(genus)
     if not species:
         return None
-    values = species.values()
+    values:list[int] = list(species.values())
     return (min(values), max(values))
 
 def species_value(genus:str, species:str) -> int|None:

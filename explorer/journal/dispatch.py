@@ -47,7 +47,7 @@ def dispatch(store:ExplorerStore, state:ExplorerState, cmdr:str, entry:dict) -> 
     if state.cmdr_id is None and state.cmdr:
         state.cmdr_id = store.get_or_create_cmdr(state.cmdr)
 
-    handler = EVENT_HANDLERS.get(entry.get("event", ""))
+    handler:Callable|None = EVENT_HANDLERS.get(entry.get("event", ""))
     if handler is None:
         return {}
     return handler(store, state, entry) or {}

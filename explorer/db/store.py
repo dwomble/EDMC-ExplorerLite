@@ -25,7 +25,7 @@ def resolve_db_path() -> Path:
     reinstall (delete-and-reclone) wipes plugin_dir outright and would destroy a Cmdr's entire
     scan history.
     """
-    directory = Path(config.app_dir_path) / GH_PROJECT
+    directory:Path = Path(config.app_dir_path) / GH_PROJECT
     directory.mkdir(parents=True, exist_ok=True)
     return directory / DB_FILENAME
 
@@ -43,18 +43,18 @@ class ExplorerStore:
     def _update(self, table:str, pk:int, **fields) -> None:
         if not fields:
             return
-        cols = ", ".join(f"{k} = ?" for k in fields)
-        values = list(fields.values()) + [pk]
+        cols:str = ", ".join(f"{k} = ?" for k in fields)
+        values:list = list(fields.values()) + [pk]
         self.conn.execute(f"UPDATE {table} SET {cols} WHERE id = ?", values)
         self.conn.commit()
 
     # -- Cmdrs --
 
     def get_or_create_cmdr(self, name:str, fid:str = "") -> int:
-        row = self.conn.execute("SELECT id FROM cmdrs WHERE name = ?", (name,)).fetchone()
+        row:sqlite3.Row|None = self.conn.execute("SELECT id FROM cmdrs WHERE name = ?", (name,)).fetchone()
         if row:
             return row["id"]
-        cur = self.conn.execute("INSERT INTO cmdrs (name, fid) VALUES (?, ?)", (name, fid))
+        cur:sqlite3.Cursor = self.conn.execute("INSERT INTO cmdrs (name, fid) VALUES (?, ?)", (name, fid))
         self.conn.commit()
         assert cur.lastrowid is not None
         return cur.lastrowid
@@ -67,12 +67,12 @@ class ExplorerStore:
     # -- Systems --
 
     def get_or_create_system(self, cmdr_id:int, system_address:int, name:str) -> int:
-        row = self.conn.execute(
+        row:sqlite3.Row|None = self.conn.execute(
             "SELECT id FROM systems WHERE cmdr_id = ? AND system_address = ?", (cmdr_id, system_address)
         ).fetchone()
         if row:
             return row["id"]
-        cur = self.conn.execute(
+        cur:sqlite3.Cursor = self.conn.execute(
             "INSERT INTO systems (cmdr_id, system_address, name, visited_at) VALUES (?, ?, ?, datetime('now'))",
             (cmdr_id, system_address, name),
         )
@@ -96,13 +96,13 @@ class ExplorerStore:
     # -- Bodies --
 
     def get_or_create_body(self, cmdr_id:int, system_id:int, body_id:int, body_name:str, body_type:str = "") -> int:
-        row = self.conn.execute(
+        row:sqlite3.Row|None = self.conn.execute(
             "SELECT id FROM bodies WHERE cmdr_id = ? AND system_id = ? AND body_id = ?",
             (cmdr_id, system_id, body_id),
         ).fetchone()
         if row:
             return row["id"]
-        cur = self.conn.execute(
+        cur:sqlite3.Cursor = self.conn.execute(
             "INSERT INTO bodies (cmdr_id, system_id, body_id, body_name, body_type) VALUES (?, ?, ?, ?, ?)",
             (cmdr_id, system_id, body_id, body_name, body_type),
         )
@@ -138,12 +138,12 @@ class ExplorerStore:
     # -- Exobiology sample progress --
 
     def get_or_create_species_progress(self, body_pk:int, genus:str) -> int:
-        row = self.conn.execute(
+        row:sqlite3.Row|None = self.conn.execute(
             "SELECT id FROM species_progress WHERE body_id = ? AND genus = ?", (body_pk, genus)
         ).fetchone()
         if row:
             return row["id"]
-        cur = self.conn.execute("INSERT INTO species_progress (body_id, genus) VALUES (?, ?)", (body_pk, genus))
+        cur:sqlite3.Cursor = self.conn.execute("INSERT INTO species_progress (body_id, genus) VALUES (?, ?)", (body_pk, genus))
         self.conn.commit()
         assert cur.lastrowid is not None
         return cur.lastrowid
@@ -177,16 +177,16 @@ class ExplorerStore:
         system-level totals across a whole transaction) -- only species-level sold_value is
         real. Est. values are best-effort (see valuation/cartography.py's own caveat).
         """
-        systems = self.conn.execute("SELECT * FROM systems WHERE cmdr_id = ? ORDER BY visited_at", (cmdr_id,)).fetchall()
+        systems:list[sqlite3.Row] = self.conn.execute("SELECT * FROM systems WHERE cmdr_id = ? ORDER BY visited_at", (cmdr_id,)).fetchall()
 
-        tree = []
+        tree:list[dict] = []
         for system in systems:
-            bodies = self.conn.execute("SELECT * FROM bodies WHERE system_id = ? ORDER BY body_id", (system["id"],)).fetchall()
+            bodies:list[sqlite3.Row] = self.conn.execute("SELECT * FROM bodies WHERE system_id = ? ORDER BY body_id", (system["id"],)).fetchall()
 
-            body_nodes = []
-            system_est_total = 0
+            body_nodes:list[dict] = []
+            system_est_total:int = 0
             for body in bodies:
-                species_nodes = [
+                species_nodes:list[dict] = [
                     {
                         "name": row["species"] or f"{row['genus']} sp.",
                         "status": _species_status(row),
@@ -195,7 +195,7 @@ class ExplorerStore:
                     }
                     for row in self.get_species_progress_for_body(body["id"])
                 ]
-                body_est = max(body["estimated_scan_value"] or 0, body["estimated_mapping_value"] or 0)
+                body_est:int = max(body["estimated_scan_value"] or 0, body["estimated_mapping_value"] or 0)
                 system_est_total += body_est
                 body_nodes.append({
                     "name": body["body_name"],
@@ -220,6 +220,6 @@ class ExplorerStore:
             "INSERT INTO sale_events (cmdr_id, event_type, timestamp, system_name, total_value, raw_json) VALUES (?, ?, ?, ?, ?, ?)",
             (cmdr_id, event_type, timestamp, system_name, total_value, raw_json),
         )
-        column = "actual_cartography_credits" if event_type == "cartography" else "actual_exobiology_credits"
+        column:str = "actual_cartography_credits" if event_type == "cartography" else "actual_exobiology_credits"
         self.conn.execute(f"UPDATE cmdrs SET {column} = {column} + ? WHERE id = ?", (total_value, cmdr_id))
         self.conn.commit()
