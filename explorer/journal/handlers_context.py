@@ -18,6 +18,7 @@ def _enter_system(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict:
         return {}
     state.system_address = system_address
     state.system_name = entry.get("StarSystem", "")
+    state.nearest_star_type = None
     state.reset_body()
     if state.cmdr_id is not None:
         state.system_id = store.get_or_create_system(state.cmdr_id, system_address, state.system_name)

@@ -118,8 +118,27 @@ class ExplorerStore:
 
     def get_flagged_bodies_for_system(self, system_id:int) -> list[sqlite3.Row]:
         return self.conn.execute(
-            "SELECT * FROM bodies WHERE system_id = ? AND (flagged_value = 1 OR flagged_exobio = 1) ORDER BY body_id",
+            """SELECT * FROM bodies WHERE system_id = ? AND (has_biological_signals IS NOT 0) AND (
+                   flagged_value = 1 OR flagged_exobio = 1 OR
+                   EXISTS (SELECT 1 FROM genus_predictions gp WHERE gp.body_id = bodies.id)
+               ) ORDER BY body_id""",
             (system_id,),
+        ).fetchall()
+
+    # -- Genus predictions (pre-DSS, from Scan properties) --
+
+    def replace_genus_predictions(self, body_pk:int, predictions:list[tuple[str, float]]) -> None:
+        """ Full replace, not merge -- predictions are always a fresh recompute from the latest Scan. """
+        self.conn.execute("DELETE FROM genus_predictions WHERE body_id = ?", (body_pk,))
+        self.conn.executemany(
+            "INSERT INTO genus_predictions (body_id, genus, confidence) VALUES (?, ?, ?)",
+            [(body_pk, genus, confidence) for genus, confidence in predictions],
+        )
+        self.conn.commit()
+
+    def get_genus_predictions_for_body(self, body_pk:int) -> list[sqlite3.Row]:
+        return self.conn.execute(
+            "SELECT * FROM genus_predictions WHERE body_id = ? ORDER BY confidence DESC", (body_pk,)
         ).fetchall()
 
     # -- Body genuses (pre/post-DSS biological signal genus hints) --

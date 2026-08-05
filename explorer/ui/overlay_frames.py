@@ -14,11 +14,13 @@ No explicit "clear" -- every shape is sent with a short TTL and simply stops bei
 happens naturally once the panel/dispatch flags say the overlay is no longer relevant.
 """
 import math
+import sqlite3
 
 from config import config # type: ignore
 
 from explorer.utils.overlay import Overlay
 
+from explorer.db.store import ExplorerStore
 from explorer.state import ExplorerState
 from explorer.valuation import exobiology_data
 from explorer.constants import CFG_OVERLAY_ENABLED, CFG_OVERLAY_RADAR_ENABLED
@@ -64,15 +66,21 @@ class RadarOverlay:
             id_prefix_group="ExplorerLite Radar",
         )
 
-    def render(self, state:ExplorerState) -> None:
+    def render(self, store:ExplorerStore, state:ExplorerState) -> None:
         if not self.overlay.available:
             return
         if not config.get_bool(CFG_OVERLAY_ENABLED, default=True) or not config.get_bool(CFG_OVERLAY_RADAR_ENABLED, default=True):
             return
         if not state.exobiology_relevant or not state.has_lat_long or state.latitude is None or state.longitude is None:
             return
+        if state.cmdr_id is None or state.system_id is None or state.body_id is None:
+            return
 
-        genus:str|None = self._active_genus(state)
+        # Genus comes from the DB (populated at SAASignalsFound, in orbit) rather than
+        # state.sample_positions -- that's session-only and only gains an entry once the FIRST
+        # sample is taken, so the radar would otherwise draw nothing to guide you there.
+        body_pk:int = store.get_or_create_body(state.cmdr_id, state.system_id, state.body_id, state.body_name)
+        genus:str|None = self._active_genus(store.get_species_progress_for_body(body_pk))
         if genus is None:
             return
 
@@ -84,14 +92,12 @@ class RadarOverlay:
         self._draw_player()
         self._draw_samples(state, genus, display_range)
 
-    def _active_genus(self, state:ExplorerState) -> str|None:
-        """ Prefer a genus that isn't done yet; fall back to whatever's tracked this visit. """
-        for genus, positions in state.sample_positions.items():
-            if len(positions) < 3:
-                return genus
-        if state.sample_positions:
-            return next(iter(state.sample_positions))
-        return None
+    def _active_genus(self, progress:list[sqlite3.Row]) -> str|None:
+        """ Prefer a genus that isn't done yet; fall back to whatever's tracked for this body. """
+        for row in progress:
+            if not row["completed_at"]:
+                return row["genus"]
+        return progress[0]["genus"] if progress else None
 
     def _display_range(self, genus:str) -> float:
         min_dist:int = exobiology_data.genus_min_distance(genus) or 200

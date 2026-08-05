@@ -67,8 +67,8 @@ def _apply_flags(flags:dict) -> None:
             panel.refresh()
         if history_view is not None:
             history_view.refresh() # cheap no-op if the popup isn't open
-    if flags.get("overlay") and radar is not None:
-        radar.render(explorer_state)
+    if flags.get("overlay") and radar is not None and store is not None:
+        radar.render(store, explorer_state)
 
 def journal_entry(cmdr:str, is_beta:bool, system:str, station:str, entry:dict, state:dict) -> None:
     """ Parse an incoming journal entry and update our own state/DB. """

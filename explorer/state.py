@@ -14,6 +14,7 @@ class ExplorerState:
     system_address:int|None = None
     system_name:str = ""
     system_id:int|None = None # DB PK for the current system, refreshed on system-change events
+    nearest_star_type:str|None = None # most recently Scan'd star this system -- a proxy for genus_prediction.py
 
     body_id:int|None = None
     body_name:str = ""

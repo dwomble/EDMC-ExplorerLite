@@ -57,11 +57,12 @@ class Updater():
             self.zip_downloaded = zip_file
             return
 
+        r:requests.Response|None = None
         try:
-            r:requests.Response = requests.get(self.download_url, headers={'User-Agent': 'EDMC-PluginLib Updater'}, timeout=TIMEOUT)
+            r = requests.get(self.download_url, headers={'User-Agent': 'EDMC-PluginLib Updater'}, timeout=TIMEOUT)
             r.raise_for_status()
         except Exception:
-            Debug.logger.error(f"Failed to download {self.gh_project} update (status code {r.status_code}).)")
+            Debug.logger.error(f"Failed to download {self.gh_project} update (status code {r.status_code if r else 'N/A'}).)")
             return
 
         with open(zip_file, 'wb') as f:

@@ -9,7 +9,7 @@ from config import config # type: ignore
 from explorer.db.store import ExplorerStore
 from explorer.state import ExplorerState
 from explorer.util import now_iso
-from explorer.valuation import cartography, exobiology
+from explorer.valuation import cartography, exobiology, genus_prediction
 from explorer.constants import (
     CFG_SCAN_VALUE_THRESHOLD, DEFAULT_SCAN_VALUE_THRESHOLD,
     CFG_EXOBIO_VALUE_THRESHOLD, DEFAULT_EXOBIO_VALUE_THRESHOLD,
@@ -51,6 +51,9 @@ def on_scan(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict:
         state.cmdr_id, state.system_id, body_id, entry.get("BodyName", ""), "Star" if is_star else "Planet"
     )
 
+    if is_star:
+        state.nearest_star_type = entry.get("StarType")
+
     scan_value:int = cartography.estimate_scan_value(entry)
     mapping_value:int = cartography.estimate_mapping_value(entry)
     flagged:bool = max(scan_value, mapping_value) >= _scan_threshold()
@@ -67,7 +70,24 @@ def on_scan(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict:
         flagged_value=1 if flagged else 0,
         scanned_at=now_iso(),
     )
+
+    if not is_star and entry.get("Landable"):
+        store.replace_genus_predictions(body_pk, _worthwhile_predictions(entry, state.nearest_star_type))
+
     return {"panel": True}
+
+def _worthwhile_predictions(entry:dict, nearest_star_type:str|None) -> list[tuple[str, float]]:
+    """ Predicted genera whose value range clears the exobio threshold -- mirrors exactly how
+    on_saa_signals_found() gates flagged_exobio, so "has any prediction row" alone is a
+    meaningful interest signal without needing a separate bodies column. """
+    threshold:int = _exobio_threshold()
+    worthwhile:list[tuple[str, float]] = []
+    for genus, confidence in genus_prediction.predict_genera(entry, nearest_star_type):
+        value_range:tuple[int, int]|None = exobiology.estimate_genus_range(genus)
+        value_max:int|None = value_range[1] if value_range else None
+        if exobiology.exceeds_threshold(value_max, threshold):
+            worthwhile.append((genus, confidence))
+    return worthwhile
 
 def on_saa_scan_complete(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict:
     if state.system_id is None or state.cmdr_id is None:

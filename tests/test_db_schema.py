@@ -1,21 +1,22 @@
 """
-SQLite schema for EDMC-ExplorerLite's self-contained store.
+Unit test for the schema migration path (explorer/db/schema.py). No DB/journal/Tk harness
+needed -- builds a raw sqlite3 connection directly.
 
-Deliberately minimal/denormalized -- no genus/species catalog tables; that static reference
-data lives in explorer/valuation/exobiology_data.py, not the DB. See REQUIREMENTS.md and the
-implementation plan for the rationale behind each table.
+Run with:
+    .venv/bin/python -m pytest tests/test_db_schema.py -v --tb=short
 """
 import sqlite3
 
-SCHEMA_VERSION = 2
+import pytest
 
-DDL = """
-CREATE TABLE IF NOT EXISTS schema_meta (
-    key TEXT PRIMARY KEY,
-    value TEXT
-);
+from explorer.db.schema import ensure_schema, SCHEMA_VERSION
 
-CREATE TABLE IF NOT EXISTS cmdrs (
+# The pre-genus_predictions (v1) DDL, frozen here on purpose -- this is what ensure_schema()
+# must be able to upgrade from, not what it currently creates.
+V1_DDL = """
+CREATE TABLE schema_meta (key TEXT PRIMARY KEY, value TEXT);
+
+CREATE TABLE cmdrs (
     id INTEGER PRIMARY KEY,
     name TEXT UNIQUE NOT NULL,
     fid TEXT,
@@ -23,7 +24,7 @@ CREATE TABLE IF NOT EXISTS cmdrs (
     actual_exobiology_credits INTEGER NOT NULL DEFAULT 0
 );
 
-CREATE TABLE IF NOT EXISTS systems (
+CREATE TABLE systems (
     id INTEGER PRIMARY KEY,
     cmdr_id INTEGER NOT NULL REFERENCES cmdrs(id),
     system_address INTEGER NOT NULL,
@@ -38,7 +39,7 @@ CREATE TABLE IF NOT EXISTS systems (
     UNIQUE(cmdr_id, system_address)
 );
 
-CREATE TABLE IF NOT EXISTS bodies (
+CREATE TABLE bodies (
     id INTEGER PRIMARY KEY,
     cmdr_id INTEGER NOT NULL REFERENCES cmdrs(id),
     system_id INTEGER NOT NULL REFERENCES systems(id),
@@ -54,7 +55,7 @@ CREATE TABLE IF NOT EXISTS bodies (
     estimated_scan_value INTEGER,
     estimated_mapping_value INTEGER,
     flagged_value INTEGER NOT NULL DEFAULT 0,
-    has_biological_signals INTEGER, -- NULL = not yet checked (FSSBodySignals hasn't fired); 0/1 = confirmed absent/present
+    has_biological_signals INTEGER NOT NULL DEFAULT 0,
     biological_signal_count INTEGER,
     estimated_exobio_value_min INTEGER,
     estimated_exobio_value_max INTEGER,
@@ -64,7 +65,7 @@ CREATE TABLE IF NOT EXISTS bodies (
     UNIQUE(cmdr_id, system_id, body_id)
 );
 
-CREATE TABLE IF NOT EXISTS body_genuses (
+CREATE TABLE body_genuses (
     id INTEGER PRIMARY KEY,
     body_id INTEGER NOT NULL REFERENCES bodies(id),
     genus TEXT NOT NULL,
@@ -73,7 +74,7 @@ CREATE TABLE IF NOT EXISTS body_genuses (
     UNIQUE(body_id, genus)
 );
 
-CREATE TABLE IF NOT EXISTS species_progress (
+CREATE TABLE species_progress (
     id INTEGER PRIMARY KEY,
     body_id INTEGER NOT NULL REFERENCES bodies(id),
     genus TEXT NOT NULL,
@@ -92,7 +93,7 @@ CREATE TABLE IF NOT EXISTS species_progress (
     UNIQUE(body_id, genus)
 );
 
-CREATE TABLE IF NOT EXISTS sale_events (
+CREATE TABLE sale_events (
     id INTEGER PRIMARY KEY,
     cmdr_id INTEGER NOT NULL REFERENCES cmdrs(id),
     event_type TEXT NOT NULL,
@@ -101,33 +102,41 @@ CREATE TABLE IF NOT EXISTS sale_events (
     total_value INTEGER NOT NULL,
     raw_json TEXT
 );
-
-CREATE TABLE IF NOT EXISTS genus_predictions (
-    id INTEGER PRIMARY KEY,
-    body_id INTEGER NOT NULL REFERENCES bodies(id),
-    genus TEXT NOT NULL,
-    confidence REAL NOT NULL,
-    UNIQUE(body_id, genus)
-);
 """
 
-def ensure_schema(conn:sqlite3.Connection) -> None:
-    """ Create tables if they don't exist yet, and stamp/verify the schema version. """
-    conn.executescript(DDL)
+def _v1_connection() -> sqlite3.Connection:
+    conn = sqlite3.connect(":memory:")
+    conn.row_factory = sqlite3.Row
+    conn.executescript(V1_DDL)
+    conn.execute("INSERT INTO cmdrs (name) VALUES ('Testy')")
+    conn.execute("INSERT INTO schema_meta (key, value) VALUES ('version', '1')")
+    conn.commit()
+    return conn
 
-    row:sqlite3.Row|None = conn.execute("SELECT value FROM schema_meta WHERE key = 'version'").fetchone()
-    if row is None:
-        conn.execute("INSERT INTO schema_meta (key, value) VALUES ('version', ?)", (str(SCHEMA_VERSION),))
-        conn.commit()
-        return
+class TestSchemaMigration:
 
-    stored_version:int = int(row[0])
-    if stored_version > SCHEMA_VERSION:
-        raise RuntimeError(f"explorer.sqlite schema version {stored_version} is newer than this plugin version supports ({SCHEMA_VERSION})")
-    if stored_version < SCHEMA_VERSION:
-        # Every version bump so far has been purely additive (new tables only, no column
-        # changes to existing tables) -- the CREATE TABLE IF NOT EXISTS script above already
-        # created anything new, so upgrading is just stamping the new version number. A future
-        # non-additive change (column rename/removal) would need real migration code here.
-        conn.execute("UPDATE schema_meta SET value = ? WHERE key = 'version'", (str(SCHEMA_VERSION),))
+    def test_v1_database_upgrades_cleanly(self) -> None:
+        conn = _v1_connection()
+
+        ensure_schema(conn) # must not raise
+
+        version:str = conn.execute("SELECT value FROM schema_meta WHERE key = 'version'").fetchone()[0]
+        assert int(version) == SCHEMA_VERSION
+
+        tables:set[str] = {row[0] for row in conn.execute("SELECT name FROM sqlite_master WHERE type = 'table'")}
+        assert "genus_predictions" in tables
+
+    def test_v1_database_upgrade_preserves_existing_data(self) -> None:
+        conn = _v1_connection()
+        ensure_schema(conn)
+        assert conn.execute("SELECT name FROM cmdrs WHERE name = 'Testy'").fetchone() is not None
+
+    def test_future_schema_version_raises(self) -> None:
+        conn = _v1_connection()
+        conn.execute("UPDATE schema_meta SET value = ?", (str(SCHEMA_VERSION + 1),))
         conn.commit()
+        with pytest.raises(RuntimeError):
+            ensure_schema(conn)
+
+if __name__ == '__main__':
+    pytest.main([__file__, '-v', '--tb=short'])

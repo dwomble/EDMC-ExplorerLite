@@ -62,6 +62,79 @@ class TestPanelStates:
         assert lines[0].startswith("Deltius —")
         assert any("above threshold" in line for line in lines)
 
+    def test_flagged_body_shows_before_full_system_fss_sweep(self, plugin:TestHarness) -> None:
+        """
+        Regression test: flagged bodies (value/exobio) used to be gated behind
+        FSSAllBodiesFound, so a body scanned directly (without sweeping the whole system map
+        first) never showed up. This sequence never fires FSSAllBodiesFound at all.
+        """
+        plugin.config.set("EDMCExplorerLite_ScanValueThreshold", 50000)
+        plugin.load_events("explorer_events.json")
+        plugin.play_sequence("partial_scan_no_full_fss", 0.02)
+
+        import load
+        lines = _panel_lines(load)
+        assert any(line.startswith("Honk:") for line in lines)
+        assert any("above threshold" in line for line in lines)
+
+    def test_exobio_line_shows_progress_then_drops_once_done(self, plugin:TestHarness) -> None:
+        """
+        Regression test for the progressive-detail redesign: a flagged body's exobio line
+        should read as a generic "genus ~value" guess, become "species — N/3, value" once
+        sampling starts, and disappear once that genus is fully sampled -- not keep showing a
+        stale "exobio~9M Cr" label throughout.
+        """
+        plugin.load_events("explorer_events.json")
+        events = plugin.events["full_walkthrough"]
+
+        # "Log" and "Sample" ScanType both count as real samples (see SAMPLE_SCAN_TYPES in
+        # handlers_exobiology.py) -- stop after the 2nd one (Log, then the first Sample) for 2/3.
+        increments_seen:int = 0
+        cutoff:int = len(events)
+        for i, event in enumerate(events):
+            if event.get("event") == "ScanOrganic" and event.get("ScanType") in ("Log", "Sample"):
+                increments_seen += 1
+                if increments_seen == 2:
+                    cutoff = i + 1
+                    break
+
+        for event in events[:cutoff]:
+            plugin.fire_event(event)
+
+        import load
+        lines = _panel_lines(load)
+        assert any("Bacterium Aurasus — 2/3, 1.0M Cr" in line for line in lines)
+
+        for event in events[cutoff:]:
+            plugin.fire_event(event)
+
+        lines = _panel_lines(load)
+        assert not any(line.startswith("2:") for line in lines) # body 2's only genus is done -- dropped
+
+    def test_predicted_genus_line_is_superseded_by_confirmed_genus(self, plugin:TestHarness) -> None:
+        """
+        Regression test for the pre-DSS genus predictor: a landable body whose Scan properties
+        match a known genus's conditions should show a "?genus ... (NN%)" line before any DSS
+        data exists, and that guess should disappear (replaced by the real confirmed-genus
+        line, no "?") once SAASignalsFound reveals what's actually there.
+        """
+        plugin.load_events("explorer_events.json")
+        events = plugin.events["predicted_then_confirmed"]
+
+        confirm_index:int = next(i for i, e in enumerate(events) if e.get("event") == "SAASignalsFound")
+        for event in events[:confirm_index]:
+            plugin.fire_event(event)
+
+        import load
+        lines = _panel_lines(load)
+        assert any(line.startswith("1: ?Fonticulua") for line in lines), lines
+
+        plugin.fire_event(events[confirm_index])
+
+        lines = _panel_lines(load)
+        assert not any("?" in line for line in lines), lines
+        assert any(line.startswith("1: Bacterium sp.") for line in lines), lines
+
 class TestNoDuplicateWidgets:
     """
     Regression test for a real bug: th.Base widgets (Button, Checkbutton, ...) only dedupe

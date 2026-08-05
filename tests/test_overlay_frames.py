@@ -13,6 +13,7 @@ from typing import Generator
 
 from harness import TestHarness, reset_plugin_modules
 
+from explorer.db.store import ExplorerStore
 from explorer.utils.overlay import Overlay
 from explorer.state import ExplorerState
 from explorer.ui.overlay_frames import RadarOverlay, FRAME_PREFIX
@@ -24,39 +25,56 @@ def overlay_mode(request, harness:TestHarness) -> Generator[None, None, None]:
     yield
     harness.set_overlay_mode('All')
 
-def _landed_state(genus:str = "Bacterium", samples:int = 1) -> ExplorerState:
+@pytest.fixture
+def store(tmp_path) -> Generator[ExplorerStore, None, None]:
+    s = ExplorerStore(tmp_path / "explorer.sqlite")
+    yield s
+    s.close()
+
+def _landed_state(store:ExplorerStore, genus:str = "Bacterium", samples:int = 1, mark_done:bool = False) -> ExplorerState:
+    """ A Cmdr standing on a body whose genus was already revealed via SAASignalsFound (in the
+    DB) -- samples/mark_done additionally simulate 0+ ScanOrganic calls made so far this visit. """
     state = ExplorerState()
+    state.cmdr_id = store.get_or_create_cmdr("Testy")
+    state.system_id = store.get_or_create_system(state.cmdr_id, 1, "Deltius")
     state.landed = True
     state.on_foot = True
     state.body_id = 2
+    state.body_name = "Deltius 2"
     state.has_lat_long = True
     state.latitude = 10.0
     state.longitude = 20.0
     state.heading = 90.0
     state.altitude = 0.0
     state.planet_radius = 500_000.0
-    state.sample_positions[genus] = [(10.0 + i * 0.0001, 20.0) for i in range(samples)]
+
+    body_pk:int = store.get_or_create_body(state.cmdr_id, state.system_id, state.body_id, state.body_name)
+    progress_id:int = store.get_or_create_species_progress(body_pk, genus)
+    if mark_done:
+        store.update_species_progress(progress_id, completed_at="2026-01-01T00:00:00Z")
+    if samples:
+        state.sample_positions[genus] = [(10.0 + i * 0.0001, 20.0) for i in range(samples)]
     return state
 
 class TestRadarOverlayNoOverlay:
 
     @pytest.mark.overlay('None')
-    def test_render_is_a_safe_noop_without_overlay(self, overlay_mode) -> None:
+    def test_render_is_a_safe_noop_without_overlay(self, overlay_mode, store:ExplorerStore) -> None:
         radar = RadarOverlay(Overlay())
-        radar.render(_landed_state()) # must not raise
+        radar.render(store, _landed_state(store)) # must not raise
 
     @pytest.mark.overlay('None')
-    def test_render_is_a_noop_when_not_exobiology_relevant(self, overlay_mode) -> None:
+    def test_render_is_a_noop_when_not_exobiology_relevant(self, overlay_mode, store:ExplorerStore) -> None:
         radar = RadarOverlay(Overlay())
-        radar.render(ExplorerState()) # not landed/on_foot -- must not raise
+        radar.render(store, ExplorerState()) # not landed/on_foot -- must not raise
 
 class TestRadarOverlayModern:
 
     @pytest.mark.overlay('Modern')
-    def test_render_draws_rings_player_and_samples(self, overlay_mode) -> None:
+    def test_render_draws_rings_player_and_samples(self, overlay_mode, store:ExplorerStore) -> None:
         radar = RadarOverlay(Overlay())
-        state = _landed_state(samples=2)
-        radar.render(state)
+        state = _landed_state(store, samples=2)
+        radar.render(store, state)
 
         shapes = radar.overlay._overlay.shapes
         assert f"{FRAME_PREFIX}ring-1.0" in shapes
@@ -67,20 +85,38 @@ class TestRadarOverlayModern:
         assert f"{FRAME_PREFIX}sample-1" in shapes
 
     @pytest.mark.overlay('Modern')
-    def test_render_is_a_noop_without_lat_long(self, overlay_mode) -> None:
+    def test_render_draws_rings_before_any_sample_is_taken(self, overlay_mode, store:ExplorerStore) -> None:
+        """
+        Regression test: the active genus used to come from state.sample_positions, which is
+        session-only and only gains an entry once ScanOrganic fires for the FIRST sample -- so
+        the radar drew nothing at all while walking towards the first sample spot, exactly when
+        it's most needed. Genus now comes from the DB (SAASignalsFound, set while still in
+        orbit), so rings must show up here with zero samples taken.
+        """
         radar = RadarOverlay(Overlay())
-        state = _landed_state()
+        state = _landed_state(store, samples=0)
+        radar.render(store, state)
+
+        shapes = radar.overlay._overlay.shapes
+        assert f"{FRAME_PREFIX}ring-1.0" in shapes
+        assert f"{FRAME_PREFIX}ring-active" in shapes
+        assert f"{FRAME_PREFIX}player" in shapes
+
+    @pytest.mark.overlay('Modern')
+    def test_render_is_a_noop_without_lat_long(self, overlay_mode, store:ExplorerStore) -> None:
+        radar = RadarOverlay(Overlay())
+        state = _landed_state(store)
         state.has_lat_long = False
-        radar.render(state)
+        radar.render(store, state)
         assert f"{FRAME_PREFIX}player" not in radar.overlay._overlay.shapes
 
     @pytest.mark.overlay('Modern')
-    def test_render_respects_radar_disabled_config(self, overlay_mode, harness:TestHarness) -> None:
+    def test_render_respects_radar_disabled_config(self, overlay_mode, harness:TestHarness, store:ExplorerStore) -> None:
         from explorer.constants import CFG_OVERLAY_RADAR_ENABLED
         harness.config.set(CFG_OVERLAY_RADAR_ENABLED, False)
         try:
             radar = RadarOverlay(Overlay())
-            radar.render(_landed_state())
+            radar.render(store, _landed_state(store))
             assert f"{FRAME_PREFIX}player" not in radar.overlay._overlay.shapes
         finally:
             harness.config.set(CFG_OVERLAY_RADAR_ENABLED, True)
