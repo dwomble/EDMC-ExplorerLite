@@ -104,12 +104,34 @@ CREATE TABLE sale_events (
 );
 """
 
+# v2 added genus_predictions as a new table but never gave `bodies` a type_label column --
+# that's the v2->v3 column-addition step ensure_schema() must handle via real ALTER TABLE.
+V2_EXTRA_DDL = """
+CREATE TABLE genus_predictions (
+    id INTEGER PRIMARY KEY,
+    body_id INTEGER NOT NULL REFERENCES bodies(id),
+    genus TEXT NOT NULL,
+    confidence REAL NOT NULL,
+    UNIQUE(body_id, genus)
+);
+"""
+
 def _v1_connection() -> sqlite3.Connection:
     conn = sqlite3.connect(":memory:")
     conn.row_factory = sqlite3.Row
     conn.executescript(V1_DDL)
     conn.execute("INSERT INTO cmdrs (name) VALUES ('Testy')")
     conn.execute("INSERT INTO schema_meta (key, value) VALUES ('version', '1')")
+    conn.commit()
+    return conn
+
+def _v2_connection() -> sqlite3.Connection:
+    conn = sqlite3.connect(":memory:")
+    conn.row_factory = sqlite3.Row
+    conn.executescript(V1_DDL)
+    conn.executescript(V2_EXTRA_DDL)
+    conn.execute("INSERT INTO cmdrs (name) VALUES ('Testy')")
+    conn.execute("INSERT INTO schema_meta (key, value) VALUES ('version', '2')")
     conn.commit()
     return conn
 
@@ -126,10 +148,36 @@ class TestSchemaMigration:
         tables:set[str] = {row[0] for row in conn.execute("SELECT name FROM sqlite_master WHERE type = 'table'")}
         assert "genus_predictions" in tables
 
+        body_columns:set[str] = {row[1] for row in conn.execute("PRAGMA table_info(bodies)")}
+        assert "type_label" in body_columns
+
     def test_v1_database_upgrade_preserves_existing_data(self) -> None:
         conn = _v1_connection()
         ensure_schema(conn)
         assert conn.execute("SELECT name FROM cmdrs WHERE name = 'Testy'").fetchone() is not None
+
+    def test_v2_database_upgrade_adds_type_label_column(self) -> None:
+        """ v2 has genus_predictions already (a new table, handled for free by CREATE TABLE IF
+        NOT EXISTS) but not bodies.type_label -- a new column on an EXISTING table, which
+        needs the real ALTER TABLE path in _ensure_columns(), not just the DDL script. """
+        conn = _v2_connection()
+        body_columns_before:set[str] = {row[1] for row in conn.execute("PRAGMA table_info(bodies)")}
+        assert "type_label" not in body_columns_before # sanity check the fixture itself
+
+        ensure_schema(conn) # must not raise
+
+        version:str = conn.execute("SELECT value FROM schema_meta WHERE key = 'version'").fetchone()[0]
+        assert int(version) == SCHEMA_VERSION
+        body_columns_after:set[str] = {row[1] for row in conn.execute("PRAGMA table_info(bodies)")}
+        assert "type_label" in body_columns_after
+        assert conn.execute("SELECT name FROM cmdrs WHERE name = 'Testy'").fetchone() is not None
+
+    def test_ensure_schema_is_idempotent_on_an_up_to_date_database(self) -> None:
+        """ ALTER TABLE ADD COLUMN on a column that already exists raises in SQLite -- calling
+        ensure_schema() twice (e.g. two ExplorerStore instances against the same file) must not. """
+        conn = _v1_connection()
+        ensure_schema(conn)
+        ensure_schema(conn) # must not raise second time either
 
     def test_future_schema_version_raises(self) -> None:
         conn = _v1_connection()

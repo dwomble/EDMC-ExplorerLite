@@ -1,6 +1,7 @@
 import json
 import importlib
 import sys
+import tkinter as tk
 import types as _types
 import semantic_version
 import logging
@@ -116,13 +117,18 @@ class MockTheme:
         if hasattr(self, '_initialized'): return
         self._initialized = True
     def register(self, widget) -> None:  # noqa: CCR001, C901
-        pass
+        # Mirrors real theme.py's own type check -- e.g. tk.Toplevel is NOT a tk.Widget
+        # subclass (it's BaseWidget+Wm, not BaseWidget+Widget), so calling this on a
+        # Toplevel always raises in the real app; the mock needs to catch that too.
+        if not isinstance(widget, (tk.Widget, tk.BitmapImage)):
+            raise TypeError(f'Expected widget, got {type(widget)}')
     def register_alternate(self, pair, gridopts) -> None:
         pass
     def button_bind(self, widget, command, image) -> None:
         pass
     def update(self, widget) -> None:
-        pass
+        if not isinstance(widget, (tk.Widget, tk.BitmapImage)):
+            raise TypeError(f'Expected widget, got {type(widget)}')
     def apply(self, root) -> None:
         pass
 

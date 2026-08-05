@@ -109,14 +109,14 @@ class TestPanelStates:
             plugin.fire_event(event)
 
         lines = _panel_lines(load)
-        assert not any(line.startswith("2:") for line in lines) # body 2's only genus is done -- dropped
+        assert not any("Bacterium" in line for line in lines) # body 2's only genus is done -- dropped entirely
 
     def test_predicted_genus_line_is_superseded_by_confirmed_genus(self, plugin:TestHarness) -> None:
         """
         Regression test for the pre-DSS genus predictor: a landable body whose Scan properties
-        match a known genus's conditions should show a "?genus ... (NN%)" line before any DSS
-        data exists, and that guess should disappear (replaced by the real confirmed-genus
-        line, no "?") once SAASignalsFound reveals what's actually there.
+        match known genera's conditions should show a "N species? ... " line (unconfirmed) in
+        the system summary before any DSS data exists, and that guess should be replaced by the
+        real confirmed-genus count (no "?") once SAASignalsFound reveals what's actually there.
         """
         plugin.load_events("explorer_events.json")
         events = plugin.events["predicted_then_confirmed"]
@@ -127,13 +127,53 @@ class TestPanelStates:
 
         import load
         lines = _panel_lines(load)
-        assert any(line.startswith("1: ?Fonticulua") for line in lines), lines
+        assert any(line.startswith("A 1 ") and "species?" in line for line in lines), lines
 
         plugin.fire_event(events[confirm_index])
 
         lines = _panel_lines(load)
-        assert not any("?" in line for line in lines), lines
-        assert any(line.startswith("1: Bacterium sp.") for line in lines), lines
+        assert not any("species?" in line for line in lines), lines
+        assert any(line.startswith("A 1 ") and "species" in line for line in lines), lines
+
+    def test_mapped_body_drops_off_the_list(self, plugin:TestHarness) -> None:
+        """
+        A value-flagged body with no biological interest should disappear from the flagged
+        list once it's been mapped -- there's nothing left to do there, so it's no longer
+        "of interest" (still visible in History, which is a permanent record, not a to-do list).
+        """
+        plugin.config.set("EDMCExplorerLite_ScanValueThreshold", 50000)
+        plugin.load_events("explorer_events.json")
+        plugin.play_sequence("mapped_body_drops_off_list", 0.02)
+
+        import load
+        lines = _panel_lines(load)
+        assert not any(line.startswith("A 1 ") for line in lines), lines
+
+    def test_type_label_shown_on_flagged_body_line(self, plugin:TestHarness) -> None:
+        plugin.config.set("EDMCExplorerLite_ScanValueThreshold", 50000)
+        plugin.load_events("explorer_events.json")
+        events = plugin.events["mapped_body_drops_off_list"]
+        scan_index:int = next(i for i, e in enumerate(events) if e.get("event") == "Scan" and e.get("BodyID") == 1)
+        for event in events[:scan_index + 1]:
+            plugin.fire_event(event)
+
+        import load
+        lines = _panel_lines(load)
+        assert any(line.startswith("A 1 MR ") for line in lines), lines
+
+    def test_supercruise_exit_shows_exobiology_before_landing(self, plugin:TestHarness) -> None:
+        """
+        Dropping out of supercruise near a body should surface its predicted biology right
+        away -- well before ApproachBody/Touchdown/on-foot -- so it's useful for deciding
+        whether to land at all.
+        """
+        plugin.load_events("explorer_events.json")
+        plugin.play_sequence("supercruise_exit_shows_bio_before_landing", 0.02)
+
+        import load
+        lines = _panel_lines(load)
+        assert any("exobiology" in line for line in lines), lines
+        assert any("species?" in line for line in lines), lines
 
 class TestNoDuplicateWidgets:
     """

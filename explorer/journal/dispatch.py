@@ -20,6 +20,7 @@ EVENT_HANDLERS:dict[str, Callable] = {
     "CarrierJump": handlers_context.on_fsd_jump,
     "StartJump": handlers_context.on_start_jump,
     "ApproachBody": handlers_context.on_approach_body,
+    "SupercruiseExit": handlers_context.on_supercruise_exit,
     "LeaveBody": handlers_context.on_leave_body,
     "Touchdown": handlers_context.on_touchdown,
     "Liftoff": handlers_context.on_liftoff,

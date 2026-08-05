@@ -39,6 +39,18 @@ def on_approach_body(store:ExplorerStore, state:ExplorerState, entry:dict) -> di
     state.body_name = entry.get("Body", "")
     return {"panel": True}
 
+def on_supercruise_exit(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict:
+    """ Dropping out of supercruise near a body -- often the first real look at a body's
+    specifics, well before ApproachBody/Touchdown. Skip station drops (BodyType "Station"). """
+    if entry.get("BodyType") == "Station":
+        return {}
+    body_id:int|None = entry.get("BodyID")
+    if body_id is None:
+        return {}
+    state.body_id = body_id
+    state.body_name = entry.get("Body", "")
+    return {"panel": True}
+
 def on_leave_body(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict:
     state.reset_body()
     return {"panel": True}

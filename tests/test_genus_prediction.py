@@ -34,9 +34,11 @@ class TestPredictGenera:
         assert predict_genera(entry, None) == []
 
     def test_borderline_temperature_scores_between_zero_and_one(self) -> None:
-        # Tussock's real range is (145.6, 154.0)K -- push just past the upper edge so it
-        # falls in the tapering margin instead of squarely inside or fully excluded.
-        entry = _entry("Rocky body", "CarbonDioxide", "", 154.5, 0.15)
+        # Tussock has several overlapping CarbonDioxide rulesets (different species); the
+        # widest cluster tops out at 197K. Push just past that shared upper edge -- gravity
+        # stays comfortably inside every ruleset's range so temperature is the only tapering
+        # factor -- landing in the margin instead of squarely inside or fully excluded.
+        entry = _entry("Rocky body", "CarbonDioxide", "", 197.5, 0.2)
         results = dict(predict_genera(entry, None))
         assert "Tussock" in results
         assert 0.0 < results["Tussock"] < 1.0

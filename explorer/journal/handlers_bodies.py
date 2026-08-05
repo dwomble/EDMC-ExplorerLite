@@ -17,6 +17,40 @@ from explorer.constants import (
 
 BIO_SIGNAL_TYPE = "$SAA_SignalType_Biological;"
 
+# Short display abbreviations for the panel's flagged-body lines -- checked in order, first
+# substring match wins, so put more specific classes (e.g. "earthlike") before generic ones.
+PLANET_CLASS_ABBREVIATIONS:list[tuple[str, str]] = [
+    ("earthlike", "ELW"),
+    ("water world", "WW"),
+    ("water giant", "WG"),
+    ("ammonia world", "AW"),
+    ("metal rich", "MR"),
+    ("high metal content", "HMC"),
+    ("rocky ice", "Rocky ice"),
+    ("rocky body", "Rocky"),
+    ("icy body", "Icy"),
+    ("gas giant with water based life", "GG (water life)"),
+    ("gas giant with ammonia based life", "GG (ammonia life)"),
+    ("helium", "He GG"),
+    ("gas giant", "GG"),
+]
+
+def _type_label(entry:dict, is_star:bool) -> str|None:
+    """ Short abbreviation for the panel's flagged-body lines, e.g. "Terraformable HMC", "ELW". """
+    if is_star:
+        return None
+    planet_class:str = (entry.get("PlanetClass") or "").lower()
+    label:str|None = None
+    for keyword, abbrev in PLANET_CLASS_ABBREVIATIONS:
+        if keyword in planet_class:
+            label = abbrev
+            break
+    if label is None:
+        return None
+    if entry.get("TerraformState") == "Terraformable":
+        label = f"Terraformable {label}"
+    return label
+
 def _scan_threshold() -> int:
     return config.get_int(CFG_SCAN_VALUE_THRESHOLD, default=DEFAULT_SCAN_VALUE_THRESHOLD)
 
@@ -68,6 +102,7 @@ def on_scan(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict:
         estimated_scan_value=scan_value,
         estimated_mapping_value=mapping_value,
         flagged_value=1 if flagged else 0,
+        type_label=_type_label(entry, is_star),
         scanned_at=now_iso(),
     )
 

@@ -34,6 +34,21 @@
     { "event": "FSSDiscoveryScan", "Progress": 1.0, "BodyCount": 3, "NonBodyCount": 2, "SystemName": "Deltius", "SystemAddress": 999000111 },
     { "event": "Scan", "ScanType": "Detailed", "BodyName": "Deltius A 1", "BodyID": 1, "StarSystem": "Deltius", "SystemAddress": 999000111, "DistanceFromArrivalLS": 500.0, "PlanetClass": "Metal rich body", "MassEM": 0.6, "TerraformState": "", "Landable": false, "WasDiscovered": false, "WasMapped": false }
   ],
+  "mapped_body_drops_off_list": [
+    { "event": "LoadGame", "FID": "F11111111", "Commander": "Testy", "Horizons": true, "Odyssey": true, "Credits": 1000000 },
+    { "event": "FSDJump", "StarSystem": "Mappia", "SystemAddress": 444000555, "Body": "Mappia A", "BodyID": 0, "BodyType": "Star", "StarPos": [1.0, 2.0, 3.0] },
+    { "event": "FSSDiscoveryScan", "Progress": 1.0, "BodyCount": 1, "NonBodyCount": 0, "SystemName": "Mappia", "SystemAddress": 444000555 },
+    { "event": "Scan", "ScanType": "Detailed", "BodyName": "Mappia A 1", "BodyID": 1, "StarSystem": "Mappia", "SystemAddress": 444000555, "DistanceFromArrivalLS": 500.0, "PlanetClass": "Metal rich body", "MassEM": 0.6, "TerraformState": "", "Landable": false, "WasDiscovered": false, "WasMapped": false },
+    { "event": "SAAScanComplete", "BodyName": "Mappia A 1", "BodyID": 1, "SystemAddress": 444000555, "ProbesUsed": 4, "EfficiencyTarget": 5 }
+  ],
+  "supercruise_exit_shows_bio_before_landing": [
+    { "event": "LoadGame", "FID": "F11111111", "Commander": "Testy", "Horizons": true, "Odyssey": true, "Credits": 1000000 },
+    { "event": "FSDJump", "StarSystem": "Predictia", "SystemAddress": 777000333, "Body": "Predictia A", "BodyID": 0, "BodyType": "Star", "StarPos": [1.0, 2.0, 3.0] },
+    { "event": "FSSDiscoveryScan", "Progress": 1.0, "BodyCount": 1, "NonBodyCount": 0, "SystemName": "Predictia", "SystemAddress": 777000333 },
+    { "event": "Scan", "ScanType": "AutoScan", "BodyName": "Predictia A", "BodyID": 0, "StarSystem": "Predictia", "SystemAddress": 777000333, "DistanceFromArrivalLS": 0.0, "StarType": "K", "StellarMass": 0.9, "WasDiscovered": false, "WasMapped": false },
+    { "event": "Scan", "ScanType": "Detailed", "BodyName": "Predictia A 1", "BodyID": 1, "StarSystem": "Predictia", "SystemAddress": 777000333, "DistanceFromArrivalLS": 400.0, "PlanetClass": "Icy body", "AtmosphereType": "NeonRich", "Volcanism": "", "SurfaceTemperature": 60.0, "SurfaceGravity": 2.5497, "MassEM": 0.2, "TerraformState": "", "Landable": true, "WasDiscovered": false, "WasMapped": false },
+    { "event": "SupercruiseExit", "StarSystem": "Predictia", "SystemAddress": 777000333, "Body": "Predictia A 1", "BodyID": 1, "BodyType": "Planet" }
+  ],
   "predicted_then_confirmed": [
     { "event": "LoadGame", "FID": "F11111111", "Commander": "Testy", "Horizons": true, "Odyssey": true, "Credits": 1000000 },
     { "event": "FSDJump", "StarSystem": "Predictia", "SystemAddress": 777000333, "Body": "Predictia A", "BodyID": 0, "BodyType": "Star", "StarPos": [1.0, 2.0, 3.0] },

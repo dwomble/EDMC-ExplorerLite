@@ -117,10 +117,12 @@ class Base:
         self.configure(**{key: value})
 
 class TopLevel(tk.Toplevel):
-    """ A themed toplevel window that can switch between light and dark mode. """
+    """
+    A plain themed toplevel window. Deliberately does NOT call theme.update()/register() on
+    itself
+    """
     def __init__(self, master:tk.Widget, **kw) -> None:
         tk.Toplevel.__init__(self, master, **kw)
-        theme.update(self)
 
 class Frame(tk.Frame):
     """ A themed frame that can switch between light and dark mode. """

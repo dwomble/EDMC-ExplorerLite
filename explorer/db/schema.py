@@ -7,7 +7,7 @@ implementation plan for the rationale behind each table.
 """
 import sqlite3
 
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 
 DDL = """
 CREATE TABLE IF NOT EXISTS schema_meta (
@@ -61,6 +61,7 @@ CREATE TABLE IF NOT EXISTS bodies (
     flagged_exobio INTEGER NOT NULL DEFAULT 0,
     scanned_at TEXT,
     mapped_at TEXT,
+    type_label TEXT, -- short display abbreviation, e.g. "Terraformable HMC", "ELW"
     UNIQUE(cmdr_id, system_id, body_id)
 );
 
@@ -111,9 +112,25 @@ CREATE TABLE IF NOT EXISTS genus_predictions (
 );
 """
 
+# Columns added to a table that already existed in an earlier schema version -- unlike brand
+# new tables (CREATE TABLE IF NOT EXISTS handles those for free), an existing table needs a
+# real ALTER TABLE to pick up a new column. (table, column, coltype) -- keep this list
+# additive only; a rename/removal still needs real migration code, not this helper.
+COLUMN_ADDITIONS:list[tuple[str, str, str]] = [
+    ("bodies", "type_label", "TEXT"),
+]
+
+def _ensure_columns(conn:sqlite3.Connection) -> None:
+    for table, column, coltype in COLUMN_ADDITIONS:
+        existing:set[str] = {row[1] for row in conn.execute(f"PRAGMA table_info({table})")}
+        if column not in existing:
+            conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {coltype}")
+    conn.commit()
+
 def ensure_schema(conn:sqlite3.Connection) -> None:
-    """ Create tables if they don't exist yet, and stamp/verify the schema version. """
+    """ Create tables if they don't exist yet, add any new columns, and stamp/verify the schema version. """
     conn.executescript(DDL)
+    _ensure_columns(conn)
 
     row:sqlite3.Row|None = conn.execute("SELECT value FROM schema_meta WHERE key = 'version'").fetchone()
     if row is None:
@@ -125,9 +142,8 @@ def ensure_schema(conn:sqlite3.Connection) -> None:
     if stored_version > SCHEMA_VERSION:
         raise RuntimeError(f"explorer.sqlite schema version {stored_version} is newer than this plugin version supports ({SCHEMA_VERSION})")
     if stored_version < SCHEMA_VERSION:
-        # Every version bump so far has been purely additive (new tables only, no column
-        # changes to existing tables) -- the CREATE TABLE IF NOT EXISTS script above already
-        # created anything new, so upgrading is just stamping the new version number. A future
-        # non-additive change (column rename/removal) would need real migration code here.
+        # New tables are handled by the DDL script above; new columns on existing tables by
+        # _ensure_columns(). This just stamps the version once both have run. A future
+        # non-additive change (column rename/removal) would still need real migration code.
         conn.execute("UPDATE schema_meta SET value = ? WHERE key = 'version'", (str(SCHEMA_VERSION),))
         conn.commit()
