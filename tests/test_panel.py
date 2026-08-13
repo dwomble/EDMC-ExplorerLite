@@ -114,7 +114,7 @@ class TestPanelStates:
 
         import load
         lines = _panel_lines(load)
-        assert any("Bacterium Aurasus — 2/3, 1.0M Cr" in line for line in lines)
+        assert any("Bacterium Aurasus — 2/3, 1M Cr" in line for line in lines)
 
         for event in events[cutoff:]:
             plugin.fire_event(event)

@@ -12,18 +12,13 @@ import sqlite3
 
 import explorer.utils.th as th
 from explorer.utils.treeviewplus import TreeviewPlus
+from explorer.utils.misc import hfplus
 
 from explorer.db.store import ExplorerStore
 from explorer.state import ExplorerState
 
 def _credits(value:int|None) -> str:
-    if not value:
-        return "-"
-    if value >= 1_000_000:
-        return f"{value / 1_000_000:.1f}M"
-    if value >= 1_000:
-        return f"{value / 1_000:.0f}k"
-    return str(value)
+    return hfplus((value, 'num', '-', ''))
 
 class HistoryView:
     """ Owns the (lazily-created) history Toplevel. Call refresh() after any DB change. """

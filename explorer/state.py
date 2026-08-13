@@ -8,7 +8,6 @@ from dataclasses import dataclass, field
 @dataclass
 class ExplorerState:
     cmdr:str = ""
-    is_beta:bool = False
     cmdr_id:int|None = None # DB PK, resolved/cached by journal/dispatch.py each dispatch call
 
     system_address:int|None = None
@@ -19,10 +18,9 @@ class ExplorerState:
     body_id:int|None = None
     body_name:str = ""
 
-    docked:bool = False
     landed:bool = False
-    on_foot:bool = False
-    in_srv:bool = False
+    on_foot:bool = False # from Status.json (dashboard.py), not EDMC's journal-derived state['OnFoot'] --
+    # more immediate, and EDMC's own docs admit theirs "might not set this 100% correctly"
     has_lat_long:bool = False
 
     latitude:float|None = None

@@ -69,7 +69,7 @@ class TestHistoryViewPopup:
 
         assert load.history_view.window is not None
         assert load.history_view.window.winfo_exists()
-        assert "Exobiology: 5.0M Cr" in load.history_view.summary_label["text"]
+        assert "Exobiology: 5M Cr" in load.history_view.summary_label["text"]
 
         systems = load.history_view.tree.get_children()
         assert len(systems) == 1

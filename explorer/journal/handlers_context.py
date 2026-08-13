@@ -12,23 +12,20 @@ def on_load_game(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict:
 def on_continued(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict:
     return {}
 
-def _enter_system(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict:
-    system_address:int|None = entry.get("SystemAddress")
+def enter_system(store:ExplorerStore, state:ExplorerState, edmc_state:dict) -> dict:
+    """ Called by dispatch() for Location/FSDJump/CarrierJump -- reads SystemAddress/SystemName
+    from EDMC's own state dict (already updated for this entry) rather than re-parsing the
+    journal entry ourselves, since EDMC tracks the exact same fields from the exact same events. """
+    system_address:int|None = edmc_state.get("SystemAddress")
     if system_address is None:
         return {}
     state.system_address = system_address
-    state.system_name = entry.get("StarSystem", "")
+    state.system_name = edmc_state.get("SystemName") or ""
     state.nearest_star_type = None
     state.reset_body()
     if state.cmdr_id is not None:
         state.system_id = store.get_or_create_system(state.cmdr_id, system_address, state.system_name)
     return {"panel": True}
-
-def on_location(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict:
-    return _enter_system(store, state, entry)
-
-def on_fsd_jump(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict:
-    return _enter_system(store, state, entry)
 
 def on_start_jump(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict:
     state.reset_body()

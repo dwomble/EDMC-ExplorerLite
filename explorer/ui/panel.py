@@ -7,6 +7,7 @@ import sqlite3
 from typing import Callable
 
 import explorer.utils.th as th
+from explorer.utils.misc import hfplus, str_truncate
 
 from explorer.db.store import ExplorerStore
 from explorer.state import ExplorerState
@@ -17,22 +18,11 @@ VISIBLE_LINES:int = 5
 LINE_HEIGHT_PX:int = 18 # approximate for the default EDMC font; tune once seen in a real window
 MAX_PREDICTED_SHOWN:int = 3 # top-N predicted (unconfirmed) genus candidates per body
 
-def _truncate(text:str) -> str:
-    return text if len(text) <= WIDTH_CHARS else text[:WIDTH_CHARS - 1] + "…"
-
 def _credits(value:int) -> str:
-    if value >= 1_000_000:
-        return f"{value / 1_000_000:.1f}M Cr"
-    if value >= 1_000:
-        return f"{value / 1_000:.0f}k Cr"
-    return f"{value} Cr"
+    return hfplus((value, 'num', '? Cr', ' Cr'))
 
 def _distance_str(distance_ls:float|None) -> str:
-    if distance_ls is None:
-        return "? ls"
-    if distance_ls >= 1000:
-        return f"{distance_ls / 1000:.1f}k ls"
-    return f"{distance_ls:.0f} ls"
+    return hfplus((distance_ls, 'num', '? ls', ' ls'))
 
 def _body_designator(system_name:str, body_name:str) -> str:
     """ The short local part of a body's name, e.g. "Deltius B 6 c" -> "B 6 c" -- system name
@@ -69,7 +59,7 @@ class ExplorerPanel:
             self.on_history_open()
 
     def _line(self, text:str) -> None:
-        th.Label(self.scroll.interior, text=_truncate(text), anchor="w", justify="left").pack(fill=tk.X)
+        th.Label(self.scroll.interior, text=str_truncate(text, WIDTH_CHARS), anchor="w", justify="left").pack(fill=tk.X)
 
     def refresh(self) -> None:
         self.scroll.clear()
@@ -171,7 +161,7 @@ class ExplorerPanel:
         if tags:
             parts.append(", ".join(tags))
         parts.append(_distance_str(body["distance_ls"]))
-        parts.append(_credits(value) if value else "? Cr")
+        parts.append(_credits(value))
         self._line(" ".join(parts))
 
     def _render_exobiology_section(self) -> None:
