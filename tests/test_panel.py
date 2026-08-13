@@ -77,6 +77,17 @@ class TestPanelStates:
         assert any(line.startswith("Honk:") for line in lines)
         assert any("above threshold" in line for line in lines)
 
+    def test_star_only_system_says_dss_not_required(self, plugin:TestHarness) -> None:
+        """ A system with no planets at all (e.g. a bare binary) shouldn't read as "checked,
+        nothing found" -- there was never anything to DSS in the first place. """
+        plugin.load_events("explorer_events.json")
+        plugin.play_sequence("binary_star_only_system", 0.02)
+
+        import load
+        lines = _panel_lines(load)
+        assert any("DSS not required" in line for line in lines), lines
+        assert not any("Nothing flagged" in line for line in lines), lines
+
     def test_exobio_line_shows_progress_then_drops_once_done(self, plugin:TestHarness) -> None:
         """
         Regression test for the progressive-detail redesign: a flagged body's exobio line
@@ -110,13 +121,17 @@ class TestPanelStates:
 
         lines = _panel_lines(load)
         assert not any("Bacterium" in line for line in lines) # body 2's only genus is done -- dropped entirely
+        # The on-body exobiology section (header + "All species done here") should vanish too,
+        # not linger once there's nothing left to sample -- not just the flagged-list line.
+        assert not any("exobiology" in line for line in lines), lines
 
     def test_predicted_genus_line_is_superseded_by_confirmed_genus(self, plugin:TestHarness) -> None:
         """
         Regression test for the pre-DSS genus predictor: a landable body whose Scan properties
-        match known genera's conditions should show a "N species? ... " line (unconfirmed) in
-        the system summary before any DSS data exists, and that guess should be replaced by the
-        real confirmed-genus count (no "?") once SAASignalsFound reveals what's actually there.
+        match known genera's conditions should show a "N species ..." line (unconfirmed) in the
+        system summary before any DSS data exists -- the species count itself isn't in doubt,
+        only which genus it is, so no "?" on the count -- and the summary's "possible exobio"
+        bucket should become "exobio potential" once SAASignalsFound confirms what's there.
         """
         plugin.load_events("explorer_events.json")
         events = plugin.events["predicted_then_confirmed"]
@@ -127,13 +142,37 @@ class TestPanelStates:
 
         import load
         lines = _panel_lines(load)
-        assert any(line.startswith("A 1 ") and "species?" in line for line in lines), lines
+        assert any(line.startswith("A 1 ") and "species" in line for line in lines), lines
+        # Regression: a predicted-only (unconfirmed) body used to still count as "nothing
+        # flagged" in the summary, printing that line right above the predicted body below it.
+        assert not any("Nothing flagged" in line for line in lines), lines
+        assert any("possible exobio" in line for line in lines), lines
 
         plugin.fire_event(events[confirm_index])
 
         lines = _panel_lines(load)
-        assert not any("species?" in line for line in lines), lines
+        assert not any("possible exobio" in line for line in lines), lines
+        assert any("exobio potential" in line for line in lines), lines
         assert any(line.startswith("A 1 ") and "species" in line for line in lines), lines
+
+    def test_known_bio_signals_count_even_without_dss_or_prediction(self, plugin:TestHarness) -> None:
+        """
+        Regression test: FSSBodySignals can confirm a body has biological signals well before
+        it's DSS'd (SAASignalsFound) or even Scanned (so no genus_prediction guess exists yet
+        either). Those bodies used to vanish from the flagged list entirely -- only the one
+        body actually DSS'd in the system counted towards any summary line -- even though we
+        already know for certain that other bodies in the system have biology too.
+        """
+        plugin.load_events("explorer_events.json")
+        plugin.play_sequence("known_bio_signals_before_dss", 0.02)
+
+        import load
+        lines = _panel_lines(load)
+        assert any("1 body exobio potential" in line for line in lines), lines
+        assert any("2 bodies known biological signals" in line for line in lines), lines
+        assert not any("possible exobio" in line for line in lines), lines # these are confirmed, not guessed
+        assert any(line.startswith("A 1 ") and "biological signals" in line and "? Cr" in line for line in lines), lines
+        assert any(line.startswith("A 3 ") and "biological signals" in line and "? Cr" in line for line in lines), lines
 
     def test_mapped_body_drops_off_the_list(self, plugin:TestHarness) -> None:
         """
@@ -173,7 +212,7 @@ class TestPanelStates:
         import load
         lines = _panel_lines(load)
         assert any("exobiology" in line for line in lines), lines
-        assert any("species?" in line for line in lines), lines
+        assert any("species" in line for line in lines), lines
 
 class TestNoDuplicateWidgets:
     """

@@ -9,6 +9,13 @@ threshold -- it is never used for the "actual" accumulated totals, which come st
 `SellExplorationData`/`MultiSellExplorationData` journal events (ground truth, no formula
 involved). Keep the constants isolated here so they're easy to recalibrate later without
 touching anything else.
+
+Base-k and terraform-k constants cross-checked against two independent community sources
+(Frontier forums' "Exploration value formulae" thread + corroborating discussion elsewhere).
+"High metal content body" previously fell through to the generic "default" k (720) since it
+was never a matched category -- a Terraformable HMC's real payout is dominated almost
+entirely by the terraform bonus, so that gap silently under-valued exactly the bodies most
+worth flagging. Fixed by giving it (and "Rocky body") their own base/terraform-k pair.
 """
 
 MASS_EXPONENT:float = 0.2
@@ -22,12 +29,31 @@ STAR_BASE_K:dict[str, int] = {
 
 PLANET_BASE_K:dict[str, int] = {
     "metal_rich": 52292,
+    "high_metal_content": 23168,
     "water_or_earthlike": 155581,
     "ammonia": 232619,
+    "rocky": 300,
     "default": 720,
 }
 
-TERRAFORMABLE_BONUS_MULTIPLIER:float = 1.8 # applied on top of the base k for a Terraformable body
+# A Terraformable body's bonus is a SEPARATE k-based term added on top of the base value, not
+# a flat multiplier -- the real bonus dwarfs the base k for HMC/rocky bodies specifically,
+# which is exactly why a flat multiplier was silently undervaluing them. The real game applies
+# a 0-100% "terraformability" we can't read from the journal at all; TERRAFORM_BONUS_FRACTION
+# below is a per-category estimate of how much of the max bonus a Terraformable body of that
+# class typically gets, per community reports (HMC/rocky/ELW usually close to the max; water
+# worlds vary a lot, so a mid-range guess).
+TERRAFORM_BONUS_K:dict[str, int] = {
+    "high_metal_content": 241607,
+    "water_or_earthlike": 279088,
+    "rocky": 223971,
+}
+TERRAFORM_BONUS_FRACTION:dict[str, float] = {
+    "high_metal_content": 0.9,
+    "water_or_earthlike": 0.75,
+    "rocky": 0.9,
+}
+
 FIRST_MAPPED_MULTIPLIER:float = 3.7 # scan value -> full first-discovered+first-mapped+efficient mapping value
 EFFICIENT_MAPPING_BONUS:float = 1.25
 
@@ -43,15 +69,18 @@ def _planet_category(planet_class:str) -> str:
     planet_class = (planet_class or "").lower()
     if "metal rich" in planet_class:
         return "metal_rich"
+    if "high metal content" in planet_class:
+        return "high_metal_content"
     if "earthlike" in planet_class or "water world" in planet_class:
         return "water_or_earthlike"
     if "ammonia" in planet_class:
         return "ammonia"
+    if "rocky body" in planet_class:
+        return "rocky"
     return "default"
 
-def _base_value(k:float, mass:float) -> int:
-    mass = max(mass, 0.0001)
-    return round(k * (1 + mass ** MASS_EXPONENT))
+def _mass_factor(mass:float) -> float:
+    return 1 + max(mass, 0.0001) ** MASS_EXPONENT
 
 def estimate_scan_value(scan_entry:dict) -> int:
     """
@@ -61,13 +90,17 @@ def estimate_scan_value(scan_entry:dict) -> int:
     if "StarType" in scan_entry:
         k:int = STAR_BASE_K[_star_category(scan_entry.get("StarType", ""))]
         mass:float = scan_entry.get("StellarMass", 1.0)
-    else:
-        k:int = PLANET_BASE_K[_planet_category(scan_entry.get("PlanetClass", ""))]
-        mass:float = scan_entry.get("MassEM", 1.0)
-        if scan_entry.get("TerraformState") == "Terraformable":
-            k = round(k * TERRAFORMABLE_BONUS_MULTIPLIER)
+        return round(k * _mass_factor(mass))
 
-    return _base_value(k, mass)
+    category:str = _planet_category(scan_entry.get("PlanetClass", ""))
+    mass:float = scan_entry.get("MassEM", 1.0)
+    mass_factor:float = _mass_factor(mass)
+    value:float = PLANET_BASE_K[category] * mass_factor
+
+    if scan_entry.get("TerraformState") == "Terraformable" and category in TERRAFORM_BONUS_K:
+        value += TERRAFORM_BONUS_K[category] * mass_factor * TERRAFORM_BONUS_FRACTION[category]
+
+    return round(value)
 
 def estimate_mapping_value(scan_entry:dict, mapped_efficiently:bool = True) -> int:
     """

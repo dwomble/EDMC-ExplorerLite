@@ -106,13 +106,28 @@ class ExplorerPanel:
         flagged:list[sqlite3.Row] = self.store.get_flagged_bodies_for_system(system["id"])
         value_flags:list[sqlite3.Row] = [b for b in flagged if b["flagged_value"]]
         exobio_flags:list[sqlite3.Row] = [b for b in flagged if b["flagged_exobio"]]
+        # FSSBodySignals already confirms biology is present on these -- not a guess, just an
+        # unidentified genus pending DSS. Distinct from possible_exobio below, which is a genus
+        # guessed purely from Scan conditions with no confirmed signal at all.
+        known_bio:list[sqlite3.Row] = [b for b in flagged if not b["flagged_exobio"] and b["has_biological_signals"]]
+        possible_exobio:list[sqlite3.Row] = [b for b in flagged if not b["flagged_exobio"] and not b["has_biological_signals"] and b["has_prediction"]]
 
         if value_flags:
             self._line(f"* {len(value_flags)} bod{'y' if len(value_flags) == 1 else 'ies'} above threshold")
         if exobio_flags:
             self._line(f"* {len(exobio_flags)} bod{'y' if len(exobio_flags) == 1 else 'ies'} exobio potential")
-        if not value_flags and not exobio_flags:
-            self._line("Nothing flagged yet")
+        if known_bio:
+            self._line(f"* {len(known_bio)} bod{'y' if len(known_bio) == 1 else 'ies'} known biological signals")
+        if possible_exobio:
+            self._line(f"* {len(possible_exobio)} bod{'y' if len(possible_exobio) == 1 else 'ies'} possible exobio")
+        if not flagged:
+            # Once every body's confirmed, "nothing flagged" can mean "no planets at all" --
+            # e.g. a binary-star-only system -- which reads as "already checked, quiet"
+            # rather than a leftover "should I DSS anything here" question.
+            if system["all_bodies_found"] and not self.store.system_has_any_planet(system["id"]):
+                self._line("No planets — DSS not required")
+            else:
+                self._line("Nothing flagged yet")
 
         if flagged:
             self._line("-" * WIDTH_CHARS)
@@ -141,8 +156,12 @@ class ExplorerPanel:
         elif not body["flagged_exobio"]:
             predictions:list[sqlite3.Row] = self.store.get_genus_predictions_for_body(body["id"])[:MAX_PREDICTED_SHOWN]
             if predictions:
-                tags.append(f"{len(predictions)} species?")
+                tags.append(f"{len(predictions)} species")
                 value += sum(self._predicted_row_value(r) for r in predictions)
+            elif body["has_biological_signals"]:
+                # FSSBodySignals already confirmed biology is present here -- worth surfacing
+                # even before a Scan gives us anything to guess a genus (and thus a value) from.
+                tags.append("biological signals")
 
         if not value and not tags:
             return # nothing left to do here -- drop it
@@ -152,7 +171,7 @@ class ExplorerPanel:
         if tags:
             parts.append(", ".join(tags))
         parts.append(_distance_str(body["distance_ls"]))
-        parts.append(_credits(value))
+        parts.append(_credits(value) if value else "? Cr")
         self._line(" ".join(parts))
 
     def _render_exobiology_section(self) -> None:
@@ -169,15 +188,16 @@ class ExplorerPanel:
         active:list[sqlite3.Row] = [row for row in all_progress if not row["completed_at"]]
         predictions:list[sqlite3.Row] = [] if (active or all_progress) else self.store.get_genus_predictions_for_body(body_pk)[:MAX_PREDICTED_SHOWN]
 
-        if not active and not all_progress and not predictions and not self.state.on_foot:
+        if not active and all_progress:
+            return # every genus here is fully sampled -- nothing left to do, drop the section
+
+        if not active and not predictions and not self.state.on_foot:
             return
 
         self._line(f"{self.state.body_name or 'body'} — exobiology")
         if active:
             for row in active:
                 self._line(self._exobio_progress_text(row))
-        elif all_progress:
-            self._line("All species done here")
         elif predictions:
             for row in predictions:
                 self._line(self._predicted_genus_text(row))

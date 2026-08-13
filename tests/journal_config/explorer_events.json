@@ -28,6 +28,14 @@
     { "event": "FSDJump", "StarSystem": "QuietSpace", "SystemAddress": 555000222, "Body": "QuietSpace A", "BodyID": 0, "BodyType": "Star", "StarPos": [1.0, 2.0, 3.0] },
     { "event": "FSSDiscoveryScan", "Progress": 1.0, "BodyCount": 1, "NonBodyCount": 0, "SystemName": "QuietSpace", "SystemAddress": 555000222 }
   ],
+  "binary_star_only_system": [
+    { "event": "LoadGame", "FID": "F11111111", "Commander": "Testy", "Horizons": true, "Odyssey": true, "Credits": 1000000 },
+    { "event": "FSDJump", "StarSystem": "Starrock", "SystemAddress": 222000888, "Body": "Starrock A", "BodyID": 0, "BodyType": "Star", "StarPos": [1.0, 2.0, 3.0] },
+    { "event": "FSSDiscoveryScan", "Progress": 1.0, "BodyCount": 2, "NonBodyCount": 0, "SystemName": "Starrock", "SystemAddress": 222000888 },
+    { "event": "Scan", "ScanType": "AutoScan", "BodyName": "Starrock A", "BodyID": 0, "StarSystem": "Starrock", "SystemAddress": 222000888, "DistanceFromArrivalLS": 0.0, "StarType": "K", "StellarMass": 0.9, "WasDiscovered": false, "WasMapped": false },
+    { "event": "Scan", "ScanType": "AutoScan", "BodyName": "Starrock B", "BodyID": 1, "StarSystem": "Starrock", "SystemAddress": 222000888, "DistanceFromArrivalLS": 500.0, "StarType": "M", "StellarMass": 0.4, "WasDiscovered": false, "WasMapped": false },
+    { "event": "FSSAllBodiesFound", "SystemName": "Starrock", "SystemAddress": 222000888, "Count": 2 }
+  ],
   "partial_scan_no_full_fss": [
     { "event": "LoadGame", "FID": "F11111111", "Commander": "Testy", "Horizons": true, "Odyssey": true, "Credits": 1000000 },
     { "event": "FSDJump", "StarSystem": "Deltius", "SystemAddress": 999000111, "Body": "Deltius A", "BodyID": 0, "BodyType": "Star", "StarPos": [1.0, 2.0, 3.0] },
@@ -58,5 +66,20 @@
     { "event": "SAASignalsFound", "BodyName": "Predictia A 1", "BodyID": 1, "SystemAddress": 777000333,
       "Signals": [ { "Type": "$SAA_SignalType_Biological;", "Type_Localised": "Biological", "Count": 1 } ],
       "Genuses": [ { "Genus": "$Codex_Ent_Bacterial_Genus_Name;", "Genus_Localised": "Bacterium" } ] }
+  ],
+  "known_bio_signals_before_dss": [
+    { "event": "LoadGame", "FID": "F11111111", "Commander": "Testy", "Horizons": true, "Odyssey": true, "Credits": 1000000 },
+    { "event": "FSDJump", "StarSystem": "Biotica", "SystemAddress": 333000444, "Body": "Biotica A", "BodyID": 0, "BodyType": "Star", "StarPos": [1.0, 2.0, 3.0] },
+    { "event": "FSSDiscoveryScan", "Progress": 1.0, "BodyCount": 4, "NonBodyCount": 0, "SystemName": "Biotica", "SystemAddress": 333000444 },
+    { "event": "Scan", "ScanType": "AutoScan", "BodyName": "Biotica A", "BodyID": 0, "StarSystem": "Biotica", "SystemAddress": 333000444, "DistanceFromArrivalLS": 0.0, "StarType": "K", "StellarMass": 0.9, "WasDiscovered": false, "WasMapped": false },
+    { "event": "FSSBodySignals", "BodyName": "Biotica A 1", "BodyID": 1, "SystemAddress": 333000444, "Signals": [ { "Type": "$SAA_SignalType_Biological;", "Type_Localised": "Biological", "Count": 2 } ] },
+    { "event": "FSSBodySignals", "BodyName": "Biotica A 2", "BodyID": 2, "SystemAddress": 333000444, "Signals": [ { "Type": "$SAA_SignalType_Biological;", "Type_Localised": "Biological", "Count": 1 } ] },
+    { "event": "Scan", "ScanType": "Detailed", "BodyName": "Biotica A 2", "BodyID": 2, "StarSystem": "Biotica", "SystemAddress": 333000444, "DistanceFromArrivalLS": 600.0, "PlanetClass": "High metal content body", "MassEM": 0.3, "TerraformState": "", "Landable": true, "WasDiscovered": false, "WasMapped": false },
+    { "event": "SAAScanComplete", "BodyName": "Biotica A 2", "BodyID": 2, "SystemAddress": 333000444, "ProbesUsed": 4, "EfficiencyTarget": 5 },
+    { "event": "SAASignalsFound", "BodyName": "Biotica A 2", "BodyID": 2, "SystemAddress": 333000444,
+      "Signals": [ { "Type": "$SAA_SignalType_Biological;", "Type_Localised": "Biological", "Count": 1 } ],
+      "Genuses": [ { "Genus": "$Codex_Ent_Bacterial_Genus_Name;", "Genus_Localised": "Bacterium" } ] },
+    { "event": "FSSBodySignals", "BodyName": "Biotica A 3", "BodyID": 3, "SystemAddress": 333000444, "Signals": [ { "Type": "$SAA_SignalType_Biological;", "Type_Localised": "Biological", "Count": 3 } ] },
+    { "event": "FSSAllBodiesFound", "SystemName": "Biotica", "SystemAddress": 333000444, "Count": 4 }
   ]
 }

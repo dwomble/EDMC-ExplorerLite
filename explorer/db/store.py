@@ -113,13 +113,22 @@ class ExplorerStore:
     def get_body(self, body_pk:int) -> sqlite3.Row|None:
         return self.conn.execute("SELECT * FROM bodies WHERE id = ?", (body_pk,)).fetchone()
 
+    def system_has_any_planet(self, system_id:int) -> bool:
+        row:sqlite3.Row|None = self.conn.execute(
+            "SELECT 1 FROM bodies WHERE system_id = ? AND body_type = 'Planet' LIMIT 1", (system_id,)
+        ).fetchone()
+        return row is not None
+
     def update_body(self, body_pk:int, **fields) -> None:
         self._update("bodies", body_pk, **fields)
 
     def get_flagged_bodies_for_system(self, system_id:int) -> list[sqlite3.Row]:
+        """ `has_prediction` distinguishes a genuine Scan-based genus guess from a body that's
+        only here because FSSBodySignals already confirmed biology (no guess needed/available). """
         return self.conn.execute(
-            """SELECT * FROM bodies WHERE system_id = ? AND (has_biological_signals IS NOT 0) AND (
-                   flagged_value = 1 OR flagged_exobio = 1 OR
+            """SELECT *, EXISTS (SELECT 1 FROM genus_predictions gp WHERE gp.body_id = bodies.id) AS has_prediction
+               FROM bodies WHERE system_id = ? AND (has_biological_signals IS NOT 0) AND (
+                   flagged_value = 1 OR flagged_exobio = 1 OR has_biological_signals = 1 OR
                    EXISTS (SELECT 1 FROM genus_predictions gp WHERE gp.body_id = bodies.id)
                ) ORDER BY body_id""",
             (system_id,),
