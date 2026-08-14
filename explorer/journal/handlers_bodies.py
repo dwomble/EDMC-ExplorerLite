@@ -96,6 +96,7 @@ def on_scan(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict:
         body_pk,
         star_type=entry.get("StarType"),
         planet_class=entry.get("PlanetClass"),
+        atmosphere_type=entry.get("AtmosphereType"),
         distance_ls=entry.get("DistanceFromArrivalLS"),
         was_discovered=1 if entry.get("WasDiscovered") else 0,
         was_mapped=1 if entry.get("WasMapped") else 0,
@@ -111,17 +112,29 @@ def on_scan(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict:
 
     return {"panel": True}
 
-def _worthwhile_predictions(entry:dict, nearest_star_type:str|None) -> list[tuple[str, float]]:
-    """ Predicted genera whose value range clears the exobio threshold -- mirrors exactly how
-    on_saa_signals_found() gates flagged_exobio, so "has any prediction row" alone is a
-    meaningful interest signal without needing a separate bodies column. """
+def _worthwhile_predictions(entry:dict, nearest_star_type:str|None) -> list[tuple[str, str|None, float]]:
+    """ Predicted (genus, species, confidence) rows whose value clears the exobio threshold --
+    mirrors exactly how on_saa_signals_found() gates flagged_exobio, so "has any prediction row"
+    alone is a meaningful interest signal without needing a separate bodies column.
+
+    Narrows to specific species wherever valuation/species_conditions.py has ruleset data for
+    that genus (`species` is set, and the exact confirmed value gates/sorts it); otherwise falls
+    back to the genus-only guess (`species` is None, gated/sorted by the genus's value range),
+    unchanged from before species-level narrowing existed. """
     threshold:int = _exobio_threshold()
-    worthwhile:list[tuple[str, float]] = []
-    for genus, confidence in genus_prediction.predict_genera(entry, nearest_star_type):
-        value_range:tuple[int, int]|None = exobiology.estimate_genus_range(genus)
-        value_max:int|None = value_range[1] if value_range else None
-        if exobiology.exceeds_threshold(value_max, threshold):
-            worthwhile.append((genus, confidence))
+    worthwhile:list[tuple[str, str|None, float]] = []
+    for genus, genus_confidence in genus_prediction.predict_genera(entry, nearest_star_type):
+        species_candidates:list[tuple[str, float]] = genus_prediction.predict_species(genus, entry, nearest_star_type)
+        if species_candidates:
+            for species, species_confidence in species_candidates:
+                value:int|None = exobiology.estimate_confirmed_value(genus, species)
+                if exobiology.exceeds_threshold(value, threshold):
+                    worthwhile.append((genus, species, species_confidence))
+        else:
+            value_range:tuple[int, int]|None = exobiology.estimate_genus_range(genus)
+            value_max:int|None = value_range[1] if value_range else None
+            if exobiology.exceeds_threshold(value_max, threshold):
+                worthwhile.append((genus, None, genus_confidence))
     return worthwhile
 
 def on_saa_scan_complete(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict:

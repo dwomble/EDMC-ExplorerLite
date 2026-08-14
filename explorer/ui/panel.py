@@ -11,12 +11,14 @@ from explorer.utils.misc import hfplus, str_truncate
 
 from explorer.db.store import ExplorerStore
 from explorer.state import ExplorerState
-from explorer.valuation import exobiology
+from explorer.valuation import exobiology, signal_count_bias
 
 WIDTH_CHARS:int = 60
 VISIBLE_LINES:int = 5
 LINE_HEIGHT_PX:int = 18 # approximate for the default EDMC font; tune once seen in a real window
-MAX_PREDICTED_SHOWN:int = 3 # top-N predicted (unconfirmed) genus candidates per body
+MAX_PREDICTED_SHOWN:int = 3 # fallback cap on predicted candidates per body, only used until
+# FSSBodySignals tells us the body's real biological_signal_count (see _best_predictions_for_body)
+INDENT_PX:int = 14 # left offset for a table nested under its own header line (e.g. per-body biologicals)
 
 def _credits(value:int) -> str:
     return hfplus((value, 'num', '? Cr', ' Cr'))
@@ -60,6 +62,24 @@ class ExplorerPanel:
 
     def _line(self, text:str) -> None:
         th.Label(self.scroll.interior, text=str_truncate(text, WIDTH_CHARS), anchor="w", justify="left").pack(fill=tk.X)
+
+    def _render_table(self, rows:list[tuple[str, ...]], anchors:tuple[str, ...], indent:int = 0) -> None:
+        """
+        Grid `rows` into one Frame -- packed into the scroll as a single "line" (consistent
+        with _line()) -- so Tk's grid geometry manager aligns every column to its widest cell.
+        A plain space-joined string only lines up columns if the font happens to be monospace,
+        which EDMC's theme doesn't guarantee.
+        """
+        if not rows:
+            return
+        table:th.Frame = th.Frame(self.scroll.interior)
+        for r, row in enumerate(rows):
+            last:int = len(row) - 1
+            for c, (text, anchor) in enumerate(zip(row, anchors)):
+                sticky:str = tk.W if anchor == "w" else tk.E
+                pad:tuple[int, int] = (0, 0) if c == last else (0, 8)
+                th.Label(table, text=text, anchor=anchor).grid(row=r, column=c, sticky=sticky, padx=pad)
+        table.pack(fill=tk.X, padx=(indent, 0))
 
     def refresh(self) -> None:
         self.scroll.clear()
@@ -121,12 +141,16 @@ class ExplorerPanel:
 
         if flagged:
             self._line("-" * WIDTH_CHARS)
+            rows:list[tuple[str, str, str, str]] = []
             for body in flagged:
-                self._render_flagged_body_line(name, body)
+                row:tuple[str, str, str, str]|None = self._flagged_body_row(name, body)
+                if row is not None:
+                    rows.append(row)
+            self._render_table(rows, anchors=("w", "w", "e", "e"))
 
-    def _render_flagged_body_line(self, system_name:str, body:sqlite3.Row) -> None:
+    def _flagged_body_row(self, system_name:str, body:sqlite3.Row) -> tuple[str, str, str, str]|None:
         """
-        One line per body of interest -- name, what's interesting about it, distance, and
+        One row per body of interest -- name, what's interesting about it, distance, and
         total remaining value. A body drops off this list entirely once there's nothing left
         to actually do there (mapped, and any exobiology fully sampled) -- it's a to-do list,
         not a permanent record (see history for that).
@@ -144,7 +168,7 @@ class ExplorerPanel:
             tags.append(f"{len(active)} species")
             value += sum(self._exobio_row_value(r) for r in active)
         elif not body["flagged_exobio"]:
-            predictions:list[sqlite3.Row] = self.store.get_genus_predictions_for_body(body["id"])[:MAX_PREDICTED_SHOWN]
+            predictions:list[sqlite3.Row] = self._best_predictions_for_body(body["id"])
             if predictions:
                 tags.append(f"{len(predictions)} species")
                 value += sum(self._predicted_row_value(r) for r in predictions)
@@ -154,15 +178,10 @@ class ExplorerPanel:
                 tags.append("biological signals")
 
         if not value and not tags:
-            return # nothing left to do here -- drop it
+            return None # nothing left to do here -- drop it
 
         designator:str = _body_designator(system_name, body["body_name"])
-        parts:list[str] = [designator]
-        if tags:
-            parts.append(", ".join(tags))
-        parts.append(_distance_str(body["distance_ls"]))
-        parts.append(_credits(value))
-        self._line(" ".join(parts))
+        return (designator, ", ".join(tags), _distance_str(body["distance_ls"]), _credits(value))
 
     def _render_exobiology_section(self) -> None:
         """
@@ -176,7 +195,7 @@ class ExplorerPanel:
 
         all_progress:list[sqlite3.Row] = self.store.get_species_progress_for_body(body_pk)
         active:list[sqlite3.Row] = [row for row in all_progress if not row["completed_at"]]
-        predictions:list[sqlite3.Row] = [] if (active or all_progress) else self.store.get_genus_predictions_for_body(body_pk)[:MAX_PREDICTED_SHOWN]
+        predictions:list[sqlite3.Row] = [] if (active or all_progress) else self._best_predictions_for_body(body_pk)
 
         if not active and all_progress:
             return # every genus here is fully sampled -- nothing left to do, drop the section
@@ -186,22 +205,83 @@ class ExplorerPanel:
 
         self._line(f"{self.state.body_name or 'body'} — exobiology")
         if active:
-            for row in active:
-                self._line(self._exobio_progress_text(row))
+            self._render_table([self._exobio_progress_row(row) for row in active], anchors=("w", "e", "e"), indent=INDENT_PX)
         elif predictions:
-            for row in predictions:
-                self._line(self._predicted_genus_text(row))
+            self._render_table([self._predicted_genus_row(row) for row in predictions], anchors=("w", "e", "e"), indent=INDENT_PX)
         else:
             self._line("No genus detected yet")
 
+    def _best_predictions_for_body(self, body_pk:int) -> list[sqlite3.Row]:
+        """
+        Predicted genus_predictions rows for this body, deduped to the single best row per genus
+        -- multiple candidate species within one genus are alternative guesses at the SAME
+        signal, not separate ones, so keeping more than one per genus would double-count it once
+        we sum values across the list. Capped to the body's actual biological_signal_count once
+        FSSBodySignals has told us it (the real number of distinct genus-level signals here,
+        one-for-one with what SAASignalsFound will later confirm) -- falling back to
+        MAX_PREDICTED_SHOWN only while that's still unknown.
+
+        Within that, genus_prediction's raw confidence is re-ranked (never overridden -- a
+        candidate must already be eligible to appear here at all) by signal_count_bias's
+        community-reported "usual genus per signal count" pattern: chain-expected genera sort
+        first, and a genus's chain-favored species (if present) wins that genus's slot over a
+        merely higher-confidence sibling species.
+        """
+        all_predictions:list[sqlite3.Row] = self.store.get_genus_predictions_for_body(body_pk)
+        if not all_predictions:
+            return []
+
+        body:sqlite3.Row|None = self.store.get_body(body_pk)
+        signal_count:int|None = body["biological_signal_count"] if body else None
+        atmosphere_type:str = (body["atmosphere_type"] if body else None) or ""
+        planet_class:str = (body["planet_class"] if body else None) or ""
+
+        best_per_genus:dict[str, sqlite3.Row] = {}
+        for row in all_predictions:
+            genus:str = row["genus"]
+            preferred_species:list[str] = signal_count_bias.preferred_species_for_tier(genus, signal_count)
+            current:sqlite3.Row|None = best_per_genus.get(genus)
+            if current is None:
+                best_per_genus[genus] = row
+                continue
+            row_preferred:bool = row["species"] in preferred_species
+            current_preferred:bool = current["species"] in preferred_species
+            if (row_preferred, row["confidence"]) > (current_preferred, current["confidence"]):
+                best_per_genus[genus] = row
+
+        expected_genera:set[str]|None = None
+        if signal_count:
+            hmc_candidate_present:bool = any(
+                r["genus"] == signal_count_bias.TIER_1_HMC_GENUS and r["species"] == signal_count_bias.TIER_1_HMC_SPECIES
+                for r in all_predictions
+            )
+            expected_genera = signal_count_bias.expected_genera_for_signal_count(
+                signal_count, atmosphere_type, planet_class, hmc_candidate_present
+            )
+
+        def sort_key(row:sqlite3.Row) -> tuple:
+            in_chain:bool = expected_genera is None or row["genus"] in expected_genera
+            return (not in_chain, -row["confidence"])
+
+        deduped:list[sqlite3.Row] = sorted(best_per_genus.values(), key=sort_key)
+
+        limit:int = signal_count if signal_count else MAX_PREDICTED_SHOWN
+        return deduped[:limit]
+
     def _predicted_row_value(self, row:sqlite3.Row) -> int:
+        """ An exact confirmed-species value where genus_prediction.predict_species() narrowed
+        that far (row["species"] set); otherwise the wider genus-level range's top. """
+        if row["species"]:
+            return exobiology.estimate_confirmed_value(row["genus"], row["species"]) or 0
         value_range:tuple[int, int]|None = exobiology.estimate_genus_range(row["genus"])
         return value_range[1] if value_range else 0
 
-    def _predicted_genus_text(self, row:sqlite3.Row) -> str:
+    def _predicted_genus_row(self, row:sqlite3.Row) -> tuple[str, str, str]:
         """ Pre-DSS guess -- '?' and a confidence percentage mark it as unconfirmed, both of
-        which disappear once SAASignalsFound confirms the real genus for this body. """
-        return f"?{row['genus']} ~{_credits(self._predicted_row_value(row))} ({row['confidence']:.0%})"
+        which disappear once SAASignalsFound confirms the real genus for this body. Shows the
+        narrowed species name (with its exact value) when we have one, else the genus guess. """
+        name:str = row["species"] or row["genus"]
+        return (f"?{name}", f"({row['confidence']:.0%})", f"~{_credits(self._predicted_row_value(row))}")
 
     def _exobio_row_value(self, row:sqlite3.Row) -> int:
         if row["species"]:
@@ -209,7 +289,7 @@ class ExplorerPanel:
         value_range:tuple[int, int]|None = exobiology.estimate_genus_range(row["genus"] or "")
         return value_range[1] if value_range else 0
 
-    def _exobio_progress_text(self, row:sqlite3.Row) -> str:
+    def _exobio_progress_row(self, row:sqlite3.Row) -> tuple[str, str, str]:
         """
         Progressive detail as we learn more -- genus placeholder becomes the species name once
         confirmed (first sample), and the value estimate becomes the confirmed value at the same
@@ -217,6 +297,7 @@ class ExplorerPanel:
         """
         genus:str = row["genus"] or "biological"
         name:str = row["species"] or f"{genus} sp."
+        value:str = _credits(self._exobio_row_value(row))
         if row["species"]:
-            return f"{name} — {row['samples_taken']}/3, {_credits(self._exobio_row_value(row))}"
-        return f"{name} ~{_credits(self._exobio_row_value(row))}"
+            return (name, f"{row['samples_taken']}/3", value)
+        return (name, "", f"~{value}")

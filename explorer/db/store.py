@@ -136,12 +136,14 @@ class ExplorerStore:
 
     # -- Genus predictions (pre-DSS, from Scan properties) --
 
-    def replace_genus_predictions(self, body_pk:int, predictions:list[tuple[str, float]]) -> None:
-        """ Full replace, not merge -- predictions are always a fresh recompute from the latest Scan. """
+    def replace_genus_predictions(self, body_pk:int, predictions:list[tuple[str, str|None, float]]) -> None:
+        """ Full replace, not merge -- predictions are always a fresh recompute from the latest
+        Scan. `species` is None for a genus-only guess (no species-level ruleset data for that
+        genus -- see valuation/species_conditions.py). """
         self.conn.execute("DELETE FROM genus_predictions WHERE body_id = ?", (body_pk,))
         self.conn.executemany(
-            "INSERT INTO genus_predictions (body_id, genus, confidence) VALUES (?, ?, ?)",
-            [(body_pk, genus, confidence) for genus, confidence in predictions],
+            "INSERT INTO genus_predictions (body_id, genus, species, confidence) VALUES (?, ?, ?, ?)",
+            [(body_pk, genus, species, confidence) for genus, species, confidence in predictions],
         )
         self.conn.commit()
 

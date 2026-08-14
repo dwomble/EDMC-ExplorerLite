@@ -7,7 +7,7 @@ implementation plan for the rationale behind each table.
 """
 import sqlite3
 
-SCHEMA_VERSION = 3
+SCHEMA_VERSION = 5
 
 DDL = """
 CREATE TABLE IF NOT EXISTS schema_meta (
@@ -47,6 +47,8 @@ CREATE TABLE IF NOT EXISTS bodies (
     body_type TEXT,
     star_type TEXT,
     planet_class TEXT,
+    atmosphere_type TEXT, -- raw AtmosphereType string, e.g. "CarbonDioxide", "None" -- used by
+    -- valuation/signal_count_bias.py to detect its Water/Oxygen/Nitrogen exception
     distance_ls REAL,
     was_discovered INTEGER,
     was_mapped INTEGER,
@@ -107,8 +109,9 @@ CREATE TABLE IF NOT EXISTS genus_predictions (
     id INTEGER PRIMARY KEY,
     body_id INTEGER NOT NULL REFERENCES bodies(id),
     genus TEXT NOT NULL,
+    species TEXT, -- NULL = genus-only guess (no species-level ruleset data for this genus)
     confidence REAL NOT NULL,
-    UNIQUE(body_id, genus)
+    UNIQUE(body_id, genus, species)
 );
 """
 
@@ -118,6 +121,7 @@ CREATE TABLE IF NOT EXISTS genus_predictions (
 # additive only; a rename/removal still needs real migration code, not this helper.
 COLUMN_ADDITIONS:list[tuple[str, str, str]] = [
     ("bodies", "type_label", "TEXT"),
+    ("bodies", "atmosphere_type", "TEXT"),
 ]
 
 def _ensure_columns(conn:sqlite3.Connection) -> None:
@@ -127,8 +131,27 @@ def _ensure_columns(conn:sqlite3.Connection) -> None:
             conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {coltype}")
     conn.commit()
 
+def _migrate_genus_predictions_species_column(conn:sqlite3.Connection) -> None:
+    """
+    v3->v4: genus_predictions gains a `species` column and its UNIQUE constraint relaxes to
+    (body_id, genus, species) so several candidate species within one genus can coexist
+    (species-level narrowing, see valuation/species_conditions.py). SQLite can't ALTER a UNIQUE
+    constraint in place -- but this table is fully derived/ephemeral (replace_genus_predictions()
+    deletes and reinserts it in full on every Scan event), so dropping and letting the DDL below
+    recreate it fresh is simpler and safer than hand-rolling a real data migration for rows that
+    regenerate themselves within one Scan event anyway.
+    """
+    tables:set[str] = {row[0] for row in conn.execute("SELECT name FROM sqlite_master WHERE type = 'table'")}
+    if "genus_predictions" not in tables:
+        return
+    columns:set[str] = {row[1] for row in conn.execute("PRAGMA table_info(genus_predictions)")}
+    if "species" not in columns:
+        conn.execute("DROP TABLE genus_predictions")
+        conn.commit()
+
 def ensure_schema(conn:sqlite3.Connection) -> None:
     """ Create tables if they don't exist yet, add any new columns, and stamp/verify the schema version. """
+    _migrate_genus_predictions_species_column(conn) # must run BEFORE the DDL recreates the table
     conn.executescript(DDL)
     _ensure_columns(conn)
 

@@ -135,6 +135,20 @@ def _v2_connection() -> sqlite3.Connection:
     conn.commit()
     return conn
 
+def _v3_connection() -> sqlite3.Connection:
+    """ v3: genus_predictions exists but without a `species` column, and its UNIQUE constraint
+    is still (body_id, genus) -- the shape ensure_schema() must upgrade away from for
+    species-level narrowing (see valuation/species_conditions.py). """
+    conn = sqlite3.connect(":memory:")
+    conn.row_factory = sqlite3.Row
+    conn.executescript(V1_DDL)
+    conn.executescript(V2_EXTRA_DDL)
+    conn.execute("ALTER TABLE bodies ADD COLUMN type_label TEXT")
+    conn.execute("INSERT INTO cmdrs (name) VALUES ('Testy')")
+    conn.execute("INSERT INTO schema_meta (key, value) VALUES ('version', '3')")
+    conn.commit()
+    return conn
+
 class TestSchemaMigration:
 
     def test_v1_database_upgrades_cleanly(self) -> None:
@@ -170,6 +184,34 @@ class TestSchemaMigration:
         assert int(version) == SCHEMA_VERSION
         body_columns_after:set[str] = {row[1] for row in conn.execute("PRAGMA table_info(bodies)")}
         assert "type_label" in body_columns_after
+        assert conn.execute("SELECT name FROM cmdrs WHERE name = 'Testy'").fetchone() is not None
+
+    def test_v3_database_upgrade_adds_species_column_and_relaxes_uniqueness(self) -> None:
+        """
+        v3->v4: genus_predictions gains a `species` column and its UNIQUE constraint relaxes to
+        (body_id, genus, species) -- SQLite can't ALTER a UNIQUE constraint in place, so this
+        exercises the drop-and-recreate migration path (_migrate_genus_predictions_species_column).
+        """
+        conn = _v3_connection()
+        pred_columns_before:set[str] = {row[1] for row in conn.execute("PRAGMA table_info(genus_predictions)")}
+        assert "species" not in pred_columns_before # sanity check the fixture itself
+
+        ensure_schema(conn) # must not raise
+
+        version:str = conn.execute("SELECT value FROM schema_meta WHERE key = 'version'").fetchone()[0]
+        assert int(version) == SCHEMA_VERSION
+        pred_columns_after:set[str] = {row[1] for row in conn.execute("PRAGMA table_info(genus_predictions)")}
+        assert "species" in pred_columns_after
+
+        # The relaxed UNIQUE(body_id, genus, species) must allow several candidate species
+        # within the same genus for the same body (the whole point of species-level narrowing).
+        body_id:int = conn.execute("INSERT INTO bodies (cmdr_id, system_id, body_id, body_name) VALUES (1, 1, 1, 'Test 1')").lastrowid
+        conn.execute("INSERT INTO genus_predictions (body_id, genus, species, confidence) VALUES (?, 'Tussock', 'Tussock Ignis', 0.9)", (body_id,))
+        conn.execute("INSERT INTO genus_predictions (body_id, genus, species, confidence) VALUES (?, 'Tussock', 'Tussock Pennata', 0.7)", (body_id,)) # must not raise
+        conn.commit()
+        rows = conn.execute("SELECT species FROM genus_predictions WHERE body_id = ? ORDER BY confidence DESC", (body_id,)).fetchall()
+        assert [row["species"] for row in rows] == ["Tussock Ignis", "Tussock Pennata"]
+
         assert conn.execute("SELECT name FROM cmdrs WHERE name = 'Testy'").fetchone() is not None
 
     def test_ensure_schema_is_idempotent_on_an_up_to_date_database(self) -> None:

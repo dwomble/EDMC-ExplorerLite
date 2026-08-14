@@ -7,7 +7,7 @@ Run with:
 """
 import pytest
 
-from explorer.valuation.genus_prediction import predict_genera
+from explorer.valuation.genus_prediction import predict_genera, predict_species
 
 def _entry(planet_class:str, atmosphere:str, volcanism:str, temp_k:float, gravity_g:float) -> dict:
     return {
@@ -60,6 +60,30 @@ class TestPredictGenera:
     def test_results_sorted_by_confidence_descending(self) -> None:
         entry = _entry("Rocky body", "CarbonDioxide", "", 178.0, 0.1)
         results = predict_genera(entry, None)
+        scores = [score for _, score in results]
+        assert scores == sorted(scores, reverse=True)
+
+class TestPredictSpecies:
+
+    def test_narrows_to_the_matching_species_within_a_genus(self) -> None:
+        # Tussock Ignis's own band is 161-170K; Ventusa (155-160K) and Serrati (171-174K) don't
+        # reach 165K even with the tapering margin, so they should drop out entirely while
+        # Ignis -- squarely inside its own range -- stays at (near) full confidence.
+        entry = _entry("Rocky body", "CarbonDioxide", "", 165.0, 0.1)
+        results = dict(predict_species("Tussock", entry, None))
+        assert results.get("Tussock Ignis", 0.0) >= 0.99
+        assert "Tussock Ventusa" not in results
+        assert "Tussock Serrati" not in results
+
+    def test_empty_for_a_genus_with_no_species_level_data(self) -> None:
+        # Anemone is airless-relevant -- deliberately not in SPECIES_RULESETS (see that
+        # module's docstring) -- so callers must fall back to the genus-only guess for it.
+        entry = _entry("Metal rich body", "None", "Any", 1000.0, 1.0)
+        assert predict_species("Anemone", entry, "M") == []
+
+    def test_results_sorted_by_confidence_descending(self) -> None:
+        entry = _entry("Rocky body", "CarbonDioxide", "", 165.0, 0.1)
+        results = predict_species("Tussock", entry, None)
         scores = [score for _, score in results]
         assert scores == sorted(scores, reverse=True)
 

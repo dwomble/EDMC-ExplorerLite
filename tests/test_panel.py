@@ -7,6 +7,7 @@ Run with:
 `harness` (session-scoped, one shared Tk root for the whole test run) comes from
 conftest.py -- see its docstring for why.
 """
+import tkinter as tk
 import pytest
 from typing import Generator
 
@@ -34,7 +35,25 @@ def plugin(harness:TestHarness, tmp_path, monkeypatch) -> Generator[TestHarness,
     harness.assert_no_unhandled_exceptions()
 
 def _panel_lines(load) -> list[str]:
-    return [child["text"] for child in load.panel.scroll.interior.winfo_children()]
+    """
+    Flatten the panel's children into one string per visual "line", for substring assertions.
+    Plain rows are a single th.Label with a "text" option; a gridded table (see panel.py's
+    _render_table) is a Frame whose grid children get grouped by row and space-joined back into
+    an equivalent line, so callers don't need to know whether a given row is columnar or not.
+    """
+    lines:list[str] = []
+    for child in load.panel.scroll.interior.winfo_children():
+        if isinstance(child, tk.Frame):
+            rows:dict[int, dict[int, str]] = {}
+            for cell in child.winfo_children():
+                info = cell.grid_info()
+                rows.setdefault(int(info["row"]), {})[int(info["column"])] = cell["text"]
+            for row_index in sorted(rows):
+                cells = rows[row_index]
+                lines.append(" ".join(cells[c] for c in sorted(cells)))
+        else:
+            lines.append(child["text"])
+    return lines
 
 class TestPanelStates:
 
@@ -114,7 +133,7 @@ class TestPanelStates:
 
         import load
         lines = _panel_lines(load)
-        assert any("Bacterium Aurasus — 2/3, 1M Cr" in line for line in lines)
+        assert any("Bacterium Aurasus 2/3 1M Cr" in line for line in lines)
 
         for event in events[cutoff:]:
             plugin.fire_event(event)
@@ -154,6 +173,108 @@ class TestPanelStates:
         assert not any("possible exobio" in line for line in lines), lines
         assert any("exobio potential" in line for line in lines), lines
         assert any(line.startswith("A 1 ") and "species" in line for line in lines), lines
+
+    def test_scan_narrows_prediction_to_species_when_data_available(self, plugin:TestHarness) -> None:
+        """
+        Regression/coverage for species-level narrowing (valuation/species_conditions.py): a
+        Scan matching a specific species' own spawn conditions -- not just its genus's wider
+        range -- should store that species name and its exact confirmed value, not just a
+        generic genus guess. Checked at the store level (not the panel's capped top-3 display)
+        since a body can plausibly match several genera/species at once and we only care that
+        this one specific species is *among* what got stored, not that it's the only one.
+        """
+        from explorer.state import state as explorer_state
+
+        plugin.config.set("EDMCExplorerLite_ExobioValueThreshold", 500_000) # Tussock Ignis is 1.85M Cr, below the 5M default
+        plugin.load_events("explorer_events.json")
+        plugin.play_sequence("species_level_prediction", 0.02)
+
+        import load
+        assert explorer_state.system_id is not None
+        flagged = load.store.get_flagged_bodies_for_system(explorer_state.system_id)
+        body = next(b for b in flagged if b["body_name"] == "Speciesia A 1")
+        predictions = load.store.get_genus_predictions_for_body(body["id"])
+        assert any(
+            p["genus"] == "Tussock" and p["species"] == "Tussock Ignis" and p["confidence"] >= 0.99
+            for p in predictions
+        ), [dict(p) for p in predictions]
+
+    def test_predicted_value_does_not_double_count_same_genus_species_guesses(self, plugin:TestHarness) -> None:
+        """
+        Regression test for _best_predictions_for_body(): a body can have several candidate
+        SPECIES stored within the SAME genus (alternative guesses at one real signal, not
+        separate ones -- see genus_prediction.predict_species()). The flagged-list/on-body total
+        must count that genus once, via its best-confidence candidate, not every guess -- and
+        the overall list should cap to the body's real biological_signal_count once known,
+        rather than an arbitrary top-3.
+        """
+        from explorer.state import state as explorer_state
+
+        plugin.load_events("explorer_events.json")
+        plugin.play_sequence("honk_only", 0.02)
+
+        import load
+        assert explorer_state.cmdr_id is not None and explorer_state.system_id is not None
+        body_pk:int = load.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 1, "QuietSpace A 1")
+        load.store.update_body(body_pk, biological_signal_count=2, has_biological_signals=1)
+        load.store.replace_genus_predictions(body_pk, [
+            ("Tussock", "Tussock Ignis", 0.95),
+            ("Tussock", "Tussock Pennata", 0.80),
+            ("Bacterium", "Bacterium Aurasus", 0.90),
+        ])
+
+        best = load.panel._best_predictions_for_body(body_pk)
+        assert len(best) == 2, best # capped to the body's known biological_signal_count
+        genera_shown = [p["genus"] for p in best]
+        assert genera_shown.count("Tussock") == 1, best
+        tussock_row = next(p for p in best if p["genus"] == "Tussock")
+        assert tussock_row["species"] == "Tussock Ignis" # kept the higher-confidence candidate
+
+    def test_signal_count_bias_prefers_chain_expected_genus_over_raw_confidence(self, plugin:TestHarness) -> None:
+        """
+        Regression/coverage for the signal-count chain bias (valuation/signal_count_bias.py): on
+        a lone (count=1) signal, Bacterium is the "usually" expected genus even when a different,
+        unrelated genus scored higher confidence from Scan conditions alone -- the chain is a
+        tiebreak among already-eligible candidates, so it should still win that one slot.
+        """
+        from explorer.state import state as explorer_state
+
+        plugin.load_events("explorer_events.json")
+        plugin.play_sequence("honk_only", 0.02)
+
+        import load
+        assert explorer_state.cmdr_id is not None and explorer_state.system_id is not None
+        body_pk:int = load.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 1, "QuietSpace A 1")
+        load.store.update_body(body_pk, biological_signal_count=1, atmosphere_type="CarbonDioxide", planet_class="Rocky body")
+        load.store.replace_genus_predictions(body_pk, [
+            ("Frutexa", "Frutexa Acus", 0.99), # highest raw confidence, but not the tier-1 expected genus
+            ("Bacterium", "Bacterium Aurasus", 0.50),
+        ])
+
+        best = load.panel._best_predictions_for_body(body_pk)
+        assert len(best) == 1, best
+        assert best[0]["genus"] == "Bacterium", best
+
+    def test_signal_count_bias_disabled_on_exception_atmospheres(self, plugin:TestHarness) -> None:
+        """ Thin Water/Oxygen/Nitrogen bodies don't follow the chain at all (direct field
+        report) -- selection should fall back to plain confidence ordering there. """
+        from explorer.state import state as explorer_state
+
+        plugin.load_events("explorer_events.json")
+        plugin.play_sequence("honk_only", 0.02)
+
+        import load
+        assert explorer_state.cmdr_id is not None and explorer_state.system_id is not None
+        body_pk:int = load.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 1, "QuietSpace A 1")
+        load.store.update_body(body_pk, biological_signal_count=1, atmosphere_type="Water", planet_class="Rocky body")
+        load.store.replace_genus_predictions(body_pk, [
+            ("Frutexa", "Frutexa Acus", 0.99),
+            ("Bacterium", "Bacterium Aurasus", 0.50),
+        ])
+
+        best = load.panel._best_predictions_for_body(body_pk)
+        assert len(best) == 1, best
+        assert best[0]["genus"] == "Frutexa", best # highest confidence wins -- no chain bias here
 
     def test_known_bio_signals_count_even_without_dss_or_prediction(self, plugin:TestHarness) -> None:
         """

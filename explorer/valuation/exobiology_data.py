@@ -121,7 +121,7 @@ SPECIES_VALUE:dict[str, dict[str, int]] = {
     "Fonticulua": {
         "Fonticulua Campestris": 1_000_000,
         "Fonticulua Digitos": 1_804_100,
-        "Fonticulua Fluctus": 16_777_215,
+        "Fonticulua Fluctus": 20_000_000, # corrected from 16,777,215 -- multiple sources (incl. BioScan) agree on 20M
         "Fonticulua Lapida": 3_111_000,
         "Fonticulua Segmentatus": 19_010_800,
         "Fonticulua Upupam": 5_727_600,
