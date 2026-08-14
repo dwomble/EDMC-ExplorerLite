@@ -22,6 +22,9 @@ def plugin(harness:TestHarness, tmp_path, monkeypatch) -> Generator[TestHarness,
     import explorer.db.store as store_module
     monkeypatch.setattr(store_module, "resolve_db_path", lambda: tmp_path / "explorer.sqlite")
 
+    import explorer.session_persist as session_persist_module
+    monkeypatch.setattr(session_persist_module, "resolve_session_path", lambda: tmp_path / "session_state.json")
+
     reset_plugin_modules()
     from load import plugin_start3, plugin_app, plugin_stop, journal_entry
     plugin_start3(str(harness.plugin_dir))
@@ -216,11 +219,10 @@ class TestPanelStates:
     def test_predicted_genus_line_is_superseded_by_confirmed_genus(self, plugin:TestHarness) -> None:
         """
         Regression test for the pre-DSS genus predictor: a landable body whose Scan properties
-        match known genera's conditions should show a "N species ..." line (unconfirmed) in the
-        flagged-body list before any DSS data exists -- the species count itself isn't in doubt,
-        only which genus it is, so no "?" on the count -- and once SAASignalsFound later
-        confirms what's there, the tag should name the actual genus, not a bare count (and the
-        body should stay listed, not read as "nothing flagged").
+        match known genera's conditions should show a "?<genus/species> ..." guess (unconfirmed,
+        marked with "?") in the flagged-body list before any DSS data exists, and once
+        SAASignalsFound later confirms what's there, the tag should name the actual genus, not
+        the predicted guess (and the body should stay listed, not read as "nothing flagged").
         """
         plugin.load_events("explorer_events.json")
         events = plugin.events["predicted_then_confirmed"]
@@ -231,7 +233,7 @@ class TestPanelStates:
 
         import load
         lines = _panel_lines(load)
-        assert any(line.startswith("A 1 ") and "species" in line for line in lines), lines
+        assert any(line.startswith("A 1 ") and "?" in line for line in lines), lines
         # Regression: a predicted-only (unconfirmed) body used to still count as "nothing
         # flagged", printing that line right above the predicted body below it.
         assert not any("Nothing flagged" in line for line in lines), lines
@@ -291,6 +293,23 @@ class TestPanelStates:
             p["genus"] == "Tussock" and p["species"] == "Tussock Ignis" and p["confidence"] >= 0.99
             for p in predictions
         ), [dict(p) for p in predictions]
+
+    def test_confirmed_biological_signal_still_shows_a_guess_below_value_threshold(self, plugin:TestHarness) -> None:
+        """
+        Real-world regression: FSSBodySignals confirmed a biological signal exists (ground
+        truth) BEFORE the body's own Scan (Detailed) arrived -- the common order when a full FSS
+        sweep of the system happens before flying to each body. The narrowed species-level guess
+        (Tussock Ignis, ~1.85M Cr) is below the 5M default exobio threshold, but existence here
+        isn't speculative anymore -- the guess should still show, not silently vanish into a
+        bare "biological signal" line just because it happens to be low-value.
+        """
+        plugin.load_events("explorer_events.json")
+        plugin.play_sequence("confirmed_biology_below_threshold", 0.02)
+
+        import load
+        lines = _panel_lines(load)
+        assert any(line.startswith("A 1 ") and "Tussock Ignis" in line for line in lines), lines
+        assert not any("biological signal" in line for line in lines), lines
 
     def test_predicted_value_does_not_double_count_same_genus_species_guesses(self, plugin:TestHarness) -> None:
         """
@@ -477,10 +496,9 @@ class TestPanelStates:
 
         import load
         lines = _panel_lines(load)
-        # The on-body detail table (not just the flagged-list "N species" line) should be
-        # showing -- its confidence percentage is the distinguishing marker between the two.
+        # The on-body detail table (not just the flagged-list guess line) should be showing --
+        # its confidence percentage is the distinguishing marker between the two.
         assert any("%)" in line for line in lines), lines
-        assert any("species" in line for line in lines), lines
 
 class TestNoDuplicateWidgets:
     """

@@ -56,6 +56,20 @@ def _landed_state(store:ExplorerStore, genus:str = "Bacterium", samples:int = 1,
         state.sample_positions[genus] = [(10.0 + i * 0.0001, 20.0) for i in range(samples)]
     return state
 
+def _flying_state(store:ExplorerStore) -> ExplorerState:
+    """ Dropped out of supercruise over a body's surface, still in the ship -- not landed, not
+    on-foot, no samples possible yet, but a body/lat-long context already exists. """
+    state = ExplorerState()
+    state.cmdr_id = store.get_or_create_cmdr("Testy")
+    state.system_id = store.get_or_create_system(state.cmdr_id, 1, "Deltius")
+    state.body_id = 2
+    state.body_name = "Deltius 2"
+    state.has_lat_long = True
+    state.latitude = 10.0
+    state.longitude = 20.0
+    state.heading = 90.0
+    return state
+
 class TestRadarOverlayNoOverlay:
 
     @pytest.mark.overlay('None')
@@ -64,9 +78,9 @@ class TestRadarOverlayNoOverlay:
         radar.render(store, _landed_state(store)) # must not raise
 
     @pytest.mark.overlay('None')
-    def test_render_is_a_noop_when_not_exobiology_relevant(self, overlay_mode, store:ExplorerStore) -> None:
+    def test_render_is_a_noop_with_no_context_at_all(self, overlay_mode, store:ExplorerStore) -> None:
         radar = RadarOverlay(Overlay())
-        radar.render(store, ExplorerState()) # not landed/on_foot -- must not raise
+        radar.render(store, ExplorerState()) # no cmdr/system/body/lat-long -- must not raise
 
 class TestRadarOverlayModern:
 
@@ -101,6 +115,45 @@ class TestRadarOverlayModern:
         assert f"{FRAME_PREFIX}ring-1.0" in shapes
         assert f"{FRAME_PREFIX}ring-active" in shapes
         assert f"{FRAME_PREFIX}player" in shapes
+
+    @pytest.mark.overlay('Modern')
+    def test_render_draws_rings_while_flying_over_surface_not_landed(self, overlay_mode, store:ExplorerStore) -> None:
+        """
+        Regression test: the radar used to require landed AND on_foot, so it stayed dark from
+        SupercruiseExit all the way down to actually stepping outside -- useless for the part of
+        the approach where you're deciding whether/where to land. A confirmed genus already in
+        the DB (SAASignalsFound, from orbit) should draw rings while still flying.
+        """
+        radar = RadarOverlay(Overlay())
+        state = _flying_state(store)
+        body_pk:int = store.get_or_create_body(state.cmdr_id, state.system_id, state.body_id, state.body_name)
+        store.get_or_create_species_progress(body_pk, "Bacterium")
+
+        radar.render(store, state)
+
+        shapes = radar.overlay._overlay.shapes
+        assert f"{FRAME_PREFIX}ring-1.0" in shapes
+        assert f"{FRAME_PREFIX}player" in shapes
+
+    @pytest.mark.overlay('Modern')
+    def test_render_draws_rings_from_predicted_genus_before_confirmation(self, overlay_mode, store:ExplorerStore) -> None:
+        """ Before SAASignalsFound even happens -- a pre-DSS genus prediction (from Scan alone)
+        is still useful while approaching, so it's the fallback when there's no confirmed genus yet. """
+        radar = RadarOverlay(Overlay())
+        state = _flying_state(store)
+        body_pk:int = store.get_or_create_body(state.cmdr_id, state.system_id, state.body_id, state.body_name)
+        store.replace_genus_predictions(body_pk, [("Bacterium", None, 0.8)])
+
+        radar.render(store, state)
+
+        assert f"{FRAME_PREFIX}ring-1.0" in radar.overlay._overlay.shapes
+
+    @pytest.mark.overlay('Modern')
+    def test_render_is_a_noop_when_no_genus_known_at_all(self, overlay_mode, store:ExplorerStore) -> None:
+        """ Flying over a body with no confirmed or predicted genus -- nothing useful to show yet. """
+        radar = RadarOverlay(Overlay())
+        radar.render(store, _flying_state(store))
+        assert f"{FRAME_PREFIX}player" not in radar.overlay._overlay.shapes
 
     @pytest.mark.overlay('Modern')
     def test_render_is_a_noop_without_lat_long(self, overlay_mode, store:ExplorerStore) -> None:

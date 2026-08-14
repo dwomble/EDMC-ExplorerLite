@@ -88,5 +88,13 @@
     { "event": "FSSDiscoveryScan", "Progress": 1.0, "BodyCount": 1, "NonBodyCount": 0, "SystemName": "Speciesia", "SystemAddress": 888000111 },
     { "event": "Scan", "ScanType": "AutoScan", "BodyName": "Speciesia A", "BodyID": 0, "StarSystem": "Speciesia", "SystemAddress": 888000111, "DistanceFromArrivalLS": 0.0, "StarType": "K", "StellarMass": 0.9, "WasDiscovered": false, "WasMapped": false },
     { "event": "Scan", "ScanType": "Detailed", "BodyName": "Speciesia A 1", "BodyID": 1, "StarSystem": "Speciesia", "SystemAddress": 888000111, "DistanceFromArrivalLS": 500.0, "PlanetClass": "Rocky body", "AtmosphereType": "CarbonDioxide", "Volcanism": "", "SurfaceTemperature": 165.0, "SurfaceGravity": 0.9797759, "SurfacePressure": 3036.95, "TerraformState": "", "Landable": true, "WasDiscovered": false, "WasMapped": false }
+  ],
+  "confirmed_biology_below_threshold": [
+    { "event": "LoadGame", "FID": "F11111111", "Commander": "Testy", "Horizons": true, "Odyssey": true, "Credits": 1000000 },
+    { "event": "FSDJump", "StarSystem": "Speciesia", "SystemAddress": 888000111, "Body": "Speciesia A", "BodyID": 0, "BodyType": "Star", "StarPos": [1.0, 2.0, 3.0] },
+    { "event": "FSSDiscoveryScan", "Progress": 1.0, "BodyCount": 1, "NonBodyCount": 0, "SystemName": "Speciesia", "SystemAddress": 888000111 },
+    { "event": "Scan", "ScanType": "AutoScan", "BodyName": "Speciesia A", "BodyID": 0, "StarSystem": "Speciesia", "SystemAddress": 888000111, "DistanceFromArrivalLS": 0.0, "StarType": "K", "StellarMass": 0.9, "WasDiscovered": false, "WasMapped": false },
+    { "event": "FSSBodySignals", "BodyName": "Speciesia A 1", "BodyID": 1, "SystemAddress": 888000111, "Signals": [{ "Type": "$SAA_SignalType_Biological;", "Type_Localised": "Biological", "Count": 1 }] },
+    { "event": "Scan", "ScanType": "Detailed", "BodyName": "Speciesia A 1", "BodyID": 1, "StarSystem": "Speciesia", "SystemAddress": 888000111, "DistanceFromArrivalLS": 500.0, "PlanetClass": "Rocky body", "AtmosphereType": "CarbonDioxide", "Volcanism": "", "SurfaceTemperature": 165.0, "SurfaceGravity": 0.9797759, "SurfacePressure": 3036.95, "TerraformState": "", "Landable": true, "WasDiscovered": false, "WasMapped": false }
   ]
 }

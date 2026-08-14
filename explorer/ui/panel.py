@@ -176,13 +176,14 @@ class ExplorerPanel:
         elif not body["flagged_exobio"]:
             predictions:list[dict] = self._best_predictions_for_body(body["id"])
             if predictions:
-                tags.append(f"{len(predictions)} species")
+                tags.append(", ".join(f"?{p['name']}" for p in predictions))
                 value_min += sum(p["value_min"] for p in predictions)
                 value_max += sum(p["value_max"] for p in predictions)
             elif body["has_biological_signals"]:
                 # FSSBodySignals already confirmed biology is present here -- worth surfacing
                 # even before a Scan gives us anything to guess a genus (and thus a value) from.
-                tags.append("biological signals")
+                count:int = body["biological_signal_count"] or 1
+                tags.append(f"{count} biological signal" + ("" if count == 1 else "s"))
 
         if not value_max and not tags:
             return None # nothing left to do here -- drop it

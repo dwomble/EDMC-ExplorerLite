@@ -108,14 +108,22 @@ def on_scan(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict:
     )
 
     if not is_star and entry.get("Landable"):
-        store.replace_genus_predictions(body_pk, _worthwhile_predictions(entry, state.nearest_star_type))
+        # FSSBodySignals often arrives before Scan (Detailed) -- if it already confirmed real
+        # biology here, existence isn't speculative anymore, so show the best guess regardless
+        # of its predicted value rather than going silent just because that guess is low-value.
+        existing:sqlite3.Row|None = store.get_body(body_pk)
+        confirmed_biology:bool = bool(existing and existing["has_biological_signals"] == 1)
+        store.replace_genus_predictions(
+            body_pk, _worthwhile_predictions(entry, state.nearest_star_type, bypass_threshold=confirmed_biology)
+        )
 
     return {"panel": True}
 
-def _worthwhile_predictions(entry:dict, nearest_star_type:str|None) -> list[tuple[str, str|None, float]]:
+def _worthwhile_predictions(entry:dict, nearest_star_type:str|None, bypass_threshold:bool = False) -> list[tuple[str, str|None, float]]:
     """ Predicted (genus, species, confidence) rows whose value clears the exobio threshold --
     mirrors exactly how on_saa_signals_found() gates flagged_exobio, so "has any prediction row"
-    alone is a meaningful interest signal without needing a separate bodies column.
+    alone is a meaningful interest signal without needing a separate bodies column. `bypass_threshold`
+    skips that gate (see caller).
 
     Narrows to specific species wherever valuation/species_conditions.py has ruleset data for
     that genus (`species` is set, and the exact confirmed value gates/sorts it); otherwise falls
@@ -128,12 +136,12 @@ def _worthwhile_predictions(entry:dict, nearest_star_type:str|None) -> list[tupl
         if species_candidates:
             for species, species_confidence in species_candidates:
                 value:int|None = exobiology.estimate_confirmed_value(genus, species)
-                if exobiology.exceeds_threshold(value, threshold):
+                if bypass_threshold or exobiology.exceeds_threshold(value, threshold):
                     worthwhile.append((genus, species, species_confidence))
         else:
             value_range:tuple[int, int]|None = exobiology.estimate_genus_range(genus)
             value_max:int|None = value_range[1] if value_range else None
-            if exobiology.exceeds_threshold(value_max, threshold):
+            if bypass_threshold or exobiology.exceeds_threshold(value_max, threshold):
                 worthwhile.append((genus, None, genus_confidence))
     return worthwhile
 

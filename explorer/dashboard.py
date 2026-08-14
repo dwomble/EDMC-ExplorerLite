@@ -30,7 +30,7 @@ def on_dashboard_entry(state:ExplorerState, entry:dict) -> dict:
         state.planet_radius = entry.get("PlanetRadius")
 
     relevant:bool = state.exobiology_relevant
-    result:dict[str, bool|str] = {"overlay": "radar"} if relevant else {}
+    result:dict[str, bool|str] = {"overlay": "radar"} # every tick -- render()'s own guards decide whether to actually draw
     if relevant != _last_exobiology_relevant:
         _last_exobiology_relevant = relevant
         result["panel"] = True

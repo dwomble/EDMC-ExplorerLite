@@ -1,9 +1,10 @@
 """
 Overlay radar: distance rings, a highlighted ring at the active genus's required minimum
-sample distance, cross markers per logged sample, and a heading tick. Built on the generic
-utils/overlay.py wrapper -- this module supplies EDMC-ExplorerLite's own frame names,
-positions, and colors, which is deliberately NOT part of the shared library (see PluginLib's
-overlay.py docstring).
+sample distance, cross markers per logged sample, and a heading tick. Visible from
+SupercruiseExit onward (flying over the surface, not just on-foot) whenever there's a
+confirmed or predicted genus to show. Built on the generic utils/overlay.py wrapper -- this
+module supplies EDMC-ExplorerLite's own frame names, positions, and colors, which is
+deliberately NOT part of the shared library (see PluginLib's overlay.py docstring).
 
 North-up, not rotated to the player's heading -- the heading tick alone shows facing
 direction. Sample markers are positioned relative to the player's CURRENT position each call,
@@ -77,6 +78,9 @@ class RadarOverlay:
         )
 
     def render(self, store:ExplorerStore, state:ExplorerState) -> None:
+        """ Shown as soon as a body is in view (SupercruiseExit onward, same as the panel's own
+        exobiology section) -- not gated behind landed/on-foot, so it's already up guiding you
+        in before you commit to landing, not just once you're already down. """
         if not self.overlay.available:
             self._log_skip("no overlay backend detected")
             return
@@ -86,9 +90,6 @@ class RadarOverlay:
         if not config.get_bool(CFG_OVERLAY_RADAR_ENABLED, default=True):
             self._log_skip("radar disabled in EDMC-ExplorerLite settings")
             return
-        if not state.exobiology_relevant:
-            self._log_skip(f"not exobiology-relevant (landed={state.landed}, on_foot={state.on_foot}, body_id={state.body_id})")
-            return
         if not state.has_lat_long or state.latitude is None or state.longitude is None:
             self._log_skip("no lat/long from Status.json yet")
             return
@@ -96,13 +97,15 @@ class RadarOverlay:
             self._log_skip(f"missing cmdr/system/body id (cmdr_id={state.cmdr_id}, system_id={state.system_id}, body_id={state.body_id})")
             return
 
-        # Genus comes from the DB (populated at SAASignalsFound, in orbit) rather than
-        # state.sample_positions -- that's session-only and only gains an entry once the FIRST
-        # sample is taken, so the radar would otherwise draw nothing to guide you there.
+        # Genus comes from the DB rather than state.sample_positions -- that's session-only and
+        # only gains an entry once the FIRST sample is taken, so the radar would otherwise draw
+        # nothing to guide you there. Confirmed (SAASignalsFound) takes priority; falls back to
+        # the pre-DSS predicted genus so there's still something useful while still in the ship.
         body_pk:int = store.get_or_create_body(state.cmdr_id, state.system_id, state.body_id, state.body_name)
-        genus:str|None = self._active_genus(store.get_species_progress_for_body(body_pk))
+        genus:str|None = self._active_genus(store.get_species_progress_for_body(body_pk)) \
+            or self._predicted_genus(store.get_genus_predictions_for_body(body_pk))
         if genus is None:
-            self._log_skip(f"no confirmed genus yet for body {state.body_name!r} (body_pk={body_pk})")
+            self._log_skip(f"no confirmed or predicted genus yet for body {state.body_name!r} (body_pk={body_pk})")
             return
 
         self._log_skip(None) # clear -- we're drawing
@@ -120,6 +123,10 @@ class RadarOverlay:
             if not row["completed_at"]:
                 return row["genus"]
         return progress[0]["genus"] if progress else None
+
+    def _predicted_genus(self, predictions:list[sqlite3.Row]) -> str|None:
+        """ Best pre-DSS guess (highest confidence, already the query's own ordering). """
+        return predictions[0]["genus"] if predictions else None
 
     def _display_range(self, genus:str) -> float:
         min_dist:int = exobiology_data.genus_min_distance(genus) or 200

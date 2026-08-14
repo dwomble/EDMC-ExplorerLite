@@ -19,6 +19,9 @@ def plugin(harness:TestHarness, tmp_path, monkeypatch) -> Generator[TestHarness,
     import explorer.db.store as store_module
     monkeypatch.setattr(store_module, "resolve_db_path", lambda: tmp_path / "explorer.sqlite")
 
+    import explorer.session_persist as session_persist_module
+    monkeypatch.setattr(session_persist_module, "resolve_session_path", lambda: tmp_path / "session_state.json")
+
     from explorer.constants import CFG_SCAN_VALUE_THRESHOLD
     harness.config.set(CFG_SCAN_VALUE_THRESHOLD, 50000)
 
