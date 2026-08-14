@@ -9,7 +9,7 @@ from explorer.utils.debug import Debug
 from explorer.utils.updater import Updater
 from explorer.utils.overlay import Overlay
 
-from explorer.constants import PLUGIN_NAME, PLUGIN_VERSION, GH_PROJECT, CFG_DEV_MODE
+from explorer.constants import PLUGIN_NAME, PLUGIN_VERSION, GH_OWNER, GH_PROJECT, CFG_DEV_MODE
 from explorer.db.store import ExplorerStore
 from explorer.state import state as explorer_state
 from explorer.journal.dispatch import dispatch
@@ -30,7 +30,7 @@ def plugin_start3(plugin_dir:str) -> str:
     Debug(plugin_dir, config.get_bool(CFG_DEV_MODE, default=False))
 
     global updater, store, radar
-    updater = Updater(plugin_dir, GH_PROJECT)
+    updater = Updater(plugin_dir, GH_OWNER, GH_PROJECT)
     updater.check_for_update(PLUGIN_VERSION)
     store = ExplorerStore()
     radar = RadarOverlay(Overlay())
