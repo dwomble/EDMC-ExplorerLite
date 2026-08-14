@@ -79,7 +79,7 @@ class TestPanelStates:
         import load
         lines = _panel_lines(load)
         assert lines[0].startswith("Deltius —")
-        assert any("above threshold" in line for line in lines)
+        assert any(line.startswith("A 1 ") for line in lines)
 
     def test_flagged_body_shows_before_full_system_fss_sweep(self, plugin:TestHarness) -> None:
         """
@@ -94,7 +94,7 @@ class TestPanelStates:
         import load
         lines = _panel_lines(load)
         assert any(line.startswith("Honk:") for line in lines)
-        assert any("above threshold" in line for line in lines)
+        assert any(line.startswith("A 1 ") for line in lines)
 
     def test_star_only_system_says_dss_not_required(self, plugin:TestHarness) -> None:
         """ A system with no planets at all (e.g. a bare binary) shouldn't read as "checked,
@@ -148,9 +148,10 @@ class TestPanelStates:
         """
         Regression test for the pre-DSS genus predictor: a landable body whose Scan properties
         match known genera's conditions should show a "N species ..." line (unconfirmed) in the
-        system summary before any DSS data exists -- the species count itself isn't in doubt,
-        only which genus it is, so no "?" on the count -- and the summary's "possible exobio"
-        bucket should become "exobio potential" once SAASignalsFound confirms what's there.
+        flagged-body list before any DSS data exists -- the species count itself isn't in doubt,
+        only which genus it is, so no "?" on the count -- and once SAASignalsFound later
+        confirms what's there, the tag should name the actual genus, not a bare count (and the
+        body should stay listed, not read as "nothing flagged").
         """
         plugin.load_events("explorer_events.json")
         events = plugin.events["predicted_then_confirmed"]
@@ -163,16 +164,39 @@ class TestPanelStates:
         lines = _panel_lines(load)
         assert any(line.startswith("A 1 ") and "species" in line for line in lines), lines
         # Regression: a predicted-only (unconfirmed) body used to still count as "nothing
-        # flagged" in the summary, printing that line right above the predicted body below it.
+        # flagged", printing that line right above the predicted body below it.
         assert not any("Nothing flagged" in line for line in lines), lines
-        assert any("possible exobio" in line for line in lines), lines
 
         plugin.fire_event(events[confirm_index])
 
         lines = _panel_lines(load)
-        assert not any("possible exobio" in line for line in lines), lines
-        assert any("exobio potential" in line for line in lines), lines
-        assert any(line.startswith("A 1 ") and "species" in line for line in lines), lines
+        assert any(line.startswith("A 1 ") and "Bacterium" in line for line in lines), lines
+        assert not any(line.startswith("A 1 ") and "1 species" in line for line in lines), lines
+
+    def test_unconfirmed_genus_guess_shows_a_value_range_not_a_single_number(self, plugin:TestHarness) -> None:
+        """
+        Regression test: a genus-only guess (no species-level narrowing available for that
+        genus, e.g. Anemone -- see species_conditions.py's scope) used to show just the top of
+        that genus's value range as a single "estimated" number, reading as more precise than
+        it really is -- the actual species present could be worth far less. Should show the
+        full min-max range instead.
+        """
+        from explorer.state import state as explorer_state
+
+        plugin.load_events("explorer_events.json")
+        plugin.play_sequence("honk_only", 0.02)
+
+        import load
+        assert explorer_state.cmdr_id is not None and explorer_state.system_id is not None
+        body_pk:int = load.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 1, "QuietSpace A 1")
+        load.store.replace_genus_predictions(body_pk, [("Anemone", None, 0.9)])
+
+        best:list[dict] = load.panel._best_predictions_for_body(body_pk)
+        assert len(best) == 1, best
+        assert best[0]["value_min"] < best[0]["value_max"], "test premise: Anemone should have a real min-max spread"
+
+        rendered:tuple[str, str, str] = load.panel._predicted_genus_row(best[0])
+        assert "-" in rendered[2], rendered # e.g. "~1.5M-3.4M Cr", not a single number
 
     def test_scan_narrows_prediction_to_species_when_data_available(self, plugin:TestHarness) -> None:
         """
@@ -225,10 +249,9 @@ class TestPanelStates:
 
         best = load.panel._best_predictions_for_body(body_pk)
         assert len(best) == 2, best # capped to the body's known biological_signal_count
-        genera_shown = [p["genus"] for p in best]
-        assert genera_shown.count("Tussock") == 1, best
-        tussock_row = next(p for p in best if p["genus"] == "Tussock")
-        assert tussock_row["species"] == "Tussock Ignis" # kept the higher-confidence candidate
+        names = [slot["name"] for slot in best]
+        assert "Tussock Ignis" in names, best # kept the higher-confidence Tussock candidate
+        assert "Tussock Pennata" not in names, best
 
     def test_signal_count_bias_prefers_chain_expected_genus_over_raw_confidence(self, plugin:TestHarness) -> None:
         """
@@ -253,7 +276,7 @@ class TestPanelStates:
 
         best = load.panel._best_predictions_for_body(body_pk)
         assert len(best) == 1, best
-        assert best[0]["genus"] == "Bacterium", best
+        assert best[0]["name"] == "Bacterium Aurasus", best
 
     def test_signal_count_bias_disabled_on_exception_atmospheres(self, plugin:TestHarness) -> None:
         """ Thin Water/Oxygen/Nitrogen bodies don't follow the chain at all (direct field
@@ -274,24 +297,49 @@ class TestPanelStates:
 
         best = load.panel._best_predictions_for_body(body_pk)
         assert len(best) == 1, best
-        assert best[0]["genus"] == "Frutexa", best # highest confidence wins -- no chain bias here
+        assert best[0]["name"] == "Frutexa Acus", best # highest confidence wins -- no chain bias here
+
+    def test_tied_genera_are_merged_not_silently_resolved_by_chain_bias(self, plugin:TestHarness) -> None:
+        """
+        Regression test from a real journal case: an HMC single-signal body scored Bacterium
+        and Stratum Tectonicas EQUALLY on physics-based confidence. The old tier-1 chain bias
+        picked Stratum outright (a ~19M Cr guess) when the confirmed answer was Bacterium
+        (~1.7M Cr) -- genuinely tied candidates must merge into one slot spanning both
+        possibilities, not let the chain silently choose between them.
+        """
+        from explorer.state import state as explorer_state
+
+        plugin.load_events("explorer_events.json")
+        plugin.play_sequence("honk_only", 0.02)
+
+        import load
+        assert explorer_state.cmdr_id is not None and explorer_state.system_id is not None
+        body_pk:int = load.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 1, "QuietSpace A 1")
+        load.store.update_body(body_pk, biological_signal_count=1, atmosphere_type="SulphurDioxide", planet_class="High metal content body")
+        load.store.replace_genus_predictions(body_pk, [
+            ("Bacterium", "Bacterium Cerbrus", 1.0),
+            ("Stratum", "Stratum Tectonicas", 1.0),
+        ])
+
+        best = load.panel._best_predictions_for_body(body_pk)
+        assert len(best) == 1, best # still exactly one real signal
+        assert "Bacterium Cerbrus" in best[0]["name"], best
+        assert "Stratum Tectonicas" in best[0]["name"], best
+        assert best[0]["value_min"] < best[0]["value_max"], best # spans both possibilities
 
     def test_known_bio_signals_count_even_without_dss_or_prediction(self, plugin:TestHarness) -> None:
         """
         Regression test: FSSBodySignals can confirm a body has biological signals well before
         it's DSS'd (SAASignalsFound) or even Scanned (so no genus_prediction guess exists yet
         either). Those bodies used to vanish from the flagged list entirely -- only the one
-        body actually DSS'd in the system counted towards any summary line -- even though we
-        already know for certain that other bodies in the system have biology too.
+        body actually DSS'd in the system showed up at all -- even though we already know for
+        certain that other bodies in the system have biology too.
         """
         plugin.load_events("explorer_events.json")
         plugin.play_sequence("known_bio_signals_before_dss", 0.02)
 
         import load
         lines = _panel_lines(load)
-        assert any("1 body exobio potential" in line for line in lines), lines
-        assert any("2 bodies known biological signals" in line for line in lines), lines
-        assert not any("possible exobio" in line for line in lines), lines # these are confirmed, not guessed
         assert any(line.startswith("A 1 ") and "biological signals" in line and "? Cr" in line for line in lines), lines
         assert any(line.startswith("A 3 ") and "biological signals" in line and "? Cr" in line for line in lines), lines
 

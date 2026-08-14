@@ -18,6 +18,7 @@ import sqlite3
 
 from config import config # type: ignore
 
+from explorer.utils.debug import Debug
 from explorer.utils.overlay import Overlay
 
 from explorer.db.store import ExplorerStore
@@ -56,6 +57,15 @@ class RadarOverlay:
     def __init__(self, overlay:Overlay) -> None:
         self.overlay:Overlay = overlay
         self._group_defined:bool = False
+        self._last_skip_reason:str|None = None # dedupe diagnostic logging -- log only on change
+
+    def _log_skip(self, reason:str|None) -> None:
+        """ Logs at INFO (no dev-mode needed) only when the reason changes, to avoid
+        spamming on every ~1/sec dashboard tick while on-foot. """
+        if reason != self._last_skip_reason:
+            self._last_skip_reason = reason
+            if reason:
+                Debug.logger.info(f"Radar overlay not drawing: {reason}")
 
     def _ensure_group(self) -> None:
         if self._group_defined or not self.overlay.is_modern:
@@ -68,12 +78,22 @@ class RadarOverlay:
 
     def render(self, store:ExplorerStore, state:ExplorerState) -> None:
         if not self.overlay.available:
+            self._log_skip("no overlay backend detected")
             return
-        if not config.get_bool(CFG_OVERLAY_ENABLED, default=True) or not config.get_bool(CFG_OVERLAY_RADAR_ENABLED, default=True):
+        if not config.get_bool(CFG_OVERLAY_ENABLED, default=True):
+            self._log_skip("overlay disabled in EDMC-ExplorerLite settings")
             return
-        if not state.exobiology_relevant or not state.has_lat_long or state.latitude is None or state.longitude is None:
+        if not config.get_bool(CFG_OVERLAY_RADAR_ENABLED, default=True):
+            self._log_skip("radar disabled in EDMC-ExplorerLite settings")
+            return
+        if not state.exobiology_relevant:
+            self._log_skip(f"not exobiology-relevant (landed={state.landed}, on_foot={state.on_foot}, body_id={state.body_id})")
+            return
+        if not state.has_lat_long or state.latitude is None or state.longitude is None:
+            self._log_skip("no lat/long from Status.json yet")
             return
         if state.cmdr_id is None or state.system_id is None or state.body_id is None:
+            self._log_skip(f"missing cmdr/system/body id (cmdr_id={state.cmdr_id}, system_id={state.system_id}, body_id={state.body_id})")
             return
 
         # Genus comes from the DB (populated at SAASignalsFound, in orbit) rather than
@@ -82,8 +102,10 @@ class RadarOverlay:
         body_pk:int = store.get_or_create_body(state.cmdr_id, state.system_id, state.body_id, state.body_name)
         genus:str|None = self._active_genus(store.get_species_progress_for_body(body_pk))
         if genus is None:
+            self._log_skip(f"no confirmed genus yet for body {state.body_name!r} (body_pk={body_pk})")
             return
 
+        self._log_skip(None) # clear -- we're drawing
         self._ensure_group()
 
         display_range:float = self._display_range(genus)

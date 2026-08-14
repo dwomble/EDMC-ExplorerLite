@@ -1,36 +1,17 @@
 """
-Per-species spawn conditions, narrowing genus_conditions.py's genus-level predictions down to a
-specific species where we have per-species data -- e.g. distinguishing "Tussock Ignis" from
-"Tussock Pennata" by temperature band, rather than just guessing "Tussock" and showing a wide
-genus-level value range.
+Per-species spawn conditions, narrowing genus_conditions.py's genus-level guesses down to a
+specific species (e.g. "Tussock Ignis" vs "Tussock Pennata" by temperature band).
 
-Deliberately scoped to genera that require SOME atmosphere. A body must have <=0.1 atm surface
-pressure to be landable at all (community-confirmed, see the Elite Dangerous Fandom wiki's
-"Atmospheric Landing"/"Planetary Landing" pages), so there's no missing "thick atmosphere"
-counterpart to source -- exobiology only exists on bodies a player can actually reach. The
-airless-relevant genera (Amphora Plant, Anemone, Bark Mound, Brain Tree, Sinuous Tuber,
-Crystalline Shard) are NOT covered here and keep predicting at genus level only, via
-genus_conditions.py/GENUS_RULESETS -- a genus absent from SPECIES_RULESETS below simply falls
-back to that unchanged behavior (see genus_prediction.predict_species()).
+Scoped to atmosphere-bearing genera only -- landable bodies are always <=0.1 atm, so there's no
+missing "thick atmosphere" case to source. Airless genera (Amphora Plant, Anemone, Bark Mound,
+Brain Tree, Sinuous Tuber, Crystalline Shard) are absent here and stay genus-only via
+GENUS_RULESETS (see genus_prediction.predict_species()).
 
-Reuses genus_conditions.py's `Ruleset` dataclass and field semantics unchanged -- a species
-ruleset is the same shape as a genus ruleset, just narrower (see that module's docstring for
-the full field-by-field explanation, including the "# unmodeled: ..." comment convention).
-Sourced the same way as genus_conditions.py itself: Silarn/EDMC-BioScan (GPLv2) read locally as
-a read-only fact source, values independently transcribed into our own dataclass/module -- not
-copying its files, structures, or code. Cross-checked against ed-dsn.net's "Conditions of
-occurrence of species on planets with fine atmospheres" page (an independent French community
-source) for the CO2/Ammonia/Water/SulphurDioxide Rocky+HMC temperature bands; agreement was
-close (ed-dsn.net rounds to the nearest few Kelvin, BioScan gives exact decimals -- we keep
-BioScan's precision as primary since it's numerically finer-grained).
+Reuses genus_conditions.py's `Ruleset` dataclass. Sourced the same way: Silarn/EDMC-BioScan
+(GPLv2) read locally as a fact source, transcribed independently -- not copied. Cross-checked
+against ed-dsn.net's community temperature-band page; agreed closely.
 
-Species name strings are the exact SPECIES_VALUE keys from exobiology_data.py
-(character-for-character) -- required for exobiology.estimate_confirmed_value() to find a
-value once genus_prediction.predict_species() narrows to a specific species.
-
-Known gap, accepted: BioScan's own Fonticulua Fluctus value (20,000,000) disagrees with
-exobiology_data.py's SPECIES_VALUE entry (16,777,215) -- left as-is here since this module only
-covers spawn CONDITIONS, not credit values; worth a separate look at exobiology_data.py itself.
+Species names must match exobiology_data.py's SPECIES_VALUE keys exactly (used for value lookup).
 """
 from explorer.valuation.genus_conditions import Ruleset
 

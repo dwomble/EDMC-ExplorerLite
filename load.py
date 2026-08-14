@@ -72,7 +72,7 @@ def _apply_flags(flags:dict) -> None:
 
 def journal_entry(cmdr:str, is_beta:bool, system:str, station:str, entry:dict, state:dict) -> None:
     """ Parse an incoming journal entry and update our own state/DB. `state` is EDMC's own
-    per-Cmdr tracking (SystemAddress/SystemName etc.), already updated for this entry. """
+    per-Cmdr tracking, already updated for this entry. """
     if store is None:
         return
     _apply_flags(dispatch(store, explorer_state, cmdr, entry, state))

@@ -23,6 +23,15 @@ INDENT_PX:int = 14 # left offset for a table nested under its own header line (e
 def _credits(value:int) -> str:
     return hfplus((value, 'num', '? Cr', ' Cr'))
 
+def _credits_range(value_min:int, value_max:int) -> str:
+    """ A single exact credits string when the range has collapsed to one number (a
+    species-exact value, or a genus with only one known species); otherwise a compact
+    min-max range -- a genus-level guess can vary a lot by which species turns out to be
+    present, and showing only the top of that range reads as a specific number it isn't. """
+    if value_min >= value_max:
+        return _credits(value_max)
+    return f"{_credits(value_min)}-{_credits(value_max)}"
+
 def _distance_str(distance_ls:float|None) -> str:
     return hfplus((distance_ls, 'num', '? ls', ' ls'))
 
@@ -114,22 +123,6 @@ class ExplorerPanel:
             self._line(f"Honk: {system['honk_hint']}")
 
         flagged:list[sqlite3.Row] = self.store.get_flagged_bodies_for_system(system["id"])
-        value_flags:list[sqlite3.Row] = [b for b in flagged if b["flagged_value"]]
-        exobio_flags:list[sqlite3.Row] = [b for b in flagged if b["flagged_exobio"]]
-        # FSSBodySignals already confirms biology is present on these -- not a guess, just an
-        # unidentified genus pending DSS. Distinct from possible_exobio below, which is a genus
-        # guessed purely from Scan conditions with no confirmed signal at all.
-        known_bio:list[sqlite3.Row] = [b for b in flagged if not b["flagged_exobio"] and b["has_biological_signals"]]
-        possible_exobio:list[sqlite3.Row] = [b for b in flagged if not b["flagged_exobio"] and not b["has_biological_signals"] and b["has_prediction"]]
-
-        if value_flags:
-            self._line(f"* {len(value_flags)} bod{'y' if len(value_flags) == 1 else 'ies'} above threshold")
-        if exobio_flags:
-            self._line(f"* {len(exobio_flags)} bod{'y' if len(exobio_flags) == 1 else 'ies'} exobio potential")
-        if known_bio:
-            self._line(f"* {len(known_bio)} bod{'y' if len(known_bio) == 1 else 'ies'} known biological signals")
-        if possible_exobio:
-            self._line(f"* {len(possible_exobio)} bod{'y' if len(possible_exobio) == 1 else 'ies'} possible exobio")
         if not flagged:
             # Once every body's confirmed, "nothing flagged" can mean "no planets at all" --
             # e.g. a binary-star-only system -- which reads as "already checked, quiet"
@@ -138,9 +131,7 @@ class ExplorerPanel:
                 self._line("No planets — DSS not required")
             else:
                 self._line("Nothing flagged yet")
-
-        if flagged:
-            self._line("-" * WIDTH_CHARS)
+        else:
             rows:list[tuple[str, str, str, str]] = []
             for body in flagged:
                 row:tuple[str, str, str, str]|None = self._flagged_body_row(name, body)
@@ -165,13 +156,15 @@ class ExplorerPanel:
 
         active:list[sqlite3.Row] = [r for r in self.store.get_species_progress_for_body(body["id"]) if not r["completed_at"]]
         if active:
-            tags.append(f"{len(active)} species")
+            # Confirmed via SAASignalsFound -- the genus (or species, once sampled) is known,
+            # not a guess, so show its actual name(s) rather than a bare count.
+            tags.append(", ".join(r["species"] or r["genus"] for r in active))
             value += sum(self._exobio_row_value(r) for r in active)
         elif not body["flagged_exobio"]:
-            predictions:list[sqlite3.Row] = self._best_predictions_for_body(body["id"])
+            predictions:list[dict] = self._best_predictions_for_body(body["id"])
             if predictions:
                 tags.append(f"{len(predictions)} species")
-                value += sum(self._predicted_row_value(r) for r in predictions)
+                value += sum(p["value_max"] for p in predictions)
             elif body["has_biological_signals"]:
                 # FSSBodySignals already confirmed biology is present here -- worth surfacing
                 # even before a Scan gives us anything to guess a genus (and thus a value) from.
@@ -195,7 +188,7 @@ class ExplorerPanel:
 
         all_progress:list[sqlite3.Row] = self.store.get_species_progress_for_body(body_pk)
         active:list[sqlite3.Row] = [row for row in all_progress if not row["completed_at"]]
-        predictions:list[sqlite3.Row] = [] if (active or all_progress) else self._best_predictions_for_body(body_pk)
+        predictions:list[dict] = [] if (active or all_progress) else self._best_predictions_for_body(body_pk)
 
         if not active and all_progress:
             return # every genus here is fully sampled -- nothing left to do, drop the section
@@ -207,26 +200,14 @@ class ExplorerPanel:
         if active:
             self._render_table([self._exobio_progress_row(row) for row in active], anchors=("w", "e", "e"), indent=INDENT_PX)
         elif predictions:
-            self._render_table([self._predicted_genus_row(row) for row in predictions], anchors=("w", "e", "e"), indent=INDENT_PX)
+            self._render_table([self._predicted_genus_row(slot) for slot in predictions], anchors=("w", "e", "e"), indent=INDENT_PX)
         else:
             self._line("No genus detected yet")
 
-    def _best_predictions_for_body(self, body_pk:int) -> list[sqlite3.Row]:
-        """
-        Predicted genus_predictions rows for this body, deduped to the single best row per genus
-        -- multiple candidate species within one genus are alternative guesses at the SAME
-        signal, not separate ones, so keeping more than one per genus would double-count it once
-        we sum values across the list. Capped to the body's actual biological_signal_count once
-        FSSBodySignals has told us it (the real number of distinct genus-level signals here,
-        one-for-one with what SAASignalsFound will later confirm) -- falling back to
-        MAX_PREDICTED_SHOWN only while that's still unknown.
-
-        Within that, genus_prediction's raw confidence is re-ranked (never overridden -- a
-        candidate must already be eligible to appear here at all) by signal_count_bias's
-        community-reported "usual genus per signal count" pattern: chain-expected genera sort
-        first, and a genus's chain-favored species (if present) wins that genus's slot over a
-        merely higher-confidence sibling species.
-        """
+    def _best_predictions_for_body(self, body_pk:int) -> list[dict]:
+        """ Best-per-genus predicted slots, capped to biological_signal_count (or
+        MAX_PREDICTED_SHOWN if unknown). Genera tied on raw confidence are merged into one
+        slot rather than arbitrarily hiding one -- see signal_count_bias.py. """
         all_predictions:list[sqlite3.Row] = self.store.get_genus_predictions_for_body(body_pk)
         if not all_predictions:
             return []
@@ -234,7 +215,6 @@ class ExplorerPanel:
         body:sqlite3.Row|None = self.store.get_body(body_pk)
         signal_count:int|None = body["biological_signal_count"] if body else None
         atmosphere_type:str = (body["atmosphere_type"] if body else None) or ""
-        planet_class:str = (body["planet_class"] if body else None) or ""
 
         best_per_genus:dict[str, sqlite3.Row] = {}
         for row in all_predictions:
@@ -251,43 +231,63 @@ class ExplorerPanel:
 
         expected_genera:set[str]|None = None
         if signal_count:
-            hmc_candidate_present:bool = any(
-                r["genus"] == signal_count_bias.TIER_1_HMC_GENUS and r["species"] == signal_count_bias.TIER_1_HMC_SPECIES
-                for r in all_predictions
-            )
-            expected_genera = signal_count_bias.expected_genera_for_signal_count(
-                signal_count, atmosphere_type, planet_class, hmc_candidate_present
-            )
+            expected_genera = signal_count_bias.expected_genera_for_signal_count(signal_count, atmosphere_type)
 
-        def sort_key(row:sqlite3.Row) -> tuple:
-            in_chain:bool = expected_genera is None or row["genus"] in expected_genera
-            return (not in_chain, -row["confidence"])
+        # Tie on raw confidence -> genuinely ambiguous, merge rather than let chain bias pick one.
+        by_confidence:list[sqlite3.Row] = sorted(best_per_genus.values(), key=lambda r: -r["confidence"])
+        groups:list[list[sqlite3.Row]] = []
+        for row in by_confidence:
+            if groups and groups[-1][0]["confidence"] == row["confidence"]:
+                groups[-1].append(row)
+            else:
+                groups.append([row])
 
-        deduped:list[sqlite3.Row] = sorted(best_per_genus.values(), key=sort_key)
+        def group_key(group:list[sqlite3.Row]) -> tuple:
+            any_in_chain:bool = expected_genera is None or any(row["genus"] in expected_genera for row in group)
+            return (not any_in_chain, -group[0]["confidence"])
+
+        groups.sort(key=group_key)
 
         limit:int = signal_count if signal_count else MAX_PREDICTED_SHOWN
-        return deduped[:limit]
+        return [self._merge_prediction_group(group) for group in groups[:limit]]
 
-    def _predicted_row_value(self, row:sqlite3.Row) -> int:
-        """ An exact confirmed-species value where genus_prediction.predict_species() narrowed
-        that far (row["species"] set); otherwise the wider genus-level range's top. """
+    def _merge_prediction_group(self, group:list[sqlite3.Row]) -> dict:
+        ranges:list[tuple[int, int]] = [self._predicted_row_range(row) for row in group]
+        return {
+            "name": " or ".join(row["species"] or row["genus"] for row in group),
+            "confidence": max(row["confidence"] for row in group),
+            "value_min": min(r[0] for r in ranges),
+            "value_max": max(r[1] for r in ranges),
+        }
+
+    def _predicted_row_range(self, row:sqlite3.Row) -> tuple[int, int]:
+        """ (min, max) value for a predicted row -- an exact species-narrowed guess collapses to
+        a single number (min==max); a bare genus-level guess spans that genus's full known
+        range, since the real species present could turn out to be anywhere in it. """
         if row["species"]:
-            return exobiology.estimate_confirmed_value(row["genus"], row["species"]) or 0
+            value:int = exobiology.estimate_confirmed_value(row["genus"], row["species"]) or 0
+            return (value, value)
         value_range:tuple[int, int]|None = exobiology.estimate_genus_range(row["genus"])
-        return value_range[1] if value_range else 0
+        return value_range if value_range else (0, 0)
 
-    def _predicted_genus_row(self, row:sqlite3.Row) -> tuple[str, str, str]:
+    def _predicted_genus_row(self, slot:dict) -> tuple[str, str, str]:
         """ Pre-DSS guess -- '?' and a confidence percentage mark it as unconfirmed, both of
-        which disappear once SAASignalsFound confirms the real genus for this body. Shows the
-        narrowed species name (with its exact value) when we have one, else the genus guess. """
-        name:str = row["species"] or row["genus"]
-        return (f"?{name}", f"({row['confidence']:.0%})", f"~{_credits(self._predicted_row_value(row))}")
+        which disappear once SAASignalsFound confirms the real genus for this body. """
+        return (f"?{slot['name']}", f"({slot['confidence']:.0%})", f"~{_credits_range(slot['value_min'], slot['value_max'])}")
+
+    def _exobio_row_range(self, row:sqlite3.Row) -> tuple[int, int]:
+        """ (min, max) value for a confirmed-genus row -- an exact number once the species is
+        sampled (min==max); until then, the genus's full known range, since the actual species
+        present isn't known yet and could be worth far less (or more) than the range's top. """
+        if row["species"]:
+            value:int = row["confirmed_value"] or 0
+            return (value, value)
+        value_range:tuple[int, int]|None = exobiology.estimate_genus_range(row["genus"] or "")
+        return value_range if value_range else (0, 0)
 
     def _exobio_row_value(self, row:sqlite3.Row) -> int:
-        if row["species"]:
-            return row["confirmed_value"] or 0
-        value_range:tuple[int, int]|None = exobiology.estimate_genus_range(row["genus"] or "")
-        return value_range[1] if value_range else 0
+        """ Top of _exobio_row_range() -- an optimistic scalar for summing a body's total. """
+        return self._exobio_row_range(row)[1]
 
     def _exobio_progress_row(self, row:sqlite3.Row) -> tuple[str, str, str]:
         """
@@ -297,7 +297,7 @@ class ExplorerPanel:
         """
         genus:str = row["genus"] or "biological"
         name:str = row["species"] or f"{genus} sp."
-        value:str = _credits(self._exobio_row_value(row))
+        value_min, value_max = self._exobio_row_range(row)
         if row["species"]:
-            return (name, f"{row['samples_taken']}/3", value)
-        return (name, "", f"~{value}")
+            return (name, f"{row['samples_taken']}/3", _credits_range(value_min, value_max))
+        return (name, "", f"~{_credits_range(value_min, value_max)}")

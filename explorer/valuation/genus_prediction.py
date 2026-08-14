@@ -14,10 +14,8 @@ identical hard fail. A genus/species's overall confidence is the BEST (max) scor
 matching rulesets, since each is an independent, alternative path to eligibility, not a
 combined requirement.
 
-predict_species() only narrows genera that species_conditions.SPECIES_RULESETS actually covers
--- a genus absent from that dict (the airless-relevant ones: Amphora Plant, Anemone, Bark
-Mound, Brain Tree, Sinuous Tuber, Crystalline Shard) simply returns no species candidates, and
-callers fall back to predict_genera()'s genus-only guess for it, unchanged.
+predict_species() returns [] for a genus absent from species_conditions.SPECIES_RULESETS
+(the airless ones) -- callers fall back to predict_genera()'s genus-only guess.
 """
 from explorer.valuation.genus_conditions import GENUS_RULESETS, Ruleset
 from explorer.valuation.species_conditions import SPECIES_RULESETS
