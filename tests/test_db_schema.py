@@ -165,6 +165,11 @@ class TestSchemaMigration:
         body_columns:set[str] = {row[1] for row in conn.execute("PRAGMA table_info(bodies)")}
         assert "type_label" in body_columns
 
+        system_columns:set[str] = {row[1] for row in conn.execute("PRAGMA table_info(systems)")}
+        assert "lost_at" in system_columns
+        species_columns:set[str] = {row[1] for row in conn.execute("PRAGMA table_info(species_progress)")}
+        assert "lost_at" in species_columns
+
     def test_v1_database_upgrade_preserves_existing_data(self) -> None:
         conn = _v1_connection()
         ensure_schema(conn)

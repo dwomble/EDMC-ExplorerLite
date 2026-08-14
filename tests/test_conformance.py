@@ -92,7 +92,9 @@ class TestFullWalkthrough:
         assert progress[0]["completed_at"] is not None
         assert progress[0]["confirmed_value"] == 1_000_000 # Bacterium Aurasus base value
         assert progress[0]["sold"] == 1
-        assert progress[0]["sold_value"] == 5_000_000
+        # sold_value is now the sample's own confirmed_value (an estimate), not BioData's exact
+        # per-item Value+Bonus -- see handlers_exobiology.on_sell_organic_data's docstring.
+        assert progress[0]["sold_value"] == 1_000_000
 
         totals = load.store.get_cmdr_totals(cmdr_id)
         assert totals["actual_cartography_credits"] == 600_000

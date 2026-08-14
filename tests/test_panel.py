@@ -83,7 +83,7 @@ class TestPanelStates:
 
         import load
         lines = _panel_lines(load)
-        assert lines[0] == "QuietSpace — 1 bodies, 0 signals — done"
+        assert lines[0] == "QuietSpace — 1 planets — done"
 
     def test_full_walkthrough_shows_flagged_bodies_section(self, plugin:TestHarness) -> None:
         plugin.config.set("EDMCExplorerLite_ScanValueThreshold", 50000)
@@ -110,16 +110,15 @@ class TestPanelStates:
         assert any(" — done" in line or " — scan needed" in line for line in lines)
         assert any(line.startswith("A 1 ") for line in lines)
 
-    def test_star_only_system_says_dss_not_required(self, plugin:TestHarness) -> None:
-        """ A system with no planets at all (e.g. a bare binary) shouldn't read as "checked,
-        nothing found" -- there was never anything to DSS in the first place. """
+    def test_binary_star_only_system_shows_no_extra_line(self, plugin:TestHarness) -> None:
+        """ A system with no planets at all (e.g. a bare binary) has nothing to flag -- just the
+        top summary line, no extra "nothing found" commentary. """
         plugin.load_events("explorer_events.json")
         plugin.play_sequence("binary_star_only_system", 0.02)
 
         import load
         lines = _panel_lines(load)
-        assert any("DSS not required" in line for line in lines), lines
-        assert not any("Nothing flagged" in line for line in lines), lines
+        assert lines == ["Starrock — 2 planets scanned"], lines
 
     def test_exobio_line_shows_progress_then_drops_once_done(self, plugin:TestHarness) -> None:
         """

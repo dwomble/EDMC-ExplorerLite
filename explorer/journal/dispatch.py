@@ -39,6 +39,7 @@ EVENT_HANDLERS:dict[str, Callable] = {
 
     "SellExplorationData": handlers_sales.on_sell_exploration_data,
     "MultiSellExplorationData": handlers_sales.on_sell_exploration_data,
+    "Died": handlers_sales.on_died,
 }
 
 def dispatch(store:ExplorerStore, state:ExplorerState, cmdr:str, entry:dict, edmc_state:dict) -> dict:
@@ -46,9 +47,11 @@ def dispatch(store:ExplorerStore, state:ExplorerState, cmdr:str, entry:dict, edm
     `edmc_state` is EDMC's own per-Cmdr state dict (see PLUGINS.md) -- already updated for this
     entry, so system-entry events read SystemAddress/SystemName from it rather than re-parsing
     the journal entry ourselves. """
+
     if cmdr and cmdr != state.cmdr:
         state.cmdr = cmdr
         state.cmdr_id = None # force re-resolution below for the new Cmdr
+
     if state.cmdr_id is None and state.cmdr:
         state.cmdr_id = store.get_or_create_cmdr(state.cmdr)
 
@@ -59,4 +62,5 @@ def dispatch(store:ExplorerStore, state:ExplorerState, cmdr:str, entry:dict, edm
     handler:Callable|None = EVENT_HANDLERS.get(event)
     if handler is None:
         return {}
+
     return handler(store, state, entry) or {}

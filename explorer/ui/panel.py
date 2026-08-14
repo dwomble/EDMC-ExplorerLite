@@ -126,19 +126,13 @@ class ExplorerPanel:
         # not gated behind a full-system FSS sweep, since many explorers scan promising bodies
         # directly rather than sweeping every body in the system map first.
         if system["all_bodies_found"]:
-            self._line(f"{name} — {system['fss_body_count']} bodies scanned")
+            self._line(f"{name} — {system['fss_body_count']} planets scanned")
         else:
             status:str = "scan needed" if system["honk_hint"] == "worth a full scan" else "done"
-            self._line(f"{name} — {system['honk_body_count']} bodies, {system['honk_non_body_count']} signals — {status}")
+            self._line(f"{name} — {system['honk_body_count']} planets — {status}")
 
         flagged:list[sqlite3.Row] = self.store.get_flagged_bodies_for_system(system["id"])
-        if not flagged:
-            # A confirmed-empty system (e.g. a binary-star-only system) still gets a line so
-            # it reads as "already checked, quiet" rather than a leftover question -- anything
-            # else with nothing flagged just stays silent, no value in saying so.
-            if system["all_bodies_found"] and not self.store.system_has_any_planet(system["id"]):
-                self._line("No planets — DSS not required")
-        else:
+        if flagged:
             rows:list[tuple[str, str, str, str]] = []
             for body in flagged:
                 row:tuple[str, str, str, str]|None = self._flagged_body_row(name, body)

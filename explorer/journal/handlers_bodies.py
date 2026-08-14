@@ -120,37 +120,31 @@ def on_scan(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict:
     return {"panel": True}
 
 def _worthwhile_predictions(entry:dict, nearest_star_type:str|None, bypass_threshold:bool = False) -> list[tuple[str, str|None, float]]:
-    """ Predicted (genus, species, confidence) rows whose value clears the exobio threshold --
-    mirrors exactly how on_saa_signals_found() gates flagged_exobio, so "has any prediction row"
-    alone is a meaningful interest signal without needing a separate bodies column. `bypass_threshold`
-    skips that gate (see caller).
-
-    Narrows to specific species wherever valuation/species_conditions.py has ruleset data for
-    that genus (`species` is set, and the exact confirmed value gates/sorts it); otherwise falls
-    back to the genus-only guess (`species` is None, gated/sorted by the genus's value range),
-    unchanged from before species-level narrowing existed. """
+    """ Predicted (genus, species, confidence) rows whose value clears the exobio threshold """
     threshold:int = _exobio_threshold()
     worthwhile:list[tuple[str, str|None, float]] = []
     for genus, genus_confidence in genus_prediction.predict_genera(entry, nearest_star_type):
         species_candidates:list[tuple[str, float]] = genus_prediction.predict_species(genus, entry, nearest_star_type)
-        if species_candidates:
-            for species, species_confidence in species_candidates:
-                value:int|None = exobiology.estimate_confirmed_value(genus, species)
-                if bypass_threshold or exobiology.exceeds_threshold(value, threshold):
-                    worthwhile.append((genus, species, species_confidence))
-        else:
+        if not species_candidates:
             value_range:tuple[int, int]|None = exobiology.estimate_genus_range(genus)
             value_max:int|None = value_range[1] if value_range else None
             if bypass_threshold or exobiology.exceeds_threshold(value_max, threshold):
                 worthwhile.append((genus, None, genus_confidence))
+            continue
+
+        for species, species_confidence in species_candidates:
+            value:int|None = exobiology.estimate_confirmed_value(genus, species)
+            if bypass_threshold or exobiology.exceeds_threshold(value, threshold):
+                worthwhile.append((genus, species, species_confidence))
+
     return worthwhile
 
 def on_saa_scan_complete(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict:
-    if state.system_id is None or state.cmdr_id is None:
-        return {}
+    if state.system_id is None or state.cmdr_id is None: return {}
+
     body_id:int|None = entry.get("BodyID")
-    if body_id is None:
-        return {}
+    if body_id is None: return {}
+
     body_pk:int = store.get_or_create_body(state.cmdr_id, state.system_id, body_id, entry.get("BodyName", ""))
 
     probes_used:int = entry.get("ProbesUsed", 0)
@@ -183,10 +177,7 @@ def on_saa_signals_found(store:ExplorerStore, state:ExplorerState, entry:dict) -
             value_max_overall = max(value_max_overall, value_range[1])
 
     flagged_exobio:bool = exobiology.exceeds_threshold(value_max_overall or None, _exobio_threshold())
-    store.update_body(
-        body_pk,
-        estimated_exobio_value_min=0,
-        estimated_exobio_value_max=value_max_overall,
-        flagged_exobio=1 if flagged_exobio else 0,
-    )
+    store.update_body(body_pk, estimated_exobio_value_min=0, estimated_exobio_value_max=value_max_overall,
+                      flagged_exobio=1 if flagged_exobio else 0)
+
     return {"panel": True, "overlay": "radar"}

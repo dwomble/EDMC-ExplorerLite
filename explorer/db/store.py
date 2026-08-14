@@ -14,6 +14,8 @@ from explorer.db.schema import ensure_schema
 def _species_status(row:sqlite3.Row) -> str:
     if row["sold"]:
         return "sold"
+    if row["lost_at"]:
+        return "lost"
     if row["completed_at"]:
         return "done"
     return f"{row['samples_taken']}/3"
@@ -93,6 +95,15 @@ class ExplorerStore:
         )
         self.conn.commit()
 
+    def mark_all_unsold_systems_lost(self, cmdr_id:int, timestamp:str) -> None:
+        """ Ship destroyed -- any cartography data still held (never sold) across every system
+        this Cmdr has visited is gone, not just the current one. """
+        self.conn.execute(
+            "UPDATE systems SET lost_at = ? WHERE cmdr_id = ? AND sold_at IS NULL AND lost_at IS NULL",
+            (timestamp, cmdr_id),
+        )
+        self.conn.commit()
+
     # -- Bodies --
 
     def get_or_create_body(self, cmdr_id:int, system_id:int, body_id:int, body_name:str, body_type:str = "") -> int:
@@ -100,8 +111,9 @@ class ExplorerStore:
             "SELECT id FROM bodies WHERE cmdr_id = ? AND system_id = ? AND body_id = ?",
             (cmdr_id, system_id, body_id),
         ).fetchone()
-        if row:
-            return row["id"]
+
+        if row: return row["id"]
+
         cur:sqlite3.Cursor = self.conn.execute(
             "INSERT INTO bodies (cmdr_id, system_id, body_id, body_name, body_type) VALUES (?, ?, ?, ?, ?)",
             (cmdr_id, system_id, body_id, body_name, body_type),
@@ -112,12 +124,6 @@ class ExplorerStore:
 
     def get_body(self, body_pk:int) -> sqlite3.Row|None:
         return self.conn.execute("SELECT * FROM bodies WHERE id = ?", (body_pk,)).fetchone()
-
-    def system_has_any_planet(self, system_id:int) -> bool:
-        row:sqlite3.Row|None = self.conn.execute(
-            "SELECT 1 FROM bodies WHERE system_id = ? AND body_type = 'Planet' LIMIT 1", (system_id,)
-        ).fetchone()
-        return row is not None
 
     def update_body(self, body_pk:int, **fields) -> None:
         self._update("bodies", body_pk, **fields)
@@ -171,8 +177,9 @@ class ExplorerStore:
         row:sqlite3.Row|None = self.conn.execute(
             "SELECT id FROM species_progress WHERE body_id = ? AND genus = ?", (body_pk, genus)
         ).fetchone()
-        if row:
-            return row["id"]
+
+        if row: return row["id"]
+
         cur:sqlite3.Cursor = self.conn.execute("INSERT INTO species_progress (body_id, genus) VALUES (?, ?)", (body_pk, genus))
         self.conn.commit()
         assert cur.lastrowid is not None
@@ -184,16 +191,38 @@ class ExplorerStore:
     def get_species_progress_row(self, progress_id:int) -> sqlite3.Row|None:
         return self.conn.execute("SELECT * FROM species_progress WHERE id = ?", (progress_id,)).fetchone()
 
-    def get_unsold_species_progress(self, cmdr_id:int, genus:str, species:str) -> list[sqlite3.Row]:
-        """ Completed, unsold sample rows for a genus+species across this Cmdr's bodies, oldest first (FIFO for best-effort sale attribution). """
-        return self.conn.execute(
-            """SELECT species_progress.* FROM species_progress
+    def mark_all_completed_species_sold(self, cmdr_id:int) -> None:
+        """ Presume every completed-but-unsold sample was sold -- SellOrganicData's BioData
+        doesn't reliably itemize what actually got sold for how much (e.g. a "sell all" at
+        Vista Genomics), so there's nothing reliable to match against. Uses each sample's own
+        confirmed value (from ScanOrganic) as its sold value. """
+
+        rows:list[sqlite3.Row] = self.conn.execute(
+            """SELECT species_progress.id, species_progress.confirmed_value FROM species_progress
                JOIN bodies ON bodies.id = species_progress.body_id
-               WHERE bodies.cmdr_id = ? AND species_progress.genus = ? AND species_progress.species = ?
-                 AND species_progress.completed_at IS NOT NULL AND species_progress.sold = 0
-               ORDER BY species_progress.completed_at ASC""",
-            (cmdr_id, genus, species),
+               WHERE bodies.cmdr_id = ? AND species_progress.completed_at IS NOT NULL AND species_progress.sold = 0""",
+            (cmdr_id,),
         ).fetchall()
+
+        self.conn.executemany(
+            "UPDATE species_progress SET sold = 1, sold_value = ? WHERE id = ?",
+            [(row["confirmed_value"] or 0, row["id"]) for row in rows],
+        )
+        self.conn.commit()
+
+    def mark_all_unsold_species_progress_lost(self, cmdr_id:int, timestamp:str) -> None:
+        """ Ship destroyed -- any completed exobiology sample data still held (never sold) is
+        gone. Only completed rows count as "data" to lose (matches what SellOrganicData would
+        ever have sold); in-progress sampling isn't registered as data yet. """
+
+        self.conn.execute(
+            """UPDATE species_progress SET lost_at = ?
+               WHERE lost_at IS NULL AND sold = 0 AND completed_at IS NOT NULL AND body_id IN (
+                   SELECT id FROM bodies WHERE cmdr_id = ?
+               )""",
+            (timestamp, cmdr_id),
+        )
+        self.conn.commit()
 
     def get_species_progress_for_body(self, body_pk:int) -> list[sqlite3.Row]:
         return self.conn.execute("SELECT * FROM species_progress WHERE body_id = ?", (body_pk,)).fetchall()
@@ -227,6 +256,7 @@ class ExplorerStore:
                 ]
                 body_est:int = max(body["estimated_scan_value"] or 0, body["estimated_mapping_value"] or 0)
                 system_est_total += body_est
+
                 body_nodes.append({
                     "name": body["body_name"],
                     "status": "mapped" if body["mapped_at"] else ("scanned" if body["scanned_at"] else "unscanned"),
@@ -237,7 +267,7 @@ class ExplorerStore:
 
             tree.append({
                 "name": system["name"],
-                "status": "sold" if system["sold_at"] else "unsold",
+                "status": "sold" if system["sold_at"] else ("lost" if system["lost_at"] else "unsold"),
                 "est_value": system_est_total,
                 "actual_value": 0,
                 "children": body_nodes,

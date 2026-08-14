@@ -59,23 +59,15 @@ def on_scan_organic(store:ExplorerStore, state:ExplorerState, entry:dict) -> dic
     return {"panel": True, "overlay": "radar"}
 
 def on_sell_organic_data(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict:
+    """ BioData doesn't reliably itemize what actually got sold for how much (e.g. a "sell
+    all" at Vista Genomics) -- presume every completed-but-unsold sample was sold rather than
+    trying to match individual BioData entries back to specific bodies. """
     if state.cmdr_id is None:
         return {}
     bio_data:list = entry.get("BioData", [])
     total:int = sum(item.get("Value", 0) + item.get("Bonus", 0) for item in bio_data)
-    if total <= 0:
-        return {}
+    if total > 0:
+        store.record_sale(state.cmdr_id, "exobiology", now_iso(), state.system_name or None, total, json.dumps(entry))
 
-    store.record_sale(state.cmdr_id, "exobiology", now_iso(), state.system_name or None, total, json.dumps(entry))
-
-    # Best-effort attribution back to a specific body's sample row -- FIFO among this Cmdr's
-    # completed, unsold rows for the same genus+species. Ambiguous if sampled on two bodies
-    # before either sale; totals (above) are the ground truth regardless.
-    for item in bio_data:
-        genus:str = item.get("Genus_Localised") or item.get("Genus", "")
-        species:str = item.get("Species_Localised") or item.get("Species", "")
-        candidates:list[sqlite3.Row] = store.get_unsold_species_progress(state.cmdr_id, genus, species)
-        if candidates:
-            store.update_species_progress(candidates[0]["id"], sold=1, sold_value=item.get("Value", 0) + item.get("Bonus", 0))
-
+    store.mark_all_completed_species_sold(state.cmdr_id)
     return {"panel": True}

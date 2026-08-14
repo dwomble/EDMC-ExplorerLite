@@ -3,6 +3,9 @@ Cartography sale handlers: SellExplorationData (older/legacy form) and MultiSell
 (current, since 3.3) -- actual credits earned, ground truth. Only system-level totals are
 available (no per-body breakdown), so per-body "actual" value is never tracked, only the
 Cmdr-level running total plus this raw sale-event log.
+
+Also Died -- the inverse of a sale: any cartography or completed exobiology data still held
+unsold is lost when the ship is destroyed, per the game's own rules.
 """
 import json
 
@@ -27,4 +30,12 @@ def on_sell_exploration_data(store:ExplorerStore, state:ExplorerState, entry:dic
         if system_name:
             store.mark_system_sold(state.cmdr_id, system_name, now)
 
+    return {"panel": True}
+
+def on_died(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict:
+    if state.cmdr_id is None:
+        return {}
+    now:str = now_iso()
+    store.mark_all_unsold_systems_lost(state.cmdr_id, now)
+    store.mark_all_unsold_species_progress_lost(state.cmdr_id, now)
     return {"panel": True}

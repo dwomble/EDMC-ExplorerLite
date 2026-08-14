@@ -47,6 +47,7 @@ def plugin_stop() -> None:
 def plugin_app(parent:tk.Frame) -> tk.Widget:
     """ Return a TK Frame for adding to the EDMC main window. """
     global panel, history_view
+
     assert store is not None, "plugin_app called before plugin_start3"
     panel = ExplorerPanel(parent, store, explorer_state)
     history_view = HistoryView(parent, store, explorer_state)
@@ -62,11 +63,10 @@ def prefs_changed(cmdr:str, is_beta:bool) -> None:
     prefs_ui.save_prefs(cmdr, is_beta)
 
 def _apply_flags(flags:dict) -> None:
-    if flags.get("panel"):
-        if panel is not None:
-            panel.refresh()
-        if history_view is not None:
-            history_view.refresh() # cheap no-op if the popup isn't open
+    if flags.get("panel") and panel is not None:
+        panel.refresh()
+    if flags.get("panel") and history_view is not None:
+        history_view.refresh() # cheap no-op if the popup isn't open
     if flags.get("overlay") and radar is not None and store is not None:
         radar.render(store, explorer_state)
 

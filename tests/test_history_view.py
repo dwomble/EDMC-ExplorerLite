@@ -58,7 +58,9 @@ class TestHistoryTreeQuery:
         assert len(species) == 1
         assert species[0]["name"] == "Bacterium Aurasus"
         assert species[0]["status"] == "sold"
-        assert species[0]["actual_value"] == 5_000_000
+        # actual_value is now the sample's own confirmed_value (an estimate), not BioData's
+        # exact per-item Value+Bonus -- see handlers_exobiology.on_sell_organic_data's docstring.
+        assert species[0]["actual_value"] == 1_000_000
 
 class TestHistoryViewPopup:
 
