@@ -4,6 +4,7 @@ visible lines, collapses to a single muted line when idle.
 """
 import tkinter as tk
 import sqlite3
+import re
 from typing import Callable
 
 import explorer.utils.th as th
@@ -19,18 +20,26 @@ LINE_HEIGHT_PX:int = 18 # approximate for the default EDMC font; tune once seen 
 MAX_PREDICTED_SHOWN:int = 3 # fallback cap on predicted candidates per body, only used until
 # FSSBodySignals tells us the body's real biological_signal_count (see _best_predictions_for_body)
 INDENT_PX:int = 14 # left offset for a table nested under its own header line (e.g. per-body biologicals)
+MAX_SPECIES_LABEL_CHARS:int = 28 # cap on the "Genus Acies/Aurasus" possible-species label
 
 def _credits(value:int) -> str:
     return hfplus((value, 'num', '? Cr', ' Cr'))
 
+_NUMERIC_PREFIX:re.Pattern = re.compile(r'^-?[\d,]+(?:\.\d+)?')
+
 def _credits_range(value_min:int, value_max:int) -> str:
-    """ A single exact credits string when the range has collapsed to one number (a
-    species-exact value, or a genus with only one known species); otherwise a compact
-    min-max range -- a genus-level guess can vary a lot by which species turns out to be
-    present, and showing only the top of that range reads as a specific number it isn't. """
+    """ A single exact credits string when the range has collapsed to one number; otherwise a
+    compact min-max range. Drops the min's unit suffix when it matches the max's (e.g.
+    "12.2-16.3M Cr" not "12.2M Cr-16.3M Cr") rather than repeating it. """
     if value_min >= value_max:
         return _credits(value_max)
-    return f"{_credits(value_min)}-{_credits(value_max)}"
+    min_str:str = _credits(value_min)
+    max_str:str = _credits(value_max)
+    min_match:re.Match|None = _NUMERIC_PREFIX.match(min_str)
+    max_match:re.Match|None = _NUMERIC_PREFIX.match(max_str)
+    if min_match and max_match and min_str[min_match.end():] == max_str[max_match.end():]:
+        return f"{min_str[:min_match.end()]}-{max_str}"
+    return f"{min_str}-{max_str}"
 
 def _distance_str(distance_ls:float|None) -> str:
     return hfplus((distance_ls, 'num', '? ls', ' ls'))
@@ -110,7 +119,7 @@ class ExplorerPanel:
         name:str = system["name"]
 
         if system["honk_body_count"] is None:
-            self._line(f"{name} — no honk yet")
+            self._line(f"{name} — honk needed")
             return
 
         # Flagged bodies (value/exobio) are shown as soon as each is individually scanned --
@@ -119,18 +128,16 @@ class ExplorerPanel:
         if system["all_bodies_found"]:
             self._line(f"{name} — {system['fss_body_count']} bodies scanned")
         else:
-            self._line(f"{name} — {system['honk_body_count']} bodies, {system['honk_non_body_count']} signals")
-            self._line(f"Honk: {system['honk_hint']}")
+            status:str = "scan needed" if system["honk_hint"] == "worth a full scan" else "done"
+            self._line(f"{name} — {system['honk_body_count']} bodies, {system['honk_non_body_count']} signals — {status}")
 
         flagged:list[sqlite3.Row] = self.store.get_flagged_bodies_for_system(system["id"])
         if not flagged:
-            # Once every body's confirmed, "nothing flagged" can mean "no planets at all" --
-            # e.g. a binary-star-only system -- which reads as "already checked, quiet"
-            # rather than a leftover "should I DSS anything here" question.
+            # A confirmed-empty system (e.g. a binary-star-only system) still gets a line so
+            # it reads as "already checked, quiet" rather than a leftover question -- anything
+            # else with nothing flagged just stays silent, no value in saying so.
             if system["all_bodies_found"] and not self.store.system_has_any_planet(system["id"]):
                 self._line("No planets — DSS not required")
-            else:
-                self._line("Nothing flagged yet")
         else:
             rows:list[tuple[str, str, str, str]] = []
             for body in flagged:
@@ -147,10 +154,13 @@ class ExplorerPanel:
         not a permanent record (see history for that).
         """
         tags:list[str] = []
-        value:int = 0
+        value_min:int = 0
+        value_max:int = 0
 
         if body["flagged_value"] and not body["mapped_at"]:
-            value += max(body["estimated_scan_value"] or 0, body["estimated_mapping_value"] or 0)
+            scan_value:int = max(body["estimated_scan_value"] or 0, body["estimated_mapping_value"] or 0)
+            value_min += scan_value
+            value_max += scan_value
             if body["type_label"]:
                 tags.append(body["type_label"])
 
@@ -159,22 +169,26 @@ class ExplorerPanel:
             # Confirmed via SAASignalsFound -- the genus (or species, once sampled) is known,
             # not a guess, so show its actual name(s) rather than a bare count.
             tags.append(", ".join(r["species"] or r["genus"] for r in active))
-            value += sum(self._exobio_row_value(r) for r in active)
+            for r in active:
+                r_min, r_max = self._exobio_row_range(r)
+                value_min += r_min
+                value_max += r_max
         elif not body["flagged_exobio"]:
             predictions:list[dict] = self._best_predictions_for_body(body["id"])
             if predictions:
                 tags.append(f"{len(predictions)} species")
-                value += sum(p["value_max"] for p in predictions)
+                value_min += sum(p["value_min"] for p in predictions)
+                value_max += sum(p["value_max"] for p in predictions)
             elif body["has_biological_signals"]:
                 # FSSBodySignals already confirmed biology is present here -- worth surfacing
                 # even before a Scan gives us anything to guess a genus (and thus a value) from.
                 tags.append("biological signals")
 
-        if not value and not tags:
+        if not value_max and not tags:
             return None # nothing left to do here -- drop it
 
         designator:str = _body_designator(system_name, body["body_name"])
-        return (designator, ", ".join(tags), _distance_str(body["distance_ls"]), _credits(value))
+        return (designator, ", ".join(tags), _distance_str(body["distance_ls"]), _credits_range(value_min, value_max))
 
     def _render_exobiology_section(self) -> None:
         """
@@ -196,7 +210,6 @@ class ExplorerPanel:
         if not active and not predictions and not self.state.on_foot:
             return
 
-        self._line(f"{self.state.body_name or 'body'} — exobiology")
         if active:
             self._render_table([self._exobio_progress_row(row) for row in active], anchors=("w", "e", "e"), indent=INDENT_PX)
         elif predictions:
@@ -248,8 +261,24 @@ class ExplorerPanel:
 
         groups.sort(key=group_key)
 
+        # Fill the (scarce) slots group by group. A tied group that fully fits in what's left
+        # gets each member its OWN slot -- 2 real signals with 2 confidently-tied genera should
+        # show as 2 separate guesses, not 1 merged "A or B" (bug: this used to merge on ANY
+        # tie, collapsing a body with signal_count=2 down to a single displayed slot). Only a
+        # group that would overflow the remaining budget gets merged into one slot.
         limit:int = signal_count if signal_count else MAX_PREDICTED_SHOWN
-        return [self._merge_prediction_group(group) for group in groups[:limit]]
+        slots:list[dict] = []
+        remaining:int = limit
+        for group in groups:
+            if remaining <= 0:
+                break
+            if len(group) <= remaining:
+                slots.extend(self._merge_prediction_group([row]) for row in group)
+                remaining -= len(group)
+            else:
+                slots.append(self._merge_prediction_group(group))
+                remaining = 0
+        return slots
 
     def _merge_prediction_group(self, group:list[sqlite3.Row]) -> dict:
         ranges:list[tuple[int, int]] = [self._predicted_row_range(row) for row in group]
@@ -285,9 +314,24 @@ class ExplorerPanel:
         value_range:tuple[int, int]|None = exobiology.estimate_genus_range(row["genus"] or "")
         return value_range if value_range else (0, 0)
 
-    def _exobio_row_value(self, row:sqlite3.Row) -> int:
-        """ Top of _exobio_row_range() -- an optimistic scalar for summing a body's total. """
-        return self._exobio_row_range(row)[1]
+    def _possible_species_label(self, body_pk:int, genus:str) -> str:
+        """ "Bacterium Acies/Aurasus" -- genus is confirmed via SAASignalsFound but not yet
+        sampled, so list its still-plausible species from the original Scan-time prediction
+        (still in genus_predictions -- confirming the genus doesn't clear it) instead of a
+        generic "genus sp." placeholder. Sorted best-confidence-first so truncation keeps the
+        most likely names. """
+        candidates:list[sqlite3.Row] = sorted(
+            (p for p in self.store.get_genus_predictions_for_body(body_pk) if p["genus"] == genus and p["species"]),
+            key=lambda p: -p["confidence"],
+        )
+        if not candidates:
+            return f"{genus} sp."
+        prefix:str = f"{genus} "
+        names:list[str] = [candidates[0]["species"]] + [
+            c["species"][len(prefix):] if c["species"].startswith(prefix) else c["species"]
+            for c in candidates[1:]
+        ]
+        return str_truncate("/".join(names), MAX_SPECIES_LABEL_CHARS)
 
     def _exobio_progress_row(self, row:sqlite3.Row) -> tuple[str, str, str]:
         """
@@ -296,7 +340,7 @@ class ExplorerPanel:
         time, replacing the generic range guess rather than sitting alongside it.
         """
         genus:str = row["genus"] or "biological"
-        name:str = row["species"] or f"{genus} sp."
+        name:str = row["species"] or self._possible_species_label(row["body_id"], genus)
         value_min, value_max = self._exobio_row_range(row)
         if row["species"]:
             return (name, f"{row['samples_taken']}/3", _credits_range(value_min, value_max))

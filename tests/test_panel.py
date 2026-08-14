@@ -12,6 +12,7 @@ import pytest
 from typing import Generator
 
 from harness import TestHarness, reset_plugin_modules
+from explorer.ui.panel import _credits_range
 
 @pytest.fixture
 def plugin(harness:TestHarness, tmp_path, monkeypatch) -> Generator[TestHarness, None, None]:
@@ -55,6 +56,17 @@ def _panel_lines(load) -> list[str]:
             lines.append(child["text"])
     return lines
 
+class TestCreditsRange:
+
+    def test_shared_unit_suffix_is_shown_once(self) -> None:
+        assert _credits_range(12_200_000, 16_300_000) == "12.2-16.3M Cr"
+
+    def test_mismatched_unit_suffix_shows_both_in_full(self) -> None:
+        assert _credits_range(500_000, 16_300_000) == "500K Cr-16.3M Cr"
+
+    def test_collapses_to_a_single_value_when_min_equals_max(self) -> None:
+        assert _credits_range(1_000_000, 1_000_000) == "1M Cr"
+
 class TestPanelStates:
 
     def test_idle_state_is_a_single_line(self, plugin:TestHarness) -> None:
@@ -68,8 +80,7 @@ class TestPanelStates:
 
         import load
         lines = _panel_lines(load)
-        assert lines[0] == "QuietSpace — 1 bodies, 0 signals"
-        assert lines[1] == "Honk: probably quiet"
+        assert lines[0] == "QuietSpace — 1 bodies, 0 signals — done"
 
     def test_full_walkthrough_shows_flagged_bodies_section(self, plugin:TestHarness) -> None:
         plugin.config.set("EDMCExplorerLite_ScanValueThreshold", 50000)
@@ -93,7 +104,7 @@ class TestPanelStates:
 
         import load
         lines = _panel_lines(load)
-        assert any(line.startswith("Honk:") for line in lines)
+        assert any(" — done" in line or " — scan needed" in line for line in lines)
         assert any(line.startswith("A 1 ") for line in lines)
 
     def test_star_only_system_says_dss_not_required(self, plugin:TestHarness) -> None:
@@ -139,10 +150,68 @@ class TestPanelStates:
             plugin.fire_event(event)
 
         lines = _panel_lines(load)
-        assert not any("Bacterium" in line for line in lines) # body 2's only genus is done -- dropped entirely
-        # The on-body exobiology section (header + "All species done here") should vanish too,
-        # not linger once there's nothing left to sample -- not just the flagged-list line.
-        assert not any("exobiology" in line for line in lines), lines
+        # Both the flagged-list line and the on-body detail table should vanish once the
+        # genus is fully sampled -- not just one or the other.
+        assert not any("Bacterium" in line for line in lines)
+
+    def test_confirmed_unsampled_genus_lists_possible_species(self, plugin:TestHarness) -> None:
+        """
+        A genus confirmed via SAASignalsFound but not yet sampled used to show a generic
+        "Bacterium sp." placeholder -- not useful, since we already have a Scan-time
+        prediction (still sitting in genus_predictions) narrowing which species it's likely
+        to be. Should list those instead, genus once + species epithets joined by "/".
+        """
+        from explorer.state import state as explorer_state
+
+        plugin.load_events("explorer_events.json")
+        plugin.play_sequence("honk_only", 0.02)
+
+        import load
+        assert explorer_state.cmdr_id is not None and explorer_state.system_id is not None
+        body_pk:int = load.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 1, "QuietSpace A 1")
+        load.store.replace_genus_predictions(body_pk, [
+            ("Bacterium", "Bacterium Acies", 0.9),
+            ("Bacterium", "Bacterium Aurasus", 0.8),
+        ])
+
+        assert load.panel._possible_species_label(body_pk, "Bacterium") == "Bacterium Acies/Aurasus"
+
+    def test_possible_species_label_falls_back_without_any_prediction(self, plugin:TestHarness) -> None:
+        """ A genus with no species-level prediction data (or none matching this body) falls
+        back to the old generic placeholder rather than an empty label. """
+        from explorer.state import state as explorer_state
+
+        plugin.load_events("explorer_events.json")
+        plugin.play_sequence("honk_only", 0.02)
+
+        import load
+        assert explorer_state.cmdr_id is not None and explorer_state.system_id is not None
+        body_pk:int = load.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 1, "QuietSpace A 1")
+
+        assert load.panel._possible_species_label(body_pk, "Anemone") == "Anemone sp."
+
+    def test_possible_species_label_truncates_when_too_long(self, plugin:TestHarness) -> None:
+        """ Many tied candidates should truncate rather than run the row on indefinitely. """
+        from explorer.state import state as explorer_state
+        from explorer.ui.panel import MAX_SPECIES_LABEL_CHARS
+
+        plugin.load_events("explorer_events.json")
+        plugin.play_sequence("honk_only", 0.02)
+
+        import load
+        assert explorer_state.cmdr_id is not None and explorer_state.system_id is not None
+        body_pk:int = load.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 1, "QuietSpace A 1")
+        load.store.replace_genus_predictions(body_pk, [
+            ("Bacterium", "Bacterium Acies", 0.99),
+            ("Bacterium", "Bacterium Alcyoneum", 0.98),
+            ("Bacterium", "Bacterium Aurasus", 0.97),
+            ("Bacterium", "Bacterium Bullaris", 0.96),
+            ("Bacterium", "Bacterium Cerbrus", 0.95),
+        ])
+
+        label:str = load.panel._possible_species_label(body_pk, "Bacterium")
+        assert len(label) <= MAX_SPECIES_LABEL_CHARS
+        assert label.startswith("Bacterium Acies"), label # best-confidence candidate survives truncation
 
     def test_predicted_genus_line_is_superseded_by_confirmed_genus(self, plugin:TestHarness) -> None:
         """
@@ -196,7 +265,7 @@ class TestPanelStates:
         assert best[0]["value_min"] < best[0]["value_max"], "test premise: Anemone should have a real min-max spread"
 
         rendered:tuple[str, str, str] = load.panel._predicted_genus_row(best[0])
-        assert "-" in rendered[2], rendered # e.g. "~1.5M-3.4M Cr", not a single number
+        assert "-" in rendered[2], rendered # e.g. "~1.5-3.4M Cr", not a single number
 
     def test_scan_narrows_prediction_to_species_when_data_available(self, plugin:TestHarness) -> None:
         """
@@ -327,6 +396,34 @@ class TestPanelStates:
         assert "Stratum Tectonicas" in best[0]["name"], best
         assert best[0]["value_min"] < best[0]["value_max"], best # spans both possibilities
 
+    def test_tied_genera_get_separate_slots_when_there_is_room_for_both(self, plugin:TestHarness) -> None:
+        """
+        Regression test from a real journal case: a body with biological_signal_count=2 had
+        Frutexa and Recepta both scoring confidence 1.0. The tie-merge fix above used to merge
+        ANY tie into one slot regardless of how many slots were actually available, collapsing
+        this 2-signal body down to a single displayed "Frutexa or Recepta" guess. A tie should
+        only merge when it doesn't fit in the remaining slots -- here there's room for both.
+        """
+        from explorer.state import state as explorer_state
+
+        plugin.load_events("explorer_events.json")
+        plugin.play_sequence("honk_only", 0.02)
+
+        import load
+        assert explorer_state.cmdr_id is not None and explorer_state.system_id is not None
+        body_pk:int = load.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 1, "QuietSpace A 1")
+        load.store.update_body(body_pk, biological_signal_count=2, atmosphere_type="CarbonDioxide", planet_class="Rocky body")
+        load.store.replace_genus_predictions(body_pk, [
+            ("Frutexa", "Frutexa Acus", 1.0),
+            ("Recepta", "Recepta Conditivus", 1.0),
+            ("Tubus", "Tubus Cavas", 0.29),
+        ])
+
+        best = load.panel._best_predictions_for_body(body_pk)
+        assert len(best) == 2, best # two real signals -- Frutexa and Recepta each get their own slot
+        names = [slot["name"] for slot in best]
+        assert names == ["Frutexa Acus", "Recepta Conditivus"], best # not merged, Tubus dropped (lower confidence)
+
     def test_known_bio_signals_count_even_without_dss_or_prediction(self, plugin:TestHarness) -> None:
         """
         Regression test: FSSBodySignals can confirm a body has biological signals well before
@@ -380,7 +477,9 @@ class TestPanelStates:
 
         import load
         lines = _panel_lines(load)
-        assert any("exobiology" in line for line in lines), lines
+        # The on-body detail table (not just the flagged-list "N species" line) should be
+        # showing -- its confidence percentage is the distinguishing marker between the two.
+        assert any("%)" in line for line in lines), lines
         assert any("species" in line for line in lines), lines
 
 class TestNoDuplicateWidgets:
