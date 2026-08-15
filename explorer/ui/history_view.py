@@ -3,6 +3,7 @@ Launched from the compact panel's "History" button. A Toplevel, not a plugin_pre
 prefs' open/close lifecycle doesn't fit a live data browser, and its notebook is too cramped
 for a multi-column tree. """
 import tkinter as tk
+from tkinter import ttk
 import sqlite3
 from typing import Literal
 
@@ -22,11 +23,13 @@ def _credits(value:int|None) -> str:
 def _date_str(iso:str) -> str:
     return iso[:10] if iso else ""
 
-# (column, heading, anchor, width, stretch, sort_by) -- date has no sort_by: rows without a
-# recorded date are blank, and the sort helper can't parse an empty string.
+# (column, heading, anchor, width, stretch, sort_by) -- date sorts as plain text ("name"), not
+# TreeviewPlus's "datetime" helper, since _date_str's ISO YYYY-MM-DD format already sorts
+# chronologically as a string, and the helper's dateutil parse would crash on the blank dates
+# shown for rows with no recorded date.
 COLUMNS:tuple[tuple[str, str, Literal["w", "e"], int, bool, str|None], ...] = (
-    ("date", "Date", "w", 90, False, None),
     ("status", "Status", "w", 80, False, None),
+    ("date", "Date", "w", 90, False, "name"),
     ("cart_est", "Cart. Est.", "e", 90, False, "num"),
     ("cart_actual", "Cart. Actual", "e", 90, False, "num"),
     ("exo_est", "Exo. Est.", "e", 90, False, "num"),
@@ -63,13 +66,22 @@ class HistoryView:
         self.summary_label = th.Label(content, text="", justify=tk.LEFT)
         self.summary_label.pack(fill=tk.X, padx=4, pady=4)
 
-        self.tree = TreeviewPlus(content, columns=tuple(c[0] for c in COLUMNS), show="tree headings")
+        tree_frame:th.Frame = th.Frame(content)
+        tree_frame.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
+        tree_frame.rowconfigure(0, weight=1)
+        tree_frame.columnconfigure(0, weight=1)
+
+        self.tree = TreeviewPlus(tree_frame, columns=tuple(c[0] for c in COLUMNS), show="tree headings")
         self.tree.heading("#0", text="Name", anchor="w")
         self.tree.column("#0", anchor="w", stretch=True, minwidth=140)
         for key, text, anchor, width, stretch, sort_by in COLUMNS:
             self.tree.heading(key, text=text, anchor=anchor, sort_by=sort_by)
             self.tree.column(key, anchor=anchor, width=width, stretch=stretch)
-        self.tree.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
+        self.tree.grid(row=0, column=0, sticky="nsew")
+
+        scrollbar:ttk.Scrollbar = ttk.Scrollbar(tree_frame, orient=tk.VERTICAL, command=self.tree.yview)
+        scrollbar.grid(row=0, column=1, sticky="ns")
+        self.tree.configure(yscrollcommand=scrollbar.set)
 
         self.refresh()
 
@@ -114,7 +126,7 @@ class HistoryView:
 
     def _row_values(self, node:dict) -> tuple[str, ...]:
         return (
-            _date_str(node["date"]), node["status"].title(),
+            node["status"].title(), _date_str(node["date"]),
             _credits(node["cart_est"]), _credits(node["cart_actual"]),
             _credits(node["exo_est"]), _credits(node["exo_actual"]),
         )

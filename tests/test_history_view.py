@@ -102,7 +102,40 @@ class TestHistoryViewPopup:
 
         # Status is title-cased for display ("Sold" not "sold").
         system_values = load.history_view.tree.item(systems[0], "values")
-        assert system_values[1] == "Sold"
+        assert system_values[0] == "Sold"
+
+        load.history_view._on_close()
+
+    def test_tree_has_a_vertical_scrollbar(self, plugin:TestHarness) -> None:
+        plugin.load_events("explorer_events.json")
+        plugin.play_sequence("full_walkthrough", 0.02)
+
+        import load
+        assert load.history_view is not None
+        load.history_view.open()
+        assert load.history_view.tree is not None
+
+        # A Treeview manages scrolling itself -- the widget on screen is a sibling Scrollbar
+        # wired to it, not a property of the tree, so check its yscrollcommand is actually set.
+        assert load.history_view.tree.cget("yscrollcommand") != ""
+
+        load.history_view._on_close()
+
+    def test_date_column_sorts_without_crashing_on_a_blank_date(self, plugin:TestHarness) -> None:
+        """ A body with no Scan yet has no date -- the column must still be sortable rather
+        than crashing on the blank string (see COLUMNS's sort_by="name" comment). """
+        plugin.load_events("explorer_events.json")
+        plugin.play_sequence("full_walkthrough", 0.02)
+
+        import load
+        assert load.store is not None and load.explorer_state.cmdr_id is not None and load.explorer_state.system_id is not None
+        load.store.get_or_create_body(load.explorer_state.cmdr_id, load.explorer_state.system_id, 99, "Deltius A 99")
+
+        assert load.history_view is not None
+        load.history_view.open()
+        assert load.history_view.tree is not None
+
+        load.history_view.tree._sort_by_name("date", False) # must not raise despite a blank date among the rows
 
         load.history_view._on_close()
 
