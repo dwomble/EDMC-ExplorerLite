@@ -1,17 +1,7 @@
-"""
-Soft ranking bias from biological_signal_count (FSSBodySignals' exact count of distinct genus
-signals), layered on top of -- never replacing -- genus_prediction.py's real confidence scoring.
-
-Community-reported pattern, only partially corroborated (see conversation history). A tiebreak
-among already-eligible candidates only -- never grants eligibility on its own. Cumulative by
-tier (1..MAX_CHAIN_SIGNAL_COUNT); tiers 1..MAX_CHAIN_SIGNAL_COUNT stay expected even when the
-body's real signal count runs higher -- extra signals beyond that are just unclassified, not
-evidence the earlier tiers stopped applying. No bias at all on Thin Water/Oxygen/Nitrogen bodies.
-
-A tier-1 "hot HMC -> Stratum Tectonicas" override used to live here; removed after real journal
-data showed it wrongly beating a confirmed Bacterium (Stratum Tectonicas's own range is wide
-enough to be "eligible" on almost any warm HMC body).
-"""
+""" Soft ranking bias from biological_signal_count, layered on top of (never replacing)
+genus_prediction.py's real confidence scoring -- a tiebreak among already-eligible candidates
+only, never grants eligibility on its own. Cumulative by tier; no bias on Water/Oxygen/Nitrogen
+bodies. Community-reported pattern, only partially corroborated. """
 
 # Cumulative: signal count N's expected-genus set is the union of tiers 1..N.
 SIGNAL_COUNT_TIER_GENERA:dict[int, list[str]] = {
@@ -33,12 +23,8 @@ CHAIN_EXCEPTION_ATMOSPHERES:set[str] = {"Water", "Oxygen", "Nitrogen"}
 MAX_CHAIN_SIGNAL_COUNT:int = 5 # highest tier we have community data for -- not a cutoff where bias stops
 
 def expected_genera_for_signal_count(signal_count:int, atmosphere_type:str) -> set[str]|None:
-    """
-    The cumulative "usually present" genus set for a known biological_signal_count, or None if
-    the chain heuristic doesn't apply at all here (no signal count yet, or an exception
-    atmosphere). A count above MAX_CHAIN_SIGNAL_COUNT still expects all of tiers 1..5 -- the
-    extra signals are just unclassified, not proof the known tiers no longer apply.
-    """
+    """ Cumulative "usually present" genus set for a known signal count, or None if the chain
+    heuristic doesn't apply (no count yet, or an exception atmosphere). """
     if atmosphere_type in CHAIN_EXCEPTION_ATMOSPHERES:
         return None
     if signal_count < 1:

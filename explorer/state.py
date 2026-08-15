@@ -32,19 +32,11 @@ class ExplorerState:
     altitude:float|None = None
     planet_radius:float|None = None
 
-    # Session-only (not persisted): (latitude, longitude, color_name) at the moment of each
-    # ScanOrganic sample OR CodexEntry waypoint-tag, keyed by genus, for the overlay radar's
-    # per-sample markers. color_name is the game's own reported variant color (e.g. "Lime") for
-    # a CodexEntry tag, or None for a real sample (drawn in the radar's fixed sample color
-    # instead) -- see overlay_frames.py's own color-name lookup. Cleared on reset_body() --
-    # these positions are meaningless once you've left the body.
+    # Session-only, keyed by genus: (lat, lon, color_name) per sample/tag for the radar's markers.
+    # color_name is the tag's variant color, or None for a real sample. Cleared on reset_body().
     sample_positions:dict[str, list[tuple[float, float, str|None]]] = field(default_factory=dict)
 
-    # The genus of the most recent real ScanOrganic sample this visit (not a CodexEntry tag --
-    # that's a passive "spotted it" note, not "currently working on it"). The radar draws its
-    # one active ring for this genus only, not one ring per in-progress genus at once -- with
-    # several genera going simultaneously, that many rings became illegible.
-    current_genus:str|None = None
+    current_genus:str|None = None # genus of the most recent real sample -- the radar's one active ring
 
     def reset_body(self) -> None:
         """ Called on leaving a body / jumping system -- clears body-scoped context. """
@@ -66,12 +58,7 @@ class ExplorerState:
         return self.landed and self.on_foot and self.body_id is not None
 
     def reset_all(self) -> None:
-        """
-        Reset every field to its default -- a fresh session. Not used during normal plugin
-        operation (a Cmdr's cached cmdr_id/system_id should persist across their whole EDMC
-        session); this exists for tests, which reuse this module-level singleton across
-        multiple TestHarness instances/temp DBs within one process and need real isolation.
-        """
+        """ Fresh-session reset -- for tests, which reuse this module-level singleton and need real isolation. """
         self.__dict__.update(ExplorerState().__dict__)
 
 state = ExplorerState()

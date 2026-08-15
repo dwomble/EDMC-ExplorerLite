@@ -1,18 +1,8 @@
-"""
-Per-species spawn conditions, narrowing genus_conditions.py's genus-level guesses down to a
-specific species (e.g. "Tussock Ignis" vs "Tussock Pennata" by temperature band).
-
-Scoped to atmosphere-bearing genera only -- landable bodies are always <=0.1 atm, so there's no
-missing "thick atmosphere" case to source. Airless genera (Amphora Plant, Anemone, Bark Mound,
-Brain Tree, Sinuous Tuber, Crystalline Shard) are absent here and stay genus-only via
-GENUS_RULESETS (see genus_prediction.predict_species()).
-
-Reuses genus_conditions.py's `Ruleset` dataclass. Sourced the same way: Silarn/EDMC-BioScan
-(GPLv2) read locally as a fact source, transcribed independently -- not copied. Cross-checked
-against ed-dsn.net's community temperature-band page; agreed closely.
-
-Species names must match exobiology_data.py's SPECIES_VALUE keys exactly (used for value lookup).
-"""
+""" Per-species spawn conditions, narrowing genus_conditions.py's genus-level guesses down to a
+specific species (e.g. "Tussock Ignis" vs "Tussock Pennata" by temperature band). Scoped to
+atmosphere-bearing genera only -- airless genera stay genus-only via GENUS_RULESETS. Reuses
+genus_conditions.py's `Ruleset` dataclass and sourcing policy. Species names must match
+exobiology_data.py's SPECIES_VALUE keys exactly. """
 from explorer.valuation.genus_conditions import Ruleset
 
 SPECIES_RULESETS:dict[str, dict[str, list[Ruleset]]] = {

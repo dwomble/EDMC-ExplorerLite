@@ -32,6 +32,39 @@ def store(tmp_path) -> Generator[ExplorerStore, None, None]:
     yield s
     s.close()
 
+class TestRadiusFrac:
+    """
+    Unit tests for the radar's piecewise-linear distance scale (_radius_frac): 3 rings
+    (200/600/1400m) evenly spaced in pixel-thirds, each segment covering double the real-world
+    width of the one before it. Unlike a true log scale, it starts at a genuine 0m at dead
+    center -- no arbitrary floor needed -- so even the smallest known genus minimum distance
+    (100m) still lands at a clearly visible, non-degenerate fraction.
+    """
+
+    def test_zero_and_ring_boundaries_land_on_exact_thirds(self) -> None:
+        from explorer.ui.overlay_frames import _radius_frac
+        assert _radius_frac(0) == 0.0
+        assert _radius_frac(200) == pytest.approx(1 / 3)
+        assert _radius_frac(600) == pytest.approx(2 / 3)
+        assert _radius_frac(1400) == 1.0
+
+    def test_smallest_known_genus_min_distance_is_clearly_visible(self) -> None:
+        """ 100m (Amphora Plant/Anemone/etc's minimum) used to collapse to a degenerate,
+        zero-radius point under a log scale anchored so 200m sat at 25%. """
+        from explorer.ui.overlay_frames import _radius_frac
+        frac = _radius_frac(100)
+        assert frac > 0.1 # comfortably non-zero, not a degenerate point
+
+    def test_largest_known_genus_min_distance_stays_within_the_outer_ring(self) -> None:
+        """ Electricae's 1000m -- the largest across all known genera -- must land inside the
+        outermost (1400m) ring, not clamped to its edge. """
+        from explorer.ui.overlay_frames import _radius_frac
+        assert 0.0 < _radius_frac(1000) < 1.0
+
+    def test_beyond_the_outer_ring_clamps_to_one(self) -> None:
+        from explorer.ui.overlay_frames import _radius_frac
+        assert _radius_frac(2000) == 1.0
+
 def _landed_state(store:ExplorerStore, genus:str = "Bacterium", samples:int = 1, mark_done:bool = False) -> ExplorerState:
     """ A Cmdr standing on a body whose genus was already revealed via SAASignalsFound (in the
     DB) -- samples/mark_done additionally simulate 0+ ScanOrganic calls made so far this visit. """
@@ -93,8 +126,8 @@ class TestRadarOverlayModern:
         radar.render(store, state)
 
         shapes = radar.overlay._overlay.shapes
-        assert f"{FRAME_PREFIX}ring-1.0" in shapes
-        assert f"{FRAME_PREFIX}ring-active-Bacterium" in shapes # Bacterium's 500m min-distance fits within the fixed 1500m display range
+        assert f"{FRAME_PREFIX}ring-1400" in shapes
+        assert f"{FRAME_PREFIX}ring-active-Bacterium" in shapes # Bacterium's 500m min-distance fits within the fixed 1400m display range
         assert f"{FRAME_PREFIX}player" in shapes
         assert f"{FRAME_PREFIX}sample-Bacterium-0" in shapes
         assert f"{FRAME_PREFIX}sample-Bacterium-1" in shapes
@@ -230,13 +263,16 @@ class TestRadarOverlayModern:
         """
         Regression: a sample position outside the display range used to keep drifting further
         from center in screen-space as the player walked away, well past the radar's own edge.
-        It should instead clamp to just past the outer ring's edge (same bearing) -- not exactly
-        on it, since the ring line itself made a hollow marker hard to see -- and render hollow
-        (border only, no fill) to signal "direction only, not an exact fix".
+        It should instead clamp to the midpoint of the reserved outer margin band (same bearing,
+        between the outermost ring and the radar's true edge) -- clear of the ring line, and
+        never past the configured radar size either -- and render hollow (border only, no fill)
+        to signal "direction only, not an exact fix".
         """
+        from explorer.ui.overlay_frames import RING_AREA_FRAC
+
         radar = RadarOverlay(Overlay())
         state = _landed_state(store, genus="Bacterium", samples=0)
-        state.sample_positions["Bacterium"] = [(10.23, 20.0, None)] # ~2007m north -- past the fixed 1500m display range
+        state.sample_positions["Bacterium"] = [(10.23, 20.0, None)] # ~2007m north -- past the fixed 1400m display range
 
         radar.render(store, state)
 
@@ -245,9 +281,9 @@ class TestRadarOverlayModern:
         assert border_color == SAMPLE_COLOR
         assert fill_color == "" # hollow
 
-        from explorer.ui.overlay_frames import SAMPLE_OUT_OF_RANGE_MARGIN_PX
         cx, cy = sx + w / 2, sy + h / 2
-        assert round(math.hypot(cx - CENTER_X, cy - CENTER_Y)) == 150 + SAMPLE_OUT_OF_RANGE_MARGIN_PX
+        expected_r = 150 * (RING_AREA_FRAC + 1.0) / 2
+        assert math.hypot(cx - CENTER_X, cy - CENTER_Y) == pytest.approx(expected_r)
 
     @pytest.mark.overlay('Modern')
     def test_render_draws_no_active_ring_before_any_sample_is_taken(self, overlay_mode, store:ExplorerStore) -> None:
@@ -260,7 +296,7 @@ class TestRadarOverlayModern:
         radar.render(store, state)
 
         shapes = radar.overlay._overlay.shapes
-        assert f"{FRAME_PREFIX}ring-1.0" in shapes
+        assert f"{FRAME_PREFIX}ring-1400" in shapes
         assert f"{FRAME_PREFIX}ring-active-Bacterium" not in shapes
         assert f"{FRAME_PREFIX}player" in shapes
 
@@ -281,7 +317,7 @@ class TestRadarOverlayModern:
         radar.render(store, state)
 
         shapes = radar.overlay._overlay.shapes
-        assert f"{FRAME_PREFIX}ring-1.0" in shapes
+        assert f"{FRAME_PREFIX}ring-1400" in shapes
         assert f"{FRAME_PREFIX}player" in shapes
 
     @pytest.mark.overlay('Modern')
@@ -298,7 +334,7 @@ class TestRadarOverlayModern:
         radar.render(store, state)
 
         shapes = radar.overlay._overlay.shapes
-        assert f"{FRAME_PREFIX}ring-1.0" in shapes
+        assert f"{FRAME_PREFIX}ring-1400" in shapes
         assert f"{FRAME_PREFIX}ring-active-Bacterium" not in shapes
 
     @pytest.mark.overlay('Modern')
@@ -337,14 +373,17 @@ class TestRadarOverlayModern:
     @pytest.mark.overlay('Modern')
     def test_render_respects_configured_radar_size(self, overlay_mode, harness:TestHarness, store:ExplorerStore) -> None:
         from explorer.constants import CFG_OVERLAY_RADAR_SIZE
+        from explorer.ui.overlay_frames import RING_AREA_FRAC
         harness.config.set(CFG_OVERLAY_RADAR_SIZE, 300)
         try:
             radar = RadarOverlay(Overlay())
             state = _landed_state(store, samples=0)
             radar.render(store, state)
 
-            msg, _ = radar.overlay._overlay.shapes[f"{FRAME_PREFIX}ring-1.0"]
-            assert msg["vector"][0]["x"] - CENTER_X == 300 # full-scale ring radius == the configured size
+            msg, _ = radar.overlay._overlay.shapes[f"{FRAME_PREFIX}ring-1400"]
+            # the outermost ring sits at RING_AREA_FRAC of the configured size, not the full
+            # radius -- the remaining margin is reserved for out-of-range dots (see module docstring)
+            assert msg["vector"][0]["x"] - CENTER_X == pytest.approx(300 * RING_AREA_FRAC)
         finally:
             harness.config.set(CFG_OVERLAY_RADAR_SIZE, 150)
 

@@ -1,22 +1,8 @@
-"""
-Predicts which genera -- and, where we have per-species data, which specific species -- could
-plausibly be present on a body from its Scan (Detailed) journal fields alone, before a
-DSS/SAASignalsFound reveals the real answer. Reads the raw entry dict directly (same convention
-as valuation/cartography.py), not a typed wrapper.
-
-A genus/species is eligible if the body satisfies ANY ONE of its rulesets (see
-genus_conditions.py/species_conditions.py -- rulesets are OR'd, fields within one ruleset are
-AND'd). Categorical fields (atmosphere, body type, star type, volcanism) are hard gates within
-a ruleset. Temperature/gravity/pressure are soft: confidence tapers from 1.0 inside a ruleset's
-documented range down to 0.0 over a margin beyond either edge, since a transcribed range can't
-be trusted to the exact Kelvin/G -- a near-miss should read as lower confidence, not an
-identical hard fail. A genus/species's overall confidence is the BEST (max) score across its
-matching rulesets, since each is an independent, alternative path to eligibility, not a
-combined requirement.
-
-predict_species() returns [] for a genus absent from species_conditions.SPECIES_RULESETS
-(the airless ones) -- callers fall back to predict_genera()'s genus-only guess.
-"""
+""" Predicts which genera/species could plausibly be present on a body from its Scan (Detailed)
+fields alone, pre-DSS. Categorical fields are hard gates; temperature/gravity/pressure taper
+confidence toward a ruleset's edge rather than hard-failing. Confidence is the best (max) score
+across a genus/species's matching rulesets. predict_species() returns [] for a genus outside
+SPECIES_RULESETS -- callers fall back to predict_genera()'s genus-only guess. """
 from explorer.valuation.genus_conditions import GENUS_RULESETS, Ruleset
 from explorer.valuation.species_conditions import SPECIES_RULESETS
 

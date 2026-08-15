@@ -1,22 +1,5 @@
-"""
-Best-effort cartography (scan/mapping) value estimate.
-
-IMPORTANT: this is deliberately approximate. Community-documented formula constants for
-Elite Dangerous's exploration payouts are contested across sources (see the implementation
-plan's research notes) and may have shifted across game-balance patches. This module's ONLY
-job is producing a number good enough to compare against the user's "worth flagging" credit
-threshold -- it is never used for the "actual" accumulated totals, which come straight from
-`SellExplorationData`/`MultiSellExplorationData` journal events (ground truth, no formula
-involved). Keep the constants isolated here so they're easy to recalibrate later without
-touching anything else.
-
-Base-k and terraform-k constants cross-checked against two independent community sources
-(Frontier forums' "Exploration value formulae" thread + corroborating discussion elsewhere).
-"High metal content body" previously fell through to the generic "default" k (720) since it
-was never a matched category -- a Terraformable HMC's real payout is dominated almost
-entirely by the terraform bonus, so that gap silently under-valued exactly the bodies most
-worth flagging. Fixed by giving it (and "Rocky body") their own base/terraform-k pair.
-"""
+""" Best-effort cartography (scan/mapping) value estimate -- deliberately approximate, only
+used for "worth flagging" comparisons; actual totals come from ground-truth sale events. """
 
 MASS_EXPONENT:float = 0.2
 
@@ -36,13 +19,9 @@ PLANET_BASE_K:dict[str, int] = {
     "default": 720,
 }
 
-# A Terraformable body's bonus is a SEPARATE k-based term added on top of the base value, not
-# a flat multiplier -- the real bonus dwarfs the base k for HMC/rocky bodies specifically,
-# which is exactly why a flat multiplier was silently undervaluing them. The real game applies
-# a 0-100% "terraformability" we can't read from the journal at all; TERRAFORM_BONUS_FRACTION
-# below is a per-category estimate of how much of the max bonus a Terraformable body of that
-# class typically gets, per community reports (HMC/rocky/ELW usually close to the max; water
-# worlds vary a lot, so a mid-range guess).
+# Terraform bonus is a separate k-based term added to the base value, not a flat multiplier.
+# TERRAFORM_BONUS_FRACTION estimates how much of the max bonus a class typically gets (game
+# doesn't expose the real 0-100% terraformability via the journal).
 TERRAFORM_BONUS_K:dict[str, int] = {
     "high_metal_content": 241607,
     "water_or_earthlike": 279088,
@@ -83,10 +62,7 @@ def _mass_factor(mass:float) -> float:
     return 1 + max(mass, 0.0001) ** MASS_EXPONENT
 
 def estimate_scan_value(scan_entry:dict) -> int:
-    """
-    Estimate a body's base scan (auto-detect) value, excluding any first-discovery bonus.
-    `scan_entry` is a `Scan` journal event dict.
-    """
+    """ Base scan (auto-detect) value from a `Scan` journal event dict, excluding first-discovery bonus. """
     if "StarType" in scan_entry:
         k:int = STAR_BASE_K[_star_category(scan_entry.get("StarType", ""))]
         mass:float = scan_entry.get("StellarMass", 1.0)
@@ -103,12 +79,7 @@ def estimate_scan_value(scan_entry:dict) -> int:
     return round(value)
 
 def estimate_mapping_value(scan_entry:dict, mapped_efficiently:bool = True) -> int:
-    """
-    Estimate the ceiling mapping value for a body -- assuming first-mapped-by-us and (unless
-    told otherwise) an efficient mapping -- excluding any first-discovery bonus. Used pre-DSS
-    to decide "is this worth mapping"; refine with the real value once SAAScanComplete confirms
-    actual efficiency.
-    """
+    """ Ceiling mapping value assuming first-mapped-by-us, for pre-DSS "worth mapping" decisions. """
     if "StarType" in scan_entry:
         return 0 # stars aren't DSS-mappable
 

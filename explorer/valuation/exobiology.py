@@ -13,11 +13,8 @@ def estimate_confirmed_value(genus:str, species:str) -> int|None:
     return exobiology_data.species_value(genus, species)
 
 def exceeds_threshold(value_max:int|None, threshold:int) -> bool:
-    """
-    Whether a body's exobiology potential is worth flagging. Uses the top of the known
-    range (optimistic) since this is a "worth investigating" signal at a stage where the
-    exact species isn't known yet, not a value guarantee.
-    """
+    """ Worth-flagging check -- uses the top of the known range (optimistic), a "worth
+    investigating" signal, not a value guarantee. """
     if value_max is None:
         return False
     return value_max >= threshold

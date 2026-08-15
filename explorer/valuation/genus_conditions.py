@@ -1,44 +1,15 @@
-"""
-Spawn conditions per genus, used by genus_prediction.py to estimate which genera could
-plausibly be present on a body BEFORE a DSS/SAASignalsFound reveals the real answer -- keyed
-by the same Genus_Localised display names as exobiology_data.py (e.g. "Bacterium", "Tussock").
-
-A genus is modeled as a list of independent RULESETS (OR'd) -- matches earlier attempt's
-mistake of modeling one condition-blob per genus, which silently dropped real spawn niches
-(e.g. Bacterium is genuinely absent from Sulphur Dioxide atmospheres in one species' data but
-present via two OTHERS -- a single genus-wide blob can't represent that, a real body is
-eligible for a genus if it satisfies ANY ONE of that genus's rulesets, same as the real game's
-per-species-per-atmosphere condition structure). Within a single ruleset, every field present
-is AND'd; a field left None is unconstrained for that ruleset.
-
-Sourced by reading Silarn/EDMC-BioScan (github.com/Silarn/EDMC-BioScan, GPLv2) locally as a
-reference and independently transcribing/restructuring the numeric spawn parameters into our
-own dataclass shape and code -- not copying its files, data structures, or prose. This project
-stays permissively (MIT) licensed; BioScan is read-only reference material for verifying
-facts, same policy as exobiology_data.py's own sourcing. Per-species distinctions are
-deliberately flattened to genus level (all of a genus's species' rulesets pooled together) --
-this plugin predicts GENUS only, matching its existing scope decision not to guess species.
-
-Several rulesets carry a "# unmodeled: ..." comment -- these note real spawn conditions that
-don't fit the fields available from a Scan event (system-wide co-occurrence checks ("bodies"),
-galactic region/nebula/Guardian-ruin proximity ("regions"/"nebula"/"guardian"/"tuber"), a
-specific home system ("system"), atmosphere gas percentage floors ("atmosphere_component"),
-orbital period, or distance-from-arrival bounds). Those specific conditions are simply not
-checked -- the ruleset still applies based on whatever fields it DOES have, so predictions for
-genera whose only rulesets carry these (Bark Mound, Amphora Plant, Crystalline Shard, some
-Anemone/Brain Tree/Sinuous Tuber rulesets) will over-fire outside their real niche. Accepted,
-not solved -- flagged per-ruleset so it's visible exactly where the gap is.
+""" Spawn conditions per genus, for genus_prediction.py's pre-DSS estimate. Keyed by the same
+Genus_Localised names as exobiology_data.py. A genus matches a body if ANY ONE of its rulesets
+matches (OR'd); within a ruleset every present field must match (AND'd), None fields unconstrained.
+Per-ruleset "# unmodeled: ..." comments flag real spawn conditions Scan can't check (accepted gap).
+Cross-checked against Silarn/EDMC-BioScan (GPLv2) as reference only -- own dataclass/values, MIT.
 
 Field semantics (Ruleset):
-- atmosphere / body_types / star_types: None = unconstrained; a set = hard gate, the body's
-  actual value must be a member (atmosphere includes the literal "None" as a settable member
-  for airless-required rulesets, matching the real AtmosphereType string for airless bodies).
-- min/max_gravity_g, min/max_temp_k, min/max_pressure_atm: soft bounds -- see
-  genus_prediction.py's tapering, not a hard cutoff exactly at the edge.
-- volcanism: None = unconstrained; 'any' = must have some volcanism; 'none' = must have none;
-  a set of strings = the real Volcanism string must contain one of these as a substring
-  (mirrors BioScan's own matching, which is itself just checking against the raw journal text).
-"""
+- atmosphere / body_types / star_types: None = unconstrained; a set = hard gate ("None" is a
+  settable atmosphere value, matching the real AtmosphereType string for airless bodies).
+- min/max_gravity_g, min/max_temp_k, min/max_pressure_atm: soft bounds, see genus_prediction.py.
+- volcanism: None = unconstrained; 'any'/'none' = must have some/none; a set of strings = the
+  real Volcanism string must contain one as a substring. """
 from dataclasses import dataclass
 
 @dataclass

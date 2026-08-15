@@ -10,13 +10,9 @@ def _persist(state:ExplorerState) -> None:
     session_persist.save(state.cmdr, state.system_address, state.system_name, state.body_id, state.body_name)
 
 def restore_last_session(store:ExplorerStore, state:ExplorerState) -> None:
-    """ Called once at plugin startup, before any journal event has arrived -- EDMC doesn't
-    replay journal history to plugins on restart, so without this the panel sits at "Explorer
-    -- idle" until the next live event, which is especially annoying if you're not even logged
-    into the game yet. Presumes nothing changed since the last session (same Cmdr, same
-    system/body); enter_system()'s own cold-start check layers on top of this once a real
-    Location/FSDJump arrives, correcting anything that's actually different (a different Cmdr,
-    a system change while EDMC was closed). """
+    """ Called once at plugin startup, before any journal event arrives, so the panel doesn't
+    sit at "Explorer -- idle" until the next live event. enter_system()'s cold-start check
+    corrects anything actually different once a real Location/FSDJump arrives. """
     saved:dict|None = session_persist.load()
     if not saved:
         return
@@ -45,16 +41,9 @@ def on_continued(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict:
 
 def enter_system(store:ExplorerStore, state:ExplorerState, edmc_state:dict) -> dict:
     """ Called by dispatch() for Location/FSDJump/CarrierJump -- reads SystemAddress/SystemName
-    from EDMC's own state dict (already updated for this entry) rather than re-parsing the
-    journal entry ourselves, since EDMC tracks the exact same fields from the exact same events.
-
-    On the very first system-entry event this process sees (state.system_id still None -- EDMC
-    doesn't replay journal history to plugins on startup, so this is otherwise a cold start --
-    or restore_last_session() already pre-populated system_id from a saved snapshot before any
-    real event arrived, in which case this first real event is still the cold start), check the
-    last session snapshot: if it's the same Cmdr in the same system, presume nothing happened
-    while EDMC was closed and resume the last known body rather than going blank until the next
-    journal event. """
+    from EDMC's own state dict rather than re-parsing the journal entry. On a cold start (no
+    system_id yet, or restore_last_session() pre-populated one), resumes the last known body
+    if it's the same Cmdr/system rather than going blank until the next event. """
     system_address:int|None = edmc_state.get("SystemAddress")
     if system_address is None:
         return {}

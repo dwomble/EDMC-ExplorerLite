@@ -11,11 +11,8 @@ from explorer.state import ExplorerState
 from explorer.util import now_iso, surface_distance_m
 from explorer.valuation import exobiology, exobiology_data
 
-# Confirmed against real captured journal lines (2026-07 sessions): every completed species
-# follows exactly ScanType Log -> Sample -> Sample -> Analyse, in that order -- Log and the two
-# Samples are the 3 real genetic samples; Analyse is a separate finalize/submit step seconds
-# later at the same location, not a 4th sample. Only Log/Sample increment samples_taken;
-# Analyse just marks completion.
+# Confirmed against real journal lines: Log -> Sample -> Sample -> Analyse. Only Log/Sample
+# count as real genetic samples; Analyse is a separate finalize step, not a 4th sample.
 SAMPLE_SCAN_TYPES = ("Log", "Sample")
 
 CODEX_ORGANIC_SUBCATEGORY = "$Codex_SubCategory_Organic_Structures;"
@@ -96,22 +93,10 @@ def on_scan_organic(store:ExplorerStore, state:ExplorerState, entry:dict) -> dic
     return {"panel": True, "overlay": "radar"}
 
 def on_codex_entry(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict:
-    """ The low-altitude composition scanner (ship or SRV) fires this whenever it identifies a
-    biological signal -- for genuinely new discoveries AND re-scans of already-known ones alike
-    -- carrying an exact Latitude/Longitude, unlike SAASignalsFound's aggregate genus+count.
-    Useful for tagging a waypoint to a species you've spotted but aren't currently sampling (e.g.
-    scanning something else nearby). Reuses state.sample_positions -- the same session-only,
-    radar-only store ScanOrganic feeds -- so it gets a ring + dot immediately, without touching
-    samples_taken/species_progress completion, so it's never mistaken for a real genetic sample
-    in the panel's progress counts. Name_Localised also gives the exact SPECIES (not just
-    genus), so it confirms the species/value the same way a real sample eventually would --
-    replacing whatever "possible species" guess was showing, well before you land and sample it.
-    Its color variant (e.g. "Tussock Cultro - Yellow") is stashed alongside the position too, so
-    the radar can draw it in that color instead of the plain sample-taken blue -- these are
-    passive tags, not "currently working on it", and looked identical to real samples otherwise.
-    A tag within the genus's minimum sample distance of a real sample already taken is never
-    even added as a waypoint -- it couldn't produce a valid additional sample (see
-    _too_close_to_existing_sample), so it'd just be sending you somewhere pointless. """
+    """ Tags a waypoint for a spotted-but-not-yet-sampled species -- exact Latitude/Longitude,
+    unlike SAASignalsFound's aggregate genus+count. Confirms species/value early, since
+    Name_Localised gives the exact species. Reuses sample_positions (radar-only, not
+    samples_taken/completion) so it's never mistaken for a real sample. """
     if entry.get("SubCategory") != CODEX_ORGANIC_SUBCATEGORY:
         return {}
     if state.system_id is None or state.cmdr_id is None:

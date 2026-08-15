@@ -1,21 +1,9 @@
-"""
-Static exobiology reference data: per-genus minimum sample distance, and per-genus/species
-base credit values (excluding first-discovery/first-logged bonus). Clean-room, sourced from
-the Elite Dangerous Fandom wiki's "Exobiology Sample Values and Details" page, cross-checked
-against njthomson/SrvSurvey's "Organic Scanning" reference (independent source, matched
-exactly on every genus/distance) -- see REQUIREMENTS.md for the licensing rationale (keeps
-this plugin permissively licensed, no GPL entanglement with BioScan's data).
+""" Static exobiology reference data: per-genus minimum sample distance and per-genus/species base
+credit values (excluding first-discovery/first-logged bonus). Clean-room sourced, cross-checked
+against 2 independent sources. Excludes Thargoid biologicals -- out of scope for this plugin.
 
-Deliberately excluded: Thargoid biologicals (Spires, Mega Barnacles, Coral Tree, Coral Root) --
-tied to Thargoid structure sites rather than ordinary planetary exploration, and it's
-unconfirmed whether they even use the same ScanOrganic/Genetic-Sampler mechanic. Out of scope
-for a general exploration assistant; revisit if that changes.
-
-CAVEAT: the exact in-game `Genus_Localised` string for three genera (singular vs. plural) is
-unconfirmed -- "Sinuous Tuber(s)", "Bark Mound(s)", "Crystalline Shard(s)". The Fandom wiki
-titles them singular; a tool that parses live journals (SrvSurvey) uses plural. Singular is
-used below as the dict key; verify against a real captured journal line and correct if needed.
-"""
+CAVEAT: exact in-game Genus_Localised singular-vs-plural is unconfirmed for 3 genera (marked
+below) -- singular used as the dict key pending verification against a real journal line. """
 
 # Minimum distance (meters) required between exobiology samples of the same genus.
 GENUS_MIN_DISTANCE_M:dict[str, int] = {
@@ -224,11 +212,7 @@ def species_value(genus:str, species:str) -> int|None:
     return SPECIES_VALUE.get(genus, {}).get(species)
 
 def genus_from_species_name(species_name:str) -> str|None:
-    """ Reverse lookup: which genus a full species display name (e.g. "Tussock Propagito")
-    belongs to, by searching SPECIES_VALUE's per-genus species tables for an exact match.
-    Used to recover the genus from a CodexEntry event's Name_Localised, which gives the
-    species name (already stripped of its " - <color>" variant suffix by the caller) rather
-    than the genus directly. """
+    """ Reverse lookup: which genus a full species name (e.g. "Tussock Propagito") belongs to. """
     for genus, species_map in SPECIES_VALUE.items():
         if species_name in species_map:
             return genus

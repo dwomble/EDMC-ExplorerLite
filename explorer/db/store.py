@@ -21,12 +21,7 @@ def _species_status(row:sqlite3.Row) -> str:
     return f"{row['samples_taken']}/3"
 
 def resolve_db_path() -> Path:
-    """
-    Store under config.app_dir_path (EDMC's persistent app-data directory), namespaced into
-    our own subfolder -- not inside the plugin's own code folder (plugin_dir), since a manual
-    reinstall (delete-and-reclone) wipes plugin_dir outright and would destroy a Cmdr's entire
-    scan history.
-    """
+    """ Under config.app_dir_path, not plugin_dir -- a manual reinstall wipes plugin_dir outright. """
     directory:Path = Path(config.app_dir_path) / GH_PROJECT
     directory.mkdir(parents=True, exist_ok=True)
     return directory / DB_FILENAME
@@ -67,11 +62,8 @@ class ExplorerStore:
         ).fetchone()
 
     def get_pending_cartography_value(self, cmdr_id:int) -> int:
-        """ Estimated scan+mapping value of bodies whose system hasn't been sold or lost yet --
-        "currently held" cartography data, distinct from actual_cartography_credits (ground
-        truth from real sales). Per-body estimates only (see valuation/cartography.py's own
-        caveat) -- an approximation, not the real payout MultiSellExplorationData would
-        eventually report. """
+        """ Estimated value of bodies whose system isn't sold/lost yet -- an approximation,
+        distinct from actual_cartography_credits (ground truth from real sales). """
         row:sqlite3.Row = self.conn.execute(
             """SELECT COALESCE(SUM(COALESCE(bodies.estimated_scan_value, 0) + COALESCE(bodies.estimated_mapping_value, 0)), 0) AS total
                FROM bodies JOIN systems ON systems.id = bodies.system_id
@@ -258,12 +250,8 @@ class ExplorerStore:
     # -- Sales (ground truth) --
 
     def get_history_tree(self, cmdr_id:int) -> list[dict]:
-        """
-        Nested System -> Body -> Species structure for the history view. Actual cartography
-        value is never attributable per-system/body (MultiSellExplorationData only gives
-        system-level totals across a whole transaction) -- only species-level sold_value is
-        real. Est. values are best-effort (see valuation/cartography.py's own caveat).
-        """
+        """ Nested System -> Body -> Species structure for the history view. Cartography value
+        isn't attributable per-system/body (only species-level sold_value is real); est. values are best-effort. """
         systems:list[sqlite3.Row] = self.conn.execute("SELECT * FROM systems WHERE cmdr_id = ? ORDER BY visited_at", (cmdr_id,)).fetchall()
 
         tree:list[dict] = []

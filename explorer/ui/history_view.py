@@ -1,12 +1,7 @@
-"""
-History popup: System -> Body -> Species browsable tree, plus a Cmdr totals summary.
-Launched from the compact panel's "History" button.
-
-A Toplevel, not a plugin_prefs tab: prefs' open/close lifecycle doesn't fit a live data
-browser (no natural "refresh while the settings dialog sits closed" hook), and a settings
-notebook tab is too cramped for a multi-column tree. See the implementation plan for the
-full rationale.
-"""
+""" History popup: System -> Body -> Species browsable tree, plus a Cmdr totals summary.
+Launched from the compact panel's "History" button. A Toplevel, not a plugin_prefs tab --
+prefs' open/close lifecycle doesn't fit a live data browser, and its notebook is too cramped
+for a multi-column tree. """
 import tkinter as tk
 import sqlite3
 

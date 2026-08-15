@@ -138,15 +138,8 @@ def _ensure_columns(conn:sqlite3.Connection) -> None:
     conn.commit()
 
 def _migrate_genus_predictions_species_column(conn:sqlite3.Connection) -> None:
-    """
-    v3->v4: genus_predictions gains a `species` column and its UNIQUE constraint relaxes to
-    (body_id, genus, species) so several candidate species within one genus can coexist
-    (species-level narrowing, see valuation/species_conditions.py). SQLite can't ALTER a UNIQUE
-    constraint in place -- but this table is fully derived/ephemeral (replace_genus_predictions()
-    deletes and reinserts it in full on every Scan event), so dropping and letting the DDL below
-    recreate it fresh is simpler and safer than hand-rolling a real data migration for rows that
-    regenerate themselves within one Scan event anyway.
-    """
+    """ v3->v4: genus_predictions gains a `species` column. SQLite can't ALTER a UNIQUE constraint
+    in place, so drop the table -- it's fully derived/ephemeral, the DDL below recreates it fresh. """
     tables:set[str] = {row[0] for row in conn.execute("SELECT name FROM sqlite_master WHERE type = 'table'")}
     if "genus_predictions" not in tables:
         return
