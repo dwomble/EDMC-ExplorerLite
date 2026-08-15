@@ -1,4 +1,6 @@
 {
-    "include": ["explorer", "load.py"],
-    "exclude": ["explorer/utils", "**/__pycache__"]
+    "include": ["explorer", "load.py", "tests"],
+    "exclude": ["explorer/utils", "tests/edmc", "**/__pycache__"],
+    "venvPath": ".",
+    "venv": ".venv"
 }

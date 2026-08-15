@@ -1,7 +1,7 @@
 """
 A themed frame with a vertically scrollable interior.
 
-The scrollbar only appears once packed/gridded content in `.interior` exceeds `max_height`
+The scrollbar only appears once packed/gridded content in `.interior` exceeds `maxheight`
 pixels; while content fits, the widget looks and behaves like a plain frame.
 """
 import tkinter as tk
@@ -12,15 +12,17 @@ from theme import theme # type: ignore
 class ScrollableFrame(tk.Frame):
     """
     A themed frame whose content -- packed or gridded into `.interior` -- scrolls vertically
-    once it exceeds `max_height` pixels. The scrollbar is hidden entirely while content fits,
+    once it exceeds `maxheight` pixels. The scrollbar is hidden entirely while content fits,
     and mouse-wheel scrolling is only bound while the pointer is over this widget so it doesn't
     steal scroll events from the rest of the EDMC window.
     """
-    def __init__(self, master:tk.Widget, max_height:int|None = None, **kw) -> None:
+    def __init__(self, master:tk.Widget, maxheight:int|None = None, **kw) -> None:
+        # maxheight (one word, no underscore) matches Tk's own option-naming convention
+        # (borderwidth, textvariable, highlightthickness, ...), not Python's usual snake_case.
         tk.Frame.__init__(self, master, **kw)
         theme.update(self)
 
-        self._max_height = max_height
+        self._maxheight = maxheight
         self._scrollbar_visible = False
         self._resize_pending = False
         self._last_height:int|None = None
@@ -98,6 +100,33 @@ class ScrollableFrame(tk.Frame):
             self._last_item_width = event.width
             self._canvas.itemconfigure(self._interior_id, width=event.width)
 
+    def configure(self, cnf=None, **kw) -> None:
+        """ Route the synthetic `maxheight` option through our own recompute; everything else
+        passes straight through to the real Tk Frame.configure() -- the standard pattern for a
+        wrapper widget adding an option Tk itself doesn't know about. Since `widget['opt'] = x`
+        and `widget.cget('opt')` are themselves implemented (in tkinter.Misc) by calling
+        self.configure()/self.cget(), overriding just these two is enough to make `maxheight`
+        behave like any other Tk option (e.g. `scroll.configure(maxheight=54)`,
+        `scroll['maxheight'] = 54`, `scroll.cget('maxheight')`) -- not a bespoke Python property. """
+        merged:dict = dict(cnf or {})
+        merged.update(kw)
+        if 'maxheight' in merged:
+            value = merged.pop('maxheight')
+            if value != self._maxheight:
+                self._maxheight = value
+                self._apply_resize() # not a <Configure>-driven change, so no storm risk applying inline
+        if merged:
+            tk.Frame.configure(self, **merged)
+
+    config = configure
+
+    def cget(self, key:str):
+        if key == 'maxheight':
+            return self._maxheight
+        return tk.Frame.cget(self, key)
+
+    __getitem__ = cget
+
     def clear(self) -> None:
         """
         Remove all content from `.interior` in one shot.
@@ -115,7 +144,7 @@ class ScrollableFrame(tk.Frame):
         self._on_interior_configure()
 
     def _update_scrollbar_visibility(self, content_height:int) -> None:
-        needs_scroll:bool = self._max_height is not None and content_height > self._max_height
+        needs_scroll:bool = self._maxheight is not None and content_height > self._maxheight
 
         if needs_scroll and not self._scrollbar_visible:
             self._scrollbar.grid(row=0, column=1, sticky="ns")
@@ -124,7 +153,7 @@ class ScrollableFrame(tk.Frame):
             self._scrollbar.grid_forget()
             self._scrollbar_visible = False
 
-        display_height:int = min(content_height, self._max_height) if self._max_height else content_height
+        display_height:int = min(content_height, self._maxheight) if self._maxheight else content_height
         if self._last_height != display_height:
             self._last_height = display_height
             self._canvas.configure(height=display_height)

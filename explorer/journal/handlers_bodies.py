@@ -98,6 +98,7 @@ def on_scan(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict:
         planet_class=entry.get("PlanetClass"),
         atmosphere_type=entry.get("AtmosphereType"),
         distance_ls=entry.get("DistanceFromArrivalLS"),
+        surface_gravity=entry.get("SurfaceGravity"),
         was_discovered=1 if entry.get("WasDiscovered") else 0,
         was_mapped=1 if entry.get("WasMapped") else 0,
         estimated_scan_value=scan_value,

@@ -7,7 +7,7 @@ implementation plan for the rationale behind each table.
 """
 import sqlite3
 
-SCHEMA_VERSION = 6
+SCHEMA_VERSION = 7
 
 DDL = """
 CREATE TABLE IF NOT EXISTS schema_meta (
@@ -51,6 +51,7 @@ CREATE TABLE IF NOT EXISTS bodies (
     atmosphere_type TEXT, -- raw AtmosphereType string, e.g. "CarbonDioxide", "None" -- used by
     -- valuation/signal_count_bias.py to detect its Water/Oxygen/Nitrogen exception
     distance_ls REAL,
+    surface_gravity REAL, -- raw SurfaceGravity, m/s^2 (convert to G for display)
     was_discovered INTEGER,
     was_mapped INTEGER,
     mapped_efficiently INTEGER,
@@ -124,6 +125,7 @@ CREATE TABLE IF NOT EXISTS genus_predictions (
 COLUMN_ADDITIONS:list[tuple[str, str, str]] = [
     ("bodies", "type_label", "TEXT"),
     ("bodies", "atmosphere_type", "TEXT"),
+    ("bodies", "surface_gravity", "REAL"),
     ("systems", "lost_at", "TEXT"),
     ("species_progress", "lost_at", "TEXT"),
 ]

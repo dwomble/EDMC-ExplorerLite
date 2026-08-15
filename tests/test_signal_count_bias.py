@@ -32,8 +32,13 @@ class TestExpectedGeneraForSignalCount:
         for atmosphere in ("Water", "Oxygen", "Nitrogen"):
             assert expected_genera_for_signal_count(2, atmosphere) is None
 
-    def test_signal_count_above_five_breaks_open_no_bias(self) -> None:
-        assert expected_genera_for_signal_count(6, "CarbonDioxide") is None
+    def test_signal_count_above_five_still_expects_all_five_known_tiers(self) -> None:
+        """ Extra signals beyond tier 5 are just unclassified -- they don't mean the known
+        tiers stop being expected (e.g. a body with 7 signals still certainly has a Bacterium,
+        a Stratum, etc. among them, per the priority order). """
+        assert expected_genera_for_signal_count(7, "CarbonDioxide") == {
+            "Bacterium", "Stratum", "Tussock", "Osseus", "Tubus", "Concha", "Frutexa",
+        }
 
     def test_zero_or_negative_signal_count_has_no_bias(self) -> None:
         assert expected_genera_for_signal_count(0, "CarbonDioxide") is None

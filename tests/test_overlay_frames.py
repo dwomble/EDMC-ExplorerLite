@@ -126,6 +126,7 @@ class TestRadarOverlayModern:
         """
         radar = RadarOverlay(Overlay())
         state = _flying_state(store)
+        assert state.cmdr_id is not None and state.system_id is not None and state.body_id is not None
         body_pk:int = store.get_or_create_body(state.cmdr_id, state.system_id, state.body_id, state.body_name)
         store.get_or_create_species_progress(body_pk, "Bacterium")
 
@@ -141,6 +142,7 @@ class TestRadarOverlayModern:
         is still useful while approaching, so it's the fallback when there's no confirmed genus yet. """
         radar = RadarOverlay(Overlay())
         state = _flying_state(store)
+        assert state.cmdr_id is not None and state.system_id is not None and state.body_id is not None
         body_pk:int = store.get_or_create_body(state.cmdr_id, state.system_id, state.body_id, state.body_name)
         store.replace_genus_predictions(body_pk, [("Bacterium", None, 0.8)])
 

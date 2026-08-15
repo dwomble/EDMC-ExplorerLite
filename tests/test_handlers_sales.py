@@ -5,6 +5,7 @@ and completed exobiology data. Pure store + handler calls, no journal/Tk harness
 Run with:
     .venv/bin/python -m pytest tests/test_handlers_sales.py -v --tb=short
 """
+import sqlite3
 import pytest
 from typing import Generator
 
@@ -29,9 +30,12 @@ class TestOnDied:
 
         handlers_sales.on_died(store, state, {"event": "Died"})
 
-        assert store.get_system(unsold_id)["lost_at"] is not None
-        assert store.get_system(sold_id)["sold_at"] is not None
-        assert store.get_system(sold_id)["lost_at"] is None
+        unsold:sqlite3.Row|None = store.get_system(unsold_id)
+        sold:sqlite3.Row|None = store.get_system(sold_id)
+        assert unsold is not None and sold is not None
+        assert unsold["lost_at"] is not None
+        assert sold["sold_at"] is not None
+        assert sold["lost_at"] is None
 
     def test_marks_completed_unsold_samples_lost_but_leaves_sold_and_in_progress_alone(self, store:ExplorerStore) -> None:
         state = ExplorerState()
@@ -50,9 +54,13 @@ class TestOnDied:
 
         handlers_sales.on_died(store, state, {"event": "Died"})
 
-        assert store.get_species_progress_row(unsold_id)["lost_at"] is not None
-        assert store.get_species_progress_row(sold_id)["lost_at"] is None # already sold, not lost
-        assert store.get_species_progress_row(in_progress_id)["lost_at"] is None # not completed yet, not "data"
+        unsold:sqlite3.Row|None = store.get_species_progress_row(unsold_id)
+        sold:sqlite3.Row|None = store.get_species_progress_row(sold_id)
+        in_progress:sqlite3.Row|None = store.get_species_progress_row(in_progress_id)
+        assert unsold is not None and sold is not None and in_progress is not None
+        assert unsold["lost_at"] is not None
+        assert sold["lost_at"] is None # already sold, not lost
+        assert in_progress["lost_at"] is None # not completed yet, not "data"
 
     def test_is_a_noop_without_a_cmdr(self, store:ExplorerStore) -> None:
         handlers_sales.on_died(store, ExplorerState(), {"event": "Died"}) # must not raise

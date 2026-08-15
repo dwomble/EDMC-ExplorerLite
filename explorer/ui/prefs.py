@@ -13,6 +13,7 @@ from explorer.constants import (
     CFG_SCAN_VALUE_THRESHOLD, DEFAULT_SCAN_VALUE_THRESHOLD,
     CFG_EXOBIO_VALUE_THRESHOLD, DEFAULT_EXOBIO_VALUE_THRESHOLD,
     CFG_OVERLAY_ENABLED, CFG_OVERLAY_RADAR_ENABLED, CFG_DEV_MODE,
+    CFG_VISIBLE_LINES, DEFAULT_VISIBLE_LINES,
 )
 
 @dataclass
@@ -25,6 +26,7 @@ class Pref:
 PREFS = [
     Pref('threshold', CFG_SCAN_VALUE_THRESHOLD, "Flag a body's scan/mapping value above (Cr):", DEFAULT_SCAN_VALUE_THRESHOLD),
     Pref('threshold', CFG_EXOBIO_VALUE_THRESHOLD, "Flag exobiology potential above (Cr):", DEFAULT_EXOBIO_VALUE_THRESHOLD),
+    Pref('threshold', CFG_VISIBLE_LINES, "Visible lines before scrolling:", DEFAULT_VISIBLE_LINES),
     Pref('bool', CFG_OVERLAY_ENABLED, "Enable overlay", True),
     Pref('bool', CFG_OVERLAY_RADAR_ENABLED, "Show radar on overlay", True),
     Pref('bool', CFG_DEV_MODE, "Developer/debug logging", False),

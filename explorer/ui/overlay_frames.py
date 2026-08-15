@@ -69,12 +69,23 @@ class RadarOverlay:
                 Debug.logger.info(f"Radar overlay not drawing: {reason}")
 
     def _ensure_group(self) -> None:
+        """
+        Real-world regression: a newer EDMCModernOverlay release renamed define_plugin_group's
+        kwargs (plugin_group -> plugin_name, matching_prefixes -> plugin_matching_prefixes,
+        id_prefix_group -> plugin_group_name -- the old names are accepted as deprecated
+        aliases, just logged as a warning) and ALSO now requires idPrefixes whenever an
+        idPrefixGroup is being created, which our call never supplied -- so define_group() threw
+        every session (PluginGroupingError), and the very next send_vect call failed right
+        after it (shapes referencing the never-created group getting rejected), which is why
+        the radar never actually drew despite every earlier gating check passing.
+        """
         if self._group_defined or not self.overlay.is_modern:
             return
         self._group_defined = self.overlay.define_group(
-            plugin_group=PLUGIN_GROUP,
-            matching_prefixes=[FRAME_PREFIX],
-            id_prefix_group="ExplorerLite Radar",
+            plugin_name=PLUGIN_GROUP,
+            plugin_matching_prefixes=[FRAME_PREFIX],
+            plugin_group_name="ExplorerLite Radar",
+            idPrefixes=[FRAME_PREFIX],
         )
 
     def render(self, store:ExplorerStore, state:ExplorerState) -> None:

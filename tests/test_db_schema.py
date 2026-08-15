@@ -210,7 +210,9 @@ class TestSchemaMigration:
 
         # The relaxed UNIQUE(body_id, genus, species) must allow several candidate species
         # within the same genus for the same body (the whole point of species-level narrowing).
-        body_id:int = conn.execute("INSERT INTO bodies (cmdr_id, system_id, body_id, body_name) VALUES (1, 1, 1, 'Test 1')").lastrowid
+        insert_cursor:sqlite3.Cursor = conn.execute("INSERT INTO bodies (cmdr_id, system_id, body_id, body_name) VALUES (1, 1, 1, 'Test 1')")
+        assert insert_cursor.lastrowid is not None
+        body_id:int = insert_cursor.lastrowid
         conn.execute("INSERT INTO genus_predictions (body_id, genus, species, confidence) VALUES (?, 'Tussock', 'Tussock Ignis', 0.9)", (body_id,))
         conn.execute("INSERT INTO genus_predictions (body_id, genus, species, confidence) VALUES (?, 'Tussock', 'Tussock Pennata', 0.7)", (body_id,)) # must not raise
         conn.commit()

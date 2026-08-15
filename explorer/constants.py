@@ -14,9 +14,11 @@ CFG_EXOBIO_VALUE_THRESHOLD:str = f"{CONFIG_PREFIX}ExobioValueThreshold"
 CFG_OVERLAY_ENABLED:str = f"{CONFIG_PREFIX}OverlayEnabled"
 CFG_OVERLAY_RADAR_ENABLED:str = f"{CONFIG_PREFIX}OverlayRadarEnabled"
 CFG_DEV_MODE:str = f"{CONFIG_PREFIX}DevMode"
+CFG_VISIBLE_LINES:str = f"{CONFIG_PREFIX}VisibleLines"
 
 # Defaults agreed during requirements gathering (REQUIREMENTS.md), excluding first-discovery bonus
 DEFAULT_SCAN_VALUE_THRESHOLD:int = 750_000
 DEFAULT_EXOBIO_VALUE_THRESHOLD:int = 5_000_000
+DEFAULT_VISIBLE_LINES:int = 5
 
 DB_FILENAME:str = "explorer.sqlite"

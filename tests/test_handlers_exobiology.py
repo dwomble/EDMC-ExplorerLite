@@ -56,6 +56,7 @@ class TestOnSellOrganicData:
 
         for progress_id, expected_value in [(p1, 1_658_500), (p2, 19_010_800), (p3, 1_658_500)]:
             row = store.get_species_progress_row(progress_id)
+            assert row is not None
             assert row["sold"] == 1, dict(row)
             assert row["sold_value"] == expected_value, dict(row)
 
@@ -74,5 +75,6 @@ class TestOnSellOrganicData:
         handlers_exobiology.on_sell_organic_data(store, state, {"event": "SellOrganicData", "BioData": []})
 
         row = store.get_species_progress_row(incomplete_id)
+        assert row is not None
         assert row["sold"] == 0
         assert row["completed_at"] is None

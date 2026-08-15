@@ -45,6 +45,7 @@ class TestHistoryTreeQuery:
         plugin.play_sequence("full_walkthrough", 0.02)
 
         import load
+        assert load.store is not None and load.explorer_state.cmdr_id is not None
         tree = load.store.get_history_tree(load.explorer_state.cmdr_id)
 
         assert len(tree) == 1
@@ -74,8 +75,10 @@ class TestHistoryViewPopup:
 
         assert load.history_view.window is not None
         assert load.history_view.window.winfo_exists()
+        assert load.history_view.summary_label is not None
         assert "Exobiology: 5M Cr" in load.history_view.summary_label["text"]
 
+        assert load.history_view.tree is not None
         systems = load.history_view.tree.get_children()
         assert len(systems) == 1
         bodies = load.history_view.tree.get_children(systems[0])

@@ -57,6 +57,7 @@ class TestFullWalkthrough:
         plugin.play_sequence("full_walkthrough", 0.02)
 
         import load
+        assert load.store is not None and load.panel is not None
         from explorer.state import state
 
         assert state.system_name == "Deltius"
@@ -66,6 +67,7 @@ class TestFullWalkthrough:
         system_id = load.store.get_or_create_system(cmdr_id, 999000111, "Deltius")
 
         system = load.store.get_system(system_id)
+        assert system is not None
         assert system["honk_body_count"] == 3
         assert system["honk_non_body_count"] == 2
         assert system["all_bodies_found"] == 1
@@ -82,6 +84,7 @@ class TestFullWalkthrough:
         assert genuses[0]["genus"] == "Bacterium"
 
         body2_row = load.store.get_body(body2)
+        assert body2_row is not None
         assert body2_row["flagged_exobio"] == 1 # Bacterium's range tops out at 9.1M, above the 5M default threshold
 
         progress = load.store.get_species_progress_for_body(body2)
@@ -97,6 +100,7 @@ class TestFullWalkthrough:
         assert progress[0]["sold_value"] == 1_000_000
 
         totals = load.store.get_cmdr_totals(cmdr_id)
+        assert totals is not None
         assert totals["actual_cartography_credits"] == 600_000
         assert totals["actual_exobiology_credits"] == 5_000_000
 
@@ -105,9 +109,11 @@ class TestFullWalkthrough:
         plugin.play_sequence("honk_only", 0.02)
 
         import load
+        assert load.store is not None and load.panel is not None
         cmdr_id = load.store.get_or_create_cmdr("Testy")
         system_id = load.store.get_or_create_system(cmdr_id, 555000222, "QuietSpace")
         system = load.store.get_system(system_id)
+        assert system is not None
         assert system["honk_body_count"] == 1
         assert system["honk_hint"] == "probably quiet"
 

@@ -8,8 +8,9 @@ Run with:
 conftest.py -- see its docstring for why.
 """
 import tkinter as tk
+import sqlite3
 import pytest
-from typing import Generator
+from typing import Generator, cast
 
 from harness import TestHarness, reset_plugin_modules
 from explorer.ui.panel import _credits_range
@@ -50,8 +51,9 @@ def _panel_lines(load) -> list[str]:
         if isinstance(child, tk.Frame):
             rows:dict[int, dict[int, str]] = {}
             for cell in child.winfo_children():
-                info = cell.grid_info()
-                rows.setdefault(int(info["row"]), {})[int(info["column"])] = cell["text"]
+                widget:tk.Widget = cast(tk.Widget, cell) # always a Label here, never a Toplevel
+                info = widget.grid_info()
+                rows.setdefault(int(info["row"]), {})[int(info["column"])] = widget["text"]
             for row_index in sorted(rows):
                 cells = rows[row_index]
                 lines.append(" ".join(cells[c] for c in sorted(cells)))
@@ -74,6 +76,7 @@ class TestPanelStates:
 
     def test_idle_state_is_a_single_line(self, plugin:TestHarness) -> None:
         import load
+        assert load.store is not None and load.panel is not None
         lines = _panel_lines(load)
         assert lines == ["Explorer — idle"]
 
@@ -82,6 +85,7 @@ class TestPanelStates:
         plugin.play_sequence("honk_only", 0.02)
 
         import load
+        assert load.store is not None and load.panel is not None
         lines = _panel_lines(load)
         assert lines[0] == "QuietSpace — 1 planets — done"
 
@@ -91,6 +95,7 @@ class TestPanelStates:
         plugin.play_sequence("full_walkthrough", 0.02)
 
         import load
+        assert load.store is not None and load.panel is not None
         lines = _panel_lines(load)
         assert lines[0].startswith("Deltius —")
         assert any(line.startswith("A 1 ") for line in lines)
@@ -106,26 +111,28 @@ class TestPanelStates:
         plugin.play_sequence("partial_scan_no_full_fss", 0.02)
 
         import load
+        assert load.store is not None and load.panel is not None
         lines = _panel_lines(load)
         assert any(" — done" in line or " — scan needed" in line for line in lines)
         assert any(line.startswith("A 1 ") for line in lines)
 
-    def test_binary_star_only_system_shows_no_extra_line(self, plugin:TestHarness) -> None:
+    def test_binary_star_system_is_quiet(self, plugin:TestHarness) -> None:
         """ A system with no planets at all (e.g. a bare binary) has nothing to flag -- just the
         top summary line, no extra "nothing found" commentary. """
         plugin.load_events("explorer_events.json")
         plugin.play_sequence("binary_star_only_system", 0.02)
 
         import load
+        assert load.store is not None and load.panel is not None
         lines = _panel_lines(load)
         assert lines == ["Starrock — 2 planets scanned"], lines
 
     def test_exobio_line_shows_progress_then_drops_once_done(self, plugin:TestHarness) -> None:
         """
         Regression test for the progressive-detail redesign: a flagged body's exobio line
-        should read as a generic "genus ~value" guess, become "species — N/3, value" once
-        sampling starts, and disappear once that genus is fully sampled -- not keep showing a
-        stale "exobio~9M Cr" label throughout.
+        should read as a generic "genus ~value" guess, become "species, sampling distance,
+        value" once sampling starts, and disappear once that genus is fully sampled -- not
+        keep showing a stale "exobio~9M Cr" label throughout.
         """
         plugin.load_events("explorer_events.json")
         events = plugin.events["full_walkthrough"]
@@ -145,8 +152,9 @@ class TestPanelStates:
             plugin.fire_event(event)
 
         import load
+        assert load.store is not None and load.panel is not None
         lines = _panel_lines(load)
-        assert any("Bacterium Aurasus 2/3 1M Cr" in line for line in lines)
+        assert any("Bacterium Aurasus 500m 1M Cr" in line for line in lines)
 
         for event in events[cutoff:]:
             plugin.fire_event(event)
@@ -169,6 +177,7 @@ class TestPanelStates:
         plugin.play_sequence("honk_only", 0.02)
 
         import load
+        assert load.store is not None and load.panel is not None
         assert explorer_state.cmdr_id is not None and explorer_state.system_id is not None
         body_pk:int = load.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 1, "QuietSpace A 1")
         load.store.replace_genus_predictions(body_pk, [
@@ -187,6 +196,7 @@ class TestPanelStates:
         plugin.play_sequence("honk_only", 0.02)
 
         import load
+        assert load.store is not None and load.panel is not None
         assert explorer_state.cmdr_id is not None and explorer_state.system_id is not None
         body_pk:int = load.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 1, "QuietSpace A 1")
 
@@ -201,6 +211,7 @@ class TestPanelStates:
         plugin.play_sequence("honk_only", 0.02)
 
         import load
+        assert load.store is not None and load.panel is not None
         assert explorer_state.cmdr_id is not None and explorer_state.system_id is not None
         body_pk:int = load.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 1, "QuietSpace A 1")
         load.store.replace_genus_predictions(body_pk, [
@@ -231,6 +242,7 @@ class TestPanelStates:
             plugin.fire_event(event)
 
         import load
+        assert load.store is not None and load.panel is not None
         lines = _panel_lines(load)
         assert any(line.startswith("A 1 ") and "?" in line for line in lines), lines
         # Regression: a predicted-only (unconfirmed) body used to still count as "nothing
@@ -257,6 +269,7 @@ class TestPanelStates:
         plugin.play_sequence("honk_only", 0.02)
 
         import load
+        assert load.store is not None and load.panel is not None
         assert explorer_state.cmdr_id is not None and explorer_state.system_id is not None
         body_pk:int = load.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 1, "QuietSpace A 1")
         load.store.replace_genus_predictions(body_pk, [("Anemone", None, 0.9)])
@@ -265,7 +278,7 @@ class TestPanelStates:
         assert len(best) == 1, best
         assert best[0]["value_min"] < best[0]["value_max"], "test premise: Anemone should have a real min-max spread"
 
-        rendered:tuple[str, str, str] = load.panel._predicted_genus_row(best[0])
+        rendered:tuple[str, str, str] = load.panel._predicted_genus_row(best[0], confirmed_signal=False)
         assert "-" in rendered[2], rendered # e.g. "~1.5-3.4M Cr", not a single number
 
     def test_scan_narrows_prediction_to_species_when_data_available(self, plugin:TestHarness) -> None:
@@ -284,6 +297,7 @@ class TestPanelStates:
         plugin.play_sequence("species_level_prediction", 0.02)
 
         import load
+        assert load.store is not None and load.panel is not None
         assert explorer_state.system_id is not None
         flagged = load.store.get_flagged_bodies_for_system(explorer_state.system_id)
         body = next(b for b in flagged if b["body_name"] == "Speciesia A 1")
@@ -297,18 +311,44 @@ class TestPanelStates:
         """
         Real-world regression: FSSBodySignals confirmed a biological signal exists (ground
         truth) BEFORE the body's own Scan (Detailed) arrived -- the common order when a full FSS
-        sweep of the system happens before flying to each body. The narrowed species-level guess
-        (Tussock Ignis, ~1.85M Cr) is below the 5M default exobio threshold, but existence here
-        isn't speculative anymore -- the guess should still show, not silently vanish into a
-        bare "biological signal" line just because it happens to be low-value.
+        sweep of the system happens before flying to each body. This body's conditions are
+        generic enough that 8 genera tie at top confidence (a real, common occurrence -- hard
+        categorical gates alone decide eligibility for most rulesets), so the shown guess is a
+        "N possible genera" summary rather than any one species name -- but it must still show
+        SOMETHING, not silently vanish into a bare "biological signal" line just because the
+        underlying species-level values happen to be low.
         """
         plugin.load_events("explorer_events.json")
         plugin.play_sequence("confirmed_biology_below_threshold", 0.02)
 
         import load
+        assert load.store is not None and load.panel is not None
         lines = _panel_lines(load)
-        assert any(line.startswith("A 1 ") and "Tussock Ignis" in line for line in lines), lines
+        assert any(line.startswith("A 1 ") and "possible genera" in line for line in lines), lines
         assert not any("biological signal" in line for line in lines), lines
+
+    def test_many_tied_genera_collapse_to_count(self, plugin:TestHarness) -> None:
+        """
+        Real-world regression: a body with several signals and many genera tied at the same
+        confidence used to render every one of them "A or B or C..." on one line, badly
+        overflowing the panel's width (a real ~180-character line was reported in play).
+        Collapsing to a short count keeps the row readable; the individual names are still
+        knowable on-body once SAASignalsFound narrows it down.
+        """
+        from explorer.state import state as explorer_state
+
+        plugin.config.set("EDMCExplorerLite_ScanValueThreshold", 50000)
+        plugin.load_events("explorer_events.json")
+        plugin.play_sequence("confirmed_biology_below_threshold", 0.02)
+
+        import load
+        assert load.store is not None and load.panel is not None
+        assert explorer_state.system_id is not None
+        flagged = load.store.get_flagged_bodies_for_system(explorer_state.system_id)
+        body = next(b for b in flagged if b["body_name"] == "Speciesia A 1")
+        best = load.panel._best_predictions_for_body(body["id"])
+        assert len(best) == 1, best # only 1 real signal -- everything tied collapses to 1 slot
+        assert best[0]["name"] == "8 possible genera", best
 
     def test_predicted_value_does_not_double_count_same_genus_species_guesses(self, plugin:TestHarness) -> None:
         """
@@ -325,6 +365,7 @@ class TestPanelStates:
         plugin.play_sequence("honk_only", 0.02)
 
         import load
+        assert load.store is not None and load.panel is not None
         assert explorer_state.cmdr_id is not None and explorer_state.system_id is not None
         body_pk:int = load.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 1, "QuietSpace A 1")
         load.store.update_body(body_pk, biological_signal_count=2, has_biological_signals=1)
@@ -340,6 +381,67 @@ class TestPanelStates:
         assert "Tussock Ignis" in names, best # kept the higher-confidence Tussock candidate
         assert "Tussock Pennata" not in names, best
 
+    def test_tied_species_widen_value_range(self, plugin:TestHarness) -> None:
+        """
+        Real-world regression: on a real body, Frutexa Flabellum and Frutexa Flammasis both
+        tied at confidence 1.0 (Frutexa's own rulesets don't distinguish them for these
+        conditions), but Flammasis (~10.3M Cr) is worth far more than Flabellum (~1.8M Cr).
+        Picking just one as "the" representative and computing its value alone silently
+        understated the true range -- both tied alternates must widen value_min/value_max,
+        even though only one name is shown.
+        """
+        from explorer.state import state as explorer_state
+
+        plugin.load_events("explorer_events.json")
+        plugin.play_sequence("honk_only", 0.02)
+
+        import load
+        assert load.store is not None and load.panel is not None
+        assert explorer_state.cmdr_id is not None and explorer_state.system_id is not None
+        body_pk:int = load.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 1, "QuietSpace A 1")
+        load.store.replace_genus_predictions(body_pk, [
+            ("Frutexa", "Frutexa Flabellum", 1.0),
+            ("Frutexa", "Frutexa Flammasis", 1.0),
+        ])
+
+        best = load.panel._best_predictions_for_body(body_pk)
+        assert len(best) == 1, best
+        assert best[0]["value_max"] >= 10_000_000, best # must reflect Flammasis, not just the shown Flabellum
+
+    def test_chain_tiers_get_own_slots(self, plugin:TestHarness) -> None:
+        """
+        Real-world regression: a 7-signal body had 9 genera all tie at confidence 1.0 (common --
+        most rulesets only use hard categorical gates, no numeric axis to break a tie). With 7
+        slots available, collapsing straight to "9 possible genera" throws away information we
+        actually have: the chain's priority order (Bacterium/Stratum/Tussock/Osseus-or-Tubus/
+        Concha-or-Frutexa) still applies even past signal count 5 -- tiers 1-5 remain expected,
+        the extra 2 signals are just unclassified. Each matching tier should get its own
+        individual slot; only the genuine excess (non-chain genera beyond the slot budget)
+        collapses into one merged slot.
+        """
+        from explorer.state import state as explorer_state
+
+        plugin.load_events("explorer_events.json")
+        plugin.play_sequence("honk_only", 0.02)
+
+        import load
+        assert load.store is not None and load.panel is not None
+        assert explorer_state.cmdr_id is not None and explorer_state.system_id is not None
+        body_pk:int = load.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 1, "QuietSpace A 1")
+        load.store.update_body(body_pk, biological_signal_count=7, atmosphere_type="Ammonia", planet_class="Rocky body")
+        load.store.replace_genus_predictions(body_pk, [
+            (genus, f"{genus} X", 1.0) for genus in
+            ["Aleoida", "Bacterium", "Cactoida", "Concha", "Frutexa", "Fungoida", "Osseus", "Stratum", "Tussock"]
+        ])
+
+        best = load.panel._best_predictions_for_body(body_pk)
+        assert len(best) == 7, best # capped to the real signal count
+        names = [slot["name"] for slot in best]
+        for chain_genus in ("Bacterium X", "Stratum X", "Tussock X", "Osseus X"):
+            assert chain_genus in names, best # each chain tier got its own dedicated slot
+        assert any("Concha X" in n and "Frutexa X" in n for n in names), best # tier 5's own pair, merged as one slot
+        assert not any("possible genera" in n for n in names), best # room enough that nothing needed to collapse to a count
+
     def test_signal_count_bias_prefers_chain_expected_genus_over_raw_confidence(self, plugin:TestHarness) -> None:
         """
         Regression/coverage for the signal-count chain bias (valuation/signal_count_bias.py): on
@@ -353,6 +455,7 @@ class TestPanelStates:
         plugin.play_sequence("honk_only", 0.02)
 
         import load
+        assert load.store is not None and load.panel is not None
         assert explorer_state.cmdr_id is not None and explorer_state.system_id is not None
         body_pk:int = load.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 1, "QuietSpace A 1")
         load.store.update_body(body_pk, biological_signal_count=1, atmosphere_type="CarbonDioxide", planet_class="Rocky body")
@@ -374,6 +477,7 @@ class TestPanelStates:
         plugin.play_sequence("honk_only", 0.02)
 
         import load
+        assert load.store is not None and load.panel is not None
         assert explorer_state.cmdr_id is not None and explorer_state.system_id is not None
         body_pk:int = load.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 1, "QuietSpace A 1")
         load.store.update_body(body_pk, biological_signal_count=1, atmosphere_type="Water", planet_class="Rocky body")
@@ -400,6 +504,7 @@ class TestPanelStates:
         plugin.play_sequence("honk_only", 0.02)
 
         import load
+        assert load.store is not None and load.panel is not None
         assert explorer_state.cmdr_id is not None and explorer_state.system_id is not None
         body_pk:int = load.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 1, "QuietSpace A 1")
         load.store.update_body(body_pk, biological_signal_count=1, atmosphere_type="SulphurDioxide", planet_class="High metal content body")
@@ -428,6 +533,7 @@ class TestPanelStates:
         plugin.play_sequence("honk_only", 0.02)
 
         import load
+        assert load.store is not None and load.panel is not None
         assert explorer_state.cmdr_id is not None and explorer_state.system_id is not None
         body_pk:int = load.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 1, "QuietSpace A 1")
         load.store.update_body(body_pk, biological_signal_count=2, atmosphere_type="CarbonDioxide", planet_class="Rocky body")
@@ -454,6 +560,7 @@ class TestPanelStates:
         plugin.play_sequence("known_bio_signals_before_dss", 0.02)
 
         import load
+        assert load.store is not None and load.panel is not None
         lines = _panel_lines(load)
         assert any(line.startswith("A 1 ") and "biological signals" in line and "? Cr" in line for line in lines), lines
         assert any(line.startswith("A 3 ") and "biological signals" in line and "? Cr" in line for line in lines), lines
@@ -469,6 +576,7 @@ class TestPanelStates:
         plugin.play_sequence("mapped_body_drops_off_list", 0.02)
 
         import load
+        assert load.store is not None and load.panel is not None
         lines = _panel_lines(load)
         assert not any(line.startswith("A 1 ") for line in lines), lines
 
@@ -481,8 +589,94 @@ class TestPanelStates:
             plugin.fire_event(event)
 
         import load
+        assert load.store is not None and load.panel is not None
         lines = _panel_lines(load)
-        assert any(line.startswith("A 1 MR ") for line in lines), lines
+        assert any(line.startswith("A 1 (MR) ") for line in lines), lines
+
+    def test_flagged_row_shows_gravity(self, plugin:TestHarness) -> None:
+        """ Gravity is stored raw (m/s^2, matching the journal) and shown converted to G. """
+        from explorer.state import state as explorer_state
+
+        plugin.load_events("explorer_events.json")
+        plugin.play_sequence("honk_only", 0.02)
+
+        import load
+        assert load.store is not None and load.panel is not None
+        assert explorer_state.cmdr_id is not None and explorer_state.system_id is not None
+        body_pk:int = load.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 1, "QuietSpace A 1")
+        load.store.update_body(body_pk, flagged_value=1, estimated_scan_value=1_000_000, surface_gravity=9.797759 * 1.5)
+
+        body:sqlite3.Row|None = load.store.get_body(body_pk)
+        assert body is not None
+        row = load.panel._flagged_body_row("QuietSpace", body)
+        assert row is not None
+        assert row[2] == "1.50g", row
+
+    def test_flagged_row_shows_unknown_gravity(self, plugin:TestHarness) -> None:
+        """ No Scan (Detailed) yet -- gravity is unknown, not a bogus zero. """
+        from explorer.state import state as explorer_state
+
+        plugin.load_events("explorer_events.json")
+        plugin.play_sequence("honk_only", 0.02)
+
+        import load
+        assert load.store is not None and load.panel is not None
+        assert explorer_state.cmdr_id is not None and explorer_state.system_id is not None
+        body_pk:int = load.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 1, "QuietSpace A 1")
+        load.store.update_body(body_pk, has_biological_signals=1, biological_signal_count=1)
+
+        body:sqlite3.Row|None = load.store.get_body(body_pk)
+        assert body is not None
+        row = load.panel._flagged_body_row("QuietSpace", body)
+        assert row is not None
+        assert row[2] == "?g", row
+
+    def test_flagged_row_keeps_species_guess(self, plugin:TestHarness) -> None:
+        """ Confirming the genus used to drop the earlier species-level narrowing entirely. """
+        from explorer.state import state as explorer_state
+
+        plugin.load_events("explorer_events.json")
+        plugin.play_sequence("honk_only", 0.02)
+
+        import load
+        assert load.store is not None and load.panel is not None
+        assert explorer_state.cmdr_id is not None and explorer_state.system_id is not None
+        body_pk:int = load.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 1, "QuietSpace A 1")
+        load.store.replace_genus_predictions(body_pk, [
+            ("Bacterium", "Bacterium Cerbrus", 1.0),
+            ("Bacterium", "Bacterium Tela", 1.0),
+        ])
+        load.store.get_or_create_species_progress(body_pk, "Bacterium") # SAASignalsFound: genus confirmed, not yet sampled
+
+        body:sqlite3.Row|None = load.store.get_body(body_pk)
+        assert body is not None
+        row = load.panel._flagged_body_row("QuietSpace", body)
+        assert row is not None
+        assert "Cerbrus/Tela" in row[4], row
+
+    def test_confirmed_signal_drops_prefix(self, plugin:TestHarness) -> None:
+        """ The "?" marks a purely speculative guess; it shouldn't apply once a real signal is confirmed. """
+        from explorer.state import state as explorer_state
+
+        plugin.load_events("explorer_events.json")
+        plugin.play_sequence("honk_only", 0.02)
+
+        import load
+        assert load.store is not None and load.panel is not None
+        assert explorer_state.cmdr_id is not None and explorer_state.system_id is not None
+        body_pk:int = load.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 1, "QuietSpace A 1")
+        load.store.replace_genus_predictions(body_pk, [("Anemone", None, 0.9)])
+
+        unconfirmed:sqlite3.Row|None = load.store.get_body(body_pk)
+        assert unconfirmed is not None
+        row = load.panel._flagged_body_row("QuietSpace", unconfirmed)
+        assert row is not None and row[4].startswith("?"), row
+
+        load.store.update_body(body_pk, has_biological_signals=1, biological_signal_count=1)
+        confirmed:sqlite3.Row|None = load.store.get_body(body_pk)
+        assert confirmed is not None
+        row = load.panel._flagged_body_row("QuietSpace", confirmed)
+        assert row is not None and not row[4].startswith("?"), row
 
     def test_supercruise_exit_shows_exobiology_before_landing(self, plugin:TestHarness) -> None:
         """
@@ -494,10 +688,11 @@ class TestPanelStates:
         plugin.play_sequence("supercruise_exit_shows_bio_before_landing", 0.02)
 
         import load
+        assert load.store is not None and load.panel is not None
         lines = _panel_lines(load)
         # The on-body detail table (not just the flagged-list guess line) should be showing --
-        # its confidence percentage is the distinguishing marker between the two.
-        assert any("%)" in line for line in lines), lines
+        # its "~" (an unconfirmed estimate) is the distinguishing marker between the two.
+        assert any("~" in line for line in lines), lines
 
 class TestNoDuplicateWidgets:
     """
@@ -508,8 +703,21 @@ class TestNoDuplicateWidgets:
 
     def test_history_button_is_gridded_not_packed(self, plugin:TestHarness) -> None:
         import load
+        assert load.store is not None and load.panel is not None
         managers = {load.panel.history_button.obj.winfo_manager(), load.panel.history_button.alt.winfo_manager()}
         assert managers == {"grid", ""} # exactly one of the light/dark pair is actually placed
+
+class TestVisibleLinesConfig:
+
+    def test_refresh_applies_configured_visible_lines(self, plugin:TestHarness) -> None:
+        """ CFG_VISIBLE_LINES drives the scrollable frame's height live -- no restart needed. """
+        from explorer.ui.panel import LINE_HEIGHT_PX
+
+        import load
+        assert load.panel is not None
+        plugin.config.set("EDMCExplorerLite_VisibleLines", 8)
+        load.panel.refresh()
+        assert load.panel.scroll.cget('maxheight') == 8 * LINE_HEIGHT_PX
 
 class TestPrefs:
 
