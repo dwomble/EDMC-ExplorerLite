@@ -66,6 +66,34 @@ class ExplorerStore:
             "SELECT actual_cartography_credits, actual_exobiology_credits FROM cmdrs WHERE id = ?", (cmdr_id,)
         ).fetchone()
 
+    def get_pending_cartography_value(self, cmdr_id:int) -> int:
+        """ Estimated scan+mapping value of bodies whose system hasn't been sold or lost yet --
+        "currently held" cartography data, distinct from actual_cartography_credits (ground
+        truth from real sales). Per-body estimates only (see valuation/cartography.py's own
+        caveat) -- an approximation, not the real payout MultiSellExplorationData would
+        eventually report. """
+        row:sqlite3.Row = self.conn.execute(
+            """SELECT COALESCE(SUM(COALESCE(bodies.estimated_scan_value, 0) + COALESCE(bodies.estimated_mapping_value, 0)), 0) AS total
+               FROM bodies JOIN systems ON systems.id = bodies.system_id
+               WHERE bodies.cmdr_id = ? AND systems.sold_at IS NULL AND systems.lost_at IS NULL""",
+            (cmdr_id,),
+        ).fetchone()
+        return row["total"]
+
+    def get_pending_exobiology_value(self, cmdr_id:int) -> int:
+        """ Confirmed value of completed-but-unsold-and-not-lost species samples -- "currently
+        held" exobiology data ready to sell, distinct from actual_exobiology_credits (ground
+        truth from real sales). Matches the same held/unsold/not-lost definition used by
+        mark_all_completed_species_sold()/mark_all_unsold_species_progress_lost(). """
+        row:sqlite3.Row = self.conn.execute(
+            """SELECT COALESCE(SUM(species_progress.confirmed_value), 0) AS total FROM species_progress
+               JOIN bodies ON bodies.id = species_progress.body_id
+               WHERE bodies.cmdr_id = ? AND species_progress.completed_at IS NOT NULL
+                 AND species_progress.sold = 0 AND species_progress.lost_at IS NULL""",
+            (cmdr_id,),
+        ).fetchone()
+        return row["total"]
+
     # -- Systems --
 
     def get_or_create_system(self, cmdr_id:int, system_address:int, name:str) -> int:

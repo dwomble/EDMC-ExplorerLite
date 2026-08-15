@@ -76,7 +76,7 @@ class TestHistoryViewPopup:
         assert load.history_view.window is not None
         assert load.history_view.window.winfo_exists()
         assert load.history_view.summary_label is not None
-        assert "Exobiology: 5M Cr" in load.history_view.summary_label["text"]
+        assert "Exobiology — sold: 5M Cr" in load.history_view.summary_label["text"]
 
         assert load.history_view.tree is not None
         systems = load.history_view.tree.get_children()

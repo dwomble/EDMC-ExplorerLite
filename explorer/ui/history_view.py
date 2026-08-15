@@ -44,7 +44,7 @@ class HistoryView:
         content:th.Frame = th.Frame(self.window) # type: ignore[arg-type] -- a Toplevel is a valid Tk master even though th.Frame's hint says tk.Widget
         content.pack(fill=tk.BOTH, expand=True)
 
-        self.summary_label = th.Label(content, text="")
+        self.summary_label = th.Label(content, text="", justify=tk.LEFT)
         self.summary_label.pack(fill=tk.X, padx=4, pady=4)
 
         self.tree = TreeviewPlus(content, columns=("status", "est_value", "actual_value"), show="tree headings")
@@ -75,9 +75,14 @@ class HistoryView:
             return
 
         totals:sqlite3.Row|None = self.store.get_cmdr_totals(self.state.cmdr_id)
-        cart:int = totals["actual_cartography_credits"] if totals else 0
-        exo:int = totals["actual_exobiology_credits"] if totals else 0
-        self.summary_label.configure(text=f"Cartography: {_credits(cart)} Cr    Exobiology: {_credits(exo)} Cr")
+        cart_sold:int = totals["actual_cartography_credits"] if totals else 0
+        exo_sold:int = totals["actual_exobiology_credits"] if totals else 0
+        cart_pending:int = self.store.get_pending_cartography_value(self.state.cmdr_id)
+        exo_pending:int = self.store.get_pending_exobiology_value(self.state.cmdr_id)
+        self.summary_label.configure(text=(
+            f"Cartography — sold: {_credits(cart_sold)} Cr, pending: {_credits(cart_pending)} Cr\n"
+            f"Exobiology — sold: {_credits(exo_sold)} Cr, pending: {_credits(exo_pending)} Cr"
+        ))
 
         for item in self.tree.get_children():
             self.tree.delete(item)
