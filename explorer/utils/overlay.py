@@ -76,10 +76,17 @@ class Overlay:
             self._fail("send_shape", e)
 
     def send_vect(self, id:str, vector:list[dict], color:str, ttl:int = 4, fill_color:str = "") -> None:
-        """ Send/update a vector shape (e.g. a polygon or ring) from a list of {'x':.., 'y':..} points. """
+        """ Send/update a vector shape (e.g. a polygon or ring) from a list of {'x':.., 'y':..}
+        points. Goes through send_raw(), not send_shape() -- confirmed against both backends'
+        real source (inorton/EDMCOverlay and EDMCModernOverlay's compat shim): send_shape()'s
+        signature is id/shape/color/fill/x/y/w/h/ttl on both, with no `vector` parameter at
+        all; a vect payload's points only ever go in via the raw message dict's "vector" key. """
         if not self.available: return
         try:
-            self._overlay.send_shape(id, "vect", color, fill_color, 0, 0, 0, 0, vector=vector, ttl=ttl)
+            self._overlay.send_raw({
+                "id": id, "shape": "vect", "color": color, "fill": fill_color,
+                "x": 0, "y": 0, "w": 0, "h": 0, "ttl": ttl, "vector": vector,
+            })
             self._warned = False
         except Exception as e:
             self._fail("send_vect", e)

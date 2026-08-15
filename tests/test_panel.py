@@ -80,6 +80,53 @@ class TestPanelStates:
         lines = _panel_lines(load)
         assert lines == ["Explorer — idle"]
 
+    def test_refresh_does_not_rebuild_widgets_when_content_is_unchanged(self, plugin:TestHarness) -> None:
+        """
+        Real-world regression: refresh() used to destroy and recreate every Label/Frame on
+        every single call, even when the new content was identical to what was already
+        showing -- a visible flicker on essentially any journal/dashboard event (landing,
+        flying, scanning...), not just ones that actually changed the display. refresh()
+        should leave the existing widgets alone when nothing actually changed.
+        """
+        plugin.load_events("explorer_events.json")
+        plugin.play_sequence("honk_only", 0.02)
+
+        import load
+        assert load.panel is not None
+        before = list(load.panel.scroll.interior.winfo_children())
+        assert before # sanity check: something is actually showing
+
+        load.panel.refresh() # same state, nothing changed
+
+        after = list(load.panel.scroll.interior.winfo_children())
+        assert before == after # same widget objects, not just equal text -- never destroyed
+
+    def test_refresh_only_rebuilds_the_row_that_changed(self, plugin:TestHarness) -> None:
+        """
+        A row unrelated to whatever changed shouldn't be touched either -- e.g. scanning a
+        sample on one body, or a new flagged body appearing, shouldn't flicker the system
+        summary line above it.
+        """
+        from explorer.state import state as explorer_state
+
+        plugin.load_events("explorer_events.json")
+        plugin.play_sequence("honk_only", 0.02)
+
+        import load
+        assert load.store is not None and load.panel is not None
+        assert explorer_state.cmdr_id is not None and explorer_state.system_id is not None
+        summary_row_before = load.panel.scroll.interior.winfo_children()[0]
+
+        # Add a flagged body -- a new row should appear, but the summary line's own widget
+        # (row 0, unrelated to this body) must not be touched.
+        body_pk:int = load.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 1, "QuietSpace A 1")
+        load.store.update_body(body_pk, flagged_value=1, estimated_scan_value=1_000_000)
+        load.panel.refresh()
+
+        rows_after = load.panel.scroll.interior.winfo_children()
+        assert len(rows_after) == 2, rows_after
+        assert rows_after[0] is summary_row_before # untouched -- same object
+
     def test_honk_state_shows_counts_and_verdict(self, plugin:TestHarness) -> None:
         plugin.load_events("explorer_events.json")
         plugin.play_sequence("honk_only", 0.02)
@@ -87,7 +134,7 @@ class TestPanelStates:
         import load
         assert load.store is not None and load.panel is not None
         lines = _panel_lines(load)
-        assert lines[0] == "QuietSpace — 1 planets — done"
+        assert lines[0] == "QuietSpace — 1 body — done"
 
     def test_full_walkthrough_shows_flagged_bodies_section(self, plugin:TestHarness) -> None:
         plugin.config.set("EDMCExplorerLite_ScanValueThreshold", 50000)
@@ -125,7 +172,7 @@ class TestPanelStates:
         import load
         assert load.store is not None and load.panel is not None
         lines = _panel_lines(load)
-        assert lines == ["Starrock — 2 planets scanned"], lines
+        assert lines == ["Starrock — 2 bodies — scan complete"], lines
 
     def test_exobio_line_shows_progress_then_drops_once_done(self, plugin:TestHarness) -> None:
         """
@@ -186,6 +233,32 @@ class TestPanelStates:
         ])
 
         assert load.panel._possible_species_label(body_pk, "Bacterium") == "Bacterium Acies/Aurasus"
+
+    def test_confirmed_genus_value_narrows_not_widens(self, plugin:TestHarness) -> None:
+        """
+        Real-world regression: confirming a genus via SAASignalsFound used to fall back to that
+        genus's FULL unnarrowed value range (estimate_genus_range), discarding the Scan-time
+        species-level prediction that had already narrowed it down -- so the estimate widened
+        after mapping instead of narrowing. Concha's full range is ~2.35-16.78M, but this body's
+        conditions only ever matched "Concha Aureolas" (~7.77M exact) -- confirming the genus
+        should keep that narrowed range, not fall back to the wider one.
+        """
+        from explorer.state import state as explorer_state
+
+        plugin.load_events("explorer_events.json")
+        plugin.play_sequence("honk_only", 0.02)
+
+        import load
+        assert load.store is not None and load.panel is not None
+        assert explorer_state.cmdr_id is not None and explorer_state.system_id is not None
+        body_pk:int = load.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 1, "QuietSpace A 1")
+        load.store.replace_genus_predictions(body_pk, [("Concha", "Concha Aureolas", 1.0)])
+        progress_id:int = load.store.get_or_create_species_progress(body_pk, "Concha") # SAASignalsFound: genus confirmed
+
+        row = load.store.get_species_progress_row(progress_id)
+        assert row is not None
+        value_min, value_max = load.panel._exobio_row_range(row)
+        assert (value_min, value_max) == (7_774_700, 7_774_700), (value_min, value_max)
 
     def test_possible_species_label_falls_back_without_any_prediction(self, plugin:TestHarness) -> None:
         """ A genus with no species-level prediction data (or none matching this body) falls
@@ -441,6 +514,38 @@ class TestPanelStates:
             assert chain_genus in names, best # each chain tier got its own dedicated slot
         assert any("Concha X" in n and "Frutexa X" in n for n in names), best # tier 5's own pair, merged as one slot
         assert not any("possible genera" in n for n in names), best # room enough that nothing needed to collapse to a count
+
+    def test_flagged_row_genus_count_is_distinct_genera_not_slot_count(self, plugin:TestHarness) -> None:
+        """
+        An 8-signal body with Osseus-or-Tubus and Concha-or-Frutexa each tied for their own tier
+        has 10 distinct possible genus names spread across 8 real signal slots. "10 possible
+        genera" is the right label -- it tells the player 10 different kinds of organism could
+        turn up here, even though only 8 of them actually will. The summed value alongside it
+        still only adds up 8 slots (one per real signal); the two numbers describe different
+        things and aren't meant to match.
+        """
+        from explorer.state import state as explorer_state
+
+        plugin.load_events("explorer_events.json")
+        plugin.play_sequence("honk_only", 0.02)
+
+        import load
+        assert load.store is not None and load.panel is not None
+        assert explorer_state.cmdr_id is not None and explorer_state.system_id is not None
+        body_pk:int = load.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 1, "QuietSpace A 1")
+        load.store.update_body(
+            body_pk, has_biological_signals=1, biological_signal_count=8, atmosphere_type="Ammonia", planet_class="Rocky body"
+        )
+        load.store.replace_genus_predictions(body_pk, [
+            (genus, f"{genus} X", 1.0) for genus in
+            ["Aleoida", "Bacterium", "Cactoida", "Concha", "Frutexa", "Fungoida", "Osseus", "Tubus", "Stratum", "Tussock"]
+        ])
+
+        body:sqlite3.Row|None = load.store.get_body(body_pk)
+        assert body is not None
+        row = load.panel._flagged_body_row("QuietSpace", body)
+        assert row is not None
+        assert row[4] == "10 possible genera", row
 
     def test_signal_count_bias_prefers_chain_expected_genus_over_raw_confidence(self, plugin:TestHarness) -> None:
         """

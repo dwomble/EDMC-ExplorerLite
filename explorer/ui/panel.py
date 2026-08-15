@@ -87,8 +87,13 @@ class ExplorerPanel:
         # proxy, which calls pack() on BOTH widgets, so the button was rendering twice.
         self.scroll:th.ScrollableFrame = th.ScrollableFrame(self.frame, maxheight=_visible_lines_px())
         self.scroll.grid(row=0, column=0, sticky=tk.EW)
+        self.scroll.interior.columnconfigure(0, weight=1) # each row below is gridded, not packed -- see refresh()
         self.history_button:th.Button = th.Button(self.frame, text="History", command=self._open_history)
         self.history_button.grid(row=1, column=0, sticky=tk.EW)
+
+        self._pending:list[tuple] = [] # lines/tables queued by _line()/_render_table() during the current refresh()
+        self._last_rendered:list[tuple] = [] # what's actually on screen right now, one entry per row widget
+        self._row_widgets:list[tk.Widget] = [] # the live widget for each _last_rendered row, same order
 
         self.refresh()
 
@@ -97,43 +102,72 @@ class ExplorerPanel:
             self.on_history_open()
 
     def _line(self, text:str) -> None:
-        th.Label(self.scroll.interior, text=str_truncate(text, WIDTH_CHARS), anchor="w", justify="left", pady=0).pack(fill=tk.X)
+        self._pending.append(("line", str_truncate(text, WIDTH_CHARS)))
 
     def _render_table(self, rows:list[tuple[str, ...]], anchors:tuple[str, ...], indent:int = 0) -> None:
+        if rows:
+            self._pending.append(("table", tuple(rows), anchors, indent))
+
+    def _materialize_row(self, command:tuple, row:int) -> tk.Widget:
         """
-        Grid `rows` into one Frame -- packed into the scroll as a single "line" (consistent
-        with _line()) -- so Tk's grid geometry manager aligns every column to its widest cell.
-        A plain space-joined string only lines up columns if the font happens to be monospace,
-        which EDMC's theme doesn't guarantee. pady=0 keeps rows tight -- Tk's default Label
-        padding adds up fast once a body lists several species.
+        Build the widget for one row of `_pending` and grid it at a fixed row index -- unlike
+        pack(), grid() lets a single row be replaced in place without needing to touch (or
+        re-sequence) any of the others.
         """
-        if not rows:
-            return
+        if command[0] == "line":
+            widget:tk.Widget = th.Label(self.scroll.interior, text=command[1], anchor="w", justify="left", pady=0)
+            widget.grid(row=row, column=0, sticky=tk.EW)
+            return widget
+
+        _, rows, anchors, indent = command
         table:th.Frame = th.Frame(self.scroll.interior)
-        for r, row in enumerate(rows):
-            last:int = len(row) - 1
-            for c, (text, anchor) in enumerate(zip(row, anchors)):
+        for r, table_row in enumerate(rows):
+            last:int = len(table_row) - 1
+            for c, (text, anchor) in enumerate(zip(table_row, anchors)):
                 sticky:str = tk.W if anchor == "w" else tk.E
                 pad:tuple[int, int] = (0, 0) if c == last else (0, 8)
                 th.Label(table, text=text, anchor=anchor, pady=0).grid(row=r, column=c, sticky=sticky, padx=pad)
-        table.pack(fill=tk.X, padx=(indent, 0))
+        table.grid(row=row, column=0, sticky=tk.EW, padx=(indent, 0))
+        return table
 
     def refresh(self) -> None:
+        """
+        Real-world regression: rebuilding the whole panel (destroy every Label/Frame, then
+        recreate them all) on every single call caused a visible flicker on essentially any
+        journal/dashboard event -- including ones where only ONE row's text actually changed
+        (a sample counter ticking up, distance/value on an unrelated body). Diffs `_pending`
+        against `_last_rendered` row by row instead, and only destroys/recreates the specific
+        rows that actually differ -- an unrelated row already on screen is never touched.
+        """
         self.scroll.configure(maxheight=_visible_lines_px()) # live prefs change -- no restart needed
-        self.scroll.clear()
 
+        self._pending = []
         system:sqlite3.Row|None = self.store.get_system(self.state.system_id) if self.state.system_id is not None else None
         if system is None:
             self._line("Explorer — idle")
-            return
+        else:
+            self._render_system_summary(system)
 
-        self._render_system_summary(system)
+            # Current body's exobiology detail: shown as soon as we have one in view
+            # (approaching or dropping out of supercruise near it, well before landing) -- not
+            # gated on being on-foot, so it's useful for the "should I bother landing here"
+            # decision too.
+            if self.state.body_id is not None and self.state.cmdr_id is not None and self.state.system_id is not None:
+                self._render_exobiology_section()
 
-        # Current body's exobiology detail: shown as soon as we have one in view (approaching
-        # or dropping out of supercruise near it, well before landing) -- not gated on being
-        # on-foot, so it's useful for the "should I bother landing here" decision too.
-        if self.state.body_id is not None and self.state.cmdr_id is not None and self.state.system_id is not None:
-            self._render_exobiology_section()
+        for i, command in enumerate(self._pending):
+            if i < len(self._last_rendered) and command == self._last_rendered[i]:
+                continue # unchanged -- leave the existing widget exactly as it is
+            if i < len(self._row_widgets):
+                self._row_widgets[i].destroy()
+                self._row_widgets[i] = self._materialize_row(command, i)
+            else:
+                self._row_widgets.append(self._materialize_row(command, i))
+
+        while len(self._row_widgets) > len(self._pending): # fewer rows than last time -- drop the leftovers
+            self._row_widgets.pop().destroy()
+
+        self._last_rendered = self._pending
 
     def _render_system_summary(self, system:sqlite3.Row) -> None:
         name:str = system["name"]
@@ -353,9 +387,11 @@ class ExplorerPanel:
     def _collapse_prediction_names(self, items:list[dict]) -> str:
         """ Comma-joined names read shorter and cleaner than "a or b or c" (see conversation).
         3+ items is usually too long to name in full -- fall back to just the distinct genus
-        names, or if even that overflows the panel, just a count. Shared by _merge_prediction_
-        group() (merging tied alternates into one slot) and _flagged_body_row() (joining the
-        body's full slot list into one line). """
+        names, or if even that overflows the panel, just a count of those genera. The count is
+        always distinct GENUS names, not slot count, whether merging tied alternates for one
+        signal (_merge_prediction_group) or joining a body's full slot list
+        (_flagged_body_row): "N possible genera" means N different kinds of organism could be
+        here, even though only as many as the real signal count will actually turn up. """
         if len(items) <= 2:
             return ", ".join(item["name"] for item in items)
         genera:list[str] = list(dict.fromkeys(genus for item in items for genus in item["genera"]))
@@ -393,12 +429,25 @@ class ExplorerPanel:
 
     def _exobio_row_range(self, row:sqlite3.Row) -> tuple[int, int]:
         """ (min, max) value for a confirmed-genus row -- an exact number once the species is
-        sampled (min==max); until then, the genus's full known range, since the actual species
-        present isn't known yet and could be worth far less (or more) than the range's top. """
+        sampled (min==max). Until then, narrow to the surviving Scan-time species predictions
+        for this genus+body (same source _possible_species_label lists) -- confirming the genus
+        doesn't mean every species of it is still equally plausible, only the ones whose spawn
+        conditions actually matched this body. Falls back to the genus's full unnarrowed range
+        only when there's no species-level data for it at all (e.g. an airless genus outside
+        species_conditions.py's coverage) -- real regression: using the full range here even
+        when a narrower prediction already existed made the estimate widen after confirmation,
+        when it should only ever narrow as more is learned. """
         if row["species"]:
             value:int = row["confirmed_value"] or 0
             return (value, value)
-        value_range:tuple[int, int]|None = exobiology.estimate_genus_range(row["genus"] or "")
+        genus:str = row["genus"] or ""
+        candidates:list[sqlite3.Row] = [
+            p for p in self.store.get_genus_predictions_for_body(row["body_id"]) if p["genus"] == genus and p["species"]
+        ]
+        if candidates:
+            values:list[int] = [exobiology.estimate_confirmed_value(genus, c["species"]) or 0 for c in candidates]
+            return (min(values), max(values))
+        value_range:tuple[int, int]|None = exobiology.estimate_genus_range(genus)
         return value_range if value_range else (0, 0)
 
     def _join_species_names(self, genus:str, names:list[str]) -> str:

@@ -291,6 +291,12 @@ class Mockedmcoverlay:
                 return
             self.shapes[args[0]] = [*args, kw]
 
+        def send_raw(self, msg, **kw):
+            if not isinstance(msg, dict) or 'id' not in msg:
+                print("send_raw called without a dict containing 'id'")
+                return
+            self.shapes[msg['id']] = [msg, kw]
+
 _edmcoverlay = _types.ModuleType('EDMCOverlay')
 for name, val in MockEDMCOverlay.__dict__.items():
     if not name.startswith('__'):
