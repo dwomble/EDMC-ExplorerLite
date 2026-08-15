@@ -54,7 +54,7 @@ def _landed_state(store:ExplorerStore, genus:str = "Bacterium", samples:int = 1,
     if mark_done:
         store.update_species_progress(progress_id, completed_at="2026-01-01T00:00:00Z")
     if samples:
-        state.sample_positions[genus] = [(10.0 + i * 0.0001, 20.0) for i in range(samples)]
+        state.sample_positions[genus] = [(10.0 + i * 0.0001, 20.0, None) for i in range(samples)]
         state.current_genus = genus
     return state
 
@@ -100,6 +100,33 @@ class TestRadarOverlayModern:
         assert f"{FRAME_PREFIX}sample-Bacterium-1" in shapes
 
     @pytest.mark.overlay('Modern')
+    def test_codex_tagged_sample_is_a_triangle_in_its_variant_color(self, overlay_mode, store:ExplorerStore) -> None:
+        """
+        A CodexEntry waypoint tag used to look identical to a real sample -- both drawn as the
+        same filled square in SAMPLE_COLOR. A tag now draws as a hollow TRIANGLE in the game's
+        own reported variant color (state.py's sample_positions third element) instead --
+        shape, not just color, is what keeps it from ever being mistaken for a real sample.
+        """
+        from explorer.ui.overlay_frames import CODEX_TAG_COLORS
+
+        radar = RadarOverlay(Overlay())
+        state = _landed_state(store, genus="Bacterium", samples=1) # a real sample -- (lat, lon, None)
+        state.sample_positions["Bacterium"].append((10.0002, 20.0, "Lime")) # a codex-tagged waypoint
+
+        radar.render(store, state)
+
+        shapes = radar.overlay._overlay.shapes
+        real_sample = shapes[f"{FRAME_PREFIX}sample-Bacterium-0"]
+        assert real_sample[1] == "rect"
+        assert real_sample[2] == SAMPLE_COLOR
+
+        tagged_msg, _ = shapes[f"{FRAME_PREFIX}sample-Bacterium-1"]
+        assert tagged_msg["shape"] == "vect"
+        assert tagged_msg["color"] == CODEX_TAG_COLORS["Lime"]
+        assert tagged_msg["fill"] == "" # always hollow
+        assert len(tagged_msg["vector"]) == 4 # 3 triangle vertices + closing point back to the first
+
+    @pytest.mark.overlay('Modern')
     def test_render_rotates_sample_positions_to_current_heading(self, overlay_mode, store:ExplorerStore) -> None:
         """
         Heading-up: the player's facing direction always maps to screen "up". A sample due north
@@ -111,7 +138,7 @@ class TestRadarOverlayModern:
 
         state = _landed_state(store, samples=0)
         state.heading = 0.0
-        state.sample_positions["Bacterium"] = [(10.01, 20.0)] # ~87m due north of the player
+        state.sample_positions["Bacterium"] = [(10.01, 20.0, None)] # ~87m due north of the player
         radar.render(store, state)
         shape = radar.overlay._overlay.shapes[f"{FRAME_PREFIX}sample-Bacterium-0"]
         sx, sy, w, h = shape[4], shape[5], shape[6], shape[7]
@@ -140,7 +167,7 @@ class TestRadarOverlayModern:
         """
         radar = RadarOverlay(Overlay())
         state = _landed_state(store, genus="Bacterium", samples=1) # sets current_genus = "Bacterium"
-        state.sample_positions["Fonticulua"] = [(10.0001, 20.0)]
+        state.sample_positions["Fonticulua"] = [(10.0001, 20.0, None)]
         assert state.cmdr_id is not None and state.system_id is not None and state.body_id is not None
         body_pk:int = store.get_or_create_body(state.cmdr_id, state.system_id, state.body_id, state.body_name)
         store.get_or_create_species_progress(body_pk, "Fonticulua")
@@ -209,7 +236,7 @@ class TestRadarOverlayModern:
         """
         radar = RadarOverlay(Overlay())
         state = _landed_state(store, genus="Bacterium", samples=0)
-        state.sample_positions["Bacterium"] = [(10.23, 20.0)] # ~2007m north -- past the fixed 1500m display range
+        state.sample_positions["Bacterium"] = [(10.23, 20.0, None)] # ~2007m north -- past the fixed 1500m display range
 
         radar.render(store, state)
 
@@ -279,6 +306,24 @@ class TestRadarOverlayModern:
         """ Flying over a body with no confirmed or predicted genus -- nothing useful to show yet. """
         radar = RadarOverlay(Overlay())
         radar.render(store, _flying_state(store))
+        assert f"{FRAME_PREFIX}player" not in radar.overlay._overlay.shapes
+
+    @pytest.mark.overlay('Modern')
+    def test_render_hides_once_every_genus_is_fully_sampled(self, overlay_mode, store:ExplorerStore) -> None:
+        """
+        Regression: falling back to a pre-DSS genus prediction whenever there were no *active*
+        genera (rather than no genera confirmed AT ALL) meant a body with every genus already
+        fully sampled could resurrect a stale prediction and keep the radar showing, instead of
+        hiding once there's genuinely nothing left to scan.
+        """
+        radar = RadarOverlay(Overlay())
+        state = _landed_state(store, genus="Bacterium", samples=0, mark_done=True)
+        assert state.cmdr_id is not None and state.system_id is not None and state.body_id is not None
+        body_pk:int = store.get_or_create_body(state.cmdr_id, state.system_id, state.body_id, state.body_name)
+        store.replace_genus_predictions(body_pk, [("Bacterium", None, 0.8)]) # stale pre-DSS guess, still on file
+
+        radar.render(store, state)
+
         assert f"{FRAME_PREFIX}player" not in radar.overlay._overlay.shapes
 
     @pytest.mark.overlay('Modern')

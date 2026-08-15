@@ -32,11 +32,13 @@ class ExplorerState:
     altitude:float|None = None
     planet_radius:float|None = None
 
-    # Session-only (not persisted): (latitude, longitude) at the moment of each ScanOrganic
-    # sample OR CodexEntry waypoint-tag, keyed by genus, for the overlay radar's per-sample
-    # markers. Cleared on reset_body() -- these positions are meaningless once you've left the
-    # body.
-    sample_positions:dict[str, list[tuple[float, float]]] = field(default_factory=dict)
+    # Session-only (not persisted): (latitude, longitude, color_name) at the moment of each
+    # ScanOrganic sample OR CodexEntry waypoint-tag, keyed by genus, for the overlay radar's
+    # per-sample markers. color_name is the game's own reported variant color (e.g. "Lime") for
+    # a CodexEntry tag, or None for a real sample (drawn in the radar's fixed sample color
+    # instead) -- see overlay_frames.py's own color-name lookup. Cleared on reset_body() --
+    # these positions are meaningless once you've left the body.
+    sample_positions:dict[str, list[tuple[float, float, str|None]]] = field(default_factory=dict)
 
     # The genus of the most recent real ScanOrganic sample this visit (not a CodexEntry tag --
     # that's a passive "spotted it" note, not "currently working on it"). The radar draws its

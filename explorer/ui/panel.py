@@ -149,13 +149,6 @@ class ExplorerPanel:
         else:
             self._render_system_summary(system)
 
-            # Current body's exobiology detail: shown as soon as we have one in view
-            # (approaching or dropping out of supercruise near it, well before landing) -- not
-            # gated on being on-foot, so it's useful for the "should I bother landing here"
-            # decision too.
-            if self.state.body_id is not None and self.state.cmdr_id is not None and self.state.system_id is not None:
-                self._render_exobiology_section()
-
         for i, command in enumerate(self._pending):
             if i < len(self._last_rendered) and command == self._last_rendered[i]:
                 continue # unchanged -- leave the existing widget exactly as it is
@@ -187,14 +180,35 @@ class ExplorerPanel:
             status:str = "scan needed" if system["honk_hint"] == "worth a full scan" else "done"
             self._line(f"{name} — {hbc} bod{'ies' if hbc != 1 else 'y'} — {status}")
 
+        # The current body's own exobiology detail nests directly under ITS OWN row in this
+        # table -- not tacked on after the whole table -- so it's never ambiguous which body a
+        # species list belongs to regardless of where that body sorts among the others (real
+        # regression: it used to always render after the full table, reading as though it
+        # belonged to whichever body happened to sort last).
+        anchors:tuple[str, ...] = ("w", "e", "e", "e", "w")
         flagged:list[sqlite3.Row] = self.store.get_flagged_bodies_for_system(system["id"])
-        if flagged:
-            rows:list[tuple[str, str, str, str, str]] = []
-            for body in flagged:
-                row:tuple[str, str, str, str, str]|None = self._flagged_body_row(name, body)
-                if row is not None:
-                    rows.append(row)
-            self._render_table(rows, anchors=("w", "e", "e", "e", "w"))
+        pending_rows:list[tuple[str, str, str, str, str]] = []
+        current_row_shown:bool = False
+        for body in flagged:
+            row:tuple[str, str, str, str, str]|None = self._flagged_body_row(name, body)
+            if row is None:
+                continue
+            if self.state.body_id is not None and body["body_id"] == self.state.body_id:
+                if pending_rows:
+                    self._render_table(pending_rows, anchors=anchors)
+                    pending_rows = []
+                self._render_table([row], anchors=anchors)
+                self._render_exobiology_section()
+                current_row_shown = True
+            else:
+                pending_rows.append(row)
+        if pending_rows:
+            self._render_table(pending_rows, anchors=anchors)
+
+        # Current body wasn't in the flagged list at all (e.g. on-foot on an otherwise
+        # uninteresting body) -- its detail (or "No genus detected yet") still needs to show.
+        if not current_row_shown and self.state.body_id is not None and self.state.cmdr_id is not None:
+            self._render_exobiology_section()
 
     def _flagged_body_row(self, system_name:str, body:sqlite3.Row) -> tuple[str, str, str, str, str]|None:
         """
@@ -264,11 +278,9 @@ class ExplorerPanel:
         body with no biological interest at all, UNLESS we're actually on-foot there --
         showing "nothing here" for every uninteresting body/star/gas giant flown past would
         drown out the rest of the panel; on-foot, it's confirmation the player actually wants.
-
-        Real-world regression: with no header of its own, this section visually ran straight
-        on from the flagged-bodies table above it -- indistinguishable from that table's own
-        last row unless the current body genuinely WAS the last one listed. A header line
-        naming the current body removes the ambiguity regardless of table order.
+        No header of its own -- the caller (_render_system_summary) nests this directly under
+        the current body's own flagged row, which already names it; a repeated header line
+        right below its own row read as a duplicate rather than useful disambiguation.
         """
         assert self.state.cmdr_id is not None and self.state.system_id is not None and self.state.body_id is not None
         body_pk:int = self.store.get_or_create_body(self.state.cmdr_id, self.state.system_id, self.state.body_id, self.state.body_name)
@@ -284,10 +296,6 @@ class ExplorerPanel:
             return
 
         body:sqlite3.Row|None = self.store.get_body(body_pk)
-        designator:str = _body_designator(self.state.system_name, self.state.body_name)
-        if body and body["type_label"]:
-            designator = f"{designator} ({body['type_label']})"
-        self._line(designator)
 
         if active:
             self._render_table([self._exobio_progress_row(row) for row in active], anchors=("w", "e", "e", "e"), indent=INDENT_PX)

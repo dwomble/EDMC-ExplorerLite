@@ -62,6 +62,52 @@ class TestOnScanOrganic:
         })
         assert state.current_genus == "Tussock"
 
+    def test_real_sample_discards_an_existing_tag_that_is_now_too_close(self, store:ExplorerStore) -> None:
+        """
+        ED requires same-genus samples to be spaced at least the genus's minimum distance apart
+        -- a codex-tagged waypoint that ends up closer than that to a real sample can no longer
+        yield a valid additional sample, so it must be dropped rather than left on the radar
+        pointing somewhere unusable. Bacterium's minimum distance is 500m.
+        """
+        state = ExplorerState()
+        state.cmdr_id = store.get_or_create_cmdr("Testy")
+        state.system_id = store.get_or_create_system(state.cmdr_id, 1, "Deltius")
+        state.body_id = 1
+        state.body_name = "Deltius 1"
+        state.has_lat_long = True
+        state.latitude = 10.0
+        state.longitude = 20.0
+        state.planet_radius = 500_000.0
+        state.sample_positions["Bacterium"] = [(10.0001, 20.0, "Lime")] # ~0.87m away -- well within 500m
+
+        handlers_exobiology.on_scan_organic(store, state, {
+            "event": "ScanOrganic", "ScanType": "Log", "Body": 1, "Genus_Localised": "Bacterium",
+        })
+
+        positions = state.sample_positions["Bacterium"]
+        assert len(positions) == 1 # the tag is gone -- only the new real sample remains
+        assert positions[0] == (10.0, 20.0, None)
+
+    def test_real_sample_keeps_an_existing_tag_that_is_still_far_enough(self, store:ExplorerStore) -> None:
+        state = ExplorerState()
+        state.cmdr_id = store.get_or_create_cmdr("Testy")
+        state.system_id = store.get_or_create_system(state.cmdr_id, 1, "Deltius")
+        state.body_id = 1
+        state.body_name = "Deltius 1"
+        state.has_lat_long = True
+        state.latitude = 10.0
+        state.longitude = 20.0
+        state.planet_radius = 500_000.0
+        state.sample_positions["Bacterium"] = [(10.1, 20.0, "Lime")] # ~873m away -- past Bacterium's 500m
+
+        handlers_exobiology.on_scan_organic(store, state, {
+            "event": "ScanOrganic", "ScanType": "Log", "Body": 1, "Genus_Localised": "Bacterium",
+        })
+
+        positions = state.sample_positions["Bacterium"]
+        assert len(positions) == 2 # both the tag and the new real sample remain
+        assert (10.1, 20.0, "Lime") in positions
+
 class TestOnSellOrganicData:
 
     def test_presumes_every_completed_unsold_row_sold_regardless_of_biodata_matching(self, store:ExplorerStore) -> None:
@@ -133,12 +179,13 @@ class TestOnCodexEntry:
         }
 
     def test_tags_a_waypoint_from_the_name_localised_color_variant(self, store:ExplorerStore) -> None:
-        """ Real captured format is "<genus> <species> - <color>" -- the color suffix must be
-        stripped before the species name will match SPECIES_VALUE's lookup table. """
+        """ Real captured format is "<genus> <species> - <color>" -- the color suffix is
+        stripped before the species name is matched against SPECIES_VALUE's lookup table, but
+        also kept alongside the position so the radar can draw the tag in that color. """
         state = self._state(store)
         handlers_exobiology.on_codex_entry(store, state, self._entry("Tussock Propagito - Lime"))
 
-        assert state.sample_positions["Tussock"] == [(-13.856755, -116.384651)]
+        assert state.sample_positions["Tussock"] == [(-13.856755, -116.384651, "Lime")]
 
     def test_creates_a_species_progress_row_even_without_prior_saa_signals_found(self, store:ExplorerStore) -> None:
         """ A low-altitude composition scan can happen before (or instead of) a DSS pass, so the
@@ -177,7 +224,7 @@ class TestOnCodexEntry:
         handlers_exobiology.on_codex_entry(store, state, self._entry("Tussock Propagito - Lime", lat=1.0, lon=2.0))
         handlers_exobiology.on_codex_entry(store, state, self._entry("Tussock Propagito - Lime", lat=3.0, lon=4.0))
 
-        assert state.sample_positions["Tussock"] == [(1.0, 2.0), (3.0, 4.0)]
+        assert state.sample_positions["Tussock"] == [(1.0, 2.0, "Lime"), (3.0, 4.0, "Lime")]
 
     def test_confirms_the_exact_species_and_value(self, store:ExplorerStore) -> None:
         """ Name_Localised gives the exact species, not just genus -- CodexEntry should confirm
@@ -201,3 +248,33 @@ class TestOnCodexEntry:
         handlers_exobiology.on_codex_entry(store, state, self._entry("Tussock Propagito - Lime"))
 
         assert state.current_genus is None
+
+    def test_skips_the_waypoint_when_too_close_to_an_existing_real_sample(self, store:ExplorerStore) -> None:
+        """ Mirror of on_scan_organic's own pruning: a tag that's already within the genus's
+        minimum sample distance of a real sample you've taken would be unusable from the moment
+        it appeared, so it's never added as a waypoint in the first place. Tussock's minimum
+        distance is 200m. Species/value confirmation still happens regardless. """
+        state = self._state(store)
+        state.planet_radius = 500_000.0
+        state.sample_positions["Tussock"] = [(-13.856755, -116.384651, None)] # a real sample already taken here
+
+        handlers_exobiology.on_codex_entry(store, state, self._entry("Tussock Propagito - Lime", lat=-13.856655, lon=-116.384651)) # ~0.87m away
+
+        assert state.sample_positions["Tussock"] == [(-13.856755, -116.384651, None)] # no waypoint added
+
+        assert state.cmdr_id is not None and state.system_id is not None
+        body_pk:int = store.get_or_create_body(state.cmdr_id, state.system_id, 2, "")
+        progress_id:int = store.get_or_create_species_progress(body_pk, "Tussock")
+        row = store.get_species_progress_row(progress_id)
+        assert row is not None
+        assert row["species"] == "Tussock Propagito" # confirmation still happens
+
+    def test_adds_the_waypoint_when_far_enough_from_an_existing_real_sample(self, store:ExplorerStore) -> None:
+        state = self._state(store)
+        state.planet_radius = 500_000.0
+        state.sample_positions["Tussock"] = [(-13.856755, -116.384651, None)] # a real sample already taken here
+
+        handlers_exobiology.on_codex_entry(store, state, self._entry("Tussock Propagito - Lime", lat=-13.826755, lon=-116.384651)) # ~262m away
+
+        assert len(state.sample_positions["Tussock"]) == 2
+        assert (-13.826755, -116.384651, "Lime") in state.sample_positions["Tussock"]

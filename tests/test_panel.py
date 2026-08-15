@@ -819,6 +819,42 @@ class TestPanelStates:
         assert row is not None
         assert row[4] == "0 of 1 scanned", row
 
+    def test_current_body_detail_nests_under_its_own_row_not_the_last_flagged_row(self, plugin:TestHarness) -> None:
+        """
+        Real-world regression: the current-body detail used to render after the WHOLE flagged
+        table, so when the current body wasn't the last one listed (sorted by body_id), its
+        species list visually read as belonging to whichever body happened to sort last. It
+        must nest directly under its own row instead, regardless of table order.
+        """
+        from explorer.state import state as explorer_state
+
+        plugin.load_events("explorer_events.json")
+        plugin.play_sequence("honk_only", 0.02)
+
+        import load
+        assert load.store is not None and load.panel is not None
+        assert explorer_state.cmdr_id is not None and explorer_state.system_id is not None
+
+        body1_pk:int = load.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 1, "QuietSpace A 1")
+        body2_pk:int = load.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 2, "QuietSpace A 2")
+        load.store.update_body(body1_pk, has_biological_signals=1, biological_signal_count=1)
+        load.store.update_body(body2_pk, has_biological_signals=1, biological_signal_count=1)
+        load.store.replace_genus_predictions(body2_pk, [("Bacterium", None, 0.8)]) # body 2's own flagged guess
+
+        progress_id:int = load.store.get_or_create_species_progress(body1_pk, "Tussock")
+        load.store.update_species_progress(progress_id, species="Tussock Ignis", samples_taken=1)
+
+        explorer_state.body_id = 1
+        explorer_state.body_name = "QuietSpace A 1"
+        load.panel.refresh()
+
+        lines = _panel_lines(load)
+        row1_index:int = next(i for i, line in enumerate(lines) if line.startswith("A 1 "))
+        row2_index:int = next(i for i, line in enumerate(lines) if line.startswith("A 2 "))
+        detail_index:int = next(i for i, line in enumerate(lines) if "Tussock Ignis" in line and "1/3" in line)
+
+        assert row1_index < detail_index < row2_index, lines
+
     def test_confirmed_signal_drops_prefix(self, plugin:TestHarness) -> None:
         """ The "?" marks a purely speculative guess; it shouldn't apply once a real signal is confirmed. """
         from explorer.state import state as explorer_state
@@ -855,10 +891,10 @@ class TestPanelStates:
         import load
         assert load.store is not None and load.panel is not None
         lines = _panel_lines(load)
-        # The on-body detail table (not just the flagged-list guess line) should be showing --
-        # its own header line (see _render_exobiology_section) is the distinguishing marker,
-        # separate from the flagged-list row sharing the same designator prefix.
-        assert "A 1 (Icy)" in lines, lines
+        # The on-body detail table (not just the flagged-list guess line) should be showing,
+        # nested directly under the flagged row -- no separate header repeating the body name.
+        flagged_index:int = next(i for i, line in enumerate(lines) if line.startswith("A 1 (Icy) "))
+        assert lines[flagged_index + 1].startswith("?"), lines # the detail row right below it
 
 class TestNoDuplicateWidgets:
     """
