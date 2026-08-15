@@ -1,17 +1,18 @@
 """
-Overlay radar: distance rings on a fixed real-world scale, a highlighted ring at the current
-species' required minimum sample distance, and cross markers per logged sample. Visible from
-SupercruiseExit onward (flying over the surface, not just on-foot) whenever a confirmed genus
-has at least one sample taken this visit -- a genus that's merely been tagged via
-SAASignalsFound but not yet approached this visit draws nothing by default (see
-SHOW_TAGGED_GENUS): there's no known bearing to it yet, only a distance, and showing a
-differently-colored ring + label for it either conveyed no real information or (once heading-up
-was added) misleadingly suggested a direction, since the label's fixed screen anchor always
-coincided with "straight ahead". Draws every not-yet-completed genus that IS in progress at
-once (not just one) so it keeps guiding you to each simultaneously, showing samples already
-taken for each. Built on the generic utils/overlay.py wrapper -- this module supplies
-EDMC-ExplorerLite's own frame names, positions, and colors, which is deliberately NOT part of
-the shared library (see PluginLib's overlay.py docstring).
+Overlay radar: distance rings on a fixed real-world scale, a highlighted ring at the CURRENT
+species' required minimum sample distance, and cross markers per logged sample -- for every
+in-progress genus, not just the current one. Visible from SupercruiseExit onward (flying over
+the surface, not just on-foot) whenever a confirmed genus has at least one sample taken this
+visit -- a genus that's merely been tagged via SAASignalsFound but not yet approached this
+visit draws nothing by default (see SHOW_TAGGED_GENUS): there's no known bearing to it yet,
+only a distance, and showing a differently-colored ring + label for it either conveyed no real
+information or (once heading-up was added) misleadingly suggested a direction, since the
+label's fixed screen anchor always coincided with "straight ahead". Only ONE ring is ever drawn
+at a time -- state.current_genus, the genus of the most recent real ScanOrganic sample -- since
+several genera's rings on screen simultaneously became illegible; sample dots for every
+in-progress genus still show regardless. Built on the generic utils/overlay.py wrapper -- this
+module supplies EDMC-ExplorerLite's own frame names, positions, and colors, which is
+deliberately NOT part of the shared library (see PluginLib's overlay.py docstring).
 
 Heading-up, not north-up: the player's current facing direction always maps to screen "up", so
 the whole radar (rings excepted -- concentric circles look the same either way -- but sample
@@ -173,7 +174,10 @@ class RadarOverlay:
         for genus in genera:
             in_progress:bool = bool(state.sample_positions.get(genus))
             if in_progress:
-                self._draw_genus_ring(radius_px, genus, ACTIVE_RING_COLOR)
+                # Only the genus actually being sampled gets a ring -- with several genera's
+                # samples on screen at once, a ring per genus became illegible.
+                if genus == state.current_genus:
+                    self._draw_genus_ring(radius_px, genus, ACTIVE_RING_COLOR)
                 self._draw_samples(state, genus, radius_px, heading_rad)
             elif SHOW_TAGGED_GENUS:
                 self._draw_genus_ring(radius_px, genus, TAGGED_RING_COLOR)

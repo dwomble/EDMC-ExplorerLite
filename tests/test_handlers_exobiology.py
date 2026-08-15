@@ -28,6 +28,40 @@ def _completed_progress(store:ExplorerStore, cmdr_id:int, system_id:int, body_id
     )
     return progress_id
 
+class TestOnScanOrganic:
+
+    def test_sets_current_genus_on_a_real_sample(self, store:ExplorerStore) -> None:
+        state = ExplorerState()
+        state.cmdr_id = store.get_or_create_cmdr("Testy")
+        state.system_id = store.get_or_create_system(state.cmdr_id, 1, "Deltius")
+        state.body_id = 1
+        state.body_name = "Deltius 1"
+
+        handlers_exobiology.on_scan_organic(store, state, {
+            "event": "ScanOrganic", "ScanType": "Log", "Body": 1, "Genus_Localised": "Bacterium",
+        })
+
+        assert state.current_genus == "Bacterium"
+
+    def test_updates_current_genus_when_switching_species(self, store:ExplorerStore) -> None:
+        """ Walking to a different organism mid-visit should move the radar's one active ring
+        to whichever genus you're now actually sampling. """
+        state = ExplorerState()
+        state.cmdr_id = store.get_or_create_cmdr("Testy")
+        state.system_id = store.get_or_create_system(state.cmdr_id, 1, "Deltius")
+        state.body_id = 1
+        state.body_name = "Deltius 1"
+
+        handlers_exobiology.on_scan_organic(store, state, {
+            "event": "ScanOrganic", "ScanType": "Log", "Body": 1, "Genus_Localised": "Bacterium",
+        })
+        assert state.current_genus == "Bacterium"
+
+        handlers_exobiology.on_scan_organic(store, state, {
+            "event": "ScanOrganic", "ScanType": "Log", "Body": 1, "Genus_Localised": "Tussock",
+        })
+        assert state.current_genus == "Tussock"
+
 class TestOnSellOrganicData:
 
     def test_presumes_every_completed_unsold_row_sold_regardless_of_biodata_matching(self, store:ExplorerStore) -> None:
@@ -144,3 +178,26 @@ class TestOnCodexEntry:
         handlers_exobiology.on_codex_entry(store, state, self._entry("Tussock Propagito - Lime", lat=3.0, lon=4.0))
 
         assert state.sample_positions["Tussock"] == [(1.0, 2.0), (3.0, 4.0)]
+
+    def test_confirms_the_exact_species_and_value(self, store:ExplorerStore) -> None:
+        """ Name_Localised gives the exact species, not just genus -- CodexEntry should confirm
+        it (and its value) the same way a real ScanOrganic sample eventually would, replacing
+        whatever "possible species" guess was showing well before landing/sampling it. """
+        state = self._state(store)
+        handlers_exobiology.on_codex_entry(store, state, self._entry("Tussock Propagito - Lime", body_id=5))
+
+        assert state.cmdr_id is not None and state.system_id is not None
+        body_pk:int = store.get_or_create_body(state.cmdr_id, state.system_id, 5, "")
+        progress_id:int = store.get_or_create_species_progress(body_pk, "Tussock")
+        row = store.get_species_progress_row(progress_id)
+        assert row is not None
+        assert row["species"] == "Tussock Propagito"
+        assert row["confirmed_value"] == 1_000_000
+
+    def test_does_not_mark_it_as_currently_being_sampled(self, store:ExplorerStore) -> None:
+        """ A composition-scan tag is a passive "spotted it" note, not "currently working on
+        it" -- unlike a real ScanOrganic sample, it must not claim the radar's one active ring. """
+        state = self._state(store)
+        handlers_exobiology.on_codex_entry(store, state, self._entry("Tussock Propagito - Lime"))
+
+        assert state.current_genus is None

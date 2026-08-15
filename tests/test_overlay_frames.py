@@ -55,6 +55,7 @@ def _landed_state(store:ExplorerStore, genus:str = "Bacterium", samples:int = 1,
         store.update_species_progress(progress_id, completed_at="2026-01-01T00:00:00Z")
     if samples:
         state.sample_positions[genus] = [(10.0 + i * 0.0001, 20.0) for i in range(samples)]
+        state.current_genus = genus
     return state
 
 def _flying_state(store:ExplorerStore) -> ExplorerState:
@@ -127,16 +128,18 @@ class TestRadarOverlayModern:
         assert round(cy) == CENTER_Y
 
     @pytest.mark.overlay('Modern')
-    def test_render_draws_every_incomplete_confirmed_genus_at_once(self, overlay_mode, store:ExplorerStore) -> None:
+    def test_render_draws_samples_for_every_in_progress_genus_but_only_one_ring(self, overlay_mode, store:ExplorerStore) -> None:
         """
         Regression: render() used to pick a single "active genus" (the first not-yet-completed
         row in DB insertion order) and only ever drew that one's ring/samples -- so a second
         confirmed, still-incomplete genus on the same body (tagged via SAASignalsFound) never
         showed up at all, and if that second genus happened to sort first, even the FIRST
-        genus's own already-taken samples would be hidden. Both should now draw simultaneously.
+        genus's own already-taken samples would be hidden. Both genera's samples now always
+        draw -- but only ONE ring shows at a time (state.current_genus, whichever you're
+        actually sampling), since a ring per simultaneously-in-progress genus became illegible.
         """
         radar = RadarOverlay(Overlay())
-        state = _landed_state(store, genus="Bacterium", samples=1)
+        state = _landed_state(store, genus="Bacterium", samples=1) # sets current_genus = "Bacterium"
         state.sample_positions["Fonticulua"] = [(10.0001, 20.0)]
         assert state.cmdr_id is not None and state.system_id is not None and state.body_id is not None
         body_pk:int = store.get_or_create_body(state.cmdr_id, state.system_id, state.body_id, state.body_name)
@@ -145,10 +148,10 @@ class TestRadarOverlayModern:
         radar.render(store, state)
 
         shapes = radar.overlay._overlay.shapes
-        assert f"{FRAME_PREFIX}ring-active-Bacterium" in shapes
-        assert f"{FRAME_PREFIX}ring-active-Fonticulua" in shapes
+        assert f"{FRAME_PREFIX}ring-active-Bacterium" in shapes # current_genus -- gets the ring
+        assert f"{FRAME_PREFIX}ring-active-Fonticulua" not in shapes # in progress too, but not current -- no ring
         assert f"{FRAME_PREFIX}sample-Bacterium-0" in shapes
-        assert f"{FRAME_PREFIX}sample-Fonticulua-0" in shapes
+        assert f"{FRAME_PREFIX}sample-Fonticulua-0" in shapes # samples still show for both
 
     @pytest.mark.overlay('Modern')
     def test_render_shows_nothing_for_a_tagged_but_unstarted_genus(self, overlay_mode, store:ExplorerStore) -> None:

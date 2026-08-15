@@ -201,7 +201,7 @@ class TestPanelStates:
         import load
         assert load.store is not None and load.panel is not None
         lines = _panel_lines(load)
-        assert any("Bacterium Aurasus 500m 1M Cr" in line for line in lines)
+        assert any("Bacterium Aurasus 2/3 500m 1M Cr" in line for line in lines)
 
         for event in events[cutoff:]:
             plugin.fire_event(event)
@@ -304,8 +304,9 @@ class TestPanelStates:
         Regression test for the pre-DSS genus predictor: a landable body whose Scan properties
         match known genera's conditions should show a "?<genus/species> ..." guess (unconfirmed,
         marked with "?") in the flagged-body list before any DSS data exists, and once
-        SAASignalsFound later confirms what's there, the tag should name the actual genus, not
-        the predicted guess (and the body should stay listed, not read as "nothing flagged").
+        SAASignalsFound later confirms what's there, the tag should switch to a scanned/total
+        count (see _flagged_body_row) rather than the predicted guess (and the body should
+        stay listed, not read as "nothing flagged").
         """
         plugin.load_events("explorer_events.json")
         events = plugin.events["predicted_then_confirmed"]
@@ -325,8 +326,7 @@ class TestPanelStates:
         plugin.fire_event(events[confirm_index])
 
         lines = _panel_lines(load)
-        assert any(line.startswith("A 1 ") and "Bacterium" in line for line in lines), lines
-        assert not any(line.startswith("A 1 ") and "1 species" in line for line in lines), lines
+        assert any(line.startswith("A 1 ") and "0 of 1 scanned" in line for line in lines), lines
 
     def test_unconfirmed_genus_guess_shows_a_value_range_not_a_single_number(self, plugin:TestHarness) -> None:
         """
@@ -353,6 +353,60 @@ class TestPanelStates:
 
         rendered:tuple[str, str, str] = load.panel._predicted_genus_row(best[0], confirmed_signal=False)
         assert "-" in rendered[2], rendered # e.g. "~1.5-3.4M Cr", not a single number
+        assert rendered[2].startswith("~"), rendered # genuine range -- "~" is warranted here
+
+    def test_predicted_row_has_no_uncertainty_marker_once_narrowed_to_one_species(self, plugin:TestHarness) -> None:
+        """
+        Regression: "~" used to be prepended unconditionally for any not-yet-confirmed genus,
+        even once Scan-time narrowing had already collapsed the candidates to a single species
+        -- species values are fixed, so that number is already exact, not an estimate.
+        """
+        from explorer.state import state as explorer_state
+
+        plugin.load_events("explorer_events.json")
+        plugin.play_sequence("honk_only", 0.02)
+
+        import load
+        assert load.store is not None and load.panel is not None
+        assert explorer_state.cmdr_id is not None and explorer_state.system_id is not None
+        body_pk:int = load.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 1, "QuietSpace A 1")
+        load.store.replace_genus_predictions(body_pk, [("Bacterium", "Bacterium Alcyoneum", 1.0)])
+
+        best:list[dict] = load.panel._best_predictions_for_body(body_pk)
+        assert len(best) == 1, best
+        assert best[0]["value_min"] == best[0]["value_max"], "test premise: a single candidate is already exact"
+
+        rendered:tuple[str, str, str] = load.panel._predicted_genus_row(best[0], confirmed_signal=False)
+        assert not rendered[2].startswith("~"), rendered
+
+    def test_confirmed_genus_row_has_no_uncertainty_marker_once_narrowed_to_one_species(self, plugin:TestHarness) -> None:
+        """ Same fix, on the on-body detail row (_exobio_progress_row): a genus confirmed via
+        SAASignalsFound but not yet sampled, narrowed to one surviving candidate species, is
+        already an exact value -- not an estimate. """
+        from explorer.state import state as explorer_state
+
+        plugin.load_events("explorer_events.json")
+        plugin.play_sequence("honk_only", 0.02)
+
+        import load
+        assert load.store is not None and load.panel is not None
+        assert explorer_state.cmdr_id is not None and explorer_state.system_id is not None
+        body_pk:int = load.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 1, "QuietSpace A 1")
+        load.store.replace_genus_predictions(body_pk, [("Bacterium", "Bacterium Alcyoneum", 1.0)])
+        progress_id:int = load.store.get_or_create_species_progress(body_pk, "Bacterium")
+
+        row:sqlite3.Row|None = load.store.get_species_progress_row(progress_id)
+        assert row is not None
+        rendered:tuple[str, str, str, str] = load.panel._exobio_progress_row(row)
+        assert not rendered[3].startswith("~"), rendered
+
+        # Contrast: still-tied candidates with DIFFERENT values keep the marker.
+        load.store.replace_genus_predictions(body_pk, [
+            ("Bacterium", "Bacterium Cerbrus", 1.0),
+            ("Bacterium", "Bacterium Tela", 1.0),
+        ])
+        rendered = load.panel._exobio_progress_row(row)
+        assert rendered[3].startswith("~"), rendered
 
     def test_scan_narrows_prediction_to_species_when_data_available(self, plugin:TestHarness) -> None:
         """
@@ -545,7 +599,7 @@ class TestPanelStates:
         assert body is not None
         row = load.panel._flagged_body_row("QuietSpace", body)
         assert row is not None
-        assert row[4] == "10 possible genera", row
+        assert row[4] == "8 signals: 10 possible genera", row
 
     def test_signal_count_bias_prefers_chain_expected_genus_over_raw_confidence(self, plugin:TestHarness) -> None:
         """
@@ -736,8 +790,14 @@ class TestPanelStates:
         assert row is not None
         assert row[2] == "?g", row
 
-    def test_flagged_row_keeps_species_guess(self, plugin:TestHarness) -> None:
-        """ Confirming the genus used to drop the earlier species-level narrowing entirely. """
+    def test_flagged_row_shows_scanned_count_once_genus_confirmed(self, plugin:TestHarness) -> None:
+        """
+        A confirmed-but-unsampled genus used to show its species-level narrowing (e.g.
+        "Cerbrus/Tela") directly in the flagged row -- replaced by a compact scanned/total
+        count (see _flagged_body_row): a full name list became illegible once several genera
+        were confirmed on the same body at once. The species-level guess itself still shows in
+        full on-body (_exobio_progress_row/_possible_species_label), just not in this summary.
+        """
         from explorer.state import state as explorer_state
 
         plugin.load_events("explorer_events.json")
@@ -757,7 +817,7 @@ class TestPanelStates:
         assert body is not None
         row = load.panel._flagged_body_row("QuietSpace", body)
         assert row is not None
-        assert "Cerbrus/Tela" in row[4], row
+        assert row[4] == "0 of 1 scanned", row
 
     def test_confirmed_signal_drops_prefix(self, plugin:TestHarness) -> None:
         """ The "?" marks a purely speculative guess; it shouldn't apply once a real signal is confirmed. """
@@ -796,8 +856,9 @@ class TestPanelStates:
         assert load.store is not None and load.panel is not None
         lines = _panel_lines(load)
         # The on-body detail table (not just the flagged-list guess line) should be showing --
-        # its "~" (an unconfirmed estimate) is the distinguishing marker between the two.
-        assert any("~" in line for line in lines), lines
+        # its own header line (see _render_exobiology_section) is the distinguishing marker,
+        # separate from the flagged-list row sharing the same designator prefix.
+        assert "A 1 (Icy)" in lines, lines
 
 class TestNoDuplicateWidgets:
     """

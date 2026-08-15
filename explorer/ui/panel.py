@@ -24,6 +24,7 @@ MAX_PREDICTED_SHOWN:int = 3 # fallback cap on predicted candidates per body, onl
 INDENT_PX:int = 14 # left offset for a table nested under its own header line (e.g. per-body biologicals)
 MAX_SPECIES_LABEL_CHARS:int = 28 # cap on the "Genus Acies/Aurasus" possible-species label
 MAX_MERGED_TAG_CHARS:int = 40 # above this, a 3+-way merged genus list collapses to just a count
+SAMPLES_REQUIRED:int = 3 # every species needs exactly 3 real samples (Log/Sample x2) to complete -- see handlers_exobiology.py
 GRAVITY_MS2_PER_G:float = 9.797759 # matches genus_prediction.py's own constant, not the textbook 9.80665
 
 def _visible_lines_px() -> int:
@@ -211,14 +212,15 @@ class ExplorerPanel:
             value_min += scan_value
             value_max += scan_value
 
-        active:list[sqlite3.Row] = [r for r in self.store.get_species_progress_for_body(body["id"]) if not r["completed_at"]]
+        all_progress:list[sqlite3.Row] = self.store.get_species_progress_for_body(body["id"])
+        active:list[sqlite3.Row] = [r for r in all_progress if not r["completed_at"]]
         if active:
-            # Confirmed via SAASignalsFound -- the genus is known, not a guess. Species isn't
-            # sampled yet, but the earlier Scan-time prediction already narrowed down which
-            # ones are still plausible (see _possible_species_label) -- don't throw that away
-            # and fall back to a bare genus name just because the genus itself is now certain.
-            names:list[str] = [r["species"] or self._possible_species_label(body["id"], r["genus"]) for r in active]
-            species_desc = ", ".join(names)
+            # A full name list here used to overflow the row badly once several genera were
+            # confirmed at once (SAASignalsFound) -- a compact scanned/total count fits the
+            # row and is what actually matters at a glance: how much of this body is left to
+            # sample. The individual species/genus names are still shown in full once you're
+            # actually on-body (see _render_exobiology_section/_exobio_progress_row).
+            species_desc = f"{len(all_progress) - len(active)} of {len(all_progress)} scanned"
             for r in active:
                 r_min, r_max = self._exobio_row_range(r)
                 value_min += r_min
@@ -231,7 +233,12 @@ class ExplorerPanel:
                 # doubt about existence, not just identity) only belongs on a purely
                 # speculative Scan-based guess with no confirmed signal at all.
                 prefix:str = "" if body["has_biological_signals"] else "?"
-                species_desc = f"{prefix}{self._collapse_prediction_names(predictions)}"
+                # The real signal count (FSSBodySignals) is ground truth for "how many
+                # organisms are actually here"; "N possible genera" is only a guess at which
+                # kinds -- show both rather than leaving the real count implicit.
+                signal_count:int|None = body["biological_signal_count"]
+                count_prefix:str = f"{signal_count} signal{'' if signal_count == 1 else 's'}: " if signal_count else ""
+                species_desc = f"{count_prefix}{prefix}{self._collapse_prediction_names(predictions)}"
                 value_min += sum(p["value_min"] for p in predictions)
                 value_max += sum(p["value_max"] for p in predictions)
             elif body["has_biological_signals"]:
@@ -257,6 +264,11 @@ class ExplorerPanel:
         body with no biological interest at all, UNLESS we're actually on-foot there --
         showing "nothing here" for every uninteresting body/star/gas giant flown past would
         drown out the rest of the panel; on-foot, it's confirmation the player actually wants.
+
+        Real-world regression: with no header of its own, this section visually ran straight
+        on from the flagged-bodies table above it -- indistinguishable from that table's own
+        last row unless the current body genuinely WAS the last one listed. A header line
+        naming the current body removes the ambiguity regardless of table order.
         """
         assert self.state.cmdr_id is not None and self.state.system_id is not None and self.state.body_id is not None
         body_pk:int = self.store.get_or_create_body(self.state.cmdr_id, self.state.system_id, self.state.body_id, self.state.body_name)
@@ -271,10 +283,15 @@ class ExplorerPanel:
         if not active and not predictions and not self.state.on_foot:
             return
 
+        body:sqlite3.Row|None = self.store.get_body(body_pk)
+        designator:str = _body_designator(self.state.system_name, self.state.body_name)
+        if body and body["type_label"]:
+            designator = f"{designator} ({body['type_label']})"
+        self._line(designator)
+
         if active:
-            self._render_table([self._exobio_progress_row(row) for row in active], anchors=("w", "e", "e"), indent=INDENT_PX)
+            self._render_table([self._exobio_progress_row(row) for row in active], anchors=("w", "e", "e", "e"), indent=INDENT_PX)
         elif predictions:
-            body:sqlite3.Row|None = self.store.get_body(body_pk)
             confirmed_signal:bool = bool(body and body["has_biological_signals"])
             self._render_table(
                 [self._predicted_genus_row(slot, confirmed_signal) for slot in predictions], anchors=("w", "e", "e"), indent=INDENT_PX
@@ -420,12 +437,14 @@ class ExplorerPanel:
     def _predicted_genus_row(self, slot:dict, confirmed_signal:bool) -> tuple[str, str, str]:
         """ Pre-DSS guess -- the '?' only applies when even the SIGNAL's existence is
         speculative (no FSSBodySignals yet); once a signal is confirmed, a real genus is
-        certainly here -- only which one is still open. """
+        certainly here -- only which one is still open. "~" only marks a genuine remaining
+        range (min != max); species values are fixed, so a slot narrowed to one candidate is
+        already an exact number. """
         prefix:str = "" if confirmed_signal else "?"
-        return (
-            f"{prefix}{slot['name']}", _sampling_distance_str(slot["genera"]),
-            f"~{_credits_range(slot['value_min'], slot['value_max'])}",
-        )
+        value_str:str = _credits_range(slot["value_min"], slot["value_max"])
+        if slot["value_min"] != slot["value_max"]:
+            value_str = f"~{value_str}"
+        return (f"{prefix}{slot['name']}", _sampling_distance_str(slot["genera"]), value_str)
 
     def _exobio_row_range(self, row:sqlite3.Row) -> tuple[int, int]:
         """ (min, max) value for a confirmed-genus row -- an exact number once the species is
@@ -470,16 +489,22 @@ class ExplorerPanel:
             return f"{genus} sp."
         return self._join_species_names(genus, [c["species"] for c in candidates])
 
-    def _exobio_progress_row(self, row:sqlite3.Row) -> tuple[str, str, str]:
+    def _exobio_progress_row(self, row:sqlite3.Row) -> tuple[str, str, str, str]:
         """
         Progressive detail as we learn more -- genus placeholder becomes the species name once
         confirmed (first sample), and the value estimate becomes the confirmed value at the same
         time, replacing the generic range guess rather than sitting alongside it.
+
+        "~" only marks a genuine remaining range (min != max) -- species values are fixed, so
+        once narrowing has collapsed to a single surviving candidate the number is already
+        exact, even before an official DB confirmation (row["species"] set via a real sample).
         """
         genus:str = row["genus"] or "biological"
         name:str = row["species"] or self._possible_species_label(row["body_id"], genus)
+        progress:str = f"{row['samples_taken']}/{SAMPLES_REQUIRED}"
         value_min, value_max = self._exobio_row_range(row)
         distance:str = _sampling_distance_str([genus])
-        if row["species"]:
-            return (name, distance, _credits_range(value_min, value_max))
-        return (name, distance, f"~{_credits_range(value_min, value_max)}")
+        value_str:str = _credits_range(value_min, value_max)
+        if value_min != value_max:
+            value_str = f"~{value_str}"
+        return (name, progress, distance, value_str)

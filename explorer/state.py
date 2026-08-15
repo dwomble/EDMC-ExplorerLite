@@ -38,6 +38,12 @@ class ExplorerState:
     # body.
     sample_positions:dict[str, list[tuple[float, float]]] = field(default_factory=dict)
 
+    # The genus of the most recent real ScanOrganic sample this visit (not a CodexEntry tag --
+    # that's a passive "spotted it" note, not "currently working on it"). The radar draws its
+    # one active ring for this genus only, not one ring per in-progress genus at once -- with
+    # several genera going simultaneously, that many rings became illegible.
+    current_genus:str|None = None
+
     def reset_body(self) -> None:
         """ Called on leaving a body / jumping system -- clears body-scoped context. """
         self.body_id = None
@@ -50,6 +56,7 @@ class ExplorerState:
         self.altitude = None
         self.planet_radius = None
         self.sample_positions = {}
+        self.current_genus = None
 
     @property
     def exobiology_relevant(self) -> bool:

@@ -9,7 +9,7 @@ import sqlite3
 from explorer.db.store import ExplorerStore
 from explorer.state import ExplorerState
 from explorer.util import now_iso
-from explorer.valuation import exobiology
+from explorer.valuation import exobiology, exobiology_data
 
 # Confirmed against real captured journal lines (2026-07 sessions): every completed species
 # follows exactly ScanType Log -> Sample -> Sample -> Analyse, in that order -- Log and the two
@@ -49,6 +49,7 @@ def on_scan_organic(store:ExplorerStore, state:ExplorerState, entry:dict) -> dic
         # ScanOrganic itself carries no position -- capture the dashboard's latest lat/long as
         # this sample's position (for the overlay radar's per-sample markers, session-only,
         # see state.py). Only for real samples, not the Analyse finalize step.
+        state.current_genus = genus # the radar's one active ring belongs to whichever genus you're actually sampling
         if state.has_lat_long and state.latitude is not None and state.longitude is not None:
             state.sample_positions.setdefault(genus, []).append((state.latitude, state.longitude))
     elif scan_type == "Analyse" and (not row or not row["completed_at"]):
@@ -69,7 +70,9 @@ def on_codex_entry(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict
     scanning something else nearby). Reuses state.sample_positions -- the same session-only,
     radar-only store ScanOrganic feeds -- so it gets a ring + dot immediately, without touching
     samples_taken/species_progress completion, so it's never mistaken for a real genetic sample
-    in the panel's progress counts. """
+    in the panel's progress counts. Name_Localised also gives the exact SPECIES (not just
+    genus), so it confirms the species/value the same way a real sample eventually would --
+    replacing whatever "possible species" guess was showing, well before you land and sample it. """
     if entry.get("SubCategory") != CODEX_ORGANIC_SUBCATEGORY:
         return {}
     if state.system_id is None or state.cmdr_id is None:
@@ -79,13 +82,20 @@ def on_codex_entry(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict
     longitude:float|None = entry.get("Longitude")
     if body_id is None or latitude is None or longitude is None:
         return {}
-    genus:str|None = exobiology.genus_from_codex_name(entry.get("Name_Localised", ""))
+    species:str = entry.get("Name_Localised", "").split(" - ")[0].strip()
+    genus:str|None = exobiology_data.genus_from_species_name(species)
     if genus is None:
         return {}
 
     body_name:str = state.body_name if state.body_id == body_id else ""
     body_pk:int = store.get_or_create_body(state.cmdr_id, state.system_id, body_id, body_name)
-    store.get_or_create_species_progress(body_pk, genus) # ensures it shows even before/without SAASignalsFound
+    progress_id:int = store.get_or_create_species_progress(body_pk, genus) # ensures it shows even before/without SAASignalsFound
+
+    fields:dict = dict(species=species)
+    confirmed_value:int|None = exobiology.estimate_confirmed_value(genus, species)
+    if confirmed_value is not None:
+        fields["confirmed_value"] = confirmed_value
+    store.update_species_progress(progress_id, **fields)
 
     state.sample_positions.setdefault(genus, []).append((latitude, longitude))
     return {"panel": True, "overlay": "radar"}
