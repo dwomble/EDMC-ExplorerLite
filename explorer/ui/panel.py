@@ -138,7 +138,8 @@ class ExplorerPanel:
     def _render_system_summary(self, system:sqlite3.Row) -> None:
         name:str = system["name"]
 
-        if system["honk_body_count"] is None:
+        hbc:int|None = system["honk_body_count"]
+        if hbc is None:
             self._line(f"{name} — honk needed")
             return
 
@@ -146,10 +147,10 @@ class ExplorerPanel:
         # not gated behind a full-system FSS sweep, since many explorers scan promising bodies
         # directly rather than sweeping every body in the system map first.
         if system["all_bodies_found"]:
-            self._line(f"{name} — {system['fss_body_count']} planets scanned")
+            self._line(f"{name} — {hbc} bod{'ies' if hbc != 1 else 'y'} — scan complete")
         else:
             status:str = "scan needed" if system["honk_hint"] == "worth a full scan" else "done"
-            self._line(f"{name} — {system['honk_body_count']} planets — {status}")
+            self._line(f"{name} — {hbc} bod{'ies' if hbc != 1 else 'y'} — {status}")
 
         flagged:list[sqlite3.Row] = self.store.get_flagged_bodies_for_system(system["id"])
         if flagged:

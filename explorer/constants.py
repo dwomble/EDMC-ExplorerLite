@@ -4,6 +4,7 @@ PLUGIN_NAME:str = "ExplorerLite"
 PLUGIN_VERSION:semantic_version.Version = semantic_version.Version.coerce("0.1.0-dev")
 VERSION:str = str(PLUGIN_VERSION) # For compatability with the EDMC Plugin Registry
 
+GH_OWNER:str = "dwomble" # Github owner/org
 GH_PROJECT:str = "EDMC-ExplorerLite" # Github project name
 
 CONFIG_PREFIX:str = "EDMCExplorerLite_"
