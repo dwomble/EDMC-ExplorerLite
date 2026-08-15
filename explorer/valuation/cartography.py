@@ -56,11 +56,7 @@ def is_exotic_star_type(star_type:str) -> bool:
 def _planet_category(planet_class:str) -> str:
     planet_class = (planet_class or "").lower()
     if "gas giant" in planet_class or "water giant" in planet_class:
-        # Checked first: "Gas giant with ammonia based life" otherwise collides with the
-        # "ammonia" check below (Ammonia world's much higher K) via bare substring match.
-        # Confirmed against a real payout (~11k Cr first-discovered+DSS-mapped) that "default"
-        # is the right bucket -- no dedicated gas-giant K is sourced.
-        return "default"
+        return "default" # checked first, else collides with "ammonia" below
     if "metal rich" in planet_class:
         return "metal_rich"
     if "high metal content" in planet_class:

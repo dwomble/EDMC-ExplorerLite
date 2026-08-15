@@ -11,12 +11,7 @@ from explorer.valuation import cartography
 class TestPlanetCategoryGasGiantCollision:
 
     def test_gas_giant_with_ammonia_life_is_not_bucketed_as_ammonia_world(self) -> None:
-        """
-        Real-world regression: a "Gas giant with ammonia based life" body was valued at 3.39M
-        Cr, when a first-discovery+DSS-mapped payout for a gas giant is actually ~11,000 Cr.
-        _planet_category()'s bare `"ammonia" in planet_class` check matched this planet class
-        via substring, wrongly bucketing it as the much pricier "Ammonia world" category.
-        """
+        """ Regression: this collided with "ammonia" and priced at 3.39M Cr instead of ~11k. """
         assert cartography._planet_category("Gas giant with ammonia based life") == "default"
 
     def test_gas_giant_with_water_based_life_is_not_bucketed_as_water_world(self) -> None:
