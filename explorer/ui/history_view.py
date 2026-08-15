@@ -4,6 +4,9 @@ prefs' open/close lifecycle doesn't fit a live data browser, and its notebook is
 for a multi-column tree. """
 import tkinter as tk
 import sqlite3
+from typing import Literal
+
+from config import config # type: ignore
 
 import explorer.utils.th as th
 from explorer.utils.treeviewplus import TreeviewPlus
@@ -11,9 +14,24 @@ from explorer.utils.misc import hfplus
 
 from explorer.db.store import ExplorerStore
 from explorer.state import ExplorerState
+from explorer.constants import CFG_HISTORY_WINDOW_GEOMETRY
 
 def _credits(value:int|None) -> str:
     return hfplus((value, 'num', '-', ''))
+
+def _date_str(iso:str) -> str:
+    return iso[:10] if iso else ""
+
+# (column, heading, anchor, width, stretch, sort_by) -- date has no sort_by: rows without a
+# recorded date are blank, and the sort helper can't parse an empty string.
+COLUMNS:tuple[tuple[str, str, Literal["w", "e"], int, bool, str|None], ...] = (
+    ("date", "Date", "w", 90, False, None),
+    ("status", "Status", "w", 80, False, None),
+    ("cart_est", "Cart. Est.", "e", 90, False, "num"),
+    ("cart_actual", "Cart. Actual", "e", 90, False, "num"),
+    ("exo_est", "Exo. Est.", "e", 90, False, "num"),
+    ("exo_actual", "Exo. Actual", "e", 90, False, "num"),
+)
 
 class HistoryView:
     """ Owns the (lazily-created) history Toplevel. Call refresh() after any DB change. """
@@ -35,6 +53,9 @@ class HistoryView:
         self.window = th.TopLevel(self.parent)
         self.window.title("ExplorerLite — History")
         self.window.protocol("WM_DELETE_WINDOW", self._on_close)
+        saved_geometry:str = config.get_str(CFG_HISTORY_WINDOW_GEOMETRY, default="")
+        if saved_geometry:
+            self.window.geometry(saved_geometry)
 
         content:th.Frame = th.Frame(self.window) # type: ignore[arg-type] -- a Toplevel is a valid Tk master even though th.Frame's hint says tk.Widget
         content.pack(fill=tk.BOTH, expand=True)
@@ -42,17 +63,19 @@ class HistoryView:
         self.summary_label = th.Label(content, text="", justify=tk.LEFT)
         self.summary_label.pack(fill=tk.X, padx=4, pady=4)
 
-        self.tree = TreeviewPlus(content, columns=("status", "est_value", "actual_value"), show="tree headings")
-        self.tree.heading("#0", text="Name")
-        self.tree.heading("status", text="Status")
-        self.tree.heading("est_value", text="Est. Value", sort_by="num")
-        self.tree.heading("actual_value", text="Actual Value", sort_by="num")
+        self.tree = TreeviewPlus(content, columns=tuple(c[0] for c in COLUMNS), show="tree headings")
+        self.tree.heading("#0", text="Name", anchor="w")
+        self.tree.column("#0", anchor="w", stretch=True, minwidth=140)
+        for key, text, anchor, width, stretch, sort_by in COLUMNS:
+            self.tree.heading(key, text=text, anchor=anchor, sort_by=sort_by)
+            self.tree.column(key, anchor=anchor, width=width, stretch=stretch)
         self.tree.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
 
         self.refresh()
 
     def _on_close(self) -> None:
         if self.window is not None:
+            config.set(CFG_HISTORY_WINDOW_GEOMETRY, self.window.geometry())
             self.window.destroy()
         self.window = None
         self.summary_label = None
@@ -75,7 +98,7 @@ class HistoryView:
         cart_pending:int = self.store.get_pending_cartography_value(self.state.cmdr_id)
         exo_pending:int = self.store.get_pending_exobiology_value(self.state.cmdr_id)
         self.summary_label.configure(text=(
-            f"Cartography — sold: {_credits(cart_sold)} Cr, pending: {_credits(cart_pending)} Cr\n"
+            f"Cartography — sold: {_credits(cart_sold)} Cr, pending: {_credits(cart_pending)} Cr   "
             f"Exobiology — sold: {_credits(exo_sold)} Cr, pending: {_credits(exo_pending)} Cr"
         ))
 
@@ -83,17 +106,15 @@ class HistoryView:
             self.tree.delete(item)
 
         for system in self.store.get_history_tree(self.state.cmdr_id):
-            system_iid:str = self.tree.insert(
-                "", "end", text=system["name"],
-                values=(system["status"], _credits(system["est_value"]), _credits(system["actual_value"])),
-            )
+            system_iid:str = self.tree.insert("", "end", text=system["name"], values=self._row_values(system))
             for body in system["children"]:
-                body_iid:str = self.tree.insert(
-                    system_iid, "end", text=body["name"],
-                    values=(body["status"], _credits(body["est_value"]), _credits(body["actual_value"])),
-                )
+                body_iid:str = self.tree.insert(system_iid, "end", text=body["name"], values=self._row_values(body))
                 for species in body["children"]:
-                    self.tree.insert(
-                        body_iid, "end", text=species["name"],
-                        values=(species["status"], _credits(species["est_value"]), _credits(species["actual_value"])),
-                    )
+                    self.tree.insert(body_iid, "end", text=species["name"], values=self._row_values(species))
+
+    def _row_values(self, node:dict) -> tuple[str, ...]:
+        return (
+            _date_str(node["date"]), node["status"].title(),
+            _credits(node["cart_est"]), _credits(node["cart_actual"]),
+            _credits(node["exo_est"]), _credits(node["exo_actual"]),
+        )

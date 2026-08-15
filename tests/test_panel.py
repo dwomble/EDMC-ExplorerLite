@@ -819,6 +819,31 @@ class TestPanelStates:
         assert row is not None
         assert row[4] == "0 of 1 scanned", row
 
+    def test_flagged_row_drops_off_once_every_confirmed_genus_is_fully_sampled(self, plugin:TestHarness) -> None:
+        """
+        Real-world regression: once every confirmed genus on a body is fully sampled, the row
+        used to fall through to the raw FSSBodySignals count ("8 biological signals", "? Cr")
+        instead of dropping off -- has_biological_signals stays 1 forever, and that fallback
+        didn't check whether the confirmed genus(es) were already done.
+        """
+        from explorer.state import state as explorer_state
+        from explorer.util import now_iso
+
+        plugin.load_events("explorer_events.json")
+        plugin.play_sequence("honk_only", 0.02)
+
+        import load
+        assert load.store is not None and load.panel is not None
+        assert explorer_state.cmdr_id is not None and explorer_state.system_id is not None
+        body_pk:int = load.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 1, "QuietSpace A 1")
+        load.store.update_body(body_pk, has_biological_signals=1, biological_signal_count=8, flagged_exobio=1)
+        progress_id:int = load.store.get_or_create_species_progress(body_pk, "Bacterium")
+        load.store.update_species_progress(progress_id, species="Bacterium Aurasus", completed_at=now_iso())
+
+        body:sqlite3.Row|None = load.store.get_body(body_pk)
+        assert body is not None
+        assert load.panel._flagged_body_row("QuietSpace", body) is None
+
     def test_current_body_detail_nests_under_its_own_row_not_the_last_flagged_row(self, plugin:TestHarness) -> None:
         """
         Real-world regression: the current-body detail used to render after the WHOLE flagged

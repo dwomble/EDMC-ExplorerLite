@@ -250,8 +250,10 @@ class ExplorerStore:
     # -- Sales (ground truth) --
 
     def get_history_tree(self, cmdr_id:int) -> list[dict]:
-        """ Nested System -> Body -> Species structure for the history view. Cartography value
-        isn't attributable per-system/body (only species-level sold_value is real); est. values are best-effort. """
+        """ Nested System -> Body -> Species structure for the history view, cartography and
+        exobiology value tracked separately. Cartography actual isn't attributable per-system/body
+        (only the cmdr-level total from record_sale is real) -- always 0 here; est. values are
+        best-effort. Exobiology actual is the species-level sold_value, real once sold. """
         systems:list[sqlite3.Row] = self.conn.execute("SELECT * FROM systems WHERE cmdr_id = ? ORDER BY visited_at", (cmdr_id,)).fetchall()
 
         tree:list[dict] = []
@@ -259,33 +261,48 @@ class ExplorerStore:
             bodies:list[sqlite3.Row] = self.conn.execute("SELECT * FROM bodies WHERE system_id = ? ORDER BY body_id", (system["id"],)).fetchall()
 
             body_nodes:list[dict] = []
-            system_est_total:int = 0
+            system_cart_est:int = 0
+            system_exo_est:int = 0
+            system_exo_actual:int = 0
             for body in bodies:
                 species_nodes:list[dict] = [
                     {
                         "name": row["species"] or f"{row['genus']} sp.",
+                        "date": row["first_sample_at"] or "",
                         "status": _species_status(row),
-                        "est_value": row["confirmed_value"] or 0,
-                        "actual_value": row["sold_value"] or 0,
+                        "cart_est": 0,
+                        "cart_actual": 0,
+                        "exo_est": row["confirmed_value"] or 0,
+                        "exo_actual": row["sold_value"] or 0,
                     }
                     for row in self.get_species_progress_for_body(body["id"])
                 ]
-                body_est:int = max(body["estimated_scan_value"] or 0, body["estimated_mapping_value"] or 0)
-                system_est_total += body_est
+                body_cart_est:int = max(body["estimated_scan_value"] or 0, body["estimated_mapping_value"] or 0)
+                body_exo_est:int = sum(s["exo_est"] for s in species_nodes)
+                body_exo_actual:int = sum(s["exo_actual"] for s in species_nodes)
+                system_cart_est += body_cart_est
+                system_exo_est += body_exo_est
+                system_exo_actual += body_exo_actual
 
                 body_nodes.append({
                     "name": body["body_name"],
+                    "date": body["scanned_at"] or "",
                     "status": "mapped" if body["mapped_at"] else ("scanned" if body["scanned_at"] else "unscanned"),
-                    "est_value": body_est,
-                    "actual_value": 0,
+                    "cart_est": body_cart_est,
+                    "cart_actual": 0,
+                    "exo_est": body_exo_est,
+                    "exo_actual": body_exo_actual,
                     "children": species_nodes,
                 })
 
             tree.append({
                 "name": system["name"],
+                "date": system["visited_at"] or "",
                 "status": "sold" if system["sold_at"] else ("lost" if system["lost_at"] else "unsold"),
-                "est_value": system_est_total,
-                "actual_value": 0,
+                "cart_est": system_cart_est,
+                "cart_actual": 0,
+                "exo_est": system_exo_est,
+                "exo_actual": system_exo_actual,
                 "children": body_nodes,
             })
 

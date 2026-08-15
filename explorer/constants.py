@@ -17,6 +17,7 @@ CFG_OVERLAY_RADAR_ENABLED:str = f"{CONFIG_PREFIX}OverlayRadarEnabled"
 CFG_DEV_MODE:str = f"{CONFIG_PREFIX}DevMode"
 CFG_VISIBLE_LINES:str = f"{CONFIG_PREFIX}VisibleLines"
 CFG_OVERLAY_RADAR_SIZE:str = f"{CONFIG_PREFIX}OverlayRadarSize"
+CFG_HISTORY_WINDOW_GEOMETRY:str = f"{CONFIG_PREFIX}HistoryWindowGeometry"
 
 # Defaults agreed during requirements gathering (REQUIREMENTS.md), excluding first-discovery bonus
 DEFAULT_SCAN_VALUE_THRESHOLD:int = 750_000

@@ -59,9 +59,25 @@ class TestHistoryTreeQuery:
         assert len(species) == 1
         assert species[0]["name"] == "Bacterium Aurasus"
         assert species[0]["status"] == "sold"
-        # actual_value is now the sample's own confirmed_value (an estimate), not BioData's
+        # exo_actual is now the sample's own confirmed_value (an estimate), not BioData's
         # exact per-item Value+Bonus -- see handlers_exobiology.on_sell_organic_data's docstring.
-        assert species[0]["actual_value"] == 1_000_000
+        assert species[0]["exo_actual"] == 1_000_000
+        # Cartography and exobiology values are tracked separately -- a species row is pure
+        # exobiology, a body's cartography value doesn't leak into its exobio total or vice versa.
+        assert species[0]["cart_est"] == 0
+        assert species[0]["cart_actual"] == 0
+        assert species[0]["date"] # first_sample_at recorded
+
+        body = bodies["Deltius A 2"]
+        assert body["cart_est"] > 0 # from its own Scan (High metal content body)
+        assert body["exo_est"] == 1_000_000 # rolled up from its one confirmed species
+        assert body["exo_actual"] == 1_000_000
+        assert body["date"] # scanned_at recorded
+
+        assert system["cart_est"] == sum(b["cart_est"] for b in system["children"])
+        assert system["exo_est"] == body["exo_est"]
+        assert system["exo_actual"] == body["exo_actual"]
+        assert system["date"] # visited_at recorded
 
 class TestHistoryViewPopup:
 
@@ -84,6 +100,49 @@ class TestHistoryViewPopup:
         bodies = load.history_view.tree.get_children(systems[0])
         assert len(bodies) >= 1
 
+        # Status is title-cased for display ("Sold" not "sold").
+        system_values = load.history_view.tree.item(systems[0], "values")
+        assert system_values[1] == "Sold"
+
+        load.history_view._on_close()
+
+    def test_close_saves_the_windows_current_geometry(self, plugin:TestHarness) -> None:
+        plugin.load_events("explorer_events.json")
+        plugin.play_sequence("full_walkthrough", 0.02)
+
+        import load
+        from explorer.constants import CFG_HISTORY_WINDOW_GEOMETRY
+
+        assert load.history_view is not None
+        load.history_view.open()
+        assert load.history_view.window is not None
+        current_geometry:str = load.history_view.window.geometry()
+        load.history_view._on_close()
+
+        assert plugin.config.get_str(CFG_HISTORY_WINDOW_GEOMETRY, default="") == current_geometry
+
+    def test_open_restores_a_previously_saved_geometry(self, plugin:TestHarness, monkeypatch) -> None:
+        plugin.load_events("explorer_events.json")
+        plugin.play_sequence("full_walkthrough", 0.02)
+
+        import load
+        import tkinter as tk
+        from explorer.constants import CFG_HISTORY_WINDOW_GEOMETRY
+
+        plugin.config.set(CFG_HISTORY_WINDOW_GEOMETRY, "620x480+15+15")
+        requested:list[str] = []
+        original_geometry = tk.Toplevel.geometry
+
+        def _spy_geometry(widget, *args, **kwargs):
+            if args:
+                requested.append(args[0])
+            return original_geometry(widget, *args, **kwargs)
+
+        monkeypatch.setattr(tk.Toplevel, "geometry", _spy_geometry)
+
+        assert load.history_view is not None
+        load.history_view.open()
+        assert "620x480+15+15" in requested
         load.history_view._on_close()
 
     def test_refresh_without_open_window_is_a_safe_noop(self, plugin:TestHarness) -> None:

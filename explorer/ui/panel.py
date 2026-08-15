@@ -205,6 +205,7 @@ class ExplorerPanel:
 
         all_progress:list[sqlite3.Row] = self.store.get_species_progress_for_body(body["id"])
         active:list[sqlite3.Row] = [r for r in all_progress if not r["completed_at"]]
+        fully_sampled:bool = bool(all_progress) and not active
         if active:
             # Compact count, not a full name list (see _exobio_progress_row for names, on-body)
             species_desc = f"{len(all_progress) - len(active)} of {len(all_progress)} scanned"
@@ -224,7 +225,7 @@ class ExplorerPanel:
             value_min += sum(p["value_min"] for p in predictions)
             value_max += sum(p["value_max"] for p in predictions)
 
-        if not predictions and body["has_biological_signals"]:
+        if not predictions and body["has_biological_signals"] and not fully_sampled:
             # FSSBodySignals already confirmed biology is present here -- worth surfacing
             # even before a Scan gives us anything to guess a genus (and thus a value) from.
             count:int = body["biological_signal_count"] or 1
