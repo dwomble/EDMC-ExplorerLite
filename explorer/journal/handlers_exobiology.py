@@ -129,8 +129,9 @@ def on_codex_entry(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict
 
 def on_sell_organic_data(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict:
     """ BioData doesn't reliably itemize what actually got sold for how much (e.g. a "sell
-    all" at Vista Genomics) -- presume every completed-but-unsold sample was sold rather than
-    trying to match individual BioData entries back to specific bodies. """
+    all" at Vista Genomics) -- presume every completed-but-unsold sample was sold, at its own
+    confirmed value plus any first-logged bonus, rather than trying to match individual BioData
+    entries back to specific bodies. """
     if state.cmdr_id is None:
         return {}
     bio_data:list = entry.get("BioData", [])
@@ -138,5 +139,10 @@ def on_sell_organic_data(store:ExplorerStore, state:ExplorerState, entry:dict) -
     if total > 0:
         store.record_sale(state.cmdr_id, "exobiology", now_iso(), state.system_name or None, total, json.dumps(entry))
 
-    store.mark_all_completed_species_sold(state.cmdr_id)
+    completed:list[sqlite3.Row] = store.get_completed_unsold_species_for_cmdr(state.cmdr_id)
+    sold_values:list[tuple[int, int]] = [
+        (row["id"], exobiology.with_first_logged_bonus(row["confirmed_value"] or 0, bool(row["was_footfalled"])))
+        for row in completed
+    ]
+    store.mark_species_progress_sold(sold_values)
     return {"panel": True}

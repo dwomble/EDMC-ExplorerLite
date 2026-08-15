@@ -14,7 +14,7 @@ from explorer.utils.misc import hfplus, str_truncate
 
 from explorer.db.store import ExplorerStore
 from explorer.state import ExplorerState
-from explorer.valuation import exobiology, exobiology_data, signal_count_bias
+from explorer.valuation import cartography, exobiology, exobiology_data, signal_count_bias
 from explorer.constants import CFG_VISIBLE_LINES, DEFAULT_VISIBLE_LINES
 
 WIDTH_CHARS:int = 60
@@ -193,15 +193,20 @@ class ExplorerPanel:
             self._render_exobiology_section()
 
     def _flagged_body_row(self, system_name:str, body:sqlite3.Row) -> tuple[str, str, str, str, str]|None:
-        """ A body drops off this to-do list once nothing's left to do there. """
+        """ A body drops off this to-do list once nothing's left to do there. Shown value is
+        Full (bonus-included) -- what the body would actually pay out, not the base/progression
+        number (see _exobio_progress_row/history view for the Base/Full split). """
         species_desc:str = ""
         value_min:int = 0
         value_max:int = 0
+        was_footfalled:bool = bool(body["was_footfalled"])
 
         if body["flagged_value"] and not body["mapped_at"]:
-            scan_value:int = max(body["estimated_scan_value"] or 0, body["estimated_mapping_value"] or 0)
-            value_min += scan_value
-            value_max += scan_value
+            scan_full:int = cartography.scan_value_with_bonus(body["estimated_scan_value"] or 0, bool(body["was_discovered"]))
+            mapping_full:int = cartography.mapping_value_for_eligibility(body["estimated_mapping_value"] or 0, bool(body["was_mapped"]))
+            cart_value:int = max(scan_full, mapping_full)
+            value_min += cart_value
+            value_max += cart_value
 
         all_progress:list[sqlite3.Row] = self.store.get_species_progress_for_body(body["id"])
         active:list[sqlite3.Row] = [r for r in all_progress if not r["completed_at"]]
@@ -211,8 +216,8 @@ class ExplorerPanel:
             species_desc = f"{len(all_progress) - len(active)} of {len(all_progress)} scanned"
             for r in active:
                 r_min, r_max = self._exobio_row_range(r)
-                value_min += r_min
-                value_max += r_max
+                value_min += exobiology.with_first_logged_bonus(r_min, was_footfalled)
+                value_max += exobiology.with_first_logged_bonus(r_max, was_footfalled)
 
         predictions:list[dict] = self._best_predictions_for_body(body["id"]) if not active and not body["flagged_exobio"] else []
 
@@ -222,10 +227,10 @@ class ExplorerPanel:
             signal_count:int|None = body["biological_signal_count"] # ground truth count, vs. the guessed kinds below
             count_prefix:str = f"{signal_count} signal{'' if signal_count == 1 else 's'}: " if signal_count else ""
             species_desc = f"{count_prefix}{prefix}{self._collapse_prediction_names(predictions)}"
-            value_min += sum(p["value_min"] for p in predictions)
-            value_max += sum(p["value_max"] for p in predictions)
+            value_min += exobiology.with_first_logged_bonus(sum(p["value_min"] for p in predictions), was_footfalled)
+            value_max += exobiology.with_first_logged_bonus(sum(p["value_max"] for p in predictions), was_footfalled)
 
-        if not predictions and body["has_biological_signals"] and not fully_sampled:
+        if not active and not predictions and body["has_biological_signals"] and not fully_sampled:
             # FSSBodySignals already confirmed biology is present here -- worth surfacing
             # even before a Scan gives us anything to guess a genus (and thus a value) from.
             count:int = body["biological_signal_count"] or 1
@@ -259,15 +264,19 @@ class ExplorerPanel:
             return
 
         body:sqlite3.Row|None = self.store.get_body(body_pk)
+        was_footfalled:bool = bool(body and body["was_footfalled"])
 
         if active:
-            self._render_table([self._exobio_progress_row(row) for row in active], anchors=("w", "e", "e", "e"), indent=INDENT_PX)
+            self._render_table(
+                [self._exobio_progress_row(row, was_footfalled) for row in active], anchors=("w", "e", "e", "e"), indent=INDENT_PX
+            )
             return
 
         if predictions:
             confirmed_signal:bool = bool(body and body["has_biological_signals"])
             self._render_table(
-                [self._predicted_genus_row(slot, confirmed_signal) for slot in predictions], anchors=("w", "e", "e"), indent=INDENT_PX
+                [self._predicted_genus_row(slot, confirmed_signal, was_footfalled) for slot in predictions],
+                anchors=("w", "e", "e"), indent=INDENT_PX,
             )
             return
 
@@ -387,11 +396,14 @@ class ExplorerPanel:
         value_range:tuple[int, int]|None = exobiology.estimate_genus_range(row["genus"])
         return value_range if value_range else (0, 0)
 
-    def _predicted_genus_row(self, slot:dict, confirmed_signal:bool) -> tuple[str, str, str]:
-        """ '?' only when the signal itself is unconfirmed; '~' only when a value range remains. """
+    def _predicted_genus_row(self, slot:dict, confirmed_signal:bool, was_footfalled:bool) -> tuple[str, str, str]:
+        """ '?' only when the signal itself is unconfirmed; '~' only when a value range remains.
+        Value shown is Full (bonus-included), matching _flagged_body_row/_exobio_progress_row. """
         prefix:str = "" if confirmed_signal else "?"
-        value_str:str = _credits_range(slot["value_min"], slot["value_max"])
-        if slot["value_min"] != slot["value_max"]:
+        value_min:int = exobiology.with_first_logged_bonus(slot["value_min"], was_footfalled)
+        value_max:int = exobiology.with_first_logged_bonus(slot["value_max"], was_footfalled)
+        value_str:str = _credits_range(value_min, value_max)
+        if value_min != value_max:
             value_str = f"~{value_str}"
         return (f"{prefix}{slot['name']}", _sampling_distance_str(slot["genera"]), value_str)
 
@@ -431,12 +443,16 @@ class ExplorerPanel:
 
         return self._join_species_names(genus, [c["species"] for c in candidates])
 
-    def _exobio_progress_row(self, row:sqlite3.Row) -> tuple[str, str, str, str]:
-        """ Genus placeholder becomes the species name (and value the confirmed value) once sampled. """
+    def _exobio_progress_row(self, row:sqlite3.Row, was_footfalled:bool) -> tuple[str, str, str, str]:
+        """ Genus placeholder becomes the species name (and value the confirmed value) once
+        sampled. Value shown is Full (bonus-included) -- the base value counting toward ED's own
+        progression is never shown in this compact panel, only in the history view. """
         genus:str = row["genus"] or "biological"
         name:str = row["species"] or self._possible_species_label(row["body_id"], genus)
         progress:str = f"{row['samples_taken']}/{SAMPLES_REQUIRED}"
         value_min, value_max = self._exobio_row_range(row)
+        value_min = exobiology.with_first_logged_bonus(value_min, was_footfalled)
+        value_max = exobiology.with_first_logged_bonus(value_max, was_footfalled)
         distance:str = _sampling_distance_str([genus])
         value_str:str = _credits_range(value_min, value_max)
 

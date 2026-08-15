@@ -90,7 +90,12 @@ def on_scan(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict:
 
     scan_value:int = cartography.estimate_scan_value(entry)
     mapping_value:int = cartography.estimate_mapping_value(entry)
-    flagged:bool = max(scan_value, mapping_value) >= _scan_threshold()
+    # Threshold check uses the bonus-inclusive value (real payout) -- the stored estimated_*
+    # columns stay base-only so downstream readers apply the bonus fresh from was_discovered/
+    # was_mapped/was_footfalled, rather than double-counting an already-applied bonus.
+    scan_value_full:int = cartography.scan_value_with_bonus(scan_value, bool(entry.get("WasDiscovered")))
+    mapping_value_full:int = cartography.mapping_value_for_eligibility(mapping_value, bool(entry.get("WasMapped")))
+    flagged:bool = max(scan_value_full, mapping_value_full) >= _scan_threshold()
 
     store.update_body(
         body_pk,
@@ -101,6 +106,7 @@ def on_scan(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict:
         surface_gravity=entry.get("SurfaceGravity"),
         was_discovered=1 if entry.get("WasDiscovered") else 0,
         was_mapped=1 if entry.get("WasMapped") else 0,
+        was_footfalled=1 if entry.get("WasFootfalled") else 0,
         estimated_scan_value=scan_value,
         estimated_mapping_value=mapping_value,
         flagged_value=1 if flagged else 0,
@@ -121,20 +127,25 @@ def on_scan(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict:
     return {"panel": True}
 
 def _worthwhile_predictions(entry:dict, nearest_star_type:str|None, bypass_threshold:bool = False) -> list[tuple[str, str|None, float]]:
-    """ Predicted (genus, species, confidence) rows whose value clears the exobio threshold """
+    """ Predicted (genus, species, confidence) rows whose value clears the exobio threshold,
+    checked against the first-logged-bonus-inclusive value (WasFootfalled is already known at
+    Scan time, same as WasDiscovered/WasMapped) -- a body only worth it WITH the bonus is still
+    worth flagging. """
     threshold:int = _exobio_threshold()
+    was_footfalled:bool = bool(entry.get("WasFootfalled"))
     worthwhile:list[tuple[str, str|None, float]] = []
     for genus, genus_confidence in genus_prediction.predict_genera(entry, nearest_star_type):
         species_candidates:list[tuple[str, float]] = genus_prediction.predict_species(genus, entry, nearest_star_type)
         if not species_candidates:
             value_range:tuple[int, int]|None = exobiology.estimate_genus_range(genus)
-            value_max:int|None = value_range[1] if value_range else None
+            value_max:int|None = exobiology.with_first_logged_bonus(value_range[1], was_footfalled) if value_range else None
             if bypass_threshold or exobiology.exceeds_threshold(value_max, threshold):
                 worthwhile.append((genus, None, genus_confidence))
             continue
 
         for species, species_confidence in species_candidates:
-            value:int|None = exobiology.estimate_confirmed_value(genus, species)
+            base_value:int|None = exobiology.estimate_confirmed_value(genus, species)
+            value:int|None = exobiology.with_first_logged_bonus(base_value, was_footfalled) if base_value is not None else None
             if bypass_threshold or exobiology.exceeds_threshold(value, threshold):
                 worthwhile.append((genus, species, species_confidence))
 
@@ -177,7 +188,12 @@ def on_saa_signals_found(store:ExplorerStore, state:ExplorerState, entry:dict) -
         if value_range is not None:
             value_max_overall = max(value_max_overall, value_range[1])
 
-    flagged_exobio:bool = exobiology.exceeds_threshold(value_max_overall or None, _exobio_threshold())
+    # Threshold check uses the bonus-inclusive value -- was_footfalled was already captured at
+    # Scan time (see on_scan), same reasoning as the cartography threshold check above.
+    existing_body:sqlite3.Row|None = store.get_body(body_pk)
+    was_footfalled:bool = bool(existing_body and existing_body["was_footfalled"])
+    value_max_full:int = exobiology.with_first_logged_bonus(value_max_overall, was_footfalled)
+    flagged_exobio:bool = exobiology.exceeds_threshold(value_max_full or None, _exobio_threshold())
     store.update_body(body_pk, estimated_exobio_value_min=0, estimated_exobio_value_max=value_max_overall,
                       flagged_exobio=1 if flagged_exobio else 0)
 

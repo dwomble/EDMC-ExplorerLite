@@ -272,3 +272,83 @@ EDMC's own plugin uninstall/reinstall) wipes `plugin_dir` outright, which would 
 Cmdr's entire scan history. `config.app_dir_path` is shared across EDMC and other plugins, but
 namespacing this plugin's own subfolder under it avoids collision while surviving any
 plugin-folder replacement.
+
+## First-discovery/first-mapped/first-logged bonus tracking
+
+**Sourcing.** Elite Dangerous pays a bonus on top of the base value for cartography and
+exobiology when nobody else has claimed the relevant discovery yet. Confirmed against a real
+captured journal log (a `Scan` event on the same body carries `WasDiscovered`, `WasMapped`,
+AND `WasFootfalled` booleans side by side) and against the user's own stated mechanics:
+- First Discovered By: +60% to the base scan (honk/FSS) value.
+- First Mapped By: +60% to the DSS mapping value.
+- First Footfall (exobiology's proxy): a body nobody has ever walked on yet means nobody could
+  have sampled its organics either, so the exobio first-logged bonus (5x total, i.e. base + 4x
+  bonus -- already a documented constant, `exobiology_data.FIRST_LOGGED_BONUS_MULTIPLIER`)
+  applies. `WasFootfalled` is a proxy, not proof -- someone could have footfallen the body
+  without sampling the specific species found, but it's the best signal the game exposes (the
+  same proxy the reference plugin EDMC-BioScan uses, confirmed by reading its source locally:
+  it hardcodes the identical `5` multiplier gated on the same signal).
+
+**Storage: base only.** `bodies.was_discovered`/`was_mapped`/`was_footfalled` are captured
+verbatim from the `Scan` event (`handlers_bodies.on_scan`). The stored `estimated_scan_value`/
+`estimated_mapping_value` columns, and `species_progress.confirmed_value`, stay BASE (bonus
+never baked in) -- every consumer (panel, history, threshold checks) applies the bonus fresh
+from the flags at its own point of use, via `cartography.scan_value_with_bonus()`/
+`mapping_value_for_eligibility()` and `exobiology.with_first_logged_bonus()`. This avoids ever
+double-counting a bonus that got baked into a stored number and then re-applied downstream.
+
+**Cartography asymmetry, deliberate.** `estimate_scan_value()` stays base-only (unchanged,
+its existing meaning); `scan_value_with_bonus()` ADDS the +60% when `not was_discovered`.
+`estimate_mapping_value()` -- and the `FIRST_MAPPED_MULTIPLIER` (3.7) constant it's built on --
+already assumed first-mapped-by-us (its existing, unchanged docstring/meaning, predating this
+feature). Rather than decompose that already-approximate constant to make it symmetrical with
+scan value (risking compounding guesswork about exactly how 3.7 was originally derived),
+`mapping_value_for_eligibility()` instead BACKS OUT the assumed +60% when `was_mapped` says
+someone else already has -- the common case (nobody's mapped it) needs no adjustment at all,
+preserving 3.7's original calibration and every existing test that depended on it.
+
+**Exobiology: Base vs Full.** ED's own progression only counts the base value, never the
+first-logged bonus -- so `confirmed_value` (species_progress) and history's "Exo. Base" column
+stay bonus-free always. "Exo. Full" (and the compact panel's single exobio number, which always
+shows Full -- the real payout matters more than progression when deciding whether to bother)
+is `sold_value` once actually sold, else `with_first_logged_bonus(confirmed_value,
+was_footfalled)` projected. `mark_all_completed_species_sold()` was split into
+`get_completed_unsold_species_for_cmdr()` + `mark_species_progress_sold()` so
+`handlers_exobiology.on_sell_organic_data` can compute each row's presumed sold value
+(including the bonus) in the handler layer rather than embedding valuation logic in the store.
+
+**Threshold checks use Full, not Base.** `on_scan()`'s `flagged_value` decision and
+`_worthwhile_predictions()`/`on_saa_signals_found()`'s `flagged_exobio` decision all compare
+against the bonus-inclusive value -- a body only worth flagging WITH the bonus is still worth
+flagging, and `WasDiscovered`/`WasMapped`/`WasFootfalled` are already known by the time each of
+these checks runs (same `Scan` event, or the body's already-stored flags for the later
+`SAASignalsFound` check).
+
+## explorer/journal/handlers_discovery.py — Honk heuristic exotic-star override
+
+**Regression:** a 3-body neutron star system honked as "probably quiet"/"done" -- the crude
+body/non-body-count heuristic (`honk_heuristic.assess()`) has no way to know the arrival star
+itself is a neutron star, which is essentially always worth a full FSS pass regardless of how
+few bodies the honk itself reports. Confirmed against a real captured journal log: the arrival
+star's `Scan` (`AutoScan`) event fires automatically on jump-in, several seconds before the
+player manually triggers the honk (`FSSDiscoveryScan`) -- so by honk time, `on_honk()` can
+already read the star's `star_type` back out of the `bodies` table. `on_honk()` now overrides
+the heuristic's verdict to "worth a full scan" whenever any already-known star in the system is
+neutron/white-dwarf/black-hole (`cartography.is_exotic_star_type()`), leaving the crude
+body/non-body verdict alone otherwise (including the rare case where the star hasn't been
+scanned yet by honk time -- no regression, just no smarter override in that timing edge case).
+
+## explorer/db/store.py — get_flagged_bodies_for_system's biology guard
+
+**Regression:** a Terraformable HMC and a Water World were both scanned as clearly worth
+mapping (`flagged_value=1`, several million credits of mapping value) in the same real system,
+but only the Water World showed up in the flagged list -- the HMC vanished entirely once
+`FSSBodySignals` confirmed it had a geological (not biological) signal, setting
+`has_biological_signals=0`. The query's `has_biological_signals IS NOT 0` guard was written as
+a blanket `AND` over the whole row, when its actual purpose only applies to ONE of the four OR
+branches: suppressing a stale pre-Scan `genus_predictions` guess once ground truth says there's
+no biology here at all. Applied as a blanket filter, it also silently excluded bodies that
+qualified for entirely unrelated reasons (`flagged_value`, `flagged_exobio`, confirmed real
+biology) the moment biology was confirmed absent. Fixed by scoping the guard to just the
+prediction branch: `flagged_value = 1 OR flagged_exobio = 1 OR has_biological_signals = 1 OR
+(has_biological_signals IS NOT 0 AND EXISTS (...))`.

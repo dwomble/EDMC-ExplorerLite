@@ -36,6 +36,10 @@ TERRAFORM_BONUS_FRACTION:dict[str, float] = {
 FIRST_MAPPED_MULTIPLIER:float = 3.7 # scan value -> full first-discovered+first-mapped+efficient mapping value
 EFFICIENT_MAPPING_BONUS:float = 1.25
 
+FIRST_DISCOVERED_BONUS_FRACTION:float = 0.6 # +60% scan value if nobody has discovered this body yet
+FIRST_MAPPED_BONUS_FRACTION:float = 0.6 # +60% mapping value if nobody has mapped this body yet -- already
+# assumed by FIRST_MAPPED_MULTIPLIER above, so eligibility adjustment backs it out rather than adding it
+
 def _star_category(star_type:str) -> str:
     star_type = (star_type or "").upper()
     if star_type.startswith("D"):
@@ -43,6 +47,11 @@ def _star_category(star_type:str) -> str:
     if star_type in ("N", "H", "SUPERMASSIVEBLACKHOLE"):
         return "neutron_or_black_hole"
     return "default"
+
+def is_exotic_star_type(star_type:str) -> bool:
+    """ Neutron star, white dwarf, or black hole -- worth a full FSS scan regardless of body
+    count (see honk_heuristic), unlike a default-category star. """
+    return _star_category(star_type) != "default"
 
 def _planet_category(planet_class:str) -> str:
     planet_class = (planet_class or "").lower()
@@ -91,3 +100,12 @@ def mapping_value_from_scan_value(scan_value:int, mapped_efficiently:bool = True
     if mapped_efficiently:
         value = round(value * EFFICIENT_MAPPING_BONUS)
     return value
+
+def scan_value_with_bonus(base_value:int, was_discovered:bool) -> int:
+    """ estimate_scan_value()'s base number, plus the first-discovered bonus if WasDiscovered says nobody has yet. """
+    return base_value if was_discovered else round(base_value * (1 + FIRST_DISCOVERED_BONUS_FRACTION))
+
+def mapping_value_for_eligibility(mapping_value:int, was_mapped:bool) -> int:
+    """ estimate_mapping_value()'s number already assumes first-mapped-by-us -- back out that
+    assumed bonus when WasMapped says someone already has, rather than adding one. """
+    return mapping_value if not was_mapped else round(mapping_value / (1 + FIRST_MAPPED_BONUS_FRACTION))

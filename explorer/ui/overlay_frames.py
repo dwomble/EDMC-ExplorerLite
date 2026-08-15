@@ -21,7 +21,7 @@ PLUGIN_GROUP:str = "EDMC-ExplorerLite"
 
 CENTER_X:int = 640
 CENTER_Y:int = 480
-RING_SEGMENTS:int = 24
+RING_SEGMENTS:int = 48 # higher = a rounder-looking circle -- the overlay draws straight segments, no arcs
 TTL:int = 8 # generous vs. the ~1/sec dashboard-tick refresh cadence, so a missed/delayed tick doesn't visibly blank the radar
 TAG_TRIANGLE_SIZE_PX:int = 5 # vertex-to-center radius for a codex-tagged waypoint's triangle marker
 
@@ -52,7 +52,7 @@ def _radius() -> int:
     """ Radar's radius in pixels, configurable. """
     return config.get_int(CFG_OVERLAY_RADAR_SIZE, default=DEFAULT_OVERLAY_RADAR_SIZE)
 
-RING_COLOR:str = "#00ff00"
+RING_COLOR:str = "#999999" # neutral grey -- distinct from every CODEX_TAG_COLORS entry below, so it never reads as a species color
 ACTIVE_RING_COLOR:str = "#ffaa00" # the current species being sampled this visit
 TAGGED_RING_COLOR:str = "#cc66ff" # a genus confirmed but not yet approached this visit -- see SHOW_TAGGED_GENUS
 SAMPLE_COLOR:str = "#00aaff" # a real ScanOrganic sample -- never reused below, so a codex-tagged dot is never mistaken for one

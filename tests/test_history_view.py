@@ -59,9 +59,12 @@ class TestHistoryTreeQuery:
         assert len(species) == 1
         assert species[0]["name"] == "Bacterium Aurasus"
         assert species[0]["status"] == "sold"
-        # exo_actual is now the sample's own confirmed_value (an estimate), not BioData's
-        # exact per-item Value+Bonus -- see handlers_exobiology.on_sell_organic_data's docstring.
-        assert species[0]["exo_actual"] == 1_000_000
+        # exo_full is the presumed sold value (base x5 first-logged bonus, since this fixture's
+        # body has no WasFootfalled -- unset defaults to "nobody has yet") -- this now matches
+        # the fixture's own SellOrganicData BioData (Value 1M + Bonus 4M = 5M), where the old
+        # base-only presumed value (1M) used to under-estimate it.
+        assert species[0]["exo_full"] == 5_000_000
+        assert species[0]["exo_base"] == 1_000_000 # base -- what counts toward ED's own progression
         # Cartography and exobiology values are tracked separately -- a species row is pure
         # exobiology, a body's cartography value doesn't leak into its exobio total or vice versa.
         assert species[0]["cart_est"] == 0
@@ -70,13 +73,13 @@ class TestHistoryTreeQuery:
 
         body = bodies["Deltius A 2"]
         assert body["cart_est"] > 0 # from its own Scan (High metal content body)
-        assert body["exo_est"] == 1_000_000 # rolled up from its one confirmed species
-        assert body["exo_actual"] == 1_000_000
+        assert body["exo_base"] == 1_000_000 # rolled up from its one confirmed species
+        assert body["exo_full"] == 5_000_000
         assert body["date"] # scanned_at recorded
 
         assert system["cart_est"] == sum(b["cart_est"] for b in system["children"])
-        assert system["exo_est"] == body["exo_est"]
-        assert system["exo_actual"] == body["exo_actual"]
+        assert system["exo_base"] == body["exo_base"]
+        assert system["exo_full"] == body["exo_full"]
         assert system["date"] # visited_at recorded
 
 class TestHistoryViewPopup:

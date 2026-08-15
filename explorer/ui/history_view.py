@@ -32,8 +32,8 @@ COLUMNS:tuple[tuple[str, str, Literal["w", "e"], int, bool, str|None], ...] = (
     ("date", "Date", "w", 90, False, "name"),
     ("cart_est", "Cart. Est.", "e", 90, False, "num"),
     ("cart_actual", "Cart. Actual", "e", 90, False, "num"),
-    ("exo_est", "Exo. Est.", "e", 90, False, "num"),
-    ("exo_actual", "Exo. Actual", "e", 90, False, "num"),
+    ("exo_base", "Exo. Base", "e", 90, False, "num"),
+    ("exo_full", "Exo. Full", "e", 90, False, "num"),
 )
 
 class HistoryView:
@@ -128,5 +128,5 @@ class HistoryView:
         return (
             node["status"].title(), _date_str(node["date"]),
             _credits(node["cart_est"]), _credits(node["cart_actual"]),
-            _credits(node["exo_est"]), _credits(node["exo_actual"]),
+            _credits(node["exo_base"]), _credits(node["exo_full"]),
         )

@@ -7,7 +7,7 @@ implementation plan for the rationale behind each table.
 """
 import sqlite3
 
-SCHEMA_VERSION = 7
+SCHEMA_VERSION = 8
 
 DDL = """
 CREATE TABLE IF NOT EXISTS schema_meta (
@@ -54,6 +54,7 @@ CREATE TABLE IF NOT EXISTS bodies (
     surface_gravity REAL, -- raw SurfaceGravity, m/s^2 (convert to G for display)
     was_discovered INTEGER,
     was_mapped INTEGER,
+    was_footfalled INTEGER, -- ground truth from Scan's WasFootfalled -- proxy for exobio first-logged bonus eligibility
     mapped_efficiently INTEGER,
     estimated_scan_value INTEGER,
     estimated_mapping_value INTEGER,
@@ -126,6 +127,7 @@ COLUMN_ADDITIONS:list[tuple[str, str, str]] = [
     ("bodies", "type_label", "TEXT"),
     ("bodies", "atmosphere_type", "TEXT"),
     ("bodies", "surface_gravity", "REAL"),
+    ("bodies", "was_footfalled", "INTEGER"),
     ("systems", "lost_at", "TEXT"),
     ("species_progress", "lost_at", "TEXT"),
 ]

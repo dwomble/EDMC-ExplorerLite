@@ -10,6 +10,7 @@ from config import config # type: ignore
 
 from explorer.constants import DB_FILENAME, GH_PROJECT
 from explorer.db.schema import ensure_schema
+from explorer.valuation import cartography, exobiology
 
 def _species_status(row:sqlite3.Row) -> str:
     if row["sold"]:
@@ -62,29 +63,34 @@ class ExplorerStore:
         ).fetchone()
 
     def get_pending_cartography_value(self, cmdr_id:int) -> int:
-        """ Estimated value of bodies whose system isn't sold/lost yet -- an approximation,
-        distinct from actual_cartography_credits (ground truth from real sales). """
-        row:sqlite3.Row = self.conn.execute(
-            """SELECT COALESCE(SUM(COALESCE(bodies.estimated_scan_value, 0) + COALESCE(bodies.estimated_mapping_value, 0)), 0) AS total
-               FROM bodies JOIN systems ON systems.id = bodies.system_id
+        """ Scan + mapping value (each bonus-adjusted for known discovery/mapped eligibility) of
+        bodies whose system isn't sold/lost yet -- an approximation, distinct from
+        actual_cartography_credits (ground truth from real sales). """
+        rows:list[sqlite3.Row] = self.conn.execute(
+            """SELECT estimated_scan_value, estimated_mapping_value, was_discovered, was_mapped FROM bodies
+               JOIN systems ON systems.id = bodies.system_id
                WHERE bodies.cmdr_id = ? AND systems.sold_at IS NULL AND systems.lost_at IS NULL""",
             (cmdr_id,),
-        ).fetchone()
-        return row["total"]
+        ).fetchall()
+        total:int = 0
+        for row in rows:
+            total += cartography.scan_value_with_bonus(row["estimated_scan_value"] or 0, bool(row["was_discovered"]))
+            total += cartography.mapping_value_for_eligibility(row["estimated_mapping_value"] or 0, bool(row["was_mapped"]))
+        return total
 
     def get_pending_exobiology_value(self, cmdr_id:int) -> int:
-        """ Confirmed value of completed-but-unsold-and-not-lost species samples -- "currently
-        held" exobiology data ready to sell, distinct from actual_exobiology_credits (ground
-        truth from real sales). Matches the same held/unsold/not-lost definition used by
-        mark_all_completed_species_sold()/mark_all_unsold_species_progress_lost(). """
-        row:sqlite3.Row = self.conn.execute(
-            """SELECT COALESCE(SUM(species_progress.confirmed_value), 0) AS total FROM species_progress
+        """ Full (bonus-included) value of completed-but-unsold-and-not-lost species samples --
+        "currently held" exobiology data ready to sell, distinct from actual_exobiology_credits
+        (ground truth from real sales). Matches the same held/unsold/not-lost definition used by
+        mark_species_progress_sold()/mark_all_unsold_species_progress_lost(). """
+        rows:list[sqlite3.Row] = self.conn.execute(
+            """SELECT species_progress.confirmed_value, bodies.was_footfalled FROM species_progress
                JOIN bodies ON bodies.id = species_progress.body_id
                WHERE bodies.cmdr_id = ? AND species_progress.completed_at IS NOT NULL
                  AND species_progress.sold = 0 AND species_progress.lost_at IS NULL""",
             (cmdr_id,),
-        ).fetchone()
-        return row["total"]
+        ).fetchall()
+        return sum(exobiology.with_first_logged_bonus(row["confirmed_value"] or 0, bool(row["was_footfalled"])) for row in rows)
 
     # -- Systems --
 
@@ -145,17 +151,24 @@ class ExplorerStore:
     def get_body(self, body_pk:int) -> sqlite3.Row|None:
         return self.conn.execute("SELECT * FROM bodies WHERE id = ?", (body_pk,)).fetchone()
 
+    def get_bodies_for_system(self, system_id:int) -> list[sqlite3.Row]:
+        return self.conn.execute("SELECT * FROM bodies WHERE system_id = ? ORDER BY body_id", (system_id,)).fetchall()
+
     def update_body(self, body_pk:int, **fields) -> None:
         self._update("bodies", body_pk, **fields)
 
     def get_flagged_bodies_for_system(self, system_id:int) -> list[sqlite3.Row]:
         """ `has_prediction` distinguishes a genuine Scan-based genus guess from a body that's
-        only here because FSSBodySignals already confirmed biology (no guess needed/available). """
+        only here because FSSBodySignals already confirmed biology (no guess needed/available).
+        The `has_biological_signals IS NOT 0` guard only gates the prediction branch -- once
+        FSSBodySignals confirms a body has NO biology, a stale pre-Scan genus guess shouldn't
+        keep it listed for that reason, but a real cartography (flagged_value) or confirmed-bio
+        (flagged_exobio/has_biological_signals=1) match must still show regardless. """
         return self.conn.execute(
             """SELECT *, EXISTS (SELECT 1 FROM genus_predictions gp WHERE gp.body_id = bodies.id) AS has_prediction
-               FROM bodies WHERE system_id = ? AND (has_biological_signals IS NOT 0) AND (
+               FROM bodies WHERE system_id = ? AND (
                    flagged_value = 1 OR flagged_exobio = 1 OR has_biological_signals = 1 OR
-                   EXISTS (SELECT 1 FROM genus_predictions gp WHERE gp.body_id = bodies.id)
+                   (has_biological_signals IS NOT 0 AND EXISTS (SELECT 1 FROM genus_predictions gp WHERE gp.body_id = bodies.id))
                ) ORDER BY body_id""",
             (system_id,),
         ).fetchall()
@@ -211,23 +224,25 @@ class ExplorerStore:
     def get_species_progress_row(self, progress_id:int) -> sqlite3.Row|None:
         return self.conn.execute("SELECT * FROM species_progress WHERE id = ?", (progress_id,)).fetchone()
 
-    def mark_all_completed_species_sold(self, cmdr_id:int) -> None:
-        """ Presume every completed-but-unsold sample was sold -- SellOrganicData's BioData
-        doesn't reliably itemize what actually got sold for how much (e.g. a "sell all" at
-        Vista Genomics), so there's nothing reliable to match against. Uses each sample's own
-        confirmed value (from ScanOrganic) as its sold value. """
-
-        rows:list[sqlite3.Row] = self.conn.execute(
-            """SELECT species_progress.id, species_progress.confirmed_value FROM species_progress
+    def get_completed_unsold_species_for_cmdr(self, cmdr_id:int) -> list[sqlite3.Row]:
+        """ Every completed-but-unsold sample across this Cmdr's bodies, with each body's
+        was_footfalled joined in -- used by handlers_exobiology.on_sell_organic_data to compute
+        the presumed sold value (SellOrganicData's BioData doesn't reliably itemize what
+        actually got sold for how much, e.g. a "sell all" at Vista Genomics, so there's nothing
+        reliable to match against -- presuming every completed-but-unsold sample was sold, at
+        its own confirmed value plus any first-logged bonus, is the best available estimate). """
+        return self.conn.execute(
+            """SELECT species_progress.id, species_progress.confirmed_value, bodies.was_footfalled FROM species_progress
                JOIN bodies ON bodies.id = species_progress.body_id
                WHERE bodies.cmdr_id = ? AND species_progress.completed_at IS NOT NULL AND species_progress.sold = 0""",
             (cmdr_id,),
         ).fetchall()
 
-        self.conn.executemany(
-            "UPDATE species_progress SET sold = 1, sold_value = ? WHERE id = ?",
-            [(row["confirmed_value"] or 0, row["id"]) for row in rows],
-        )
+    def mark_species_progress_sold(self, sold_values:list[tuple[int, int]]) -> None:
+        """ (progress_id, sold_value) pairs -- bulk-marks each as sold with its given value. """
+        if not sold_values:
+            return
+        self.conn.executemany("UPDATE species_progress SET sold = 1, sold_value = ? WHERE id = ?", [(value, pid) for pid, value in sold_values])
         self.conn.commit()
 
     def mark_all_unsold_species_progress_lost(self, cmdr_id:int, timestamp:str) -> None:
@@ -250,21 +265,24 @@ class ExplorerStore:
     # -- Sales (ground truth) --
 
     def get_history_tree(self, cmdr_id:int) -> list[dict]:
-        """ Nested System -> Body -> Species structure for the history view, cartography and
-        exobiology value tracked separately. Cartography actual isn't attributable per-system/body
-        (only the cmdr-level total from record_sale is real) -- always 0 here; est. values are
-        best-effort. Exobiology actual is the species-level sold_value, real once sold. """
+        """ Nested System -> Body -> Species structure for the history view. Cartography actual
+        isn't attributable per-system/body (only the cmdr-level total from record_sale is real)
+        -- always 0 here; cart_est is bonus-adjusted for known discovery/mapped eligibility.
+        Exobiology tracks Base (the value that counts toward ED's own progression -- never
+        includes the first-logged bonus) and Full (the real payout: sold_value once sold, else
+        Base with the bonus projected in). """
         systems:list[sqlite3.Row] = self.conn.execute("SELECT * FROM systems WHERE cmdr_id = ? ORDER BY visited_at", (cmdr_id,)).fetchall()
 
         tree:list[dict] = []
         for system in systems:
-            bodies:list[sqlite3.Row] = self.conn.execute("SELECT * FROM bodies WHERE system_id = ? ORDER BY body_id", (system["id"],)).fetchall()
+            bodies:list[sqlite3.Row] = self.get_bodies_for_system(system["id"])
 
             body_nodes:list[dict] = []
             system_cart_est:int = 0
-            system_exo_est:int = 0
-            system_exo_actual:int = 0
+            system_exo_base:int = 0
+            system_exo_full:int = 0
             for body in bodies:
+                was_footfalled:bool = bool(body["was_footfalled"])
                 species_nodes:list[dict] = [
                     {
                         "name": row["species"] or f"{row['genus']} sp.",
@@ -272,17 +290,19 @@ class ExplorerStore:
                         "status": _species_status(row),
                         "cart_est": 0,
                         "cart_actual": 0,
-                        "exo_est": row["confirmed_value"] or 0,
-                        "exo_actual": row["sold_value"] or 0,
+                        "exo_base": row["confirmed_value"] or 0,
+                        "exo_full": row["sold_value"] if row["sold"] else exobiology.with_first_logged_bonus(row["confirmed_value"] or 0, was_footfalled),
                     }
                     for row in self.get_species_progress_for_body(body["id"])
                 ]
-                body_cart_est:int = max(body["estimated_scan_value"] or 0, body["estimated_mapping_value"] or 0)
-                body_exo_est:int = sum(s["exo_est"] for s in species_nodes)
-                body_exo_actual:int = sum(s["exo_actual"] for s in species_nodes)
+                scan_full:int = cartography.scan_value_with_bonus(body["estimated_scan_value"] or 0, bool(body["was_discovered"]))
+                mapping_full:int = cartography.mapping_value_for_eligibility(body["estimated_mapping_value"] or 0, bool(body["was_mapped"]))
+                body_cart_est:int = max(scan_full, mapping_full)
+                body_exo_base:int = sum(s["exo_base"] for s in species_nodes)
+                body_exo_full:int = sum(s["exo_full"] for s in species_nodes)
                 system_cart_est += body_cart_est
-                system_exo_est += body_exo_est
-                system_exo_actual += body_exo_actual
+                system_exo_base += body_exo_base
+                system_exo_full += body_exo_full
 
                 body_nodes.append({
                     "name": body["body_name"],
@@ -290,8 +310,8 @@ class ExplorerStore:
                     "status": "mapped" if body["mapped_at"] else ("scanned" if body["scanned_at"] else "unscanned"),
                     "cart_est": body_cart_est,
                     "cart_actual": 0,
-                    "exo_est": body_exo_est,
-                    "exo_actual": body_exo_actual,
+                    "exo_base": body_exo_base,
+                    "exo_full": body_exo_full,
                     "children": species_nodes,
                 })
 
@@ -301,8 +321,8 @@ class ExplorerStore:
                 "status": "sold" if system["sold_at"] else ("lost" if system["lost_at"] else "unsold"),
                 "cart_est": system_cart_est,
                 "cart_actual": 0,
-                "exo_est": system_exo_est,
-                "exo_actual": system_exo_actual,
+                "exo_base": system_exo_base,
+                "exo_full": system_exo_full,
                 "children": body_nodes,
             })
 

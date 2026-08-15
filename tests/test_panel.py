@@ -201,7 +201,9 @@ class TestPanelStates:
         import load
         assert load.store is not None and load.panel is not None
         lines = _panel_lines(load)
-        assert any("Bacterium Aurasus 2/3 500m 1M Cr" in line for line in lines)
+        # 5M Cr, not 1M -- this fixture's body has no WasFootfalled (unset defaults to "nobody
+        # has yet"), so the shown value is Full (base 1M x5 first-logged bonus), not Base.
+        assert any("Bacterium Aurasus 2/3 500m 5M Cr" in line for line in lines)
 
         for event in events[cutoff:]:
             plugin.fire_event(event)
@@ -351,7 +353,7 @@ class TestPanelStates:
         assert len(best) == 1, best
         assert best[0]["value_min"] < best[0]["value_max"], "test premise: Anemone should have a real min-max spread"
 
-        rendered:tuple[str, str, str] = load.panel._predicted_genus_row(best[0], confirmed_signal=False)
+        rendered:tuple[str, str, str] = load.panel._predicted_genus_row(best[0], confirmed_signal=False, was_footfalled=True)
         assert "-" in rendered[2], rendered # e.g. "~1.5-3.4M Cr", not a single number
         assert rendered[2].startswith("~"), rendered # genuine range -- "~" is warranted here
 
@@ -376,7 +378,7 @@ class TestPanelStates:
         assert len(best) == 1, best
         assert best[0]["value_min"] == best[0]["value_max"], "test premise: a single candidate is already exact"
 
-        rendered:tuple[str, str, str] = load.panel._predicted_genus_row(best[0], confirmed_signal=False)
+        rendered:tuple[str, str, str] = load.panel._predicted_genus_row(best[0], confirmed_signal=False, was_footfalled=True)
         assert not rendered[2].startswith("~"), rendered
 
     def test_confirmed_genus_row_has_no_uncertainty_marker_once_narrowed_to_one_species(self, plugin:TestHarness) -> None:
@@ -397,7 +399,7 @@ class TestPanelStates:
 
         row:sqlite3.Row|None = load.store.get_species_progress_row(progress_id)
         assert row is not None
-        rendered:tuple[str, str, str, str] = load.panel._exobio_progress_row(row)
+        rendered:tuple[str, str, str, str] = load.panel._exobio_progress_row(row, was_footfalled=True)
         assert not rendered[3].startswith("~"), rendered
 
         # Contrast: still-tied candidates with DIFFERENT values keep the marker.
@@ -405,7 +407,7 @@ class TestPanelStates:
             ("Bacterium", "Bacterium Cerbrus", 1.0),
             ("Bacterium", "Bacterium Tela", 1.0),
         ])
-        rendered = load.panel._exobio_progress_row(row)
+        rendered = load.panel._exobio_progress_row(row, was_footfalled=True)
         assert rendered[3].startswith("~"), rendered
 
     def test_scan_narrows_prediction_to_species_when_data_available(self, plugin:TestHarness) -> None:
@@ -818,6 +820,35 @@ class TestPanelStates:
         row = load.panel._flagged_body_row("QuietSpace", body)
         assert row is not None
         assert row[4] == "0 of 1 scanned", row
+
+    def test_flagged_row_shows_scanned_count_while_actively_sampling(self, plugin:TestHarness) -> None:
+        """
+        Real-world regression: a body with has_biological_signals=1 (its ground-truth signal
+        count is always set once FSSBodySignals fires, and never clears) whose genus is
+        already confirmed and partway through sampling used to show the raw "N biological
+        signals" fallback instead of the "X of Y scanned" progress -- the fallback's condition
+        only checked `not predictions`, but predictions is also [] whenever sampling is already
+        active, so it clobbered the progress text that had just been set moments earlier.
+        """
+        from explorer.state import state as explorer_state
+
+        plugin.load_events("explorer_events.json")
+        plugin.play_sequence("honk_only", 0.02)
+
+        import load
+        assert load.store is not None and load.panel is not None
+        assert explorer_state.cmdr_id is not None and explorer_state.system_id is not None
+        body_pk:int = load.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 1, "QuietSpace A 1")
+        load.store.update_body(body_pk, has_biological_signals=1, biological_signal_count=7, flagged_exobio=1)
+        progress_id:int = load.store.get_or_create_species_progress(body_pk, "Bacterium")
+        load.store.update_species_progress(progress_id, species="Bacterium Aurasus", samples_taken=2)
+
+        body:sqlite3.Row|None = load.store.get_body(body_pk)
+        assert body is not None
+        row = load.panel._flagged_body_row("QuietSpace", body)
+        assert row is not None
+        assert row[4] == "0 of 1 scanned", row
+        assert "biological signal" not in row[4], row
 
     def test_flagged_row_drops_off_once_every_confirmed_genus_is_fully_sampled(self, plugin:TestHarness) -> None:
         """

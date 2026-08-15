@@ -22,6 +22,7 @@ def store(tmp_path) -> Generator[ExplorerStore, None, None]:
 
 def _completed_progress(store:ExplorerStore, cmdr_id:int, system_id:int, body_id:int, body_name:str, genus:str, species:str, confirmed_value:int) -> int:
     body_pk:int = store.get_or_create_body(cmdr_id, system_id, body_id, body_name)
+    store.update_body(body_pk, was_footfalled=1) # no first-logged bonus -- these tests aren't about it
     progress_id:int = store.get_or_create_species_progress(body_pk, genus)
     store.update_species_progress(
         progress_id, species=species, samples_taken=3, completed_at="2026-01-01T00:00:00Z", confirmed_value=confirmed_value

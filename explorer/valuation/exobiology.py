@@ -18,3 +18,8 @@ def exceeds_threshold(value_max:int|None, threshold:int) -> bool:
     if value_max is None:
         return False
     return value_max >= threshold
+
+def with_first_logged_bonus(value:int, was_footfalled:bool) -> int:
+    """ Multiplies by the first-logged bonus (5x total) if WasFootfalled says nobody has set
+    foot on this body yet -- see exobiology_data.FIRST_LOGGED_BONUS_MULTIPLIER. """
+    return value if was_footfalled else value * exobiology_data.FIRST_LOGGED_BONUS_MULTIPLIER
