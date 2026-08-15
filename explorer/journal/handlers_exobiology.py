@@ -1,6 +1,7 @@
 """
-On-body exobiology handlers: ScanOrganic (per-sample progress) and SellOrganicData (actual
-credits earned, ground truth).
+Exobiology handlers: ScanOrganic (per-sample progress), SellOrganicData (actual credits
+earned, ground truth), and CodexEntry (waypoint-tagging a species you've spotted but aren't
+currently sampling).
 """
 import json
 import sqlite3
@@ -16,6 +17,8 @@ from explorer.valuation import exobiology
 # later at the same location, not a 4th sample. Only Log/Sample increment samples_taken;
 # Analyse just marks completion.
 SAMPLE_SCAN_TYPES = ("Log", "Sample")
+
+CODEX_ORGANIC_SUBCATEGORY = "$Codex_SubCategory_Organic_Structures;"
 
 def on_scan_organic(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict:
     if state.system_id is None or state.cmdr_id is None:
@@ -56,6 +59,35 @@ def on_scan_organic(store:ExplorerStore, state:ExplorerState, entry:dict) -> dic
         fields["confirmed_value"] = confirmed_value
 
     store.update_species_progress(progress_id, **fields)
+    return {"panel": True, "overlay": "radar"}
+
+def on_codex_entry(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict:
+    """ The low-altitude composition scanner (ship or SRV) fires this whenever it identifies a
+    biological signal -- for genuinely new discoveries AND re-scans of already-known ones alike
+    -- carrying an exact Latitude/Longitude, unlike SAASignalsFound's aggregate genus+count.
+    Useful for tagging a waypoint to a species you've spotted but aren't currently sampling (e.g.
+    scanning something else nearby). Reuses state.sample_positions -- the same session-only,
+    radar-only store ScanOrganic feeds -- so it gets a ring + dot immediately, without touching
+    samples_taken/species_progress completion, so it's never mistaken for a real genetic sample
+    in the panel's progress counts. """
+    if entry.get("SubCategory") != CODEX_ORGANIC_SUBCATEGORY:
+        return {}
+    if state.system_id is None or state.cmdr_id is None:
+        return {}
+    body_id:int|None = entry.get("BodyID")
+    latitude:float|None = entry.get("Latitude")
+    longitude:float|None = entry.get("Longitude")
+    if body_id is None or latitude is None or longitude is None:
+        return {}
+    genus:str|None = exobiology.genus_from_codex_name(entry.get("Name_Localised", ""))
+    if genus is None:
+        return {}
+
+    body_name:str = state.body_name if state.body_id == body_id else ""
+    body_pk:int = store.get_or_create_body(state.cmdr_id, state.system_id, body_id, body_name)
+    store.get_or_create_species_progress(body_pk, genus) # ensures it shows even before/without SAASignalsFound
+
+    state.sample_positions.setdefault(genus, []).append((latitude, longitude))
     return {"panel": True, "overlay": "radar"}
 
 def on_sell_organic_data(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict:

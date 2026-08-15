@@ -1,6 +1,6 @@
 """
-Unit tests for handlers_exobiology.on_sell_organic_data's "presume all sold" behavior. Pure
-store + handler calls, no journal/Tk harness needed.
+Unit tests for handlers_exobiology.on_sell_organic_data's "presume all sold" behavior, and
+on_codex_entry's waypoint-tagging. Pure store + handler calls, no journal/Tk harness needed.
 
 Run with:
     .venv/bin/python -m pytest tests/test_handlers_exobiology.py -v --tb=short
@@ -11,6 +11,8 @@ from typing import Generator
 from explorer.db.store import ExplorerStore
 from explorer.state import ExplorerState
 from explorer.journal import handlers_exobiology
+
+ORGANIC_SUBCATEGORY = "$Codex_SubCategory_Organic_Structures;"
 
 @pytest.fixture
 def store(tmp_path) -> Generator[ExplorerStore, None, None]:
@@ -78,3 +80,67 @@ class TestOnSellOrganicData:
         assert row is not None
         assert row["sold"] == 0
         assert row["completed_at"] is None
+
+class TestOnCodexEntry:
+    """ CodexEntry (the low-altitude composition scanner, ship or SRV) carries an exact
+    Latitude/Longitude, unlike SAASignalsFound's aggregate genus+count -- useful for tagging a
+    waypoint to a species spotted but not currently being sampled. """
+
+    def _state(self, store:ExplorerStore) -> ExplorerState:
+        state = ExplorerState()
+        state.cmdr_id = store.get_or_create_cmdr("Testy")
+        state.system_id = store.get_or_create_system(state.cmdr_id, 1, "Deltius")
+        return state
+
+    def _entry(self, name_localised:str, body_id:int = 2, lat:float = -13.856755, lon:float = -116.384651) -> dict:
+        return {
+            "event": "CodexEntry", "SubCategory": ORGANIC_SUBCATEGORY, "Category": "$Codex_Category_Biology;",
+            "Name_Localised": name_localised, "BodyID": body_id, "Latitude": lat, "Longitude": lon, "IsNewEntry": True,
+        }
+
+    def test_tags_a_waypoint_from_the_name_localised_color_variant(self, store:ExplorerStore) -> None:
+        """ Real captured format is "<genus> <species> - <color>" -- the color suffix must be
+        stripped before the species name will match SPECIES_VALUE's lookup table. """
+        state = self._state(store)
+        handlers_exobiology.on_codex_entry(store, state, self._entry("Tussock Propagito - Lime"))
+
+        assert state.sample_positions["Tussock"] == [(-13.856755, -116.384651)]
+
+    def test_creates_a_species_progress_row_even_without_prior_saa_signals_found(self, store:ExplorerStore) -> None:
+        """ A low-altitude composition scan can happen before (or instead of) a DSS pass, so the
+        genus must show up in the panel/radar even if SAASignalsFound never fired for it. """
+        state = self._state(store)
+        handlers_exobiology.on_codex_entry(store, state, self._entry("Tussock Propagito - Lime", body_id=5))
+
+        assert state.cmdr_id is not None and state.system_id is not None
+        body_pk:int = store.get_or_create_body(state.cmdr_id, state.system_id, 5, "")
+        progress_id:int = store.get_or_create_species_progress(body_pk, "Tussock")
+        row = store.get_species_progress_row(progress_id)
+        assert row is not None
+        assert row["completed_at"] is None # tagging isn't sampling -- doesn't complete it
+
+    def test_ignores_non_organic_codex_entries(self, store:ExplorerStore) -> None:
+        """ e.g. a stellar/geological codex entry -- no genus to tag, must be a safe no-op. """
+        state = self._state(store)
+        entry = self._entry("DAV Type Star")
+        entry["SubCategory"] = "$Codex_SubCategory_Stars;"
+        handlers_exobiology.on_codex_entry(store, state, entry)
+
+        assert state.sample_positions == {}
+
+    def test_ignores_unrecognized_species_names(self, store:ExplorerStore) -> None:
+        """ A species not in our static SPECIES_VALUE table -- can't resolve a genus, so no-op
+        rather than raising or tagging garbage. """
+        state = self._state(store)
+        handlers_exobiology.on_codex_entry(store, state, self._entry("Not A Real Species - Puce"))
+
+        assert state.sample_positions == {}
+
+    def test_appends_rather_than_overwrites_repeat_tags(self, store:ExplorerStore) -> None:
+        """ Re-scanning (or scanning a second individual organism of the same species) should
+        add another waypoint, not replace the first. """
+        state = self._state(store)
+        handlers_exobiology.on_codex_entry(store, state, self._entry("Tussock Propagito - Lime", lat=1.0, lon=2.0))
+        handlers_exobiology.on_codex_entry(store, state, self._entry("Tussock Propagito - Lime", lat=3.0, lon=4.0))
+
+        assert state.sample_positions["Tussock"] == [(1.0, 2.0), (3.0, 4.0)]

@@ -151,14 +151,35 @@ class TestRadarOverlayModern:
         assert f"{FRAME_PREFIX}sample-Fonticulua-0" in shapes
 
     @pytest.mark.overlay('Modern')
-    def test_render_distinguishes_in_progress_from_tagged_unstarted_genus(self, overlay_mode, store:ExplorerStore) -> None:
+    def test_render_shows_nothing_for_a_tagged_but_unstarted_genus(self, overlay_mode, store:ExplorerStore) -> None:
         """
-        A genus with a sample already taken this visit ("in progress") gets the orange ring and
-        its sample markers; a genus that's merely confirmed (SAASignalsFound) but not yet
-        approached this visit gets a different ring color and a short text label instead, so two
-        simultaneously-tagged species don't look identical on the radar.
+        A genus merely confirmed (SAASignalsFound) but with no sample taken yet this visit has no
+        known bearing -- only a distance -- so it draws nothing at all (no ring, no label): an
+        earlier version drew a differently-colored ring + label for it, but that either had no
+        real information to convey or (once heading-up was added) misleadingly suggested a
+        direction. Only the genus actually being sampled gets a ring + markers.
         """
-        from explorer.ui.overlay_frames import ACTIVE_RING_COLOR, TAGGED_RING_COLOR
+        radar = RadarOverlay(Overlay())
+        state = _landed_state(store, genus="Bacterium", samples=1)
+        assert state.cmdr_id is not None and state.system_id is not None and state.body_id is not None
+        body_pk:int = store.get_or_create_body(state.cmdr_id, state.system_id, state.body_id, state.body_name)
+        store.get_or_create_species_progress(body_pk, "Fonticulua") # tagged, no sample taken yet
+
+        radar.render(store, state)
+
+        shapes = radar.overlay._overlay.shapes
+        assert f"{FRAME_PREFIX}ring-active-Bacterium" in shapes
+        assert f"{FRAME_PREFIX}ring-active-Fonticulua" not in shapes
+        assert f"{FRAME_PREFIX}sample-Fonticulua-0" not in shapes # nothing taken yet -- nothing to draw
+
+    @pytest.mark.overlay('Modern')
+    def test_tagged_genus_ring_and_label_still_work_if_re_enabled(self, overlay_mode, store:ExplorerStore, monkeypatch) -> None:
+        """
+        SHOW_TAGGED_GENUS is off by default (see its docstring), but the code path is kept, not
+        deleted, in case this presentation is wanted again -- verify it still actually works.
+        """
+        import explorer.ui.overlay_frames as overlay_frames
+        monkeypatch.setattr(overlay_frames, "SHOW_TAGGED_GENUS", True)
 
         radar = RadarOverlay(Overlay())
         state = _landed_state(store, genus="Bacterium", samples=1)
@@ -170,18 +191,18 @@ class TestRadarOverlayModern:
 
         shapes = radar.overlay._overlay.shapes
         messages = radar.overlay._overlay.messages
-        assert shapes[f"{FRAME_PREFIX}ring-active-Bacterium"][0]["color"] == ACTIVE_RING_COLOR
-        assert shapes[f"{FRAME_PREFIX}ring-active-Fonticulua"][0]["color"] == TAGGED_RING_COLOR
+        assert shapes[f"{FRAME_PREFIX}ring-active-Bacterium"][0]["color"] == overlay_frames.ACTIVE_RING_COLOR
+        assert shapes[f"{FRAME_PREFIX}ring-active-Fonticulua"][0]["color"] == overlay_frames.TAGGED_RING_COLOR
         assert messages[f"{FRAME_PREFIX}label-Fonticulua"][1] == "FON"
-        assert f"{FRAME_PREFIX}sample-Fonticulua-0" not in shapes # nothing taken yet -- nothing to draw
 
     @pytest.mark.overlay('Modern')
-    def test_render_clamps_out_of_range_sample_to_ring_edge_and_hollows_it(self, overlay_mode, store:ExplorerStore) -> None:
+    def test_render_clamps_out_of_range_sample_just_past_the_ring_edge_and_hollows_it(self, overlay_mode, store:ExplorerStore) -> None:
         """
         Regression: a sample position outside the display range used to keep drifting further
         from center in screen-space as the player walked away, well past the radar's own edge.
-        It should instead clamp to the ring's edge (same bearing) and render hollow (border only,
-        no fill) to signal "direction only, not an exact fix" instead of a false-precision dot.
+        It should instead clamp to just past the outer ring's edge (same bearing) -- not exactly
+        on it, since the ring line itself made a hollow marker hard to see -- and render hollow
+        (border only, no fill) to signal "direction only, not an exact fix".
         """
         radar = RadarOverlay(Overlay())
         state = _landed_state(store, genus="Bacterium", samples=0)
@@ -194,17 +215,15 @@ class TestRadarOverlayModern:
         assert border_color == SAMPLE_COLOR
         assert fill_color == "" # hollow
 
+        from explorer.ui.overlay_frames import SAMPLE_OUT_OF_RANGE_MARGIN_PX
         cx, cy = sx + w / 2, sy + h / 2
-        assert round(math.hypot(cx - CENTER_X, cy - CENTER_Y)) == 150 # clamped to the (default) radar radius
+        assert round(math.hypot(cx - CENTER_X, cy - CENTER_Y)) == 150 + SAMPLE_OUT_OF_RANGE_MARGIN_PX
 
     @pytest.mark.overlay('Modern')
-    def test_render_draws_rings_before_any_sample_is_taken(self, overlay_mode, store:ExplorerStore) -> None:
+    def test_render_draws_no_active_ring_before_any_sample_is_taken(self, overlay_mode, store:ExplorerStore) -> None:
         """
-        Regression test: the active genus used to come from state.sample_positions, which is
-        session-only and only gains an entry once ScanOrganic fires for the FIRST sample -- so
-        the radar drew nothing at all while walking towards the first sample spot, exactly when
-        it's most needed. Genus now comes from the DB (SAASignalsFound, set while still in
-        orbit), so rings must show up here with zero samples taken.
+        A confirmed genus with zero samples taken this visit has no known bearing yet -- only
+        the base distance-scale rings show, not a species-specific ring, until sampling begins.
         """
         radar = RadarOverlay(Overlay())
         state = _landed_state(store, samples=0)
@@ -212,7 +231,7 @@ class TestRadarOverlayModern:
 
         shapes = radar.overlay._overlay.shapes
         assert f"{FRAME_PREFIX}ring-1.0" in shapes
-        assert f"{FRAME_PREFIX}ring-active-Bacterium" in shapes
+        assert f"{FRAME_PREFIX}ring-active-Bacterium" not in shapes
         assert f"{FRAME_PREFIX}player" in shapes
 
     @pytest.mark.overlay('Modern')
@@ -236,9 +255,10 @@ class TestRadarOverlayModern:
         assert f"{FRAME_PREFIX}player" in shapes
 
     @pytest.mark.overlay('Modern')
-    def test_render_draws_rings_from_predicted_genus_before_confirmation(self, overlay_mode, store:ExplorerStore) -> None:
+    def test_render_draws_base_rings_from_predicted_genus_before_confirmation(self, overlay_mode, store:ExplorerStore) -> None:
         """ Before SAASignalsFound even happens -- a pre-DSS genus prediction (from Scan alone)
-        is still useful while approaching, so it's the fallback when there's no confirmed genus yet. """
+        is the fallback when there's no confirmed genus yet, but with no sample taken it's the
+        same as any other unstarted genus: only the base distance-scale rings show. """
         radar = RadarOverlay(Overlay())
         state = _flying_state(store)
         assert state.cmdr_id is not None and state.system_id is not None and state.body_id is not None
@@ -247,7 +267,9 @@ class TestRadarOverlayModern:
 
         radar.render(store, state)
 
-        assert f"{FRAME_PREFIX}ring-1.0" in radar.overlay._overlay.shapes
+        shapes = radar.overlay._overlay.shapes
+        assert f"{FRAME_PREFIX}ring-1.0" in shapes
+        assert f"{FRAME_PREFIX}ring-active-Bacterium" not in shapes
 
     @pytest.mark.overlay('Modern')
     def test_render_is_a_noop_when_no_genus_known_at_all(self, overlay_mode, store:ExplorerStore) -> None:

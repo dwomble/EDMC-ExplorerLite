@@ -36,6 +36,7 @@ EVENT_HANDLERS:dict[str, Callable] = {
 
     "ScanOrganic": handlers_exobiology.on_scan_organic,
     "SellOrganicData": handlers_exobiology.on_sell_organic_data,
+    "CodexEntry": handlers_exobiology.on_codex_entry,
 
     "SellExplorationData": handlers_sales.on_sell_exploration_data,
     "MultiSellExplorationData": handlers_sales.on_sell_exploration_data,

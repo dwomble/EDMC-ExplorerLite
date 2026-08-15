@@ -33,8 +33,9 @@ class ExplorerState:
     planet_radius:float|None = None
 
     # Session-only (not persisted): (latitude, longitude) at the moment of each ScanOrganic
-    # sample, keyed by genus, for the overlay radar's per-sample markers. Cleared on
-    # reset_body() -- these positions are meaningless once you've left the body.
+    # sample OR CodexEntry waypoint-tag, keyed by genus, for the overlay radar's per-sample
+    # markers. Cleared on reset_body() -- these positions are meaningless once you've left the
+    # body.
     sample_positions:dict[str, list[tuple[float, float]]] = field(default_factory=dict)
 
     def reset_body(self) -> None:

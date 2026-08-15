@@ -222,3 +222,14 @@ def genus_value_range(genus:str) -> tuple[int, int]|None:
 
 def species_value(genus:str, species:str) -> int|None:
     return SPECIES_VALUE.get(genus, {}).get(species)
+
+def genus_from_species_name(species_name:str) -> str|None:
+    """ Reverse lookup: which genus a full species display name (e.g. "Tussock Propagito")
+    belongs to, by searching SPECIES_VALUE's per-genus species tables for an exact match.
+    Used to recover the genus from a CodexEntry event's Name_Localised, which gives the
+    species name (already stripped of its " - <color>" variant suffix by the caller) rather
+    than the genus directly. """
+    for genus, species_map in SPECIES_VALUE.items():
+        if species_name in species_map:
+            return genus
+    return None

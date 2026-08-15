@@ -12,6 +12,13 @@ def estimate_confirmed_value(genus:str, species:str) -> int|None:
     """ Exact base credit value once the species is confirmed (first ScanOrganic sample). """
     return exobiology_data.species_value(genus, species)
 
+def genus_from_codex_name(name_localised:str) -> str|None:
+    """ Match a CodexEntry event's Name_Localised (e.g. "Tussock Propagito - Lime") back to its
+    genus -- strips the trailing " - <color>" variant suffix, if any, then looks up the
+    resulting species name. """
+    species_name:str = name_localised.split(" - ")[0].strip()
+    return exobiology_data.genus_from_species_name(species_name)
+
 def exceeds_threshold(value_max:int|None, threshold:int) -> bool:
     """
     Whether a body's exobiology potential is worth flagging. Uses the top of the known

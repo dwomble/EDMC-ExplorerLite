@@ -1,18 +1,17 @@
 """
-Overlay radar: distance rings on a fixed real-world scale, a highlighted ring per remaining
-genus at its required minimum sample distance, and cross markers per logged sample (also per
-genus). Visible from SupercruiseExit onward (flying over the surface, not just on-foot)
-whenever there's a confirmed or predicted genus to show. Draws every not-yet-completed
-confirmed genus at once (not just one) so it keeps guiding you to every remaining species on
-the body, and keeps showing samples already taken for each. A genus with at least one sample
-already taken this visit ("in progress") gets the orange ring + its sample markers; a genus
-that's merely been tagged via SAASignalsFound but not yet approached this visit gets a
-differently-colored ring plus a short text label (its genus name's first 3 letters, unique
-across all known genera) so multiple simultaneously-tagged, not-yet-started species stay
-visually distinguishable from each other and from whichever one is actually in progress. Built
-on the generic utils/overlay.py wrapper -- this module supplies EDMC-ExplorerLite's own frame
-names, positions, and colors, which is deliberately NOT part of the shared library (see
-PluginLib's overlay.py docstring).
+Overlay radar: distance rings on a fixed real-world scale, a highlighted ring at the current
+species' required minimum sample distance, and cross markers per logged sample. Visible from
+SupercruiseExit onward (flying over the surface, not just on-foot) whenever a confirmed genus
+has at least one sample taken this visit -- a genus that's merely been tagged via
+SAASignalsFound but not yet approached this visit draws nothing by default (see
+SHOW_TAGGED_GENUS): there's no known bearing to it yet, only a distance, and showing a
+differently-colored ring + label for it either conveyed no real information or (once heading-up
+was added) misleadingly suggested a direction, since the label's fixed screen anchor always
+coincided with "straight ahead". Draws every not-yet-completed genus that IS in progress at
+once (not just one) so it keeps guiding you to each simultaneously, showing samples already
+taken for each. Built on the generic utils/overlay.py wrapper -- this module supplies
+EDMC-ExplorerLite's own frame names, positions, and colors, which is deliberately NOT part of
+the shared library (see PluginLib's overlay.py docstring).
 
 Heading-up, not north-up: the player's current facing direction always maps to screen "up", so
 the whole radar (rings excepted -- concentric circles look the same either way -- but sample
@@ -51,7 +50,13 @@ PLUGIN_GROUP:str = "EDMC-ExplorerLite"
 CENTER_X:int = 640
 CENTER_Y:int = 480
 RING_SEGMENTS:int = 24
-TTL:int = 4
+TTL:int = 8 # generous vs. the ~1/sec dashboard-tick refresh cadence, so a missed/delayed tick doesn't visibly blank the radar
+SAMPLE_OUT_OF_RANGE_MARGIN_PX:int = 12 # how far past the outer ring an out-of-range sample sits, clear of the ring line
+
+# Off by default (2026-08): a ring + label for a confirmed-but-not-yet-approached genus turned
+# out to convey no useful info before heading-up, and misleadingly suggested a direction after
+# it. Kept (not deleted) in case a future presentation of "tagged genus" info is wanted again.
+SHOW_TAGGED_GENUS:bool = False
 
 # Fixed real-world scale for the 4 green rings -- 1.5x the largest known genus minimum sample
 # distance, so the ring positions mean the same thing regardless of which species is on screen.
@@ -61,8 +66,8 @@ def _radius_px() -> int:
     return config.get_int(CFG_OVERLAY_RADAR_SIZE, default=DEFAULT_OVERLAY_RADAR_SIZE)
 
 RING_COLOR:str = "#00ff00"
-ACTIVE_RING_COLOR:str = "#ffaa00" # a genus with >=1 sample already taken this visit
-TAGGED_RING_COLOR:str = "#cc66ff" # a genus confirmed but not yet approached this visit
+ACTIVE_RING_COLOR:str = "#ffaa00" # the current species being sampled this visit
+TAGGED_RING_COLOR:str = "#cc66ff" # a genus confirmed but not yet approached this visit -- see SHOW_TAGGED_GENUS
 SAMPLE_COLOR:str = "#00aaff"
 PLAYER_COLOR:str = "#ffffff"
 LABEL_COLOR:str = "#ffffff"
@@ -167,10 +172,12 @@ class RadarOverlay:
         self._draw_distance_rings(radius_px)
         for genus in genera:
             in_progress:bool = bool(state.sample_positions.get(genus))
-            color:str = ACTIVE_RING_COLOR if in_progress else TAGGED_RING_COLOR
-            self._draw_genus_ring(radius_px, genus, color)
             if in_progress:
+                self._draw_genus_ring(radius_px, genus, ACTIVE_RING_COLOR)
                 self._draw_samples(state, genus, radius_px, heading_rad)
+            elif SHOW_TAGGED_GENUS:
+                self._draw_genus_ring(radius_px, genus, TAGGED_RING_COLOR)
+                self._draw_genus_label(radius_px, genus)
         self._draw_player()
 
     def _active_genera(self, progress:list[sqlite3.Row]) -> list[str]:
@@ -195,6 +202,14 @@ class RadarOverlay:
             return
         r:float = radius_px * (min_dist / DISPLAY_RANGE_M)
         self.overlay.send_vect(f"{FRAME_PREFIX}ring-active-{genus}", _circle_points(CENTER_X, CENTER_Y, r), color, ttl=TTL)
+
+    def _draw_genus_label(self, radius_px:int, genus:str) -> None:
+        """ Only called when SHOW_TAGGED_GENUS is on -- see its docstring for why this is
+        currently disabled (fixed screen anchor, easily mistaken for a bearing). """
+        min_dist:int|None = exobiology_data.genus_min_distance(genus)
+        if not min_dist or min_dist > DISPLAY_RANGE_M:
+            return
+        r:float = radius_px * (min_dist / DISPLAY_RANGE_M)
         self.overlay.send_text(f"{FRAME_PREFIX}label-{genus}", _genus_label(genus), LABEL_COLOR, CENTER_X - 10, round(CENTER_Y - r - 14), ttl=TTL)
 
     def _draw_player(self) -> None:
@@ -214,7 +229,14 @@ class RadarOverlay:
                 east *= scale
                 north *= scale
             forward, right = _rotate_to_heading(east, north, heading_rad)
-            sx:int = round(CENTER_X + right * px_per_m)
-            sy:int = round(CENTER_Y - forward * px_per_m)
+            sx:float = CENTER_X + right * px_per_m
+            sy:float = CENTER_Y - forward * px_per_m
+            if not in_range: # push just past the outer ring line so it doesn't obscure the hollow marker
+                dx, dy = sx - CENTER_X, sy - CENTER_Y
+                edge_dist:float = math.hypot(dx, dy)
+                if edge_dist > 0:
+                    push:float = (edge_dist + SAMPLE_OUT_OF_RANGE_MARGIN_PX) / edge_dist
+                    sx = CENTER_X + dx * push
+                    sy = CENTER_Y + dy * push
             fill:str = SAMPLE_COLOR if in_range else "" # hollow once out of range -- position is only a bearing now, not exact
-            self.overlay.send_shape(f"{FRAME_PREFIX}sample-{genus}-{i}", "rect", SAMPLE_COLOR, fill, sx - 3, sy - 3, 6, 6, ttl=TTL)
+            self.overlay.send_shape(f"{FRAME_PREFIX}sample-{genus}-{i}", "rect", SAMPLE_COLOR, fill, round(sx) - 3, round(sy) - 3, 6, 6, ttl=TTL)
