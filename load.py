@@ -13,6 +13,7 @@ from explorer.constants import PLUGIN_NAME, PLUGIN_VERSION, GH_OWNER, GH_PROJECT
 from explorer.db.store import ExplorerStore
 from explorer.state import state as explorer_state
 from explorer.journal.dispatch import dispatch
+from explorer.journal.handlers_context import restore_last_session
 from explorer.dashboard import on_dashboard_entry
 from explorer.ui.panel import ExplorerPanel
 from explorer.ui import prefs as prefs_ui
@@ -49,6 +50,7 @@ def plugin_app(parent:tk.Frame) -> tk.Widget:
     global panel, history_view
 
     assert store is not None, "plugin_app called before plugin_start3"
+    restore_last_session(store, explorer_state) # shows the last known system/body immediately, before any journal event
     panel = ExplorerPanel(parent, store, explorer_state)
     history_view = HistoryView(parent, store, explorer_state)
     panel.on_history_open = history_view.open

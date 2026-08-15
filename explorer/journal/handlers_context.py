@@ -9,6 +9,30 @@ from explorer import session_persist
 def _persist(state:ExplorerState) -> None:
     session_persist.save(state.cmdr, state.system_address, state.system_name, state.body_id, state.body_name)
 
+def restore_last_session(store:ExplorerStore, state:ExplorerState) -> None:
+    """ Called once at plugin startup, before any journal event has arrived -- EDMC doesn't
+    replay journal history to plugins on restart, so without this the panel sits at "Explorer
+    -- idle" until the next live event, which is especially annoying if you're not even logged
+    into the game yet. Presumes nothing changed since the last session (same Cmdr, same
+    system/body); enter_system()'s own cold-start check layers on top of this once a real
+    Location/FSDJump arrives, correcting anything that's actually different (a different Cmdr,
+    a system change while EDMC was closed). """
+    saved:dict|None = session_persist.load()
+    if not saved:
+        return
+    cmdr:str|None = saved.get("cmdr")
+    system_address:int|None = saved.get("system_address")
+    if not cmdr or system_address is None:
+        return
+
+    state.cmdr = cmdr
+    state.cmdr_id = store.get_or_create_cmdr(cmdr)
+    state.system_address = system_address
+    state.system_name = saved.get("system_name") or ""
+    state.system_id = store.get_or_create_system(state.cmdr_id, system_address, state.system_name)
+    state.body_id = saved.get("body_id")
+    state.body_name = saved.get("body_name") or ""
+
 def on_load_game(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict:
     state.reset_body()
     _persist(state)

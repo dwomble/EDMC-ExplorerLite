@@ -35,6 +35,32 @@ class TestSaveLoad:
             "cmdr": "Testy", "system_address": 123, "system_name": "Deltius", "body_id": 5, "body_name": "Deltius 5",
         }
 
+class TestRestoreLastSession:
+    """ restore_last_session() runs at plugin startup, before any journal event -- unlike
+    enter_system()'s cold-start check, there's no incoming event to compare against yet, so it
+    just trusts the saved snapshot outright (the next real journal event corrects it if wrong,
+    same as enter_system() already does for a genuine cold start). """
+
+    def test_restores_system_and_body_from_saved_snapshot(self, store:ExplorerStore) -> None:
+        session_persist.save("Testy", 123, "Deltius", 5, "Deltius 5")
+
+        state = ExplorerState()
+        handlers_context.restore_last_session(store, state)
+
+        assert state.cmdr == "Testy"
+        assert state.cmdr_id is not None and state.cmdr_id == store.get_or_create_cmdr("Testy")
+        assert state.system_address == 123
+        assert state.system_name == "Deltius"
+        assert state.system_id == store.get_or_create_system(state.cmdr_id, 123, "Deltius")
+        assert state.body_id == 5
+        assert state.body_name == "Deltius 5"
+
+    def test_is_a_noop_when_no_snapshot_exists_yet(self, store:ExplorerStore) -> None:
+        state = ExplorerState()
+        handlers_context.restore_last_session(store, state)
+        assert state.cmdr_id is None
+        assert state.system_id is None
+
 class TestEnterSystemResume:
     """ enter_system() only checks the saved snapshot on a cold start (state.system_id still
     None -- EDMC doesn't replay journal history, so this is the first system-entry event this
