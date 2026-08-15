@@ -1,14 +1,30 @@
 """
-Overlay radar: distance rings, a highlighted ring at the active genus's required minimum
-sample distance, cross markers per logged sample, and a heading tick. Visible from
-SupercruiseExit onward (flying over the surface, not just on-foot) whenever there's a
-confirmed or predicted genus to show. Built on the generic utils/overlay.py wrapper -- this
-module supplies EDMC-ExplorerLite's own frame names, positions, and colors, which is
-deliberately NOT part of the shared library (see PluginLib's overlay.py docstring).
+Overlay radar: distance rings on a fixed real-world scale, a highlighted ring per remaining
+genus at its required minimum sample distance, and cross markers per logged sample (also per
+genus). Visible from SupercruiseExit onward (flying over the surface, not just on-foot)
+whenever there's a confirmed or predicted genus to show. Draws every not-yet-completed
+confirmed genus at once (not just one) so it keeps guiding you to every remaining species on
+the body, and keeps showing samples already taken for each. A genus with at least one sample
+already taken this visit ("in progress") gets the orange ring + its sample markers; a genus
+that's merely been tagged via SAASignalsFound but not yet approached this visit gets a
+differently-colored ring plus a short text label (its genus name's first 3 letters, unique
+across all known genera) so multiple simultaneously-tagged, not-yet-started species stay
+visually distinguishable from each other and from whichever one is actually in progress. Built
+on the generic utils/overlay.py wrapper -- this module supplies EDMC-ExplorerLite's own frame
+names, positions, and colors, which is deliberately NOT part of the shared library (see
+PluginLib's overlay.py docstring).
 
-North-up, not rotated to the player's heading -- the heading tick alone shows facing
-direction. Sample markers are positioned relative to the player's CURRENT position each call,
-so they correctly drift as the player walks around, same as a real radar.
+Heading-up, not north-up: the player's current facing direction always maps to screen "up", so
+the whole radar (rings excepted -- concentric circles look the same either way -- but sample
+markers) rotates as you turn, rather than a separate tick line showing facing against a fixed
+north-up frame. Sample markers are positioned relative to the player's CURRENT position and
+heading each call, so they correctly drift/rotate as the player walks/turns, same as a real
+heading-up radar.
+
+The 4 green distance rings sit on a fixed DISPLAY_RANGE_M scale (1.5x the largest known genus
+minimum sample distance, currently Electricae's 1000m -- see exobiology_data.GENUS_MIN_DISTANCE_M),
+not a per-genus adaptive scale, so the same ring always means the same real-world distance
+regardless of which species is being tracked -- a genuine fixed reference, not a moving target.
 
 No explicit "clear" -- every shape is sent with a short TTL and simply stops being refreshed
 (and expires on the overlay) once render() stops being called for this genus/body, which
@@ -25,22 +41,36 @@ from explorer.utils.overlay import Overlay
 from explorer.db.store import ExplorerStore
 from explorer.state import ExplorerState
 from explorer.valuation import exobiology_data
-from explorer.constants import CFG_OVERLAY_ENABLED, CFG_OVERLAY_RADAR_ENABLED
+from explorer.constants import (
+    CFG_OVERLAY_ENABLED, CFG_OVERLAY_RADAR_ENABLED, CFG_OVERLAY_RADAR_SIZE, DEFAULT_OVERLAY_RADAR_SIZE,
+)
 
 FRAME_PREFIX:str = "explorerlite-radar-"
 PLUGIN_GROUP:str = "EDMC-ExplorerLite"
 
 CENTER_X:int = 640
 CENTER_Y:int = 480
-RADIUS_PX:int = 150 # on-screen pixel radius for the radar's max display range
 RING_SEGMENTS:int = 24
 TTL:int = 4
 
+# Fixed real-world scale for the 4 green rings -- 1.5x the largest known genus minimum sample
+# distance, so the ring positions mean the same thing regardless of which species is on screen.
+DISPLAY_RANGE_M:float = 1.5 * max(exobiology_data.GENUS_MIN_DISTANCE_M.values())
+
+def _radius_px() -> int:
+    return config.get_int(CFG_OVERLAY_RADAR_SIZE, default=DEFAULT_OVERLAY_RADAR_SIZE)
+
 RING_COLOR:str = "#00ff00"
-ACTIVE_RING_COLOR:str = "#ffaa00"
+ACTIVE_RING_COLOR:str = "#ffaa00" # a genus with >=1 sample already taken this visit
+TAGGED_RING_COLOR:str = "#cc66ff" # a genus confirmed but not yet approached this visit
 SAMPLE_COLOR:str = "#00aaff"
 PLAYER_COLOR:str = "#ffffff"
-HEADING_COLOR:str = "#ffffff"
+LABEL_COLOR:str = "#ffffff"
+
+def _genus_label(genus:str) -> str:
+    """ First 3 letters, uppercased -- confirmed unique across all 21 known genera in
+    exobiology_data.py, so it's enough to tell simultaneously-drawn genera apart at a glance. """
+    return genus[:3].upper()
 
 def _circle_points(cx:float, cy:float, r:float) -> list[dict]:
     return [
@@ -53,6 +83,14 @@ def _local_xy_m(lat0:float, lon0:float, lat:float, lon:float, planet_radius_m:fl
     y:float = math.radians(lat - lat0) * planet_radius_m
     x:float = math.radians(lon - lon0) * planet_radius_m * math.cos(math.radians(lat0))
     return x, y
+
+def _rotate_to_heading(east:float, north:float, heading_rad:float) -> tuple[float, float]:
+    """ Rotate a world-space (east, north) offset into a heading-up screen frame, where the
+    player's current facing direction maps to "forward" (screen up) instead of true north. """
+    sin_h, cos_h = math.sin(heading_rad), math.cos(heading_rad)
+    forward:float = east * sin_h + north * cos_h
+    right:float = east * cos_h - north * sin_h
+    return forward, right
 
 class RadarOverlay:
     def __init__(self, overlay:Overlay) -> None:
@@ -108,70 +146,75 @@ class RadarOverlay:
             self._log_skip(f"missing cmdr/system/body id (cmdr_id={state.cmdr_id}, system_id={state.system_id}, body_id={state.body_id})")
             return
 
-        # Genus comes from the DB rather than state.sample_positions -- that's session-only and
+        # Genera come from the DB rather than state.sample_positions -- that's session-only and
         # only gains an entry once the FIRST sample is taken, so the radar would otherwise draw
         # nothing to guide you there. Confirmed (SAASignalsFound) takes priority; falls back to
         # the pre-DSS predicted genus so there's still something useful while still in the ship.
         body_pk:int = store.get_or_create_body(state.cmdr_id, state.system_id, state.body_id, state.body_name)
-        genus:str|None = self._active_genus(store.get_species_progress_for_body(body_pk)) \
-            or self._predicted_genus(store.get_genus_predictions_for_body(body_pk))
-        if genus is None:
+        genera:list[str] = self._active_genera(store.get_species_progress_for_body(body_pk))
+        if not genera:
+            predicted:str|None = self._predicted_genus(store.get_genus_predictions_for_body(body_pk))
+            genera = [predicted] if predicted else []
+        if not genera:
             self._log_skip(f"no confirmed or predicted genus yet for body {state.body_name!r} (body_pk={body_pk})")
             return
 
         self._log_skip(None) # clear -- we're drawing
         self._ensure_group()
 
-        display_range:float = self._display_range(genus)
-        self._draw_rings(display_range, genus)
-        self._draw_heading_tick(state.heading)
+        radius_px:int = _radius_px()
+        heading_rad:float = math.radians(state.heading) if state.heading is not None else 0.0
+        self._draw_distance_rings(radius_px)
+        for genus in genera:
+            in_progress:bool = bool(state.sample_positions.get(genus))
+            color:str = ACTIVE_RING_COLOR if in_progress else TAGGED_RING_COLOR
+            self._draw_genus_ring(radius_px, genus, color)
+            if in_progress:
+                self._draw_samples(state, genus, radius_px, heading_rad)
         self._draw_player()
-        self._draw_samples(state, genus, display_range)
 
-    def _active_genus(self, progress:list[sqlite3.Row]) -> str|None:
-        """ Prefer a genus that isn't done yet; fall back to whatever's tracked for this body. """
-        for row in progress:
-            if not row["completed_at"]:
-                return row["genus"]
-        return progress[0]["genus"] if progress else None
+    def _active_genera(self, progress:list[sqlite3.Row]) -> list[str]:
+        """ Every confirmed genus not yet fully sampled -- previously only the first one (in DB
+        insertion order) was drawn, silently hiding both the current species' own already-taken
+        samples (when a different, still-incomplete genus happened to sort first) and any other
+        tagged species entirely. """
+        return [row["genus"] for row in progress if not row["completed_at"]]
 
     def _predicted_genus(self, predictions:list[sqlite3.Row]) -> str|None:
         """ Best pre-DSS guess (highest confidence, already the query's own ordering). """
         return predictions[0]["genus"] if predictions else None
 
-    def _display_range(self, genus:str) -> float:
-        min_dist:int = exobiology_data.genus_min_distance(genus) or 200
-        return max(min_dist * 1.5, 100)
-
-    def _draw_rings(self, display_range:float, genus:str) -> None:
+    def _draw_distance_rings(self, radius_px:int) -> None:
         for frac in (0.25, 0.5, 0.75, 1.0):
-            r:float = RADIUS_PX * frac
+            r:float = radius_px * frac
             self.overlay.send_vect(f"{FRAME_PREFIX}ring-{frac}", _circle_points(CENTER_X, CENTER_Y, r), RING_COLOR, ttl=TTL)
 
+    def _draw_genus_ring(self, radius_px:int, genus:str, color:str) -> None:
         min_dist:int|None = exobiology_data.genus_min_distance(genus)
-        if min_dist and min_dist <= display_range:
-            r:float = RADIUS_PX * (min_dist / display_range)
-            self.overlay.send_vect(f"{FRAME_PREFIX}ring-active", _circle_points(CENTER_X, CENTER_Y, r), ACTIVE_RING_COLOR, ttl=TTL)
+        if not min_dist or min_dist > DISPLAY_RANGE_M:
+            return
+        r:float = radius_px * (min_dist / DISPLAY_RANGE_M)
+        self.overlay.send_vect(f"{FRAME_PREFIX}ring-active-{genus}", _circle_points(CENTER_X, CENTER_Y, r), color, ttl=TTL)
+        self.overlay.send_text(f"{FRAME_PREFIX}label-{genus}", _genus_label(genus), LABEL_COLOR, CENTER_X - 10, round(CENTER_Y - r - 14), ttl=TTL)
 
     def _draw_player(self) -> None:
         self.overlay.send_shape(f"{FRAME_PREFIX}player", "rect", PLAYER_COLOR, PLAYER_COLOR, CENTER_X - 3, CENTER_Y - 3, 6, 6, ttl=TTL)
 
-    def _draw_heading_tick(self, heading:float|None) -> None:
-        if heading is None:
-            return
-        rad:float = math.radians(heading)
-        tick_len:int = RADIUS_PX + 15
-        x2:int = round(CENTER_X + math.sin(rad) * tick_len)
-        y2:int = round(CENTER_Y - math.cos(rad) * tick_len)
-        self.overlay.send_vect(f"{FRAME_PREFIX}heading", [{"x": CENTER_X, "y": CENTER_Y}, {"x": x2, "y": y2}], HEADING_COLOR, ttl=TTL)
-
-    def _draw_samples(self, state:ExplorerState, genus:str, display_range:float) -> None:
+    def _draw_samples(self, state:ExplorerState, genus:str, radius_px:int, heading_rad:float) -> None:
         positions:list[tuple[float, float]] = state.sample_positions.get(genus, [])
         if not positions or state.planet_radius is None or state.latitude is None or state.longitude is None:
             return
-        px_per_m:float = RADIUS_PX / display_range
+        px_per_m:float = radius_px / DISPLAY_RANGE_M
         for i, (lat, lon) in enumerate(positions):
-            x, y = _local_xy_m(state.latitude, state.longitude, lat, lon, state.planet_radius)
-            sx:int = round(CENTER_X + x * px_per_m)
-            sy:int = round(CENTER_Y - y * px_per_m)
-            self.overlay.send_shape(f"{FRAME_PREFIX}sample-{i}", "rect", SAMPLE_COLOR, SAMPLE_COLOR, sx - 3, sy - 3, 6, 6, ttl=TTL)
+            east, north = _local_xy_m(state.latitude, state.longitude, lat, lon, state.planet_radius)
+            dist_m:float = math.hypot(east, north)
+            in_range:bool = dist_m <= DISPLAY_RANGE_M
+            if not in_range: # clamp to the ring's edge, same bearing, rather than drifting off-radar
+                scale:float = DISPLAY_RANGE_M / dist_m
+                east *= scale
+                north *= scale
+            forward, right = _rotate_to_heading(east, north, heading_rad)
+            sx:int = round(CENTER_X + right * px_per_m)
+            sy:int = round(CENTER_Y - forward * px_per_m)
+            fill:str = SAMPLE_COLOR if in_range else "" # hollow once out of range -- position is only a bearing now, not exact
+            self.overlay.send_shape(f"{FRAME_PREFIX}sample-{genus}-{i}", "rect", SAMPLE_COLOR, fill, sx - 3, sy - 3, 6, 6, ttl=TTL)

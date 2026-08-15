@@ -32,10 +32,12 @@ def restore_last_session(store:ExplorerStore, state:ExplorerState) -> None:
     state.system_id = store.get_or_create_system(state.cmdr_id, system_address, state.system_name)
     state.body_id = saved.get("body_id")
     state.body_name = saved.get("body_name") or ""
+    state.restored_at_startup = True
 
 def on_load_game(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict:
     state.reset_body()
-    _persist(state)
+    if not state.restored_at_startup: # don't overwrite the still-unconfirmed resumable snapshot on disk
+        _persist(state)
     return {"panel": True}
 
 def on_continued(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict:
@@ -46,16 +48,19 @@ def enter_system(store:ExplorerStore, state:ExplorerState, edmc_state:dict) -> d
     from EDMC's own state dict (already updated for this entry) rather than re-parsing the
     journal entry ourselves, since EDMC tracks the exact same fields from the exact same events.
 
-    On the very first system-entry event this process (state.system_id still None -- EDMC
-    doesn't replay journal history to plugins on startup, so this is otherwise a cold start),
-    check the last session snapshot: if it's the same Cmdr in the same system, presume nothing
-    happened while EDMC was closed and resume the last known body rather than going blank until
-    the next journal event. """
+    On the very first system-entry event this process sees (state.system_id still None -- EDMC
+    doesn't replay journal history to plugins on startup, so this is otherwise a cold start --
+    or restore_last_session() already pre-populated system_id from a saved snapshot before any
+    real event arrived, in which case this first real event is still the cold start), check the
+    last session snapshot: if it's the same Cmdr in the same system, presume nothing happened
+    while EDMC was closed and resume the last known body rather than going blank until the next
+    journal event. """
     system_address:int|None = edmc_state.get("SystemAddress")
     if system_address is None:
         return {}
 
-    cold_start:bool = state.system_id is None
+    cold_start:bool = state.system_id is None or state.restored_at_startup
+    state.restored_at_startup = False
     saved:dict|None = session_persist.load() if cold_start else None
 
     state.system_address = system_address

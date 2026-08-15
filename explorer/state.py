@@ -15,6 +15,9 @@ class ExplorerState:
     system_id:int|None = None # DB PK for the current system, refreshed on system-change events
     nearest_star_type:str|None = None # most recently Scan'd star this system -- a proxy for genus_prediction.py
 
+    restored_at_startup:bool = False # set by restore_last_session(); makes enter_system() treat the
+    # next real system-entry event as a cold start even though system_id is already populated
+
     body_id:int|None = None
     body_name:str = ""
 

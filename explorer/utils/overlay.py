@@ -25,11 +25,14 @@ class Overlay:
     check `.available`/`.is_modern` if you need to know, but there's no need to guard calls.
     """
 
+    FAILURE_THRESHOLD:int = 5 # consecutive failures before giving up on this overlay for the rest of the session
+
     def __init__(self) -> None:
         self._overlay:Any = None
         self.available:bool = False
         self.is_modern:bool = False
         self._warned:bool = False
+        self._consecutive_failures:int = 0
 
         self._detect()
 
@@ -62,7 +65,7 @@ class Overlay:
         if not self.available: return
         try:
             self._overlay.send_message(id, text, color, x, y, ttl=ttl, size=size)
-            self._warned = False
+            self._succeed()
         except Exception as e:
             self._fail("send_text", e)
 
@@ -71,7 +74,7 @@ class Overlay:
         if not self.available: return
         try:
             self._overlay.send_shape(id, shape, border_color, fill_color, x, y, w, h, ttl=ttl)
-            self._warned = False
+            self._succeed()
         except Exception as e:
             self._fail("send_shape", e)
 
@@ -87,7 +90,7 @@ class Overlay:
                 "id": id, "shape": "vect", "color": color, "fill": fill_color,
                 "x": 0, "y": 0, "w": 0, "h": 0, "ttl": ttl, "vector": vector,
             })
-            self._warned = False
+            self._succeed()
         except Exception as e:
             self._fail("send_vect", e)
 
@@ -120,9 +123,22 @@ class Overlay:
             self.is_modern = False
             return False
 
+    def _succeed(self) -> None:
+        self._warned = False
+        self._consecutive_failures = 0
+
     def _fail(self, op:str, exc:Exception) -> None:
-        """ Log the first failure only, then go quiet -- an overlay that vanishes mid-session shouldn't spam the log. """
+        """ A single failure doesn't disable the overlay -- e.g. a one-off bad API call during
+        setup (like a define_group() mismatch) shouldn't blackout the rest of the session. Only
+        FAILURE_THRESHOLD consecutive failures does, and even then logs just once, so a
+        genuinely vanished overlay app goes quiet instead of spamming retries/warnings. """
+        self._consecutive_failures += 1
+        if self._consecutive_failures < self.FAILURE_THRESHOLD:
+            return
         if not self._warned:
             self._warned = True
-            Debug.logger.warning(f"Overlay {op} failed, disabling further overlay output this session", exc_info=exc)
+            Debug.logger.warning(
+                f"Overlay {op} failed {self._consecutive_failures} times in a row, disabling further overlay output this session",
+                exc_info=exc,
+            )
         self.available = False

@@ -16,10 +16,12 @@ CFG_OVERLAY_ENABLED:str = f"{CONFIG_PREFIX}OverlayEnabled"
 CFG_OVERLAY_RADAR_ENABLED:str = f"{CONFIG_PREFIX}OverlayRadarEnabled"
 CFG_DEV_MODE:str = f"{CONFIG_PREFIX}DevMode"
 CFG_VISIBLE_LINES:str = f"{CONFIG_PREFIX}VisibleLines"
+CFG_OVERLAY_RADAR_SIZE:str = f"{CONFIG_PREFIX}OverlayRadarSize"
 
 # Defaults agreed during requirements gathering (REQUIREMENTS.md), excluding first-discovery bonus
 DEFAULT_SCAN_VALUE_THRESHOLD:int = 750_000
 DEFAULT_EXOBIO_VALUE_THRESHOLD:int = 5_000_000
 DEFAULT_VISIBLE_LINES:int = 5
+DEFAULT_OVERLAY_RADAR_SIZE:int = 150 # on-screen pixel radius, matches overlay_frames.py's original hardcoded RADIUS_PX
 
 DB_FILENAME:str = "explorer.sqlite"

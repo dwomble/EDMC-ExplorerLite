@@ -61,6 +61,26 @@ class TestRestoreLastSession:
         assert state.cmdr_id is None
         assert state.system_id is None
 
+    def test_body_survives_login_after_restart(self, store:ExplorerStore) -> None:
+        """ Regression: restore_last_session() pre-populates system_id, which used to defeat
+        enter_system()'s own cold-start check (state.system_id is None) once the real LoadGame +
+        Location sequence arrived after logging back in -- on_load_game()'s reset_body() would
+        clear the body, and enter_system() would then treat it as a normal (non-cold-start) jump
+        and never resume it, since `saved` was never loaded. """
+        session_persist.save("Testy", 123, "Deltius", 5, "Deltius 5")
+
+        state = ExplorerState()
+        handlers_context.restore_last_session(store, state)
+        assert state.body_id == 5
+
+        handlers_context.on_load_game(store, state, {})
+        assert state.body_id is None
+
+        handlers_context.enter_system(store, state, {"SystemAddress": 123, "SystemName": "Deltius"})
+
+        assert state.body_id == 5
+        assert state.body_name == "Deltius 5"
+
 class TestEnterSystemResume:
     """ enter_system() only checks the saved snapshot on a cold start (state.system_id still
     None -- EDMC doesn't replay journal history, so this is the first system-entry event this
