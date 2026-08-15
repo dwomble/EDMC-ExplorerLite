@@ -45,6 +45,15 @@ class SystemSummaryOverlay:
         self.panel:ExplorerPanel = panel
         self._group_defined:bool = False
         self._last_skip_reason:str|None = None # dedupe diagnostic logging -- log only on change
+        # A frame's own TTL is generous (see TTL below) so a line stays up between refreshes --
+        # but that means a slot that's no longer needed (a mapped body drops off the list, a
+        # genus gets confirmed, etc.) would otherwise linger on screen for the rest of its TTL
+        # instead of vanishing the moment it stops being relevant. Track the previous counts so
+        # render() can explicitly clear() exactly the slots that are no longer in use.
+        self._last_had_header:bool = False
+        self._last_body_count:int = 0
+        self._last_had_overflow:bool = False
+        self._last_current_count:int = 0
 
     def _log_skip(self, reason:str|None) -> None:
         if reason != self._last_skip_reason:
@@ -58,6 +67,23 @@ class SystemSummaryOverlay:
         self._group_defined = self.overlay.define_group(plugin_name=PLUGIN_GROUP, plugin_matching_prefixes=[FRAME_PREFIX],
             plugin_group_name="ExplorerLite Summary", plugin_group_prefixes=[FRAME_PREFIX])
 
+    def _clear_all(self) -> None:
+        """ Every slot from the last render() this instance actually drew -- called whenever
+        this render() bails out early with nothing to show, so a config toggle or leaving the
+        system takes effect immediately rather than waiting out each frame's own TTL. """
+        if self._last_had_header:
+            self.overlay.clear(f"{FRAME_PREFIX}header")
+        for i in range(self._last_body_count):
+            self.overlay.clear(f"{FRAME_PREFIX}body-{i}")
+        if self._last_had_overflow:
+            self.overlay.clear(f"{FRAME_PREFIX}overflow")
+        for i in range(self._last_current_count):
+            self.overlay.clear(f"{FRAME_PREFIX}current-{i}")
+        self._last_had_header = False
+        self._last_body_count = 0
+        self._last_had_overflow = False
+        self._last_current_count = 0
+
     def render(self, store:ExplorerStore, state:ExplorerState) -> None:
         """ Shown whenever a system is known, same as the panel's own top-level gating -- not
         restricted to on-foot/landed like the radar, since "what's left in this system" is
@@ -68,19 +94,23 @@ class SystemSummaryOverlay:
 
         if not config.get_bool(CFG_OVERLAY_ENABLED, default=True):
             self._log_skip("overlay disabled in EDMC-ExplorerLite settings")
+            self._clear_all()
             return
 
         if not config.get_bool(CFG_OVERLAY_SUMMARY_ENABLED, default=True):
             self._log_skip("summary disabled in EDMC-ExplorerLite settings")
+            self._clear_all()
             return
 
         if state.system_id is None:
             self._log_skip("no system known yet")
+            self._clear_all()
             return
 
         system = store.get_system(state.system_id)
         if system is None:
             self._log_skip(f"system_id {state.system_id} not found in store")
+            self._clear_all()
             return
 
         self._log_skip(None) # clear -- we're drawing
@@ -89,6 +119,7 @@ class SystemSummaryOverlay:
 
         scanned_count:int = store.count_scanned_bodies_for_system(system["id"])
         self.overlay.send_text(f"{FRAME_PREFIX}header", system_status_text(system, scanned_count), color, ANCHOR_X, ANCHOR_Y, ttl=TTL)
+        self._last_had_header = True
 
         flagged:list[sqlite3.Row] = sorted(store.get_flagged_bodies_for_system(system["id"]), key=_sort_key)
         rows:list[str] = []
@@ -101,19 +132,26 @@ class SystemSummaryOverlay:
         for i, line in enumerate(shown):
             y:int = ANCHOR_Y + LINE_HEIGHT_PX * (i + 1)
             self.overlay.send_text(f"{FRAME_PREFIX}body-{i}", line, color, ANCHOR_X, y, ttl=TTL)
+        for i in range(len(shown), self._last_body_count): # dropped since last render -- clear now, don't wait on TTL
+            self.overlay.clear(f"{FRAME_PREFIX}body-{i}")
+        self._last_body_count = len(shown)
 
         next_row:int = len(shown) + 1
         overflow:int = len(rows) - len(shown)
         if overflow > 0:
             self.overlay.send_text(f"{FRAME_PREFIX}overflow", f"+{overflow} more", OVERFLOW_COLOR, ANCHOR_X, ANCHOR_Y + LINE_HEIGHT_PX * next_row, ttl=TTL)
             next_row += 1
-        # No explicit clear for rows/overflow beyond the current count -- same as overlay_frames.py,
-        # a stale line just stops being refreshed and expires via its own TTL.
+        elif self._last_had_overflow:
+            self.overlay.clear(f"{FRAME_PREFIX}overflow")
+        self._last_had_overflow = overflow > 0
 
         current_lines:list[str] = self._current_body_lines(store, state)[:MAX_CURRENT_BODY_LINES]
         for i, line in enumerate(current_lines):
             y = ANCHOR_Y + LINE_HEIGHT_PX * (next_row + i)
             self.overlay.send_text(f"{FRAME_PREFIX}current-{i}", line, color, ANCHOR_X + CURRENT_BODY_INDENT_PX, y, ttl=TTL)
+        for i in range(len(current_lines), self._last_current_count):
+            self.overlay.clear(f"{FRAME_PREFIX}current-{i}")
+        self._last_current_count = len(current_lines)
 
     def _current_body_lines(self, store:ExplorerStore, state:ExplorerState) -> list[str]:
         """ Mirrors ExplorerPanel._render_exobiology_section()'s own selection logic exactly

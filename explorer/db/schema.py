@@ -66,7 +66,7 @@ CREATE TABLE IF NOT EXISTS bodies (
     flagged_exobio INTEGER NOT NULL DEFAULT 0,
     scanned_at TEXT,
     mapped_at TEXT,
-    type_label TEXT, -- short display abbreviation, e.g. "Terraformable HMC", "ELW"
+    type_label TEXT, -- short display abbreviation, e.g. "T HMC", "ELW"
     UNIQUE(cmdr_id, system_id, body_id)
 );
 

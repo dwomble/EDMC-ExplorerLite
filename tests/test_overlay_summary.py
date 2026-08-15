@@ -184,6 +184,100 @@ class TestSystemSummaryOverlay:
         messages = load.summary_overlay.overlay._overlay.messages
         assert f"{FRAME_PREFIX}current-0" not in messages
 
+    def test_a_body_dropping_off_the_list_clears_immediately_not_after_ttl(self, plugin:TestHarness) -> None:
+        """
+        Real-world regression: mapping a body drops it from the panel's list synchronously
+        (on_saa_scan_complete only returns {"panel": True}), but the overlay only used to stop
+        RE-SENDING that body's frame, relying on its own TTL to make it disappear -- fine at the
+        original 8s TTL, but after bumping TTL to 30s (see the "stay on screen longer" fix) a
+        mapped body's stale line could visibly linger for up to that long. render() must now
+        explicitly clear a dropped slot the moment it notices, not just stop refreshing it.
+        """
+        plugin.load_events("explorer_events.json")
+        plugin.play_sequence("honk_only", 0.02)
+
+        import load
+        assert load.store is not None and load.summary_overlay is not None
+        assert load.explorer_state.cmdr_id is not None and load.explorer_state.system_id is not None
+        body_pk:int = load.store.get_or_create_body(load.explorer_state.cmdr_id, load.explorer_state.system_id, 1, "QuietSpace A 1")
+        load.store.update_body(body_pk, flagged_value=1, estimated_scan_value=1_000_000, was_discovered=1, was_mapped=1)
+
+        load.summary_overlay.render(load.store, load.explorer_state)
+        assert "A 1" in load.summary_overlay.overlay._overlay.messages[f"{FRAME_PREFIX}body-0"][1]
+
+        load.store.update_body(body_pk, mapped_at="2026-01-01T00:00:00Z") # now mapped -- flagged_body_row drops it
+
+        load.summary_overlay.render(load.store, load.explorer_state)
+        assert load.summary_overlay.overlay._overlay.messages[f"{FRAME_PREFIX}body-0"][1] == ""
+
+    def test_overflow_line_clears_immediately_once_the_count_no_longer_needs_it(self, plugin:TestHarness) -> None:
+        plugin.load_events("explorer_events.json")
+        plugin.play_sequence("honk_only", 0.02)
+
+        import load
+        assert load.store is not None and load.summary_overlay is not None
+        assert load.explorer_state.cmdr_id is not None and load.explorer_state.system_id is not None
+        body_pks:list[int] = []
+        for body_id in range(1, MAX_BODY_LINES + 3):
+            body_pk:int = load.store.get_or_create_body(load.explorer_state.cmdr_id, load.explorer_state.system_id, body_id, f"QuietSpace A {body_id}")
+            load.store.update_body(body_pk, flagged_value=1, estimated_scan_value=1_000_000, was_discovered=1, was_mapped=1)
+            body_pks.append(body_pk)
+
+        load.summary_overlay.render(load.store, load.explorer_state)
+        assert load.summary_overlay.overlay._overlay.messages[f"{FRAME_PREFIX}overflow"][1] == "+2 more"
+
+        for body_pk in body_pks[MAX_BODY_LINES:]: # map away the overflow bodies
+            load.store.update_body(body_pk, mapped_at="2026-01-01T00:00:00Z")
+
+        load.summary_overlay.render(load.store, load.explorer_state)
+        assert load.summary_overlay.overlay._overlay.messages[f"{FRAME_PREFIX}overflow"][1] == ""
+
+    def test_current_body_line_clears_immediately_once_fully_sampled(self, plugin:TestHarness) -> None:
+        from explorer.util import now_iso
+
+        plugin.load_events("explorer_events.json")
+        plugin.play_sequence("honk_only", 0.02)
+
+        import load
+        assert load.store is not None and load.summary_overlay is not None
+        assert load.explorer_state.cmdr_id is not None and load.explorer_state.system_id is not None
+        body_pk:int = load.store.get_or_create_body(load.explorer_state.cmdr_id, load.explorer_state.system_id, 1, "QuietSpace A 1")
+        progress_id:int = load.store.get_or_create_species_progress(body_pk, "Bacterium")
+        load.store.update_species_progress(progress_id, species="Bacterium Aurasus", samples_taken=2)
+
+        load.explorer_state.body_id = 1
+        load.explorer_state.body_name = "QuietSpace A 1"
+
+        load.summary_overlay.render(load.store, load.explorer_state)
+        assert "Bacterium" in load.summary_overlay.overlay._overlay.messages[f"{FRAME_PREFIX}current-0"][1]
+
+        load.store.update_species_progress(progress_id, samples_taken=3, completed_at=now_iso())
+
+        load.summary_overlay.render(load.store, load.explorer_state)
+        assert load.summary_overlay.overlay._overlay.messages[f"{FRAME_PREFIX}current-0"][1] == ""
+
+    def test_disabling_the_summary_mid_session_clears_everything_immediately(self, plugin:TestHarness) -> None:
+        from explorer.constants import CFG_OVERLAY_SUMMARY_ENABLED
+
+        plugin.load_events("explorer_events.json")
+        plugin.play_sequence("honk_only", 0.02)
+
+        import load
+        assert load.store is not None and load.summary_overlay is not None and load.explorer_state.cmdr_id is not None
+        assert load.explorer_state.system_id is not None
+        body_pk:int = load.store.get_or_create_body(load.explorer_state.cmdr_id, load.explorer_state.system_id, 1, "QuietSpace A 1")
+        load.store.update_body(body_pk, flagged_value=1, estimated_scan_value=1_000_000, was_discovered=1, was_mapped=1)
+
+        load.summary_overlay.render(load.store, load.explorer_state)
+        messages = load.summary_overlay.overlay._overlay.messages
+        assert messages[f"{FRAME_PREFIX}header"][1] != "" and messages[f"{FRAME_PREFIX}body-0"][1] != ""
+
+        plugin.config.set(CFG_OVERLAY_SUMMARY_ENABLED, False)
+        load.summary_overlay.render(load.store, load.explorer_state)
+
+        assert messages[f"{FRAME_PREFIX}header"][1] == ""
+        assert messages[f"{FRAME_PREFIX}body-0"][1] == ""
+
     def test_render_respects_summary_disabled_config(self, plugin:TestHarness) -> None:
         from explorer.constants import CFG_OVERLAY_SUMMARY_ENABLED
 

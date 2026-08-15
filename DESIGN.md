@@ -162,6 +162,13 @@ corroborating discussion elsewhere).
 almost entirely by the terraform bonus, so that gap silently under-valued exactly the bodies
 most worth flagging. Fixed by giving it (and "Rocky body") their own base/terraform-k pair.
 
+**Regression:** `_planet_category()`'s substring checks are naive (`"ammonia" in planet_class`),
+so "Gas giant with ammonia based life" collided with the unrelated "Ammonia world" category and
+got its much higher k (232,619) — showing 3.39M Cr for a body a real first-discovery+DSS-mapped
+payout put at ~11,000 Cr. No dedicated gas/water-giant k is sourced; confirmed against that real
+payout that "default" is the right bucket at typical gas-giant mass. Fixed by checking
+"gas giant"/"water giant" first, before the categories they'd otherwise collide with.
+
 ## explorer/valuation/genus_prediction.py — Pre-DSS genus/species prediction
 
 Reads the raw `Scan` (Detailed) entry dict directly (same convention as `cartography.py`), not
@@ -430,3 +437,31 @@ via `CURRENT_BODY_INDENT_PX` (an indented x-offset, not leading whitespace in th
 than repeating the body's name. Row position on screen is dynamic -- it starts right after
 however many flagged-body/overflow lines were actually shown that tick, the same way the
 overflow line itself already floats.
+
+**Stale slots now clear immediately instead of waiting out their TTL.** Real regression: a
+mapped body's row disappeared from the panel right away (`on_saa_scan_complete()` only returns
+`{"panel": True}`, refreshing the panel synchronously) but lingered on the overlay for up to a
+full TTL, since the overlay only re-evaluates on the next dashboard tick and previously relied
+entirely on a dropped frame's own TTL expiry to disappear -- fine at the original TTL (8s), but
+once TTL was bumped to 30s (see above) a stale, no-longer-true line could visibly linger for
+that long. `render()` now tracks how many body/current-body lines (and whether an overflow
+line) it drew last time, and explicitly `overlay.clear()`s exactly the slots no longer in use
+-- same fix applied to every early-return branch (disabled in settings, no system known, etc.)
+so those also clear immediately rather than fading out over TTL. This keeps the longer TTL
+fixing "not staying up long enough" without reintroducing "stays up too long after it
+shouldn't" -- the two complaints are only in tension if disappearance depends on TTL at all.
+
+## explorer/journal/handlers_bodies.py — Belt clusters aren't scannable bodies
+
+**Regression:** "N of M scanned" (see the summary overlay above) could read something like "20
+of 9 scanned" -- more scanned than the honk itself ever reported existing. Root cause: an
+asteroid belt cluster's own `Scan` (`AutoScan`) event has neither `StarType` nor `PlanetClass`
+at all (confirmed against a real captured journal log), but `on_scan()` didn't check for that,
+so it created a fake "Planet" body row for every belt cluster and stamped it `scanned_at` just
+like a real body -- inflating `count_scanned_bodies_for_system()` well past
+`honk_body_count` (which only counts real bodies; a belt cluster is exactly what
+`NonBodyCount` is for). It was also getting a bogus cartography value estimate from
+`cartography.estimate_scan_value()`'s `PlanetClass`-less default-category fallback, though
+that never surfaced as visibly as the scanned-count inflation did. Fixed by returning early
+whenever neither field is present -- a belt cluster is never tracked as a body at all now, not
+patched after the fact.

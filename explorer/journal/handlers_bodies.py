@@ -36,7 +36,7 @@ PLANET_CLASS_ABBREVIATIONS:list[tuple[str, str]] = [
 ]
 
 def _type_label(entry:dict, is_star:bool) -> str|None:
-    """ Short abbreviation for the panel's flagged-body lines, e.g. "Terraformable HMC", "ELW". """
+    """ Short abbreviation for the panel's flagged-body lines, e.g. "T HMC", "ELW". """
     if is_star:
         return None
     planet_class:str = (entry.get("PlanetClass") or "").lower()
@@ -48,7 +48,7 @@ def _type_label(entry:dict, is_star:bool) -> str|None:
     if label is None:
         return None
     if entry.get("TerraformState") == "Terraformable":
-        label = f"Terraformable {label}"
+        label = f"T {label}"
     return label
 
 def _scan_threshold() -> int:
@@ -81,6 +81,9 @@ def on_scan(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict:
         return {}
 
     is_star:bool = "StarType" in entry
+    if not is_star and "PlanetClass" not in entry:
+        return {} # a belt cluster (or similar) -- has neither field, unlike a real star/planet
+
     body_pk:int = store.get_or_create_body(
         state.cmdr_id, state.system_id, body_id, entry.get("BodyName", ""), "Star" if is_star else "Planet"
     )
