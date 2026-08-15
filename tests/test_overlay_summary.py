@@ -59,7 +59,8 @@ class TestSystemSummaryOverlay:
 
         messages = load.summary_overlay.overlay._overlay.messages
         header = messages[f"{FRAME_PREFIX}header"]
-        assert header[1] == "QuietSpace — 1 body — done" # matches panel.py's system_header_line()
+        # No system name -- it's already shown elsewhere in the game's own UI, see system_status_text()
+        assert header[1] == "1 body — done"
 
         body_line = messages[f"{FRAME_PREFIX}body-0"]
         assert body_line[1].startswith("A 1")
@@ -82,6 +83,35 @@ class TestSystemSummaryOverlay:
         assert f"{FRAME_PREFIX}body-{MAX_BODY_LINES - 1}" in messages
         assert f"{FRAME_PREFIX}body-{MAX_BODY_LINES}" not in messages
         assert messages[f"{FRAME_PREFIX}overflow"][1] == "+2 more"
+
+    def test_biologically_interesting_bodies_are_never_pushed_into_overflow(self, plugin:TestHarness) -> None:
+        """
+        Real-world report: a biological signal went missing from the overlay in a system with
+        several cartography-flagged bodies. MAX_BODY_LINES is a hard cap with no scrolling, and
+        the list used to be plain body_id order -- a body with confirmed biology but a higher
+        body_id than several cartography-only bodies could get silently bumped into the
+        anonymous "+N more" count. Biological interest must always sort first.
+        """
+        plugin.load_events("explorer_events.json")
+        plugin.play_sequence("honk_only", 0.02)
+
+        import load
+        assert load.store is not None and load.summary_overlay is not None
+        assert load.explorer_state.cmdr_id is not None and load.explorer_state.system_id is not None
+
+        for body_id in range(1, MAX_BODY_LINES + 1): # low body_id, cartography-only -- would fill every slot
+            body_pk:int = load.store.get_or_create_body(load.explorer_state.cmdr_id, load.explorer_state.system_id, body_id, f"QuietSpace {body_id}")
+            load.store.update_body(body_pk, flagged_value=1, estimated_scan_value=1_000_000, was_discovered=1, was_mapped=1)
+
+        bio_body_id:int = MAX_BODY_LINES + 5 # high body_id -- last in plain body_id order
+        bio_pk:int = load.store.get_or_create_body(load.explorer_state.cmdr_id, load.explorer_state.system_id, bio_body_id, "QuietSpace Bio")
+        load.store.update_body(bio_pk, has_biological_signals=1, biological_signal_count=3)
+
+        load.summary_overlay.render(load.store, load.explorer_state)
+
+        messages = load.summary_overlay.overlay._overlay.messages
+        shown_lines = [messages[f"{FRAME_PREFIX}body-{i}"][1] for i in range(MAX_BODY_LINES)]
+        assert any("Bio" in line for line in shown_lines), shown_lines
 
     def test_render_respects_summary_disabled_config(self, plugin:TestHarness) -> None:
         from explorer.constants import CFG_OVERLAY_SUMMARY_ENABLED

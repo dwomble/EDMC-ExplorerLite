@@ -13,7 +13,7 @@ import pytest
 from typing import Generator, cast
 
 from harness import TestHarness, reset_plugin_modules
-from explorer.ui.panel import _credits_range
+from explorer.ui.panel import _credits_range, system_status_text, system_header_line
 
 @pytest.fixture
 def plugin(harness:TestHarness, tmp_path, monkeypatch) -> Generator[TestHarness, None, None]:
@@ -71,6 +71,34 @@ class TestCreditsRange:
 
     def test_collapses_to_a_single_value_when_min_equals_max(self) -> None:
         assert _credits_range(1_000_000, 1_000_000) == "1M Cr"
+
+class TestSystemStatusText:
+    """ system_status_text()/system_header_line() take anything dict-like ("system[key]") --
+    a plain dict stands in for a real sqlite3.Row here, no store/harness needed. """
+
+    def test_before_honking(self) -> None:
+        system = {"honk_body_count": None}
+        assert system_status_text(system, scanned_count=0) == "honk needed"
+
+    def test_progress_while_worth_a_full_scan(self) -> None:
+        """ Real change: "scan needed" used to stay static throughout the FSS pass -- now shows
+        live "N of M scanned" progress. """
+        system = {"honk_body_count": 7, "all_bodies_found": 0, "honk_hint": "worth a full scan"}
+        assert system_status_text(system, scanned_count=3) == "3 of 7 scanned"
+
+    def test_probably_quiet_stays_done(self) -> None:
+        """ Unaffected by the progress change -- "done" is the heuristic's own opinion, not
+        literal FSS completion, so it doesn't get a scanned-count treatment. """
+        system = {"honk_body_count": 1, "all_bodies_found": 0, "honk_hint": "probably quiet"}
+        assert system_status_text(system, scanned_count=0) == "1 body — done"
+
+    def test_all_bodies_found(self) -> None:
+        system = {"honk_body_count": 3, "all_bodies_found": 1, "honk_hint": "worth a full scan"}
+        assert system_status_text(system, scanned_count=3) == "3 bodies — scan complete"
+
+    def test_header_line_prepends_the_system_name(self) -> None:
+        system = {"name": "Deltius", "honk_body_count": 7, "all_bodies_found": 0, "honk_hint": "worth a full scan"}
+        assert system_header_line(system, scanned_count=3) == "Deltius — 3 of 7 scanned"
 
 class TestPanelStates:
 

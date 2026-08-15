@@ -2,6 +2,8 @@
 capped list of flagged-body lines -- a glanceable "what's left to do here" without alt-tabbing
 to the panel. Reuses ExplorerPanel._flagged_body_row() for the per-body text so both surfaces
 never drift out of sync. """
+import sqlite3
+
 from config import config # type: ignore
 
 from explorer.utils.debug import Debug
@@ -9,8 +11,11 @@ from explorer.utils.overlay import Overlay
 
 from explorer.db.store import ExplorerStore
 from explorer.state import ExplorerState
-from explorer.ui.panel import ExplorerPanel, system_header_line
-from explorer.constants import CFG_OVERLAY_ENABLED, CFG_OVERLAY_SUMMARY_ENABLED
+from explorer.ui.panel import ExplorerPanel, system_status_text
+from explorer.constants import (
+    CFG_OVERLAY_ENABLED, CFG_OVERLAY_SUMMARY_ENABLED,
+    CFG_OVERLAY_SUMMARY_TEXT_COLOR, DEFAULT_OVERLAY_SUMMARY_TEXT_COLOR,
+)
 
 FRAME_PREFIX:str = "explorerlite-summary-"
 PLUGIN_GROUP:str = "EDMC-ExplorerLite"
@@ -19,11 +24,14 @@ ANCHOR_X:int = 20
 ANCHOR_Y:int = 20
 LINE_HEIGHT_PX:int = 20
 MAX_BODY_LINES:int = 6 # a sensible cap -- the overlay can't scroll like the panel's own table
-TTL:int = 8 # matches overlay_frames.py's own TTL -- generous vs. the ~1/sec dashboard-tick refresh
+TTL:int = 30 # longer than overlay_frames.py's radar TTL (8s) -- real-world reports of the
+# summary going blank between refreshes even though it's on the same dashboard-tick trigger as
+# the radar; a longer TTL is a safe hedge against however irregular that cadence turns out to be
 
-HEADER_COLOR:str = "#ffffff"
-BODY_LINE_COLOR:str = "#ffffff"
 OVERFLOW_COLOR:str = "#999999" # same neutral grey as the radar's rings -- a subdued hint, not a data line
+
+def _text_color() -> str:
+    return config.get_str(CFG_OVERLAY_SUMMARY_TEXT_COLOR, default=DEFAULT_OVERLAY_SUMMARY_TEXT_COLOR)
 
 class SystemSummaryOverlay:
     """ Owns the overlay text frames. `panel` supplies the row formatting -- constructed after
@@ -74,11 +82,14 @@ class SystemSummaryOverlay:
 
         self._log_skip(None) # clear -- we're drawing
         self._ensure_group()
+        color:str = _text_color()
 
-        self.overlay.send_text(f"{FRAME_PREFIX}header", system_header_line(system), HEADER_COLOR, ANCHOR_X, ANCHOR_Y, ttl=TTL)
+        scanned_count:int = store.count_scanned_bodies_for_system(system["id"])
+        self.overlay.send_text(f"{FRAME_PREFIX}header", system_status_text(system, scanned_count), color, ANCHOR_X, ANCHOR_Y, ttl=TTL)
 
+        flagged:list[sqlite3.Row] = sorted(store.get_flagged_bodies_for_system(system["id"]), key=_sort_key)
         rows:list[str] = []
-        for body in store.get_flagged_bodies_for_system(system["id"]):
+        for body in flagged:
             row = self.panel._flagged_body_row(system["name"], body)
             if row is not None:
                 rows.append(_format_body_line(row))
@@ -86,7 +97,7 @@ class SystemSummaryOverlay:
         shown:list[str] = rows[:MAX_BODY_LINES]
         for i, line in enumerate(shown):
             y:int = ANCHOR_Y + LINE_HEIGHT_PX * (i + 1)
-            self.overlay.send_text(f"{FRAME_PREFIX}body-{i}", line, BODY_LINE_COLOR, ANCHOR_X, y, ttl=TTL)
+            self.overlay.send_text(f"{FRAME_PREFIX}body-{i}", line, color, ANCHOR_X, y, ttl=TTL)
 
         overflow:int = len(rows) - len(shown)
         if overflow > 0:
@@ -94,6 +105,14 @@ class SystemSummaryOverlay:
             self.overlay.send_text(f"{FRAME_PREFIX}overflow", f"+{overflow} more", OVERFLOW_COLOR, ANCHOR_X, y, ttl=TTL)
         # No explicit clear for rows/overflow beyond the current count -- same as overlay_frames.py,
         # a stale line just stops being refreshed and expires via its own TTL.
+
+def _sort_key(body:sqlite3.Row) -> bool:
+    """ Biologically-interesting bodies first -- MAX_BODY_LINES is a hard cap with no
+    scrolling, so a system with several cartography-flagged bodies must never silently push
+    exobiology (this plugin's whole point) into the anonymous overflow count. Stable sort, so
+    body_id order is otherwise preserved within each group. """
+    biological:bool = bool(body["has_biological_signals"] == 1 or body["flagged_exobio"] or body["has_prediction"])
+    return not biological
 
 def _format_body_line(row:tuple[str, str, str, str, str]) -> str:
     """ Collapses _flagged_body_row()'s (designator, distance, gravity, value, description)

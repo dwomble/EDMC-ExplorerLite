@@ -391,3 +391,26 @@ to on-foot/landed/lat-long -- unlike the radar (which needs a body and surface p
 anything), "what's left in this system" is relevant from the moment you arrive until you leave,
 including while docked. No dedicated "docked" suppression exists yet (`ExplorerState` doesn't
 track it) -- accepted for now rather than adding new journal-event tracking speculatively.
+
+**Refinements after real-world use:**
+- **TTL bumped 8s -> 30s.** Real-world reports of the summary going blank between refreshes
+  despite sharing the radar's own steady dashboard-tick trigger -- rather than fully diagnose
+  the cadence, a much longer TTL is a safe hedge against however irregular it turns out to be.
+- **System name dropped from the header** (`system_status_text()`, no name, vs.
+  `system_header_line()` which prepends it for the panel) -- the game's own UI already shows
+  the current system name elsewhere, so repeating it here was wasted space.
+- **"scan needed" replaced with live "N of M scanned" progress**
+  (`store.count_scanned_bodies_for_system()` vs. `honk_body_count`), while the honk heuristic
+  says the system is worth a full FSS pass. The "probably quiet"/"done" case is left alone --
+  that's the heuristic's own opinion, not literal scan completion, so a scanned-count doesn't
+  apply to it the same way.
+- **Text colour is now a preference** (`CFG_OVERLAY_SUMMARY_TEXT_COLOR`, a `tkinter.colorchooser`
+  picker in prefs.py, following the same pattern as another of the user's plugins,
+  EDMC-NeutronDancer) -- read fresh each render, matching how radar size is already configurable.
+- **Biologically-interesting bodies now sort first**, before the `MAX_BODY_LINES` cap is
+  applied. Real regression: the list was plain `body_id` order, so a body with confirmed
+  biology could silently land in the anonymous "+N more" overflow behind several
+  cartography-only bodies with lower body IDs -- exactly backwards for a plugin whose main
+  point is exobiology. `_sort_key()` treats `has_biological_signals`/`flagged_exobio`/
+  `has_prediction` as "biological interest" and sorts those bodies before pure-cartography
+  ones; a stable sort keeps body_id order within each group.

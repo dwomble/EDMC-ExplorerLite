@@ -154,6 +154,14 @@ class ExplorerStore:
     def get_bodies_for_system(self, system_id:int) -> list[sqlite3.Row]:
         return self.conn.execute("SELECT * FROM bodies WHERE system_id = ? ORDER BY body_id", (system_id,)).fetchall()
 
+    def count_scanned_bodies_for_system(self, system_id:int) -> int:
+        """ Bodies actually Scanned (scanned_at set), not just FSSBodySignals-touched -- for
+        "N of M scanned" progress against the honk's total body count. """
+        row:sqlite3.Row = self.conn.execute(
+            "SELECT COUNT(*) AS n FROM bodies WHERE system_id = ? AND scanned_at IS NOT NULL", (system_id,)
+        ).fetchone()
+        return row["n"]
+
     def update_body(self, body_pk:int, **fields) -> None:
         self._update("bodies", body_pk, **fields)
 

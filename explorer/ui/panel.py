@@ -64,19 +64,25 @@ def _sampling_distance_str(genera:list[str]) -> str:
 
     return f"{min(distances)}m" if min(distances) == max(distances) else f"{min(distances)}-{max(distances)}m"
 
-def system_header_line(system:sqlite3.Row) -> str:
-    """ "{name} -- honk needed" / "{name} -- N bodies -- scan complete/scan needed/done".
-    Module-level (not a panel method) so overlay_summary.py can mirror it exactly. """
-    name:str = system["name"]
+def system_status_text(system:sqlite3.Row, scanned_count:int) -> str:
+    """ "honk needed" / "N bodies -- scan complete/done" / "N of M scanned" while the FSS pass
+    is still in progress. No system name -- module-level (not a panel method) so
+    overlay_summary.py can mirror this without repeating the name it already shows elsewhere. """
     hbc:int|None = system["honk_body_count"]
     if hbc is None:
-        return f"{name} — honk needed"
+        return "honk needed"
 
     if system["all_bodies_found"]:
-        return f"{name} — {hbc} bod{'ies' if hbc != 1 else 'y'} — scan complete"
+        return f"{hbc} bod{'ies' if hbc != 1 else 'y'} — scan complete"
 
-    status:str = "scan needed" if system["honk_hint"] == "worth a full scan" else "done"
-    return f"{name} — {hbc} bod{'ies' if hbc != 1 else 'y'} — {status}"
+    if system["honk_hint"] == "worth a full scan":
+        return f"{scanned_count} of {hbc} scanned"
+
+    return f"{hbc} bod{'ies' if hbc != 1 else 'y'} — done"
+
+def system_header_line(system:sqlite3.Row, scanned_count:int) -> str:
+    """ The panel's own header line -- system_status_text() prefixed with the system name. """
+    return f"{system['name']} — {system_status_text(system, scanned_count)}"
 
 def _body_designator(system_name:str, body_name:str) -> str:
     """ The short local part of a body's name, e.g. "Deltius B 6 c" -> "B 6 c" -- system name
@@ -167,7 +173,8 @@ class ExplorerPanel:
         self._last_rendered = self._pending
 
     def _render_system_summary(self, system:sqlite3.Row) -> None:
-        self._line(system_header_line(system))
+        scanned_count:int = self.store.count_scanned_bodies_for_system(system["id"])
+        self._line(system_header_line(system, scanned_count))
         if system["honk_body_count"] is None:
             return
 
