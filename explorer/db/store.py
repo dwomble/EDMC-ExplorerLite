@@ -271,7 +271,8 @@ class ExplorerStore:
         Exobiology tracks Base (the value that counts toward ED's own progression -- never
         includes the first-logged bonus) and Full (the real payout: sold_value once sold, else
         Base with the bonus projected in). """
-        systems:list[sqlite3.Row] = self.conn.execute("SELECT * FROM systems WHERE cmdr_id = ? ORDER BY visited_at", (cmdr_id,)).fetchall()
+        # DESC -- most recently visited system first, matching a "history" log's natural order
+        systems:list[sqlite3.Row] = self.conn.execute("SELECT * FROM systems WHERE cmdr_id = ? ORDER BY visited_at DESC", (cmdr_id,)).fetchall()
 
         tree:list[dict] = []
         for system in systems:

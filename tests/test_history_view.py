@@ -10,6 +10,13 @@ import pytest
 from typing import Generator
 
 from harness import TestHarness, reset_plugin_modules
+from explorer.db.store import ExplorerStore
+
+@pytest.fixture
+def store(tmp_path) -> Generator[ExplorerStore, None, None]:
+    s = ExplorerStore(tmp_path / "explorer.sqlite")
+    yield s
+    s.close()
 
 @pytest.fixture
 def plugin(harness:TestHarness, tmp_path, monkeypatch) -> Generator[TestHarness, None, None]:
@@ -81,6 +88,20 @@ class TestHistoryTreeQuery:
         assert system["exo_base"] == body["exo_base"]
         assert system["exo_full"] == body["exo_full"]
         assert system["date"] # visited_at recorded
+
+    def test_systems_default_to_most_recently_visited_first(self, store:ExplorerStore) -> None:
+        """ Reverse-date order, not insertion order -- a "history" log reads naturally with the
+        most recent entry at the top. """
+        cmdr_id:int = store.get_or_create_cmdr("Testy")
+        s1:int = store.get_or_create_system(cmdr_id, 1, "First")
+        store.update_system(s1, visited_at="2026-01-01T00:00:00")
+        s2:int = store.get_or_create_system(cmdr_id, 2, "Second")
+        store.update_system(s2, visited_at="2026-06-01T00:00:00")
+        s3:int = store.get_or_create_system(cmdr_id, 3, "Third")
+        store.update_system(s3, visited_at="2026-03-01T00:00:00")
+
+        tree = store.get_history_tree(cmdr_id)
+        assert [system["name"] for system in tree] == ["Second", "Third", "First"]
 
 class TestHistoryViewPopup:
 

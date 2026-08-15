@@ -64,6 +64,20 @@ def _sampling_distance_str(genera:list[str]) -> str:
 
     return f"{min(distances)}m" if min(distances) == max(distances) else f"{min(distances)}-{max(distances)}m"
 
+def system_header_line(system:sqlite3.Row) -> str:
+    """ "{name} -- honk needed" / "{name} -- N bodies -- scan complete/scan needed/done".
+    Module-level (not a panel method) so overlay_summary.py can mirror it exactly. """
+    name:str = system["name"]
+    hbc:int|None = system["honk_body_count"]
+    if hbc is None:
+        return f"{name} — honk needed"
+
+    if system["all_bodies_found"]:
+        return f"{name} — {hbc} bod{'ies' if hbc != 1 else 'y'} — scan complete"
+
+    status:str = "scan needed" if system["honk_hint"] == "worth a full scan" else "done"
+    return f"{name} — {hbc} bod{'ies' if hbc != 1 else 'y'} — {status}"
+
 def _body_designator(system_name:str, body_name:str) -> str:
     """ The short local part of a body's name, e.g. "Deltius B 6 c" -> "B 6 c" -- system name
     is implied by context, repeating it on every line just wastes width. """
@@ -153,20 +167,11 @@ class ExplorerPanel:
         self._last_rendered = self._pending
 
     def _render_system_summary(self, system:sqlite3.Row) -> None:
-        name:str = system["name"]
-
-        hbc:int|None = system["honk_body_count"]
-        if hbc is None:
-            self._line(f"{name} — honk needed")
+        self._line(system_header_line(system))
+        if system["honk_body_count"] is None:
             return
 
-        # Flagged bodies shown as soon as scanned, not gated behind a full FSS sweep
-        if system["all_bodies_found"]:
-            self._line(f"{name} — {hbc} bod{'ies' if hbc != 1 else 'y'} — scan complete")
-        else:
-            status:str = "scan needed" if system["honk_hint"] == "worth a full scan" else "done"
-            self._line(f"{name} — {hbc} bod{'ies' if hbc != 1 else 'y'} — {status}")
-
+        name:str = system["name"]
         # Current body's exobiology detail nests under its own row, not after the whole table
         anchors:tuple = ("w", "e", "e", "e", "w")
         flagged:list[sqlite3.Row] = self.store.get_flagged_bodies_for_system(system["id"])

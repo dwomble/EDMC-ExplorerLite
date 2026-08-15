@@ -12,7 +12,7 @@ from config import config # type: ignore
 from explorer.constants import (
     CFG_SCAN_VALUE_THRESHOLD, DEFAULT_SCAN_VALUE_THRESHOLD,
     CFG_EXOBIO_VALUE_THRESHOLD, DEFAULT_EXOBIO_VALUE_THRESHOLD,
-    CFG_OVERLAY_ENABLED, CFG_OVERLAY_RADAR_ENABLED, CFG_DEV_MODE,
+    CFG_OVERLAY_ENABLED, CFG_OVERLAY_RADAR_ENABLED, CFG_OVERLAY_SUMMARY_ENABLED, CFG_DEV_MODE,
     CFG_VISIBLE_LINES, DEFAULT_VISIBLE_LINES,
     CFG_OVERLAY_RADAR_SIZE, DEFAULT_OVERLAY_RADAR_SIZE,
 )
@@ -30,6 +30,7 @@ PREFS = [
     Pref('threshold', CFG_VISIBLE_LINES, "Visible lines before scrolling:", DEFAULT_VISIBLE_LINES),
     Pref('bool', CFG_OVERLAY_ENABLED, "Enable overlay", True),
     Pref('bool', CFG_OVERLAY_RADAR_ENABLED, "Show radar on overlay", True),
+    Pref('bool', CFG_OVERLAY_SUMMARY_ENABLED, "Show system summary on overlay", True),
     Pref('threshold', CFG_OVERLAY_RADAR_SIZE, "Radar size (px):", DEFAULT_OVERLAY_RADAR_SIZE),
     Pref('bool', CFG_DEV_MODE, "Developer/debug logging", False),
 ]

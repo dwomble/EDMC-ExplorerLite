@@ -352,3 +352,42 @@ qualified for entirely unrelated reasons (`flagged_value`, `flagged_exobio`, con
 biology) the moment biology was confirmed absent. Fixed by scoping the guard to just the
 prediction branch: `flagged_value = 1 OR flagged_exobio = 1 OR has_biological_signals = 1 OR
 (has_biological_signals IS NOT 0 AND EXISTS (...))`.
+
+## explorer/ui/overlay_summary.py — Overlay system summary
+
+Mirrors the compact panel's system-summary header line (`panel.system_header_line()`, extracted
+to module level so both surfaces share it) plus a capped list of flagged-body lines, so "what's
+left to do in this system" is glanceable without alt-tabbing to the panel. Each body line is
+`_flagged_body_row()`'s own (designator, distance, gravity, value, description) tuple collapsed
+to just designator/value/description -- distance and gravity are already columns on the panel's
+own table, not worth the overlay's limited width.
+
+**Reuses `ExplorerPanel._flagged_body_row()` directly** rather than re-deriving the same
+value/formatting logic in a second place -- `_flagged_body_row()` is deeply threaded through
+several other panel methods (predictions, exobio ranges, chain-tier merging), so duplicating it
+would risk the two surfaces drifting out of sync. This is why `SystemSummaryOverlay` is
+constructed in `load.py`'s `plugin_app()` (once `ExplorerPanel` exists), not alongside
+`RadarOverlay` in `plugin_start3()` -- and why it shares the SAME underlying `Overlay()` backend
+instance as the radar (`load.py`'s `overlay_backend` global) rather than probing a second time.
+
+**No cap on how many bodies get row-computed, only on how many get shown** -- `render()`
+computes `_flagged_body_row()` for every body `get_flagged_bodies_for_system()` returns, then
+truncates to `MAX_BODY_LINES`. This mirrors `panel.py`'s own refresh(), which already
+recomputes every row fresh on each call; a system with a genuinely huge flagged list is rare
+enough that this wasn't worth optimizing pre-truncation.
+
+**Triggered on the same "overlay" flag as the radar** (`load.py`'s `_apply_flags()`), not a
+separate "panel" trigger -- `dashboard_entry` emits `{"overlay": "radar"}` every ~1/sec tick
+regardless of whether anything changed, which is what keeps the radar's short-TTL frames
+continuously refreshed. Piggybacking on that same flag gives the summary the same steady
+cadence; gating it on "panel" instead (which only fires on discrete journal events) would let
+its TTL expire and the whole overlay vanish during any stretch of supercruise with no new
+events. Cartography/exobio handlers that only return `{"panel": True}` (Scan, FSSBodySignals,
+SAASignalsFound) still reach the overlay within about a second via the next dashboard tick --
+imperceptible in practice, not worth wiring a second explicit trigger for.
+
+**Gating differs from the radar's.** Shown whenever `state.system_id` is known, not restricted
+to on-foot/landed/lat-long -- unlike the radar (which needs a body and surface position to mean
+anything), "what's left in this system" is relevant from the moment you arrive until you leave,
+including while docked. No dedicated "docked" suppression exists yet (`ExplorerState` doesn't
+track it) -- accepted for now rather than adding new journal-event tracking speculatively.
