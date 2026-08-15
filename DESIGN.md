@@ -414,3 +414,19 @@ track it) -- accepted for now rather than adding new journal-event tracking spec
   point is exobiology. `_sort_key()` treats `has_biological_signals`/`flagged_exobio`/
   `has_prediction` as "biological interest" and sorts those bodies before pure-cartography
   ones; a stable sort keeps body_id order within each group.
+
+**Current-body species detail (`_current_body_lines()`).** The overlay originally mirrored
+only the top-level flagged-body list -- real feedback after using it live was that the
+per-species detail table the panel shows for whichever body you're actually standing on
+(`ExplorerPanel._render_exobiology_section()`, e.g. "Bacterium Aurasus 2/3 500m 5M Cr") was
+missing entirely, a genuine scope gap rather than a bug in what was already built. Added as a
+new section below the flagged-body list, reusing `_exobio_progress_row()`/
+`_predicted_genus_row()`/`_best_predictions_for_body()` directly and mirroring
+`_render_exobiology_section()`'s exact selection logic (active samples this visit, else a
+pre-DSS prediction, else nothing) so the two surfaces can't drift apart. No header/body-name
+line -- same as the panel's own nesting, which already sits directly under the body's own
+row with nothing labeling it; the overlay ties the lines back to their body the same way,
+via `CURRENT_BODY_INDENT_PX` (an indented x-offset, not leading whitespace in the text) rather
+than repeating the body's name. Row position on screen is dynamic -- it starts right after
+however many flagged-body/overflow lines were actually shown that tick, the same way the
+overflow line itself already floats.

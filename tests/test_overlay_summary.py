@@ -113,6 +113,77 @@ class TestSystemSummaryOverlay:
         shown_lines = [messages[f"{FRAME_PREFIX}body-{i}"][1] for i in range(MAX_BODY_LINES)]
         assert any("Bio" in line for line in shown_lines), shown_lines
 
+    def test_render_shows_current_body_species_progress(self, plugin:TestHarness) -> None:
+        """
+        Real feature gap: the overlay only ever mirrored the top-level flagged-body list, never
+        the per-species detail for whichever body you're actually standing on -- the panel's
+        own nested table (ExplorerPanel._render_exobiology_section()). Reuses
+        _exobio_progress_row() directly so the wording/values can't drift from the panel. No
+        header line, same as the panel's own nesting -- just indented under the body above it.
+        """
+        plugin.load_events("explorer_events.json")
+        plugin.play_sequence("honk_only", 0.02)
+
+        import load
+        from explorer.ui.overlay_summary import ANCHOR_X, CURRENT_BODY_INDENT_PX
+        assert load.store is not None and load.summary_overlay is not None
+        assert load.explorer_state.cmdr_id is not None and load.explorer_state.system_id is not None
+        body_pk:int = load.store.get_or_create_body(load.explorer_state.cmdr_id, load.explorer_state.system_id, 1, "QuietSpace A 1")
+        progress_id:int = load.store.get_or_create_species_progress(body_pk, "Bacterium")
+        load.store.update_species_progress(progress_id, species="Bacterium Aurasus", samples_taken=2)
+
+        load.explorer_state.body_id = 1
+        load.explorer_state.body_name = "QuietSpace A 1"
+
+        load.summary_overlay.render(load.store, load.explorer_state)
+
+        messages = load.summary_overlay.overlay._overlay.messages
+        current_line = messages[f"{FRAME_PREFIX}current-0"]
+        assert "Bacterium Aurasus" in current_line[1]
+        assert "2/3" in current_line[1]
+        assert current_line[3] == ANCHOR_X + CURRENT_BODY_INDENT_PX # indented, not at the left margin
+
+    def test_current_body_section_hidden_once_fully_sampled(self, plugin:TestHarness) -> None:
+        from explorer.util import now_iso
+
+        plugin.load_events("explorer_events.json")
+        plugin.play_sequence("honk_only", 0.02)
+
+        import load
+        assert load.store is not None and load.summary_overlay is not None
+        assert load.explorer_state.cmdr_id is not None and load.explorer_state.system_id is not None
+        body_pk:int = load.store.get_or_create_body(load.explorer_state.cmdr_id, load.explorer_state.system_id, 1, "QuietSpace A 1")
+        progress_id:int = load.store.get_or_create_species_progress(body_pk, "Bacterium")
+        load.store.update_species_progress(progress_id, species="Bacterium Aurasus", samples_taken=3, completed_at=now_iso())
+
+        load.explorer_state.body_id = 1
+        load.explorer_state.body_name = "QuietSpace A 1"
+
+        load.summary_overlay.render(load.store, load.explorer_state)
+
+        messages = load.summary_overlay.overlay._overlay.messages
+        assert f"{FRAME_PREFIX}current-0" not in messages
+
+    def test_current_body_section_absent_off_foot_with_no_genus_known(self, plugin:TestHarness) -> None:
+        """ Flying over a body with no confirmed genus and no prediction -- nothing worth
+        showing yet, matching the panel's own gating. """
+        plugin.load_events("explorer_events.json")
+        plugin.play_sequence("honk_only", 0.02)
+
+        import load
+        assert load.store is not None and load.summary_overlay is not None
+        assert load.explorer_state.cmdr_id is not None and load.explorer_state.system_id is not None
+        load.store.get_or_create_body(load.explorer_state.cmdr_id, load.explorer_state.system_id, 1, "QuietSpace A 1")
+
+        load.explorer_state.body_id = 1
+        load.explorer_state.body_name = "QuietSpace A 1"
+        load.explorer_state.on_foot = False
+
+        load.summary_overlay.render(load.store, load.explorer_state)
+
+        messages = load.summary_overlay.overlay._overlay.messages
+        assert f"{FRAME_PREFIX}current-0" not in messages
+
     def test_render_respects_summary_disabled_config(self, plugin:TestHarness) -> None:
         from explorer.constants import CFG_OVERLAY_SUMMARY_ENABLED
 

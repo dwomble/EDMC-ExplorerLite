@@ -1,7 +1,8 @@
-""" Overlay system summary: mirrors the compact panel's system-summary header line plus a
-capped list of flagged-body lines -- a glanceable "what's left to do here" without alt-tabbing
-to the panel. Reuses ExplorerPanel._flagged_body_row() for the per-body text so both surfaces
-never drift out of sync. """
+""" Overlay system summary: mirrors the compact panel's system-summary header line, a capped
+list of flagged-body lines, and the current body's own per-species detail (indented under the
+list, no header -- same nesting as the panel's own table) -- a glanceable "what's left to do
+here" without alt-tabbing to the panel. Reuses ExplorerPanel's own row-building methods for all
+of this so the overlay text never drifts out of sync with the panel. """
 import sqlite3
 
 from config import config # type: ignore
@@ -23,7 +24,9 @@ PLUGIN_GROUP:str = "EDMC-ExplorerLite"
 ANCHOR_X:int = 20
 ANCHOR_Y:int = 20
 LINE_HEIGHT_PX:int = 20
+CURRENT_BODY_INDENT_PX:int = 20 # nests the current body's species lines under the list, no header -- matches the panel's own INDENT_PX treatment
 MAX_BODY_LINES:int = 6 # a sensible cap -- the overlay can't scroll like the panel's own table
+MAX_CURRENT_BODY_LINES:int = 6 # ditto, for the current body's own species detail below the list
 TTL:int = 30 # longer than overlay_frames.py's radar TTL (8s) -- real-world reports of the
 # summary going blank between refreshes even though it's on the same dashboard-tick trigger as
 # the radar; a longer TTL is a safe hedge against however irregular that cadence turns out to be
@@ -99,12 +102,52 @@ class SystemSummaryOverlay:
             y:int = ANCHOR_Y + LINE_HEIGHT_PX * (i + 1)
             self.overlay.send_text(f"{FRAME_PREFIX}body-{i}", line, color, ANCHOR_X, y, ttl=TTL)
 
+        next_row:int = len(shown) + 1
         overflow:int = len(rows) - len(shown)
         if overflow > 0:
-            y = ANCHOR_Y + LINE_HEIGHT_PX * (len(shown) + 1)
-            self.overlay.send_text(f"{FRAME_PREFIX}overflow", f"+{overflow} more", OVERFLOW_COLOR, ANCHOR_X, y, ttl=TTL)
+            self.overlay.send_text(f"{FRAME_PREFIX}overflow", f"+{overflow} more", OVERFLOW_COLOR, ANCHOR_X, ANCHOR_Y + LINE_HEIGHT_PX * next_row, ttl=TTL)
+            next_row += 1
         # No explicit clear for rows/overflow beyond the current count -- same as overlay_frames.py,
         # a stale line just stops being refreshed and expires via its own TTL.
+
+        current_lines:list[str] = self._current_body_lines(store, state)[:MAX_CURRENT_BODY_LINES]
+        for i, line in enumerate(current_lines):
+            y = ANCHOR_Y + LINE_HEIGHT_PX * (next_row + i)
+            self.overlay.send_text(f"{FRAME_PREFIX}current-{i}", line, color, ANCHOR_X + CURRENT_BODY_INDENT_PX, y, ttl=TTL)
+
+    def _current_body_lines(self, store:ExplorerStore, state:ExplorerState) -> list[str]:
+        """ Mirrors ExplorerPanel._render_exobiology_section()'s own selection logic exactly
+        (active samples this visit, else a pre-DSS prediction, else nothing) -- reusing its row
+        methods directly rather than re-deriving the same value/formatting logic here. No
+        header/body-name line, same as the panel's own nesting -- just the indented x offset
+        (see render()) ties these lines back to the body above them. """
+        if state.cmdr_id is None or state.system_id is None or state.body_id is None:
+            return []
+
+        body_pk:int = store.get_or_create_body(state.cmdr_id, state.system_id, state.body_id, state.body_name)
+        all_progress:list[sqlite3.Row] = store.get_species_progress_for_body(body_pk)
+        active:list[sqlite3.Row] = [row for row in all_progress if not row["completed_at"]]
+        predictions:list[dict] = [] if (active or all_progress) else self.panel._best_predictions_for_body(body_pk)
+
+        if not active and all_progress:
+            return [] # every genus here is fully sampled -- nothing left to do
+
+        if not active and not predictions and not state.on_foot:
+            return []
+
+        body:sqlite3.Row|None = store.get_body(body_pk)
+        was_footfalled:bool = bool(body and body["was_footfalled"])
+
+        if active:
+            rows = [self.panel._exobio_progress_row(row, was_footfalled) for row in active]
+            return [_format_progress_line(r) for r in rows]
+
+        if predictions:
+            confirmed_signal:bool = bool(body and body["has_biological_signals"])
+            rows = [self.panel._predicted_genus_row(slot, confirmed_signal, was_footfalled) for slot in predictions]
+            return [_format_predicted_line(r) for r in rows]
+
+        return ["No genus detected yet"]
 
 def _sort_key(body:sqlite3.Row) -> bool:
     """ Biologically-interesting bodies first -- MAX_BODY_LINES is a hard cap with no
@@ -120,3 +163,13 @@ def _format_body_line(row:tuple[str, str, str, str, str]) -> str:
     columns already, not worth the overlay's limited width. """
     designator, _distance, _gravity, value_str, species_desc = row
     return f"{designator}  {value_str}  {species_desc}" if species_desc else f"{designator}  {value_str}"
+
+def _format_progress_line(row:tuple[str, str, str, str]) -> str:
+    """ _exobio_progress_row()'s (name, samples-taken progress, min-distance, value) tuple. """
+    name, progress, distance, value_str = row
+    return f"{name}  {progress}  {distance}  {value_str}"
+
+def _format_predicted_line(row:tuple[str, str, str]) -> str:
+    """ _predicted_genus_row()'s (name, min-distance, value) tuple. """
+    name, distance, value_str = row
+    return f"{name}  {distance}  {value_str}"
