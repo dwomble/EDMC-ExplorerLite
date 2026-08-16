@@ -47,6 +47,10 @@ SECTIONS:list[tuple[str, list[Pref]]] = [
 ]
 PREFS:list[Pref] = [p for _, section_prefs in SECTIONS for p in section_prefs] # save_prefs() iterates this flat
 
+LABEL_GAP_PX:int = 16 # between a pref's own label and its control
+GROUP_GAP_PX:int = 24 # between the left half and the right half
+ROW_GAP_PX:int = 6 # vertical space between pref rows
+
 _pref_vars:dict[str, tk.Variable] = {}
 
 def _bold_font() -> tkfont.Font:
@@ -57,30 +61,32 @@ def _pick_color(parent:tk.Widget, var:tk.StringVar, btn:tk.Button) -> None:
     _, color = colorchooser.askcolor(var.get(), title="Overlay summary text colour", parent=parent)
     if color:
         var.set(color)
-        btn.configure(text=color, foreground=color)
+        btn.configure(text="Foreground", foreground=color)
 
 def _place_pref(frame:nb.Frame, p:Pref, row:int, col:int, enabled:bool) -> None:
     """ col: 0 for the left half, 2 for the right half. """
     state:str = tk.NORMAL if enabled else tk.DISABLED
+    left_pad:int = GROUP_GAP_PX if col == 2 else 0
+    pady:tuple[int, int] = (0, ROW_GAP_PX)
     match p.kind:
         case 'threshold':
             _pref_vars[p.key] = tk.StringVar(value=str(config.get_int(p.key, default=p.default)))
-            nb.Label(frame, text=p.desc).grid(row=row, column=col, sticky=tk.W, padx=(0, 4))
-            nb.EntryMenu(frame, textvariable=_pref_vars[p.key], width=10, state=state).grid(row=row, column=col + 1, sticky=tk.W)
+            nb.Label(frame, text=p.desc).grid(row=row, column=col, sticky=tk.W, padx=(left_pad, LABEL_GAP_PX), pady=pady)
+            nb.EntryMenu(frame, textvariable=_pref_vars[p.key], width=10, state=state).grid(row=row, column=col + 1, sticky=tk.W, pady=pady)
 
         case 'bool':
             _pref_vars[p.key] = tk.BooleanVar(value=config.get_bool(p.key, default=p.default))
             nb.Checkbutton(frame, text=p.desc, variable=_pref_vars[p.key], state=state).grid(
-                row=row, column=col, columnspan=2, sticky=tk.W)
+                row=row, column=col, columnspan=2, sticky=tk.W, padx=(left_pad, 0), pady=pady)
 
         case 'color':
             color:str = config.get_str(p.key, default=p.default)
             color_var:tk.StringVar = tk.StringVar(value=color)
             _pref_vars[p.key] = color_var
-            nb.Label(frame, text=p.desc).grid(row=row, column=col, sticky=tk.W, padx=(0, 4))
-            btn:tk.Button = tk.Button(frame, text=color, foreground=color, background="#555555", state=state)
+            nb.Label(frame, text=p.desc).grid(row=row, column=col, sticky=tk.W, padx=(left_pad, LABEL_GAP_PX), pady=pady)
+            btn:tk.Button = tk.Button(frame, text="Foreground", foreground=color, background="#555555", state=state)
             btn.configure(command=partial(_pick_color, frame, color_var, btn))
-            btn.grid(row=row, column=col + 1, sticky=tk.W)
+            btn.grid(row=row, column=col + 1, sticky=tk.W, pady=pady)
 
 def _build_section(frame:nb.Frame, section_prefs:list[Pref], row:int, enabled:bool = True) -> int:
     """ Flows prefs two-up, alternating left then right. """
@@ -97,8 +103,7 @@ def build_prefs(parent:tk.Widget, cmdr:str, is_beta:bool, overlay_available:bool
     _pref_vars = {}
 
     frame:nb.Frame = nb.Frame(parent)
-    frame.columnconfigure(1, weight=1)
-    frame.columnconfigure(3, weight=1)
+    frame.columnconfigure(3, weight=1) # only the trailing column stretches -- keeps halves close
     bold:tkfont.Font = _bold_font()
 
     row:int = 0

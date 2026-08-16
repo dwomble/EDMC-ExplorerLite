@@ -565,3 +565,20 @@ new `overlay_available:bool = True` param; `_place_pref()`/`_build_section()` th
 `overlay_backend` and runs its detection probe) always runs before EDMC ever calls
 `plugin_prefs()`. Only the Overlays section is affected; Thresholds/Debug are unconditionally
 enabled regardless of the `overlay_available` value.
+
+**Rebalanced spacing, from a real screenshot review.** `frame.columnconfigure(1, weight=1)`
+(alongside column 3's own weight) was stretching the *left* control column to fill any spare
+dialog width, which pushed the right half of each row away by however much slack happened to be
+in the window -- an accidental, unpredictable gap, not a designed one. Removed it; only column 3
+(trailing) still stretches, which is enough to keep the header's GitHub link pushed to the right
+edge without affecting the two pref columns' spacing at all (they're both `sticky=W`, so a
+stretched column just leaves blank space past the widget, not a bigger widget). Replaced the
+implicit stretch with explicit, fixed spacing instead: `LABEL_GAP_PX` (a pref's own label to its
+control) and `ROW_GAP_PX` (between rows) both increased from the prior ad-hoc `padx=(0, 4)`/no
+`pady` at all; `GROUP_GAP_PX` is a new, deliberately *smaller* fixed gap between the left and
+right halves, applied only when `col == 2` -- smaller than the stretch column ever produced, but
+present, so the two halves still read as visually distinct groups rather than one dense block.
+
+**Color button now reads "Foreground", not the hex value.** The button's text no longer changes
+per pick -- only its `foreground=` (text color) does, still previewing the actual chosen color.
+A hex string as the only label was harder to parse than a fixed, readable word at a glance.
