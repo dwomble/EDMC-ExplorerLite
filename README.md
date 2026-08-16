@@ -62,7 +62,6 @@ All configurable from EDMC's plugin settings pane:
 - Overlay on/off, radar on/off, system summary on/off
 - Radar size (px)
 - Overlay summary text colour
-- Developer/debug logging
 
 ## Persistence
 

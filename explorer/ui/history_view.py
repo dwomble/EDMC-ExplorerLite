@@ -9,7 +9,6 @@ from typing import Literal
 
 from config import config # type: ignore
 
-import explorer.utils.th as th
 from explorer.utils.treeviewplus import TreeviewPlus
 from explorer.utils.misc import hfplus
 
@@ -53,20 +52,20 @@ class HistoryView:
             self.refresh()
             return
 
-        self.window = th.TopLevel(self.parent)
+        self.window = tk.Toplevel(self.parent)
         self.window.title("ExplorerLite — History")
         self.window.protocol("WM_DELETE_WINDOW", self._on_close)
         saved_geometry:str = config.get_str(CFG_HISTORY_WINDOW_GEOMETRY, default="")
         if saved_geometry:
             self.window.geometry(saved_geometry)
 
-        content:th.Frame = th.Frame(self.window) # type: ignore[arg-type] -- a Toplevel is a valid Tk master even though th.Frame's hint says tk.Widget
+        content:tk.Frame = tk.Frame(self.window) # type: ignore[arg-type] -- a Toplevel is a valid Tk master even though th.Frame's hint says tk.Widget
         content.pack(fill=tk.BOTH, expand=True)
 
-        self.summary_label = th.Label(content, text="", justify=tk.LEFT)
+        self.summary_label = tk.Label(content, text="", justify=tk.LEFT)
         self.summary_label.pack(fill=tk.X, padx=4, pady=4)
 
-        tree_frame:th.Frame = th.Frame(content)
+        tree_frame:tk.Frame = tk.Frame(content)
         tree_frame.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
         tree_frame.rowconfigure(0, weight=1)
         tree_frame.columnconfigure(0, weight=1)

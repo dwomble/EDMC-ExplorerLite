@@ -11,10 +11,7 @@ from theme import theme # type: ignore
 
 class ScrollableFrame(tk.Frame):
     """
-    A themed frame whose content -- packed or gridded into `.interior` -- scrolls vertically
-    once it exceeds `maxheight` pixels. The scrollbar is hidden entirely while content fits,
-    and mouse-wheel scrolling is only bound while the pointer is over this widget so it doesn't
-    steal scroll events from the rest of the EDMC window.
+    A themed frame whose content -- packed or gridded into `.interior` -- scrolls vertically once it exceeds `maxheight` pixels.
     """
     def __init__(self, master:tk.Widget, maxheight:int|None = None, **kw) -> None:
         # maxheight (one word, no underscore) matches Tk's own option-naming convention
@@ -42,6 +39,7 @@ class ScrollableFrame(tk.Frame):
 
         from . import Frame # local import: avoids a hard circular import at module load time
         self.interior:tk.Frame = Frame(self._canvas)
+        theme.register(self.interior) # else stuck light forever -- canvas children aren't walked
         self._interior_id = self._canvas.create_window((0, 0), window=self.interior, anchor="nw")
 
         self.interior.bind("<Configure>", self._on_interior_configure)
@@ -50,15 +48,7 @@ class ScrollableFrame(tk.Frame):
         self._canvas.bind("<Leave>", self._unbind_mousewheel)
 
     def _on_interior_configure(self, event:tk.Event|None = None) -> None:
-        """
-        Content changed -- schedule (don't do inline) a scroll-region/scrollbar recompute.
-
-        Deferring via after_idle and coalescing repeat calls into one is deliberate: recomputing
-        synchronously inside the event handler can end up applying configure() changes that
-        themselves generate more <Configure> events (e.g. while several children are being
-        destroyed in the same pass), and a burst like that can turn into a storm that a real
-        update() -- not just update_idletasks() -- keeps feeding into itself indefinitely.
-        """
+        """ Content changed -- schedule (don't do inline) a scroll-region/scrollbar recompute. """
         if self._resize_pending:
             return
         self._resize_pending = True
@@ -84,14 +74,7 @@ class ScrollableFrame(tk.Frame):
         self._update_scrollbar_visibility(content_height)
 
     def _content_height(self) -> int:
-        """
-        Sum the children's own requested heights rather than trust `.interior.winfo_reqheight()`.
-
-        Tk caches a pack-managed frame's own requested size and does not recompute it just
-        because its children were destroyed -- winfo_reqheight() on an emptied frame keeps
-        reporting its last (larger) size even after update()/update_idletasks(). Summing the
-        current children directly sidesteps that stale cache entirely.
-        """
+        """ Sum the children's own requested heights rather than trust `.interior.winfo_reqheight()` """
         return sum(child.winfo_reqheight() for child in self.interior.winfo_children())
 
     def _on_canvas_configure(self, event:tk.Event) -> None:
@@ -100,14 +83,8 @@ class ScrollableFrame(tk.Frame):
             self._last_item_width = event.width
             self._canvas.itemconfigure(self._interior_id, width=event.width)
 
-    def configure(self, cnf=None, **kw) -> None:
-        """ Route the synthetic `maxheight` option through our own recompute; everything else
-        passes straight through to the real Tk Frame.configure() -- the standard pattern for a
-        wrapper widget adding an option Tk itself doesn't know about. Since `widget['opt'] = x`
-        and `widget.cget('opt')` are themselves implemented (in tkinter.Misc) by calling
-        self.configure()/self.cget(), overriding just these two is enough to make `maxheight`
-        behave like any other Tk option (e.g. `scroll.configure(maxheight=54)`,
-        `scroll['maxheight'] = 54`, `scroll.cget('maxheight')`) -- not a bespoke Python property. """
+    def configure(self, cnf=None, **kw) -> None: # type: ignore[override] -- never queries one option
+        """ Route the synthetic `maxheight` option through our own recompute """
         merged:dict = dict(cnf or {})
         merged.update(kw)
         if 'maxheight' in merged:
@@ -128,15 +105,7 @@ class ScrollableFrame(tk.Frame):
     __getitem__ = cget
 
     def clear(self) -> None:
-        """
-        Remove all content from `.interior` in one shot.
-
-        Prefer this over destroying children individually: destroying widgets one at a time
-        while the resize machinery is live re-triggers a recompute after each destroy, and a
-        rapid burst of those has been observed to make Tk spin on this platform. Unbinding for
-        the duration of the wipe and recomputing exactly once afterwards avoids that entirely,
-        and matches how a status panel actually replaces its content each refresh anyway.
-        """
+        """ Remove all content from `.interior` in one shot. """
         self.interior.unbind("<Configure>")
         for child in self.interior.winfo_children():
             child.destroy()
