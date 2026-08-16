@@ -292,7 +292,6 @@ class ExplorerPanel:
             )
             return
 
-        self._line("No genus detected yet")
 
     def _best_predictions_for_body(self, body_pk:int) -> list[dict]:
         """ Best-per-genus predicted slots, capped to biological_signal_count (or MAX_PREDICTED_SHOWN).

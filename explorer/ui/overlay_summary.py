@@ -165,7 +165,7 @@ class SystemSummaryOverlay:
             rows = [self.panel._predicted_genus_row(slot, confirmed_signal, was_footfalled) for slot in predictions]
             return [_format_predicted_line(r) for r in rows]
 
-        return ["No genus detected yet"]
+        return []
 
 def _sort_key(body:sqlite3.Row) -> bool:
     """ Biological bodies sort first so they don't overflow. """
