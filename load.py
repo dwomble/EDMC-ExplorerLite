@@ -63,7 +63,8 @@ def plugin_app(parent:tk.Frame) -> tk.Widget:
 
 def plugin_prefs(parent:tk.Widget, cmdr:str, is_beta:bool) -> tk.Widget:
     """ Return a TK Frame for adding to the EDMC settings dialog. """
-    return prefs_ui.build_prefs(parent, cmdr, is_beta)
+    overlay_available:bool = overlay_backend is not None and overlay_backend.available
+    return prefs_ui.build_prefs(parent, cmdr, is_beta, overlay_available)
 
 def prefs_changed(cmdr:str, is_beta:bool) -> None:
     """ Save settings. """

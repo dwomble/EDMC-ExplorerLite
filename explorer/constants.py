@@ -13,7 +13,6 @@ CONFIG_PREFIX:str = "EDMCExplorerLite_"
 CFG_PANEL_ENABLED:str = f"{CONFIG_PREFIX}PanelEnabled" # master show/hide -- data collection is unaffected
 CFG_SCAN_VALUE_THRESHOLD:str = f"{CONFIG_PREFIX}ScanValueThreshold"
 CFG_EXOBIO_VALUE_THRESHOLD:str = f"{CONFIG_PREFIX}ExobioValueThreshold"
-CFG_OVERLAY_ENABLED:str = f"{CONFIG_PREFIX}OverlayEnabled"
 CFG_OVERLAY_RADAR_ENABLED:str = f"{CONFIG_PREFIX}OverlayRadarEnabled"
 CFG_OVERLAY_SUMMARY_ENABLED:str = f"{CONFIG_PREFIX}OverlaySummaryEnabled"
 CFG_OVERLAY_SUMMARY_TEXT_COLOR:str = f"{CONFIG_PREFIX}OverlaySummaryTextColor"

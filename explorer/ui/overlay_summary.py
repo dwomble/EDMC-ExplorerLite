@@ -10,7 +10,7 @@ from explorer.db.store import ExplorerStore
 from explorer.state import ExplorerState
 from explorer.ui.panel import ExplorerPanel, system_status_text
 from explorer.constants import (
-    CFG_PANEL_ENABLED, CFG_OVERLAY_ENABLED, CFG_OVERLAY_SUMMARY_ENABLED,
+    CFG_PANEL_ENABLED, CFG_OVERLAY_SUMMARY_ENABLED,
     CFG_OVERLAY_SUMMARY_TEXT_COLOR, DEFAULT_OVERLAY_SUMMARY_TEXT_COLOR,
 )
 
@@ -78,11 +78,6 @@ class SystemSummaryOverlay:
 
         if not config.get_bool(CFG_PANEL_ENABLED, default=True):
             self._log_skip("panel hidden via the show/hide toggle")
-            self._clear_all()
-            return
-
-        if not config.get_bool(CFG_OVERLAY_ENABLED, default=True):
-            self._log_skip("overlay disabled in EDMC-ExplorerLite settings")
             self._clear_all()
             return
 

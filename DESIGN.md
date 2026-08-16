@@ -508,7 +508,9 @@ more, which (thanks to the existing diff-based row rebuild) picks up everything 
 while hidden in one pass. Both `RadarOverlay.render()` and `SystemSummaryOverlay.render()` also
 check `CFG_PANEL_ENABLED` first, so hiding the panel hides both overlay elements too -- this is
 a master switch layered on top of (not a replacement for) the existing per-element
-`CFG_OVERLAY_ENABLED`/`CFG_OVERLAY_RADAR_ENABLED`/`CFG_OVERLAY_SUMMARY_ENABLED` toggles.
+`CFG_OVERLAY_RADAR_ENABLED`/`CFG_OVERLAY_SUMMARY_ENABLED` toggles. A separate overlay-specific
+master toggle (`CFG_OVERLAY_ENABLED`) was later removed as redundant -- see the prefs.py
+section below.
 
 ## explorer/ui/panel.py — Abbreviated genus/species names
 
@@ -531,3 +533,35 @@ Three tiers now: full names if short enough (`MAX_FULL_NAME_CHARS`, 24) -> abbre
 that fits (`MAX_MERGED_TAG_CHARS`, lowered 40 -> 32) -> a bare "N possible genera" count as the
 last resort. The outer "N signals: " prefix was also shortened to "N – " (matching the
 requested style) since the word "signals" was redundant once a names list follows it.
+
+## explorer/ui/prefs.py — Header + sectioned, two-up layout
+
+Rebuilt the settings pane: a header row (plugin name + version bold, a `GitHub` `HyperlinkLabel`
+linking to `GH_URL`) above three titled sections -- Thresholds, Overlays, Debug -- each flowing
+its prefs two-up rather than one full-width row per pref. `Pref` entries are now declared
+grouped under `SECTIONS:list[tuple[str, list[Pref]]]` instead of one flat list; `PREFS` (the
+flat list `save_prefs()`/existing tests iterate) is derived from `SECTIONS` at import time, so
+there's exactly one place a pref's section/kind/default is declared.
+
+`_build_section()` alternates each pref between column-pair (0,1) and (2,3) in declaration
+order -- a `bool` pref's checkbox spans both columns of whichever half it lands in (matching
+the old single-column behavior, just narrower), while `threshold`/`color` prefs split their
+half into a label column and a control column. An odd-numbered section just leaves its last row
+half-empty on the right, rather than trying to rebalance -- not worth the complexity for a
+purely cosmetic gap. `ttk.Separator` (not an `nb.*` widget, matching how NeutronDancer's own
+prefs pane uses a bare `Separator` -- it has no background to theme in the first place) divides
+the header from the sections.
+
+**Removed `CFG_OVERLAY_ENABLED`.** With only two overlay elements (radar, summary), a master
+overlay-on/off checkbox above their own individual toggles was redundant -- unchecking both
+individual boxes already achieves the same thing, and `CFG_PANEL_ENABLED` (the panel's own
+show/hide toggle) already sits above all of it as a real master switch. One less checkbox, one
+less config key, one less branch in each `render()`.
+
+**Grey out the Overlays section when no overlay backend is installed.** `build_prefs()` takes a
+new `overlay_available:bool = True` param; `_place_pref()`/`_build_section()` thread an
+`enabled` flag through to each widget's `state=`. `load.py`'s `plugin_prefs()` passes
+`overlay_backend.available` -- safe to read directly since `plugin_start3()` (which constructs
+`overlay_backend` and runs its detection probe) always runs before EDMC ever calls
+`plugin_prefs()`. Only the Overlays section is affected; Thresholds/Debug are unconditionally
+enabled regardless of the `overlay_available` value.

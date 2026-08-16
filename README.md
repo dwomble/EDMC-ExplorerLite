@@ -36,7 +36,6 @@ When the FSS reports biological signals on a body, ExplorerLite indicates likely
 
 Per-species genetic sampling progress (`N/M scanned`) is shown live while you're on the body, along with the minimum walking distance required between samples for that genus. Values shown always include the first-discovery/first-logged bonus you'd actually be paid — not just the base value that only matters for in-game session-progression math.
 
-
 ## Overlay
 
 Requires the [modern overlay](https://github.com/SweetJonnySauce/EDMCModernOverlay), the legacy `EDMCOverlay`/`edmcoverlay2` plugins aren't supported. Without it, ExplorerLite still works fully — the overlay is a heads-up convenience, not a requirement. The panel's 👁/🙈 header toggle hides both overlay elements too, alongside the panel's own content.
@@ -52,7 +51,7 @@ Two independently toggleable overlay elements:
 The top row of the panel is always visible — the plugin name and version on the left, and two icon buttons on the right:
 
 - 🕓 opens the History browser (below).
-- 👁/🙈 shows or hides everything below the header. Data collection and the overlay keep working exactly as before either way; this just declutters the EDMC window. Your choice is remembered across restarts.
+- 👁/🙈 shows or hides everything below the header as well as the overlays. Data collection continues but this declutters the EDMC window. Your choice is remembered across restarts.
 
 ## History
 
@@ -62,14 +61,11 @@ Actual sold values always come straight from the ED journal — ground truth, ne
 
 ## Settings
 
-All configurable from EDMC's plugin settings pane:
+The following settings are configurable from the EDMC preferences panel:
 
-- Cartography (scan/mapping) value threshold, in credits
-- Exobiology potential threshold, in credits
-- Visible panel lines before scrolling
-- Overlay on/off, radar on/off, system summary on/off
-- Radar size (px)
-- Overlay summary text colour
+- **Thresholds** — minimum cartography (scan/mapping) value, minimum exobiology species value, panel lines before scrolling
+- **Overlays** — radar on/off, system summary on/off, radar size, overlay summary text colour (greyed out entirely if no overlay backend is installed)
+- **Debug** — developer/debug logging
 
 ## Persistence
 

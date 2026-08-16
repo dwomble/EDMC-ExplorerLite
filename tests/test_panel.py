@@ -1087,17 +1087,17 @@ class TestPrefs:
 
     def test_build_and_save_roundtrip(self, plugin:TestHarness) -> None:
         from explorer.ui import prefs as prefs_ui
-        from explorer.constants import CFG_SCAN_VALUE_THRESHOLD, CFG_OVERLAY_ENABLED
+        from explorer.constants import CFG_SCAN_VALUE_THRESHOLD, CFG_OVERLAY_RADAR_ENABLED
 
         frame = prefs_ui.build_prefs(plugin.parent, "Testy", False)
         assert frame is not None
 
         prefs_ui._pref_vars[CFG_SCAN_VALUE_THRESHOLD].set("123456")
-        prefs_ui._pref_vars[CFG_OVERLAY_ENABLED].set(False)
+        prefs_ui._pref_vars[CFG_OVERLAY_RADAR_ENABLED].set(False)
         prefs_ui.save_prefs("Testy", False)
 
         assert plugin.config.get_int(CFG_SCAN_VALUE_THRESHOLD) == 123456
-        assert plugin.config.get_bool(CFG_OVERLAY_ENABLED) is False
+        assert plugin.config.get_bool(CFG_OVERLAY_RADAR_ENABLED) is False
 
     def test_invalid_threshold_falls_back_to_default(self, plugin:TestHarness) -> None:
         from explorer.ui import prefs as prefs_ui
@@ -1108,6 +1108,50 @@ class TestPrefs:
         prefs_ui.save_prefs("Testy", False)
 
         assert plugin.config.get_int(CFG_EXOBIO_VALUE_THRESHOLD) == DEFAULT_EXOBIO_VALUE_THRESHOLD
+
+    def test_header_shows_name_version_and_github_link(self, plugin:TestHarness) -> None:
+        from explorer.ui import prefs as prefs_ui
+        from explorer.constants import PLUGIN_NAME, VERSION
+
+        frame = prefs_ui.build_prefs(plugin.parent, "Testy", False)
+        labels = {c.cget("text") for c in frame.winfo_children() if "text" in c.keys()}
+        assert f"{PLUGIN_NAME} v{VERSION}" in labels
+
+        links = [c for c in frame.winfo_children() if type(c).__name__ == "HyperlinkLabel"]
+        assert len(links) == 1 and links[0].cget("text") == "GitHub"
+        assert links[0].url == prefs_ui.GH_URL
+
+    def test_all_three_sections_are_present(self, plugin:TestHarness) -> None:
+        from explorer.ui import prefs as prefs_ui
+
+        frame = prefs_ui.build_prefs(plugin.parent, "Testy", False)
+        labels = {c.cget("text") for c in frame.winfo_children() if "text" in c.keys()}
+        assert {"Thresholds", "Overlays", "Debug"} <= labels
+
+    def test_every_pref_still_has_a_live_widget(self, plugin:TestHarness) -> None:
+        """ Regression guard for the two-up layout: every Pref must still end up with a
+        variable in _pref_vars, however it's split across the left/right columns. """
+        from explorer.ui import prefs as prefs_ui
+
+        prefs_ui.build_prefs(plugin.parent, "Testy", False)
+        assert set(prefs_ui._pref_vars.keys()) == {p.key for p in prefs_ui.PREFS}
+
+    def test_overlays_section_disabled_without_an_overlay_backend(self, plugin:TestHarness) -> None:
+        from explorer.ui import prefs as prefs_ui
+
+        frame = prefs_ui.build_prefs(plugin.parent, "Testy", False, overlay_available=False)
+        radar_cb = next(c for c in frame.winfo_children() if "text" in c.keys() and c.cget("text") == "Show radar on overlay")
+        assert str(radar_cb.cget("state")) == "disabled"
+
+        threshold_entry = next(c for c in frame.winfo_children() if type(c).__name__ == "EntryMenu")
+        assert str(threshold_entry.cget("state")) == "normal" # Thresholds section is unaffected
+
+    def test_overlays_section_enabled_with_an_overlay_backend(self, plugin:TestHarness) -> None:
+        from explorer.ui import prefs as prefs_ui
+
+        frame = prefs_ui.build_prefs(plugin.parent, "Testy", False, overlay_available=True)
+        radar_cb = next(c for c in frame.winfo_children() if "text" in c.keys() and c.cget("text") == "Show radar on overlay")
+        assert str(radar_cb.cget("state")) == "normal"
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v', '--tb=short'])

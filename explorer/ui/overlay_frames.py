@@ -13,7 +13,7 @@ from explorer.state import ExplorerState
 from explorer.util import local_offset_m
 from explorer.valuation import exobiology_data
 from explorer.constants import (
-    CFG_PANEL_ENABLED, CFG_OVERLAY_ENABLED, CFG_OVERLAY_RADAR_ENABLED, CFG_OVERLAY_RADAR_SIZE, DEFAULT_OVERLAY_RADAR_SIZE,
+    CFG_PANEL_ENABLED, CFG_OVERLAY_RADAR_ENABLED, CFG_OVERLAY_RADAR_SIZE, DEFAULT_OVERLAY_RADAR_SIZE,
 )
 
 FRAME_PREFIX:str = "explorerlite-radar-"
@@ -129,10 +129,6 @@ class RadarOverlay:
 
         if not config.get_bool(CFG_PANEL_ENABLED, default=True):
             self._log_skip("panel hidden via the show/hide toggle")
-            return
-
-        if not config.get_bool(CFG_OVERLAY_ENABLED, default=True):
-            self._log_skip("overlay disabled in EDMC-ExplorerLite settings")
             return
 
         if not config.get_bool(CFG_OVERLAY_RADAR_ENABLED, default=True):
