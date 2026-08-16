@@ -10,7 +10,7 @@ from explorer.db.store import ExplorerStore
 from explorer.state import ExplorerState
 from explorer.ui.panel import ExplorerPanel, system_status_text
 from explorer.constants import (
-    CFG_OVERLAY_ENABLED, CFG_OVERLAY_SUMMARY_ENABLED,
+    CFG_PANEL_ENABLED, CFG_OVERLAY_ENABLED, CFG_OVERLAY_SUMMARY_ENABLED,
     CFG_OVERLAY_SUMMARY_TEXT_COLOR, DEFAULT_OVERLAY_SUMMARY_TEXT_COLOR,
 )
 
@@ -74,6 +74,11 @@ class SystemSummaryOverlay:
         """ Shown for any known system, not gated to on-foot like the radar. """
         if not self.overlay.available:
             self._log_skip("no overlay backend detected")
+            return
+
+        if not config.get_bool(CFG_PANEL_ENABLED, default=True):
+            self._log_skip("panel hidden via the show/hide toggle")
+            self._clear_all()
             return
 
         if not config.get_bool(CFG_OVERLAY_ENABLED, default=True):

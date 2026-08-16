@@ -10,6 +10,7 @@ GH_PROJECT:str = "EDMC-ExplorerLite" # Github project name
 CONFIG_PREFIX:str = "EDMCExplorerLite_"
 
 # Config keys (all prefixed to stay unique among EDMC's shared config namespace)
+CFG_PANEL_ENABLED:str = f"{CONFIG_PREFIX}PanelEnabled" # master show/hide -- data collection is unaffected
 CFG_SCAN_VALUE_THRESHOLD:str = f"{CONFIG_PREFIX}ScanValueThreshold"
 CFG_EXOBIO_VALUE_THRESHOLD:str = f"{CONFIG_PREFIX}ExobioValueThreshold"
 CFG_OVERLAY_ENABLED:str = f"{CONFIG_PREFIX}OverlayEnabled"

@@ -629,7 +629,7 @@ class TestPanelStates:
         assert body is not None
         row = load.panel._flagged_body_row("QuietSpace", body)
         assert row is not None
-        assert row[4] == "8 signals: 10 possible genera", row
+        assert row[4] == "8 – 10 possible genera", row
 
     def test_signal_count_bias_prefers_chain_expected_genus_over_raw_confidence(self, plugin:TestHarness) -> None:
         """
@@ -704,8 +704,8 @@ class TestPanelStates:
 
         best = load.panel._best_predictions_for_body(body_pk)
         assert len(best) == 1, best # still exactly one real signal
-        assert "Bacterium Cerbrus" in best[0]["name"], best
-        assert "Stratum Tectonicas" in best[0]["name"], best
+        assert "Bac. Cerbrus" in best[0]["name"], best # abbreviated -- both tied names, neither dropped
+        assert "Str. Tectonicas" in best[0]["name"], best
         assert best[0]["value_min"] < best[0]["value_max"], best # spans both possibilities
 
     def test_tied_genera_get_separate_slots_when_there_is_room_for_both(self, plugin:TestHarness) -> None:
@@ -992,6 +992,84 @@ class TestNoDuplicateWidgets:
         assert load.store is not None and load.panel is not None
         managers = {load.panel.history_button.obj.winfo_manager(), load.panel.history_button.alt.winfo_manager()}
         assert managers == {"grid", ""} # exactly one of the light/dark pair is actually placed
+
+    def test_toggle_button_is_gridded_not_packed(self, plugin:TestHarness) -> None:
+        import load
+        assert load.store is not None and load.panel is not None
+        managers = {load.panel.toggle_button.obj.winfo_manager(), load.panel.toggle_button.alt.winfo_manager()}
+        assert managers == {"grid", ""}
+
+class TestPanelHeaderToggle:
+    """ The always-visible header (name/version + History/toggle buttons) and the show/hide
+    toggle for everything below it -- data collection continues regardless of toggle state. """
+
+    def test_header_shows_plugin_name_and_version(self, plugin:TestHarness) -> None:
+        from explorer.constants import PLUGIN_NAME, VERSION
+
+        import load
+        assert load.panel is not None
+        assert load.panel.title_label.cget("text") == f"{PLUGIN_NAME} v{VERSION}"
+        assert load.panel._title_font.actual("weight") == "bold"
+
+    def test_toggle_hides_and_shows_the_scrollable_content(self, plugin:TestHarness) -> None:
+        from explorer.ui.panel import PANEL_SHOWN_GLYPH, PANEL_HIDDEN_GLYPH
+
+        import load
+        assert load.panel is not None
+        assert load.panel.scroll.winfo_manager() == "grid"
+        assert load.panel.toggle_button.cget("text") == PANEL_SHOWN_GLYPH
+
+        load.panel._toggle_panel()
+        assert load.panel.scroll.winfo_manager() == ""
+        assert load.panel.toggle_button.cget("text") == PANEL_HIDDEN_GLYPH
+
+        load.panel._toggle_panel()
+        assert load.panel.scroll.winfo_manager() == "grid"
+        assert load.panel.toggle_button.cget("text") == PANEL_SHOWN_GLYPH
+
+    def test_toggle_persists_across_the_config(self, plugin:TestHarness) -> None:
+        from explorer.constants import CFG_PANEL_ENABLED
+
+        import load
+        assert load.panel is not None
+        load.panel._toggle_panel()
+        try:
+            assert plugin.config.get_bool(CFG_PANEL_ENABLED) is False
+        finally:
+            load.panel._toggle_panel() # broad-impact flag -- must not leak to other tests
+
+    def test_refresh_is_a_noop_while_hidden_and_catches_up_when_shown(self, plugin:TestHarness) -> None:
+        plugin.load_events("explorer_events.json")
+        plugin.play_sequence("honk_only", 0.02)
+
+        import load
+        assert load.store is not None and load.panel is not None
+        before:list[str] = _panel_lines(load)
+
+        load.panel._toggle_panel() # hide
+        assert load.explorer_state.system_id is not None
+        load.store.update_system(load.explorer_state.system_id, all_bodies_found=1, fss_body_count=1)
+        load.panel.refresh() # e.g. a journal-driven refresh() while hidden -- must not touch the UI
+        assert _panel_lines(load) == before
+
+        load.panel._toggle_panel() # show again -- must reflect the change made while hidden
+        assert _panel_lines(load) != before
+
+    def test_panel_starts_hidden_when_config_says_so(self, harness:TestHarness, tmp_path) -> None:
+        from explorer.constants import CFG_PANEL_ENABLED
+        from explorer.ui.panel import ExplorerPanel, PANEL_HIDDEN_GLYPH
+        from explorer.db.store import ExplorerStore
+        from explorer.state import ExplorerState
+
+        harness.config.set(CFG_PANEL_ENABLED, False)
+        store = ExplorerStore(tmp_path / "explorer_standalone.sqlite")
+        try:
+            panel = ExplorerPanel(harness.parent, store, ExplorerState())
+            assert panel.scroll.winfo_manager() == ""
+            assert panel.toggle_button.cget("text") == PANEL_HIDDEN_GLYPH
+        finally:
+            store.close()
+            harness.config.set(CFG_PANEL_ENABLED, True)
 
 class TestVisibleLinesConfig:
 

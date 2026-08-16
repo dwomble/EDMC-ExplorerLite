@@ -398,5 +398,16 @@ class TestRadarOverlayModern:
         finally:
             harness.config.set(CFG_OVERLAY_RADAR_ENABLED, True)
 
+    @pytest.mark.overlay('Modern')
+    def test_render_respects_panel_hidden_via_show_hide_toggle(self, overlay_mode, harness:TestHarness, store:ExplorerStore) -> None:
+        from explorer.constants import CFG_PANEL_ENABLED
+        harness.config.set(CFG_PANEL_ENABLED, False)
+        try:
+            radar = RadarOverlay(Overlay())
+            radar.render(store, _landed_state(store))
+            assert f"{FRAME_PREFIX}player" not in radar.overlay._overlay.shapes
+        finally:
+            harness.config.set(CFG_PANEL_ENABLED, True)
+
 if __name__ == '__main__':
     pytest.main([__file__, '-v', '--tb=short'])

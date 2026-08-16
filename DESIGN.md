@@ -490,3 +490,44 @@ like a real body -- inflating `count_scanned_bodies_for_system()` well past
 that never surfaced as visibly as the scanned-count inflation did. Fixed by returning early
 whenever neither field is present -- a belt cluster is never tracked as a body at all now, not
 patched after the fact.
+
+## explorer/ui/panel.py — Header row + show/hide toggle
+
+Replaced the bottom "History" text button with an always-visible header row: plugin name +
+version (bold) on the left, then a History button and a show/hide toggle on the right --
+`HISTORY_GLYPH`/`PANEL_SHOWN_GLYPH`/`PANEL_HIDDEN_GLYPH` (🕓/👁/🙈) rather than text, per an
+explicit request for icon buttons. Only `self.scroll` (the content below the header) is what
+the toggle shows/hides -- the header itself is never affected, so History always stays
+reachable. `CFG_PANEL_ENABLED` persists the toggle's state (defaults true), read once at
+construction and updated immediately on click.
+
+Hiding the panel does not pause data collection -- journal handlers write to the store
+regardless of panel/overlay visibility, same as they always have. `refresh()` early-returns
+while hidden rather than rebuilding invisible widgets; toggling back on calls `refresh()` once
+more, which (thanks to the existing diff-based row rebuild) picks up everything that changed
+while hidden in one pass. Both `RadarOverlay.render()` and `SystemSummaryOverlay.render()` also
+check `CFG_PANEL_ENABLED` first, so hiding the panel hides both overlay elements too -- this is
+a master switch layered on top of (not a replacement for) the existing per-element
+`CFG_OVERLAY_ENABLED`/`CFG_OVERLAY_RADAR_ENABLED`/`CFG_OVERLAY_SUMMARY_ENABLED` toggles.
+
+## explorer/ui/panel.py — Abbreviated genus/species names
+
+**Regression:** a flagged body's species guess ("N signals: Genus Species, Genus2 Species2")
+was routinely too long for both the panel's table cell and the overlay's single-line summary
+(which reuses this same string via `_flagged_body_row`). `_collapse_prediction_names()`
+previously had only two tiers -- full names for <=2 items with no length check at all, then a
+bare distinct-genus count once the plain genus list exceeded `MAX_MERGED_TAG_CHARS` (40) --
+skipping straight from "possibly very long" to "no species info at all."
+
+Added a middle tier: an abbreviated "Gen. Species" form using the same 3-letter genus code the
+overlay radar already relies on (`exobiology_data.genus_code()` -- moved there from
+`overlay_frames.py`'s local `_genus_label()`, now just a thin wrapper, so both the radar and the
+panel share one canonical, confirmed-unique-across-21-genera code rather than each rolling
+their own). `_abbreviated_name()` only abbreviates a single-genus item whose name is confirmed
+to start with that exact genus string -- a merged multi-genus item (e.g. a chain-tier group)
+passes through unabbreviated, since there's no single genus to abbreviate against.
+
+Three tiers now: full names if short enough (`MAX_FULL_NAME_CHARS`, 24) -> abbreviated codes if
+that fits (`MAX_MERGED_TAG_CHARS`, lowered 40 -> 32) -> a bare "N possible genera" count as the
+last resort. The outer "N signals: " prefix was also shortened to "N – " (matching the
+requested style) since the word "signals" was redundant once a names list follows it.

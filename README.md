@@ -12,6 +12,7 @@ At every stage of exploring a system — Discovery Scan (Honk), Full Spectrum Sc
 - Live per-species sampling progress once you're on the ground, including the first-logged bonus.
 - In-game overlay: a sample-tracking radar plus a glanceable system summary, so you rarely need to alt-tab to the panel.
 - Per-commander history browser with running sold/pending totals for both cartography and exobiology.
+- A show/hide toggle minimizes the display when not exploring.
 
 ## Installation
 
@@ -38,7 +39,7 @@ Per-species genetic sampling progress (`N/M scanned`) is shown live while you're
 
 ## Overlay
 
-Requires the [modern overlay](https://github.com/SweetJonnySauce/EDMCModernOverlay), the legacy `EDMCOverlay`/`edmcoverlay2` plugins aren't supported. Without it, ExplorerLite still works fully — the overlay is a heads-up convenience, not a requirement.
+Requires the [modern overlay](https://github.com/SweetJonnySauce/EDMCModernOverlay), the legacy `EDMCOverlay`/`edmcoverlay2` plugins aren't supported. Without it, ExplorerLite still works fully — the overlay is a heads-up convenience, not a requirement. The panel's 👁/🙈 header toggle hides both overlay elements too, alongside the panel's own content.
 
 Two independently toggleable overlay elements:
 
@@ -46,9 +47,16 @@ Two independently toggleable overlay elements:
 
 - **Radar** — centered on you, shows distance rings, a highlighted ring at the current genus's minimum sample distance, a marker for each logged sample (filled = in range, hollow = out of range), and a hollow triangle for any codex-tagged waypoint, colored by variant. Rotates with your heading. Radar size is configurable.
 
+## Panel header
+
+The top row of the panel is always visible — the plugin name and version on the left, and two icon buttons on the right:
+
+- 🕓 opens the History browser (below).
+- 👁/🙈 shows or hides everything below the header. Data collection and the overlay keep working exactly as before either way; this just declutters the EDMC window. Your choice is remembered across restarts.
+
 ## History
 
-Click **History** on the panel to open a System → Body → Species browser (per Cmdr), showing status, date, and both estimated and actual value for cartography (`Cart. Est.`/`Cart. Actual`) and exobiology (`Exo. Base`/`Exo. Full`). A running totals line at the top shows sold vs. still-pending credits for both categories. Window size/position is remembered across sessions.
+Click 🕓 on the panel to open a System → Body → Species browser (per Cmdr), showing status, date, and both estimated and actual value for cartography (`Cart. Est.`/`Cart. Actual`) and exobiology (`Exo. Base`/`Exo. Full`). A running totals line at the top shows sold vs. still-pending credits for both categories. Window size/position is remembered across sessions.
 
 Actual sold values always come straight from the ED journal — ground truth, never a formula. Estimates exist purely to flag what's worth your time before you sell.
 

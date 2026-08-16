@@ -291,5 +291,20 @@ class TestSystemSummaryOverlay:
 
         assert load.summary_overlay.overlay._overlay.messages == {}
 
+    def test_render_respects_panel_hidden_via_show_hide_toggle(self, plugin:TestHarness) -> None:
+        from explorer.constants import CFG_PANEL_ENABLED
+
+        plugin.load_events("explorer_events.json")
+        plugin.play_sequence("honk_only", 0.02)
+        plugin.config.set(CFG_PANEL_ENABLED, False)
+        try:
+            import load
+            assert load.store is not None and load.summary_overlay is not None
+            load.summary_overlay.render(load.store, load.explorer_state)
+
+            assert load.summary_overlay.overlay._overlay.messages == {}
+        finally:
+            plugin.config.set(CFG_PANEL_ENABLED, True) # broad-impact flag -- must not leak to other tests
+
 if __name__ == '__main__':
     pytest.main([__file__, '-v', '--tb=short'])

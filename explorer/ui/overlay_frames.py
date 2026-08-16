@@ -13,7 +13,7 @@ from explorer.state import ExplorerState
 from explorer.util import local_offset_m
 from explorer.valuation import exobiology_data
 from explorer.constants import (
-    CFG_OVERLAY_ENABLED, CFG_OVERLAY_RADAR_ENABLED, CFG_OVERLAY_RADAR_SIZE, DEFAULT_OVERLAY_RADAR_SIZE,
+    CFG_PANEL_ENABLED, CFG_OVERLAY_ENABLED, CFG_OVERLAY_RADAR_ENABLED, CFG_OVERLAY_RADAR_SIZE, DEFAULT_OVERLAY_RADAR_SIZE,
 )
 
 FRAME_PREFIX:str = "explorerlite-radar-"
@@ -81,9 +81,7 @@ def _triangle_points(cx:float, cy:float, r:float) -> list[dict]:
     return points + [points[0]]
 
 def _genus_label(genus:str) -> str:
-    """ First 3 letters, uppercased -- confirmed unique across all 21 known genera in
-    exobiology_data.py, so it's enough to tell simultaneously-drawn genera apart at a glance. """
-    return genus[:3].upper()
+    return exobiology_data.genus_code(genus)
 
 def _circle_points(cx:float, cy:float, r:float) -> list[dict]:
     return [
@@ -127,6 +125,10 @@ class RadarOverlay:
         in before you commit to landing, not just once you're already down. """
         if not self.overlay.available:
             self._log_skip("no overlay backend detected")
+            return
+
+        if not config.get_bool(CFG_PANEL_ENABLED, default=True):
+            self._log_skip("panel hidden via the show/hide toggle")
             return
 
         if not config.get_bool(CFG_OVERLAY_ENABLED, default=True):

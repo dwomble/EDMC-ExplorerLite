@@ -3,6 +3,7 @@ Compact panel: plugin_app's Tk frame. Fixed <=60 char width, vertical scrollbar 
 configured visible-line count (CFG_VISIBLE_LINES), collapses to a single muted line when idle.
 """
 import tkinter as tk
+import tkinter.font as tkfont
 import sqlite3
 import re
 from typing import Callable
@@ -15,7 +16,11 @@ from explorer.utils.misc import hfplus, str_truncate
 from explorer.db.store import ExplorerStore
 from explorer.state import ExplorerState
 from explorer.valuation import cartography, exobiology, exobiology_data, signal_count_bias
-from explorer.constants import CFG_VISIBLE_LINES, DEFAULT_VISIBLE_LINES
+from explorer.constants import CFG_VISIBLE_LINES, DEFAULT_VISIBLE_LINES, CFG_PANEL_ENABLED, PLUGIN_NAME, VERSION
+
+HISTORY_GLYPH:str = "\U0001F553" # clock face
+PANEL_SHOWN_GLYPH:str = "\U0001F441" # eye
+PANEL_HIDDEN_GLYPH:str = "\U0001F648" # see-no-evil monkey
 
 WIDTH_CHARS:int = 60
 LINE_HEIGHT_PX:int = 18 # approximate for the default EDMC font; tune once seen in a real window
@@ -23,7 +28,8 @@ MAX_PREDICTED_SHOWN:int = 3 # fallback cap on predicted candidates per body, onl
 # FSSBodySignals tells us the body's real biological_signal_count (see _best_predictions_for_body)
 INDENT_PX:int = 14 # left offset for a table nested under its own header line (e.g. per-body biologicals)
 MAX_SPECIES_LABEL_CHARS:int = 28 # cap on the "Genus Acies/Aurasus" possible-species label
-MAX_MERGED_TAG_CHARS:int = 40 # above this, a 3+-way merged genus list collapses to just a count
+MAX_FULL_NAME_CHARS:int = 24 # above this, try abbreviated genus codes before giving up
+MAX_MERGED_TAG_CHARS:int = 32 # above this even abbreviated, collapse to just a genus count
 SAMPLES_REQUIRED:int = 3 # every species needs exactly 3 real samples (Log/Sample x2) to complete -- see handlers_exobiology.py
 GRAVITY_MS2_PER_G:float = 9.797759 # matches genus_prediction.py's own constant, not the textbook 9.80665
 
@@ -84,6 +90,10 @@ def system_header_line(system:sqlite3.Row, scanned_count:int) -> str:
     """ The panel's own header line -- system_status_text() prefixed with the system name. """
     return f"{system['name']} — {system_status_text(system, scanned_count)}"
 
+def _bold_font() -> tkfont.Font:
+    default:tkfont.Font = tkfont.nametofont("TkDefaultFont")
+    return tkfont.Font(family=default.actual("family"), size=default.actual("size"), weight="bold")
+
 def _body_designator(system_name:str, body_name:str) -> str:
     """ The short local part of a body's name, e.g. "Deltius B 6 c" -> "B 6 c" -- system name
     is implied by context, repeating it on every line just wastes width. """
@@ -102,15 +112,31 @@ class ExplorerPanel:
         self.state:ExplorerState = state
         self.on_history_open:Callable[[], None]|None = None # wired up externally by load.py
 
+        self._panel_enabled:bool = config.get_bool(CFG_PANEL_ENABLED, default=True)
+
         self.frame:th.Frame = th.Frame(parent)
         self.frame.columnconfigure(0, weight=1)
 
         # grid, not pack -- th.Base's pack() renders light/dark widget pairs twice
+        header:th.Frame = th.Frame(self.frame) # always shown -- only self.scroll below hides
+        header.grid(row=0, column=0, sticky=tk.EW)
+        header.columnconfigure(0, weight=1)
+
+        self._title_font:tkfont.Font = _bold_font()
+        self.title_label:th.Label = th.Label(header, text=f"{PLUGIN_NAME} v{VERSION}", font=self._title_font, anchor="w")
+        self.title_label.grid(row=0, column=0, sticky=tk.W)
+
+        self.history_button:th.Button = th.Button(header, text=HISTORY_GLYPH, width=3, command=self._open_history)
+        self.history_button.grid(row=0, column=1, sticky=tk.E)
+
+        self.toggle_button:th.Button = th.Button(header, text=self._toggle_glyph(), width=3, command=self._toggle_panel)
+        self.toggle_button.grid(row=0, column=2, sticky=tk.E)
+
         self.scroll:th.ScrollableFrame = th.ScrollableFrame(self.frame, maxheight=_visible_lines_px())
-        self.scroll.grid(row=0, column=0, sticky=tk.EW)
+        self.scroll.grid(row=1, column=0, sticky=tk.EW)
         self.scroll.interior.columnconfigure(0, weight=1) # each row below is gridded, not packed -- see refresh()
-        self.history_button:th.Button = th.Button(self.frame, text="History", command=self._open_history)
-        self.history_button.grid(row=1, column=0, sticky=tk.EW)
+        if not self._panel_enabled:
+            self.scroll.grid_forget()
 
         self._pending:list[tuple] = [] # lines/tables queued by _line()/_render_table() during the current refresh()
         self._last_rendered:list[tuple] = [] # what's actually on screen right now, one entry per row widget
@@ -121,6 +147,20 @@ class ExplorerPanel:
     def _open_history(self) -> None:
         if self.on_history_open:
             self.on_history_open()
+
+    def _toggle_glyph(self) -> str:
+        return PANEL_SHOWN_GLYPH if self._panel_enabled else PANEL_HIDDEN_GLYPH
+
+    def _toggle_panel(self) -> None:
+        """ Shows/hides content; collection keeps going. """
+        self._panel_enabled = not self._panel_enabled
+        config.set(CFG_PANEL_ENABLED, self._panel_enabled)
+        self.toggle_button.configure(text=self._toggle_glyph())
+        if self._panel_enabled:
+            self.scroll.grid(row=1, column=0, sticky=tk.EW)
+            self.refresh()
+        else:
+            self.scroll.grid_forget()
 
     def _line(self, text:str) -> None:
         self._pending.append(("line", str_truncate(text, WIDTH_CHARS)))
@@ -149,6 +189,9 @@ class ExplorerPanel:
 
     def refresh(self) -> None:
         """ Diffs _pending against _last_rendered row by row -- only rebuilds rows that changed. """
+        if not self._panel_enabled:
+            return # hidden -- _toggle_panel() rebuilds fully once shown again
+
         self.scroll.configure(maxheight=_visible_lines_px()) # live prefs change -- no restart needed
 
         self._pending = []
@@ -237,7 +280,7 @@ class ExplorerPanel:
             # "?" only for a purely speculative guess -- a confirmed signal means a genus IS here
             prefix:str = "" if body["has_biological_signals"] else "?"
             signal_count:int|None = body["biological_signal_count"] # ground truth count, vs. the guessed kinds below
-            count_prefix:str = f"{signal_count} signal{'' if signal_count == 1 else 's'}: " if signal_count else ""
+            count_prefix:str = f"{signal_count} – " if signal_count else ""
             species_desc = f"{count_prefix}{prefix}{self._collapse_prediction_names(predictions)}"
             value_min += exobiology.with_first_logged_bonus(sum(p["value_min"] for p in predictions), was_footfalled)
             value_max += exobiology.with_first_logged_bonus(sum(p["value_max"] for p in predictions), was_footfalled)
@@ -380,13 +423,26 @@ class ExplorerPanel:
         return slots
 
     def _collapse_prediction_names(self, items:list[dict]) -> str:
-        """ Full names if they fit; else distinct genus names; else just a genus count.
-        "N possible genera" always counts distinct genera, not slots. """
+        """ Full, abbreviated, then a bare genus count. """
         if len(items) <= 2:
-            return ", ".join(item["name"] for item in items)
+            full:str = ", ".join(item["name"] for item in items)
+            if len(full) <= MAX_FULL_NAME_CHARS:
+                return full
+
+        abbreviated:str = "/".join(self._abbreviated_name(item) for item in items)
+        if len(abbreviated) <= MAX_MERGED_TAG_CHARS:
+            return abbreviated
+
         genera:list[str] = list(dict.fromkeys(genus for item in items for genus in item["genera"]))
-        joined:str = ", ".join(genera)
-        return joined if len(joined) <= MAX_MERGED_TAG_CHARS else f"{len(genera)} possible genera"
+        return f"{len(genera)} possible genera" # distinct genera, not slots
+
+    def _abbreviated_name(self, item:dict) -> str:
+        """ Abbreviates via the radar's own genus code. """
+        genus:str = item["genera"][0]
+        if len(item["genera"]) != 1 or not item["name"].startswith(genus):
+            return item["name"] # a merged multi-genus item -- nothing single to abbreviate
+        code:str = exobiology_data.genus_code(genus).capitalize() + "."
+        return f"{code}{item['name'][len(genus):]}"
 
     def _merge_prediction_group(self, group:list[dict]) -> dict:
         return {

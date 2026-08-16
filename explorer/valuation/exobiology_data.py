@@ -197,6 +197,10 @@ SPECIES_VALUE:dict[str, dict[str, int]] = {
 # Confirmed: total payout for a first-logged sample = base value x 5 (i.e. base + 4x bonus).
 FIRST_LOGGED_BONUS_MULTIPLIER:int = 5
 
+def genus_code(genus:str) -> str:
+    """ Confirmed unique across all 21 genera above. """
+    return genus[:3].upper()
+
 def genus_min_distance(genus:str) -> int|None:
     return GENUS_MIN_DISTANCE_M.get(genus)
 
