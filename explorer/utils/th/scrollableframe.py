@@ -59,6 +59,10 @@ class ScrollableFrame(tk.Frame):
         if not self._canvas.winfo_exists():
             return
 
+        for child in self.interior.winfo_children():
+            theme.update(child) # colors it if the theme is already known...
+            theme.register(child) # ...and covers it for a later apply() if not
+
         bbox = self._canvas.bbox("all")
         # Compare against the value *we* last applied, not the widget's own read-back: under
         # non-100% Tk UI scaling, configure(x) and cget() don't always round-trip to the same

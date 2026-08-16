@@ -348,20 +348,27 @@ star gives the most generous (easiest to satisfy) tier. No star known yet by hon
 timing edge case) defaults to the 3+ "other" tier. The old `NonBodyCount`-based OR condition
 was dropped entirely, not folded into the new tiers -- deliberately, not an oversight.
 
-## explorer/utils/th/scrollableframe.py — Interior never went dark
+## explorer/utils/th/scrollableframe.py — Interior (and its content) never went dark
 
 **Regression:** the panel's scrollable area stayed light-colored in dark mode, both on live
 theme switch and after a restart. Root cause (confirmed by reading EDMC's real `theme.py`):
 EDMC registers every plugin widget for theming via one walk over `plugin_app()`'s returned
 frame, right after all plugins load -- but that walk only recurses into `tk.Frame`/`ttk.Frame`
-children, not `tk.Canvas` ones, so `.interior` (which lives inside `ScrollableFrame`'s canvas)
-was never reached. `.interior`'s own constructor also calls `theme.update(self)`, but that's a
-no-op too -- it runs during `plugin_app()`, before EDMC's theme system has applied any theme yet
-at all, so there's nothing yet for it to register against. `self._canvas` already worked around
-this with its own explicit `theme.register()` call; `.interior` needed the same fix. Content
-rows added later (during actual play, well after EDMC's first theme apply) self-register fine
-through their own constructors -- this only affects the canvas boundary itself. Fixed upstream
-in EDMC-PluginLib (this file is vendored) as well as here.
+children, not `tk.Canvas` ones, so nothing inside `ScrollableFrame`'s canvas (`.interior` and
+everything gridded into it) was ever reached. Registering `.interior` itself the same way
+`self._canvas` already was (explicit `theme.register()` at construction) only got partway there:
+a widget's own constructor also calls `theme.update(self)`, which is a no-op if called before
+EDMC's theme system has applied a theme even once -- true for anything built during
+`plugin_app()`, including the panel's very first `refresh()`. Since `panel.py`'s `refresh()`
+only destroys/recreates a row when its content actually changes, any row that happened to render
+identically from that first, too-early refresh() kept its original, never-registered widget
+indefinitely -- explaining why only the frequently-rebuilt species-progress table (torn down and
+recreated on nearly every tick while sampling, long after startup) went dark, while
+slower-changing rows stayed stuck light. Fixed by walking `.interior`'s children inside
+`_apply_resize()` -- already the debounced hook that fires whenever content changes -- calling
+`theme.update()` (colors it immediately if the theme is already known) then `theme.register()`
+(covers it for a later `apply()` if not) on each, catching every row regardless of when it was
+first built. Fixed upstream in EDMC-PluginLib (this file is vendored) as well as here.
 
 ## explorer/db/store.py — get_flagged_bodies_for_system's biology guard
 
