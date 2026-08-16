@@ -1,27 +1,84 @@
 # EDMC-ExplorerLite
 
-A lightweight exploration + exobiology assistant for [EDMC](https://github.com/EDCD/EDMarketConnector), built on [EDMC-PluginLib](https://github.com/dwomble/EDMC-PluginLib).
+A lightweight exploration and exobiology assistant for [EDMC](https://github.com/EDCD/EDMarketConnector).
 
-Tells you, at each stage of exploring a system, whether it's worth your time and what's worth scanning — without cluttering the EDMC window or requiring network access.
+At every stage of exploring a system — Discovery Scan (Honk), Full Spectrum Scan (FSS), Detailed Surface Scan (DSS), on-foot (genetic) sampling — ExplorerLite tells you whether it's worth your time and what's worth doing next, in a clean, compact panel that gets out of the way when there's nothing to report. It's designed to be lightweight and self-contained with overlay support for single-screen/VR/heads-up operation.
 
-## What it does
+## Key Features
 
-- **Honk** (`FSSDiscoveryScan`): a rough, offline heuristic for whether a full spectrum scan looks worthwhile.
-- **FSS**: flags bodies whose estimated scan/mapping value, or exobiology potential, clears your configured credit thresholds.
-- **On-body exobiology**: shows which species need scanning and per-species sample progress; an overlay radar shows sample positions, the required minimum distance for the active genus, and a heading tick.
-- **Tracking**: actual (from `SellExplorationData`/`SellOrganicData` — ground truth) and estimated cartography/exobiology value, per Cmdr, browsable via the "History" popup.
+- Honk heuristic flags whether a system is worth a full FSS pass, based on body/signal counts (with an automatic override for neutron stars, white dwarfs, and black holes).
+- Flags bodies whose cartography (scan/mapping) value or exobiology potential clears your configured credit thresholds, including first-discovery/first-mapped bonus.
+- Pre-DSS genus/species prediction: ranks likely biology from a body's atmosphere, temperature, gravity, and volcanism as soon as it's scanned — no need to land blind.
+- Live per-species sampling progress once you're on the ground, including the first-logged bonus.
+- In-game overlay: a sample-tracking radar plus a glanceable system summary, so you rarely need to alt-tab to the panel.
+- Per-commander history browser with running sold/pending totals for both cartography and exobiology.
 
-## Install
+## Installation
 
-Copy this directory into your EDMC `plugins` folder (rename the folder to `EDMC-ExplorerLite` if it isn't already).
+Create a directory into your EDMC `plugins` folder called `EDMC-ExplorerLite`, download the latest release .zip file and extract it into that directory, then restart EDMC.
+
+## Honk
+
+As soon as you honk, ExplorerLite gives a quick verdict — `worth a full scan` or `probably quiet` — based on the star type and body counts.
+
+## FSS
+
+As bodies are scanned, any whose estimated cartography value clears your threshold are listed with distance, gravity, type (`T HMC`, `WW`, `ELW`, `AW`, `GG`, etc. — `T` prefix for terraformable), and approximate value. The system line itself updates live: `N of M scanned` while the FSS pass is still in progress, then `N bodies — scan complete` once done.
+
+## DSS
+
+Bodies whose value exceeds a configurable threshold are recommended for DSS as are planets whose likely biologicals exceed a configurable threshold.
+
+## Exobiology
+
+When the FSS reports biological signals on a body, ExplorerLite indicates likely genera based on the body's atmosphere, temperature, gravity, volcanism, and nearby star type. Estimated genera are shown with a `?` prefix and a value range until confirmed. The DSS narrows this to the genera actually present and the first genetic sample per genus locks in the exact species and variant.
+
+Per-species genetic sampling progress (`N/M scanned`) is shown live while you're on the body, along with the minimum walking distance required between samples for that genus. Values shown always include the first-discovery/first-logged bonus you'd actually be paid — not just the base value that only matters for in-game session-progression math.
+
 
 ## Overlay
 
-Supports the modern `overlay_plugin.overlay_api` backend only (not the legacy `EDMCOverlay` plugin). Install a compatible modern overlay plugin if you want the radar; the rest of the plugin works fully offline without it.
+Requires the [modern overlay](https://github.com/SweetJonnySauce/EDMCModernOverlay), the legacy `EDMCOverlay`/`edmcoverlay2` plugins aren't supported. Without it, ExplorerLite still works fully — the overlay is a heads-up convenience, not a requirement.
+
+Two independently toggleable overlay elements:
+
+- **System summary** — mirrors the panel's own header and flagged-body list, capped to a handful of lines (with a "+N more" overflow) so it stays glanceable. The body you're currently standing on gets its own indented species-progress detail underneath. Text colour is configurable. Background, border and position are configurable via Modern Overlay's overlay controller.
+
+- **Radar** — centered on you, shows distance rings, a highlighted ring at the current genus's minimum sample distance, a marker for each logged sample (filled = in range, hollow = out of range), and a hollow triangle for any codex-tagged waypoint, colored by variant. Rotates with your heading. Radar size is configurable.
+
+## History
+
+Click **History** on the panel to open a System → Body → Species browser (per Cmdr), showing status, date, and both estimated and actual value for cartography (`Cart. Est.`/`Cart. Actual`) and exobiology (`Exo. Base`/`Exo. Full`). A running totals line at the top shows sold vs. still-pending credits for both categories. Window size/position is remembered across sessions.
+
+Actual sold values always come straight from the ED journal — ground truth, never a formula. Estimates exist purely to flag what's worth your time before you sell.
 
 ## Settings
 
-Two credit thresholds (scan/mapping value, exobiology potential), overlay on/off, radar on/off, and a dev-mode logging flag — all in EDMC's plugin settings pane.
+All configurable from EDMC's plugin settings pane:
+
+- Cartography (scan/mapping) value threshold, in credits
+- Exobiology potential threshold, in credits
+- Visible panel lines before scrolling
+- Overlay on/off, radar on/off, system summary on/off
+- Radar size (px)
+- Overlay summary text colour
+- Developer/debug logging
+
+## Persistence
+
+All data and progress is stored locally in a per-install SQLite database (`explorer.sqlite`, in EDMC's app-data folder), segmented per commander. The only network call ExplorerLite makes is its own update check against this repo's GitHub releases.
+
+## Requirements
+
+- A recent version of EDMC (needs `plugin_app`/`dashboard_entry` support).
+- Optional: [EDMCModernOverlay](https://github.com/SweetJonnySauce/EDMCModernOverlay) for the radar and system-summary overlays.
+
+## Acknowledgements
+
+- Cartography value constants cross-checked against two independent community sources, including the Frontier forums' "Exploration value formulae" thread.
+- Exobiology species value/distance data sourced from the Elite Dangerous Fandom wiki's "Exobiology Sample Values and Details" page, cross-checked against [njthomson/SrvSurvey](https://github.com/njthomson/SrvSurvey)'s organic-scanning reference.
+- Genus spawn-condition data independently transcribed from public sources, cross-checked against [Silarn/EDMC-BioScan](https://github.com/Silarn/EDMC-BioScan) (GPLv2) and ed-dsn.net's community temperature-band data.
+- Codex-tag overlay colors cross-checked against EDMC-BioScan's own variant color names.
 
 ## Development
 
@@ -32,3 +89,7 @@ python3 -m venv .venv
 ```
 
 `explorer/utils/` and `tests/` are vendored from EDMC-PluginLib (no package/submodule mechanism exists there yet — see that project's own README for the copy-in convention). `utils/` is nested under `explorer/` rather than sitting at the plugin root, specifically to avoid colliding with any other installed plugin that also vendors this library — EDMC loads every plugin into one process with a shared `sys.path`, and two bare top-level `utils` packages from different plugins would otherwise silently collide via `sys.modules`.
+
+## License
+
+MIT — see [LICENSE](LICENSE).

@@ -48,11 +48,6 @@ def _star_category(star_type:str) -> str:
         return "neutron_or_black_hole"
     return "default"
 
-def is_exotic_star_type(star_type:str) -> bool:
-    """ Neutron star, white dwarf, or black hole -- worth a full FSS scan regardless of body
-    count (see honk_heuristic), unlike a default-category star. """
-    return _star_category(star_type) != "default"
-
 def _planet_category(planet_class:str) -> str:
     planet_class = (planet_class or "").lower()
     if "gas giant" in planet_class or "water giant" in planet_class:

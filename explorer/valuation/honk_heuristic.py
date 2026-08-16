@@ -1,19 +1,34 @@
-"""
-Honk-only "is a full spectrum scan worth it" heuristic.
+""" Honk verdict heuristic, tiered by star type. """
 
-Deliberately crude: at honk time (FSSDiscoveryScan) all we know is body count and non-body
-signal count -- there's no way to know actual body values without doing the FSS. This is a
-starting heuristic, explicitly expected to be revisited/tuned once the plugin sees real use
-(see REQUIREMENTS.md's honk-heuristic note) -- not a claim of accuracy.
-"""
+ALWAYS_WORTH_IT_TYPES:set[str] = {"F", "G", "K", "N", "H", "SUPERMASSIVEBLACKHOLE"}
+DWARF_TYPES:set[str] = {"M", "L", "T", "Y"}
 
-WORTH_IT_BODY_COUNT:int = 6
-WORTH_IT_NON_BODY_COUNT:int = 3
+DWARF_BODY_COUNT:int = 6
+OTHER_BODY_COUNT:int = 3
 
-def assess(body_count:int, non_body_count:int) -> str:
+def _star_tier(star_type:str) -> str:
+    star_type = (star_type or "").upper()
+    if star_type in ALWAYS_WORTH_IT_TYPES:
+        return "always"
+    if star_type in DWARF_TYPES:
+        return "dwarf"
+    return "other"
+
+def _best_tier(star_types:list[str]) -> str:
+    tiers:set[str] = {_star_tier(t) for t in star_types} or {"other"}
+    if "always" in tiers:
+        return "always"
+    if "other" in tiers:
+        return "other"
+    return "dwarf"
+
+def assess(body_count:int, star_types:list[str]) -> str:
     """ Return a short (panel-friendly) verdict string. """
     if body_count == 0:
         return "no bodies"
-    if body_count >= WORTH_IT_BODY_COUNT or non_body_count >= WORTH_IT_NON_BODY_COUNT:
-        return "worth a full scan"
-    return "probably quiet"
+
+    tier:str = _best_tier(star_types)
+    if tier == "always":
+        return "worth a full scan" if body_count > 1 else "probably quiet" # >1 is our proxy for "has any planets"
+    threshold:int = DWARF_BODY_COUNT if tier == "dwarf" else OTHER_BODY_COUNT
+    return "worth a full scan" if body_count >= threshold else "probably quiet"

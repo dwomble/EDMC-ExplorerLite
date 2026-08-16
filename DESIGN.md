@@ -331,19 +331,22 @@ flagging, and `WasDiscovered`/`WasMapped`/`WasFootfalled` are already known by t
 these checks runs (same `Scan` event, or the body's already-stored flags for the later
 `SAASignalsFound` check).
 
-## explorer/journal/handlers_discovery.py — Honk heuristic exotic-star override
+## explorer/valuation/honk_heuristic.py — Star-type-tiered verdict
 
-**Regression:** a 3-body neutron star system honked as "probably quiet"/"done" -- the crude
-body/non-body-count heuristic (`honk_heuristic.assess()`) has no way to know the arrival star
-itself is a neutron star, which is essentially always worth a full FSS pass regardless of how
-few bodies the honk itself reports. Confirmed against a real captured journal log: the arrival
-star's `Scan` (`AutoScan`) event fires automatically on jump-in, several seconds before the
-player manually triggers the honk (`FSSDiscoveryScan`) -- so by honk time, `on_honk()` can
-already read the star's `star_type` back out of the `bodies` table. `on_honk()` now overrides
-the heuristic's verdict to "worth a full scan" whenever any already-known star in the system is
-neutron/white-dwarf/black-hole (`cartography.is_exotic_star_type()`), leaving the crude
-body/non-body verdict alone otherwise (including the rare case where the star hasn't been
-scanned yet by honk time -- no regression, just no smarter override in that timing edge case).
+Superseded the original crude body/non-body-count-only heuristic (and its later exotic-star
+override patch) with a single star-type-tiered heuristic, since the crude version had no idea
+a 3-body neutron star system is basically always worth a full FSS pass regardless of body
+count. `on_honk()` reads the arrival star's `star_type` back out of the `bodies` table --
+confirmed against a real captured journal log that its `Scan` (`AutoScan`) fires automatically
+on jump-in, several seconds before the player manually triggers the honk (`FSSDiscoveryScan`).
+
+Three tiers, by star type, each with its own bar for "worth a full scan": F/G/K/neutron/black
+hole need only more than one known body (our only honk-time proxy for "has any planets" --
+`BodyCount` doesn't break down stars vs. planets); M/L/T/Y dwarfs need 6+ bodies; everything
+else (A/B/O, white dwarfs, Wolf-Rayet, etc.) needs 3+. A multi-star system uses whichever known
+star gives the most generous (easiest to satisfy) tier. No star known yet by honk time (rare
+timing edge case) defaults to the 3+ "other" tier. The old `NonBodyCount`-based OR condition
+was dropped entirely, not folded into the new tiers -- deliberately, not an oversight.
 
 ## explorer/db/store.py — get_flagged_bodies_for_system's biology guard
 

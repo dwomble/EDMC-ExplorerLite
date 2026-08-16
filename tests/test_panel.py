@@ -188,7 +188,7 @@ class TestPanelStates:
         import load
         assert load.store is not None and load.panel is not None
         lines = _panel_lines(load)
-        assert any(" — done" in line or " — scan needed" in line for line in lines)
+        assert any(" — done" in line or " scanned" in line for line in lines)
         assert any(line.startswith("A 1 ") for line in lines)
 
     def test_binary_star_system_is_quiet(self, plugin:TestHarness) -> None:
