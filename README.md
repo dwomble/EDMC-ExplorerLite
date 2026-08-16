@@ -83,16 +83,8 @@ All data and progress is stored locally in a per-install SQLite database (`explo
 - Genus spawn-condition data independently transcribed from public sources, cross-checked against [Silarn/EDMC-BioScan](https://github.com/Silarn/EDMC-BioScan) (GPLv2) and ed-dsn.net's community temperature-band data.
 - Codex-tag overlay colors cross-checked against EDMC-BioScan's own variant color names.
 
-## Development
+## Suggestions
 
-```bash
-python3 -m venv .venv
-.venv/bin/pip install -r requirements-dev.txt
-.venv/bin/python -m pytest tests/ -v
-```
+Please let me know if you have any suggestions or find any bugs by submitting an [issue](https://github.com/dwomble/EDMC-NeutronDancer/issues), and if you like ExplorerLite I don't need a coffee, I live in Seattle so I'm plenty caffeinated already, but please give it a ⭐.
 
-`explorer/utils/` and `tests/` are vendored from EDMC-PluginLib (no package/submodule mechanism exists there yet — see that project's own README for the copy-in convention). `utils/` is nested under `explorer/` rather than sitting at the plugin root, specifically to avoid colliding with any other installed plugin that also vendors this library — EDMC loads every plugin into one process with a shared `sys.path`, and two bare top-level `utils` packages from different plugins would otherwise silently collide via `sys.modules`.
-
-## License
-
-MIT — see [LICENSE](LICENSE).
+Fly dangerous! o7
