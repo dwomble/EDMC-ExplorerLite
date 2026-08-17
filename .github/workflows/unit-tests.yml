@@ -26,7 +26,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install flake8 pytest pytest-xvfb
+        pip install flake8 pytest
         if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt; fi
 
     - name: Lint with flake8
@@ -34,6 +34,6 @@ jobs:
         # stop the build if there are Python syntax errors or undefined names
         flake8 . --extend-exclude .venv,explorer/utils --count --select=E9,F63,F7,F82 --show-source --statistics
 
-    - name: Test with xvfb-pytest
+    - name: Test with xvfb-run
       run: |
         xvfb-run pytest -m "not manual_only" -c tests/pytest.ini
