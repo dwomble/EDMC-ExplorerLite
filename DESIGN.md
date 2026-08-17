@@ -800,30 +800,29 @@ immediately -- no separate "Apply" step). The store method's own defaults
 (`unsold_only=False, since=None`) stay unfiltered, so every existing direct caller/test of
 `get_history_tree()` is unaffected -- only the UI opts into the new defaults explicitly.
 
-## explorer/utils/th/scrollableframe.py -- Scrollbar now follows dark mode
+## explorer/utils/th/scrollableframe.py -- Dark-mode scrollbar: known, accepted limitation
 
-**Regression:** the panel's scrollbar stayed light-colored in EDMC's dark mode. Root cause:
-it was a `ttk.Scrollbar`, and EDMC's own `theme.py` docstring says outright it can't theme ttk
-widgets ("Because of various ttk limitations... have to change colors manually") -- its
-`_update_widget()` only sets plain-tk widget options (`foreground`/`background`/etc.), which
-`ttk.Scrollbar` doesn't expose the same way. Worse, on macOS/Windows the native ttk theme
-engines (aqua/vista) largely ignore `ttk.Style().configure()` color overrides for Scrollbar
-specifically -- a real, well-known Tk limitation, not something fixable by registering it
-differently. No other plugin in this ecosystem themes a ttk.Scrollbar either (checked
-BGS-Tally, EDMC-Mining-Analytics) -- this was a real gap, not a missed one-line fix.
+The panel's scrollbar stays light-colored in EDMC's dark mode, and this turned out to be
+unfixable without replacing the widget entirely, not a quick theming fix. What was tried and
+ruled out, in order:
 
-Switched to a plain `tk.Scrollbar` instead -- a classic Tk widget with real, settable
-`background`/`troughcolor`/`activebackground` options, same as every other `th.*` widget.
-`theme.register()` already covers `background` for free (matches `Canvas`/`Frame`'s existing
-treatment, since `tk.Scrollbar` has a `background` key but no `foreground` one, landing in
-`_update_widget()`'s Frame/Canvas fallback branch). `troughcolor`/`activebackground` aren't
-touched by EDMC's generic logic, so a new `_theme_scrollbar()` sets those by hand from
-`theme.current`, called once at construction and again every `_apply_resize()` (which already
-runs on essentially every content change) -- riding on an existing hook rather than adding a
-new theme-change event plumbed in through `load.py`/`prefs_changed()`. Guards with
-`getattr(theme, 'current', None)` since the test harness's `MockTheme` stub has no `.current`
-at all (only real EDMC's `theme.py` does).
+- **`ttk.Scrollbar` (original)**: EDMC's own `theme.py` docstring says outright it can't theme
+  ttk widgets ("Because of various ttk limitations... have to change colors manually").
+- **Plain `tk.Scrollbar`**: on macOS, Tk delegates scrollbar rendering to the native Aqua
+  control regardless of widget class -- `tk.Scrollbar` is just as native-rendered as
+  `ttk.Scrollbar` there, so its `background`/`troughcolor`/`activebackground` options are
+  silently ignored at draw time even though `cget()` still reports back whatever was configured
+  (which is why this looked plausible before actually being tested).
+- **`ttk.Scrollbar` with an explicit custom style**: a real, documented Tcl/Tk workaround --
+  explicitly passing `-style`/`style=` used to force ttk's generic (non-Aqua) scrollbar
+  rendering path, which *is* colorable. Confirmed dead on this machine's actual Tk version
+  (8.6.17): the Tcl wiki notes this stopped working as of Tk 8.6.10, when macOS gained its own
+  native `ttk::scrollbar` with no such escape hatch.
 
-This file is a vendored copy of EDMC-PluginLib's `utils/th/scrollableframe.py` -- the same bug
-almost certainly exists upstream too, but fixing PluginLib itself is a separate repo/decision,
-not folded into this change.
+No other plugin in this ecosystem themes a scrollbar either (checked BGS-Tally,
+EDMC-Mining-Analytics) -- this isn't a gap specific to this project. The only remaining path
+would be a fully custom canvas-drawn scrollbar (either a draggable thumb, matching current
+behavior, or a simpler non-interactive position indicator, dropping click-drag since
+mouse-wheel scrolling already works) -- a real feature build, not a fix, and not undertaken here.
+Reverted to the original plain `ttk.Scrollbar` with no special theming -- native look, wrong
+color in dark mode, accepted as a known limitation of current Tk on macOS.
