@@ -1,5 +1,10 @@
 # EDMC-ExplorerLite
 
+[Python](https://img.shields.io/badge/Python-3.x-blue?logo=python)
+[![CodeQL](https://github.com/dwomble/EDMC-ExplorerLite/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/dwomble/EDMC-ExplorerLite/actions/workflows/github-code-scanning/codeql)
+[![GitHub Latest Version](https://img.shields.io/github/v/release/dwomble/EDMC-ExplorerLite)](https://github.com/dwomble/EDMC-ExplorerLite/releases/latest)
+[![Github All Releases](https://img.shields.io/github/downloads/dwomble/EDMC-ExplorerLite/total.svg)](https://github.com/dwomble/EDMC-ExplorerLite/releases/latest)
+
 An unobtrusive, lightweight exploration and exobiology assistant for [EDMC](https://github.com/EDCD/EDMarketConnector).
 
 <img width="478" height="47" alt="Screenshot 2026-08-16 215121" src="https://github.com/user-attachments/assets/92830698-5053-4837-85f4-17b48ed7cbc1" />
