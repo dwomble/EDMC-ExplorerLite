@@ -60,7 +60,7 @@ class TestSystemSummaryOverlay:
         messages = load.summary_overlay.overlay._overlay.messages
         header = messages[f"{FRAME_PREFIX}header"]
         # No system name -- it's already shown elsewhere in the game's own UI, see system_status_text()
-        assert header[1] == "Done"
+        assert header[1] == "1 body — Done"
 
         body_line = messages[f"{FRAME_PREFIX}body-0"]
         assert body_line[1].startswith("A 1")
@@ -256,6 +256,42 @@ class TestSystemSummaryOverlay:
         load.summary_overlay.render(load.store, load.explorer_state)
         assert load.summary_overlay.overlay._overlay.messages[f"{FRAME_PREFIX}current-0"][1] == ""
 
+    def test_current_body_detail_nests_under_its_own_row_not_the_end(self, plugin:TestHarness) -> None:
+        """
+        Real-world report: bodies 2a/2b/2c all had biology, landed on 2a, and the panel nested
+        the species detail directly under 2a's own row while the overlay always appended it
+        after the whole list instead -- render() must interleave, matching the panel exactly.
+        """
+        from explorer.ui.overlay_summary import ANCHOR_Y, HEADER_LINE_HEIGHT_PX, LINE_HEIGHT_PX
+
+        plugin.load_events("explorer_events.json")
+        plugin.play_sequence("honk_only", 0.02)
+
+        import load
+        assert load.store is not None and load.summary_overlay is not None
+        assert load.explorer_state.cmdr_id is not None and load.explorer_state.system_id is not None
+        for body_id in (1, 2, 3):
+            body_pk:int = load.store.get_or_create_body(load.explorer_state.cmdr_id, load.explorer_state.system_id, body_id, f"QuietSpace A {body_id}")
+            load.store.update_body(body_pk, has_biological_signals=1, biological_signal_count=1)
+            if body_id == 2: # landed here -- this is the one with in-progress sampling
+                middle_pk = body_pk
+
+        progress_id:int = load.store.get_or_create_species_progress(middle_pk, "Bacterium")
+        load.store.update_species_progress(progress_id, species="Bacterium Aurasus", samples_taken=2)
+        load.explorer_state.body_id = 2
+        load.explorer_state.body_name = "QuietSpace A 2"
+
+        load.summary_overlay.render(load.store, load.explorer_state)
+
+        messages = load.summary_overlay.overlay._overlay.messages
+        base_y:int = ANCHOR_Y + HEADER_LINE_HEIGHT_PX
+        assert "A 1" in messages[f"{FRAME_PREFIX}body-0"][1] and messages[f"{FRAME_PREFIX}body-0"][4] == base_y
+        assert "A 2" in messages[f"{FRAME_PREFIX}body-1"][1] and messages[f"{FRAME_PREFIX}body-1"][4] == base_y + LINE_HEIGHT_PX
+        assert "Bacterium Aurasus" in messages[f"{FRAME_PREFIX}current-0"][1]
+        assert messages[f"{FRAME_PREFIX}current-0"][4] == base_y + LINE_HEIGHT_PX * 2
+        assert "A 3" in messages[f"{FRAME_PREFIX}body-2"][1] # pushed down below the interleaved detail
+        assert messages[f"{FRAME_PREFIX}body-2"][4] == base_y + LINE_HEIGHT_PX * 3
+
     def test_disabling_the_summary_mid_session_clears_everything_immediately(self, plugin:TestHarness) -> None:
         from explorer.constants import CFG_OVERLAY_SUMMARY_ENABLED
 
@@ -287,6 +323,42 @@ class TestSystemSummaryOverlay:
 
         import load
         assert load.store is not None and load.summary_overlay is not None
+        load.summary_overlay.render(load.store, load.explorer_state)
+
+        assert load.summary_overlay.overlay._overlay.messages == {}
+
+    def test_render_is_a_noop_while_docked(self, plugin:TestHarness) -> None:
+        plugin.load_events("explorer_events.json")
+        plugin.play_sequence("honk_only", 0.02)
+
+        import load
+        assert load.summary_overlay is not None
+        load.explorer_state.docked = True
+        load.summary_overlay.render(load.store, load.explorer_state)
+
+        assert load.summary_overlay.overlay._overlay.messages == {}
+
+    def test_render_is_a_noop_on_foot_in_a_station(self, plugin:TestHarness) -> None:
+        plugin.load_events("explorer_events.json")
+        plugin.play_sequence("honk_only", 0.02)
+
+        import load
+        assert load.summary_overlay is not None
+        load.explorer_state.on_foot_in_station = True
+        load.summary_overlay.render(load.store, load.explorer_state)
+
+        assert load.summary_overlay.overlay._overlay.messages == {}
+
+    def test_render_is_a_noop_while_a_ui_panel_has_focus(self, plugin:TestHarness) -> None:
+        """ e.g. galaxy map / system map open in the ship -- GuiFocus != 0. """
+        from edmc_data import GuiFocusGalaxyMap # type: ignore
+
+        plugin.load_events("explorer_events.json")
+        plugin.play_sequence("honk_only", 0.02)
+
+        import load
+        assert load.summary_overlay is not None
+        load.explorer_state.gui_focus = GuiFocusGalaxyMap
         load.summary_overlay.render(load.store, load.explorer_state)
 
         assert load.summary_overlay.overlay._overlay.messages == {}

@@ -39,6 +39,10 @@ def _visible_lines_px() -> int:
 def _credits(value:int) -> str:
     return hfplus((value, 'num', '? Cr', ' Cr'))
 
+def _header_credits(value:int) -> str:
+    """ Here 0 means "nothing pending", not "unknown". """
+    return "0 Cr" if value == 0 else _credits(value)
+
 _NUMERIC_PREFIX:re.Pattern = re.compile(r'^-?[\d,]+(?:\.\d+)?')
 
 def _credits_range(min_val:int, max_val:int) -> str:
@@ -102,9 +106,21 @@ def system_status_text(store:ExplorerStore, system:sqlite3.Row) -> str:
         return "Sample"
     return "Done"
 
+def system_body_count_text(system:sqlite3.Row) -> str:
+    """ "N bodies" once honked, not the FSS progress. """
+    hbc:int|None = system["honk_body_count"]
+    if hbc is None:
+        return ""
+    return f"{hbc} bod{'ies' if hbc != 1 else 'y'}"
+
+def system_header_prefix(system:sqlite3.Row) -> str:
+    """ Header line, minus the state itself. """
+    body_count:str = system_body_count_text(system)
+    return f"{system['name']} — {body_count} —" if body_count else f"{system['name']} —"
+
 def system_header_line(store:ExplorerStore, system:sqlite3.Row) -> str:
-    """ The panel's own header line -- system_status_text() prefixed with the system name. """
-    return f"{system['name']} — {system_status_text(store, system)}"
+    """ Plain-text header; the panel bolds the state. """
+    return f"{system_header_prefix(system)} {system_status_text(store, system)}"
 
 def _bold_font() -> tkfont.Font:
     default:tkfont.Font = tkfont.nametofont("TkDefaultFont")
@@ -149,11 +165,11 @@ class ExplorerPanel:
         self.title_label:th.Label = th.Label(header, text=PLUGIN_NAME, font=self._title_font, anchor="w")
         self.title_label.grid(row=0, column=0, sticky=tk.W)
 
-        self.cart_value_label:th.Label = th.Label(header, text=_credits(0), anchor="w")
+        self.cart_value_label:th.Label = th.Label(header, text=_header_credits(0), anchor="w")
         self.cart_value_label.grid(row=0, column=1, sticky=tk.W)
         th.Tooltip(self.cart_value_label, "Pending cartography value")
 
-        self.exo_value_label:th.Label = th.Label(header, text=_credits(0), anchor="w")
+        self.exo_value_label:th.Label = th.Label(header, text=_header_credits(0), anchor="w")
         self.exo_value_label.grid(row=0, column=2, sticky=tk.W)
         th.Tooltip(self.exo_value_label, "Pending exobiology value")
 
@@ -203,11 +219,14 @@ class ExplorerPanel:
         cmdr_id:int|None = self.state.cmdr_id
         cart:int = self.store.get_pending_cartography_value(cmdr_id) if cmdr_id is not None else 0
         exo:int = self.store.get_pending_exobiology_value(cmdr_id) if cmdr_id is not None else 0
-        self.cart_value_label.configure(text=_credits(cart))
-        self.exo_value_label.configure(text=_credits(exo))
+        self.cart_value_label.configure(text=_header_credits(cart))
+        self.exo_value_label.configure(text=_header_credits(exo))
 
     def _line(self, text:str) -> None:
         self._pending.append(("line", str_truncate(text, WIDTH_CHARS)))
+
+    def _header_line(self, prefix:str, state:str) -> None:
+        self._pending.append(("header", str_truncate(prefix, WIDTH_CHARS), state))
 
     def _render_table(self, rows:list[tuple[str, ...]], anchors:tuple[str, ...], indent:int = 0) -> None:
         if rows:
@@ -219,6 +238,14 @@ class ExplorerPanel:
             widget:tk.Widget = th.Label(self.scroll.interior, text=command[1], anchor="w", justify="left", pady=0)
             widget.grid(row=row, column=0, sticky=tk.EW)
             return widget
+
+        if command[0] == "header":
+            _, prefix, state = command
+            header:th.Frame = th.Frame(self.scroll.interior)
+            th.Label(header, text=prefix, anchor="w", pady=0).grid(row=0, column=0, sticky=tk.W)
+            th.Label(header, text=state, anchor="w", pady=0, font=self._title_font).grid(row=0, column=1, sticky=tk.W, padx=(4, 0))
+            header.grid(row=row, column=0, sticky=tk.EW)
+            return header
 
         _, rows, anchors, indent = command
         table:th.Frame = th.Frame(self.scroll.interior)
@@ -262,7 +289,7 @@ class ExplorerPanel:
         self._last_rendered = self._pending
 
     def _render_system_summary(self, system:sqlite3.Row) -> None:
-        self._line(system_header_line(self.store, system))
+        self._header_line(system_header_prefix(system), system_status_text(self.store, system))
         if system["honk_body_count"] is None:
             return
 
@@ -325,8 +352,10 @@ class ExplorerPanel:
             # "?" only for a purely speculative guess -- a confirmed signal means a genus IS here
             prefix:str = "" if body["has_biological_signals"] else "?"
             signal_count:int|None = body["biological_signal_count"] # ground truth count, vs. the guessed kinds below
-            count_prefix:str = f"{signal_count} – " if signal_count else ""
-            species_desc = f"{count_prefix}{prefix}{self._collapse_prediction_names(predictions)}"
+            collapsed:str = self._collapse_prediction_names(predictions)
+            sep:str = "of" if collapsed.endswith("possible genera") else "–" # "N of M possible genera" reads clearer than "N – M"
+            count_prefix:str = f"{signal_count} {sep} " if signal_count else ""
+            species_desc = f"{count_prefix}{prefix}{collapsed}"
             value_min += exobiology.with_first_logged_bonus(sum(p["value_min"] for p in predictions), was_footfalled)
             value_max += exobiology.with_first_logged_bonus(sum(p["value_max"] for p in predictions), was_footfalled)
 

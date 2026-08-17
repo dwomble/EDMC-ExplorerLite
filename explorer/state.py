@@ -26,6 +26,10 @@ class ExplorerState:
     # more immediate, and EDMC's own docs admit theirs "might not set this 100% correctly"
     has_lat_long:bool = False
 
+    docked:bool = False
+    on_foot_in_station:bool = False
+    gui_focus:int = 0 # Status.json GuiFocus -- 0 = no UI panel focused
+
     latitude:float|None = None
     longitude:float|None = None
     heading:float|None = None
@@ -56,6 +60,11 @@ class ExplorerState:
     def exobiology_relevant(self) -> bool:
         """ Whether the on-body exobiology UI/overlay section is currently relevant. """
         return self.landed and self.on_foot and self.body_id is not None
+
+    @property
+    def overlay_relevant(self) -> bool:
+        """ False if docked, on-foot in-station, or UI-focused. """
+        return not (self.docked or self.on_foot_in_station or self.gui_focus != 0)
 
     def reset_all(self) -> None:
         """ Fresh-session reset -- for tests, which reuse this module-level singleton and need real isolation. """

@@ -658,3 +658,94 @@ display. Fixed in `_best_predictions_for_body()` -- the one shared source all th
 funnel through -- so a confirmed `has_biological_signals == 0` now returns `[]` regardless of
 what's still sitting in `genus_predictions`, rather than needing the same guard duplicated at
 every caller.
+
+## explorer/ui/panel.py — Header credit totals show 0, not "?"
+
+`_credits()` treats `0` as "empty" (via `hfplus`'s own `value in [None, False, ..., 0, ...]`
+convention) and shows the "unknown" placeholder -- correct for `_credits_range()`'s callers,
+where a body's value is never genuinely computed as exactly 0 (such a body would already be
+filtered out before display). The header's pending totals are different: 0 pending is a real,
+common, known state, not "unknown data" -- so it needs to say "0 Cr". Added `_header_credits()`
+rather than changing `_credits()` itself, since the latter is shared with `_credits_range()` and
+changing its fallback behavior there wasn't asked for and isn't obviously safe.
+
+## explorer/ui/panel.py — "N of M possible genera", not "N – M"
+
+Per explicit request: "N – M possible genera" reads like a numeric range (8-10), not "8 signals,
+10 possible genera." Only this specific fallback needed the word swap -- the full-name and
+abbreviated-name tiers (e.g. "8 – Bacterium Aurasus") don't have the same ambiguity, since a dash
+followed by a name doesn't read as a range. Detected via `collapsed.endswith("possible genera")`
+in `_flagged_body_row()` rather than threading a flag through `_collapse_prediction_names()` --
+that function is also called internally by `_merge_prediction_group()` to build an intermediate
+merged slot's "name" (no signal_count/prefix involved at that point), so pushing the
+count-vs-names decision into it would have meant either passing `None`s through the internal
+call or duplicating the logic. The suffix is a fixed string we generate ourselves, not user
+input, so checking it is safe, not fragile.
+
+## explorer/ui/panel.py — Header: body count back, state rendered bold
+
+Two related tweaks to the header line. First, the "N bodies" count (not FSS scan *progress* --
+that stays dropped) was missing after the next-action redesign; re-added via
+`system_body_count_text()`/`system_header_prefix()`, e.g. "Deltius — 7 bodies —". Second, the
+state word itself (`DSS`, `Sample`, ...) is now bold, which meant the header could no longer be
+a single `_line()` string -- Tk labels don't support mixed-weight text within one widget. Added a
+new `"header"` pending-row kind alongside the existing `"line"`/`"table"` ones: a two-cell
+`th.Frame` (prefix normal weight, state reusing `self._title_font` bold) gridded as one row.
+`system_header_line()` (still directly tested) stays a plain-string convenience wrapper combining
+the same two pieces, even though the panel's own render path no longer calls it -- it needed the
+split for styling, not the fused string.
+
+## explorer/ui/overlay_summary.py — Header line: body count + state, one large-text line
+
+Follow-up to the panel's bold-state header: the overlay has no way to mix a bold word into a
+plain-text line the way `tk.Label` does for the panel (`Overlay.send_text()` sends one string at
+one fixed size per call, and there's no font-metrics API to size-split a line ourselves). Rather
+than guess pixel widths to place a separately-sized state word after the body count, the whole
+header line (count + state) now renders as one `send_text(..., size="large")` call. Confirmed
+`size="large"` is a real overlay parameter (not guessed) by grepping sibling plugins that already
+consume the modern overlay API (`EDMC-NeutronDancer`, `BGS-Tally`), and took
+`HEADER_LINE_HEIGHT_PX = 25` from NeutronDancer's own `y += 25 if size == 'large' else 20` --
+large text needs more vertical room than the normal 20px line height. The old index-based
+`next_row` arithmetic (`ANCHOR_Y + LINE_HEIGHT_PX * (i + 1)`) couldn't express a variable-height
+first line, so it was replaced with a single running `next_y` accumulator, incremented after
+each section renders -- this also made the interleaving fix below simpler to add.
+
+## explorer/ui/overlay_summary.py — Current body's detail nests under its own row
+
+**Regression:** the panel nests a landed-on body's species/prediction detail directly under that
+body's own row in the flagged list (`_render_system_summary()`'s per-body loop checks
+`body["body_id"] == self.state.body_id` and renders the detail immediately, before moving to the
+next body). The overlay's `render()` never carried that positional information -- it built the
+list of formatted body lines first, discarding which body_id each one came from, then always drew
+the current body's detail lines after the whole list (and after the overflow line). With three
+biological bodies in a system and the player landed on the first, the panel showed the detail
+right under body 1; the overlay showed it dangling after body 3.
+
+Fixed by keeping `(body_id, line)` pairs instead of bare strings, and switching the per-body loop
+to the same running `next_y` accumulator used for the header: as each body's line is sent, if its
+`body_id` matches `state.body_id`, the current-body detail lines are sent immediately after (via
+a small `_send_current_lines()` helper shared by both call sites), advancing `next_y` past them
+before the next body is drawn. A `current_shown` flag falls back to appending the detail after the
+overflow line if the current body isn't in the visible `shown` slice at all (e.g. bumped into
+"+N more") -- mirroring the panel's own `current_row_shown` fallback.
+
+## explorer/state.py + dashboard.py + both overlays — Hide overlays when they'd be irrelevant
+
+Both overlays already gated on config toggles and (for the radar) having a body/lat-long, but
+nothing accounted for contexts where the player can't usefully see them anyway: docked, on-foot
+inside a station, or any ship/on-foot UI panel (galaxy map, system map, station services, ...)
+holding focus and covering the screen. Added three raw fields to `ExplorerState` -- `docked`,
+`on_foot_in_station`, `gui_focus` -- populated in `dashboard.py` from Status.json's `Flags`
+(`FlagsDocked`), `Flags2` (`Flags2OnFootInStation`), and `GuiFocus` respectively (`Flags2OnFoot`
+was already read the same way for `on_foot`, so this follows the existing convention rather than
+introducing a new one).
+
+A single `ExplorerState.overlay_relevant` property (matching the existing `exobiology_relevant`
+property's style) combines the three: `not (docked or on_foot_in_station or gui_focus != 0)`.
+Both `overlay_summary.py`'s `render()` and `overlay_frames.py`'s `RadarOverlay.render()` gate on
+it as one more early-return check, in the same `_log_skip()`-then-return style already used for
+their other gates -- no separate logic per overlay, so the two surfaces can't drift on what
+"irrelevant context" means. `gui_focus != 0` covers the galaxy-map/system-map/panel case
+regardless of ship or on-foot, since any focused panel implies the overlay is covered either way
+-- simpler than trying to enumerate "only these panels count," and Status.json's `GuiFocus` is
+already the single source of truth for "is a panel focused right now."

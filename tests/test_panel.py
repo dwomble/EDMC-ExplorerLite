@@ -14,7 +14,7 @@ from typing import Generator, cast
 
 from harness import TestHarness, reset_plugin_modules
 from explorer.db.store import ExplorerStore
-from explorer.ui.panel import _credits_range, system_status_text, system_header_line
+from explorer.ui.panel import _credits_range, system_status_text, system_header_line, system_body_count_text
 
 @pytest.fixture
 def store(tmp_path) -> Generator[ExplorerStore, None, None]:
@@ -149,7 +149,18 @@ class TestSystemStatusText:
         cmdr_id = store.get_or_create_cmdr("Testy")
         system_id = store.get_or_create_system(cmdr_id, 1, "Deltius")
         store.update_system(system_id, honk_body_count=7, honk_hint="worth a full scan", all_bodies_found=0)
-        assert system_header_line(store, store.get_system(system_id)) == "Deltius — FSS"
+        assert system_header_line(store, store.get_system(system_id)) == "Deltius — 7 bodies — FSS"
+
+    def test_body_count_text_is_the_known_count_not_fss_progress(self, store:ExplorerStore) -> None:
+        cmdr_id = store.get_or_create_cmdr("Testy")
+        system_id = store.get_or_create_system(cmdr_id, 1, "Deltius")
+        assert system_body_count_text(store.get_system(system_id)) == "" # not honked yet
+
+        store.update_system(system_id, honk_body_count=1)
+        assert system_body_count_text(store.get_system(system_id)) == "1 body"
+
+        store.update_system(system_id, honk_body_count=7)
+        assert system_body_count_text(store.get_system(system_id)) == "7 bodies"
 
 class TestPanelStates:
 
@@ -213,7 +224,7 @@ class TestPanelStates:
         import load
         assert load.store is not None and load.panel is not None
         lines = _panel_lines(load)
-        assert lines[0] == "QuietSpace — Done"
+        assert lines[0] == "QuietSpace — 1 body — Done"
 
     def test_full_walkthrough_shows_flagged_bodies_section(self, plugin:TestHarness) -> None:
         plugin.config.set("EDMCExplorerLite_ScanValueThreshold", 50000)
@@ -276,7 +287,7 @@ class TestPanelStates:
         import load
         assert load.store is not None and load.panel is not None
         lines = _panel_lines(load)
-        assert lines == ["Starrock — Done"], lines
+        assert lines == ["Starrock — 2 bodies — Done"], lines
 
     def test_exobio_line_shows_progress_then_drops_once_done(self, plugin:TestHarness) -> None:
         """
@@ -705,7 +716,7 @@ class TestPanelStates:
         assert body is not None
         row = load.panel._flagged_body_row("QuietSpace", body)
         assert row is not None
-        assert row[4] == "8 – 10 possible genera", row
+        assert row[4] == "8 of 10 possible genera", row
 
     def test_confirmed_zero_signals_suppresses_a_stale_prediction(self, plugin:TestHarness) -> None:
         """
@@ -1108,6 +1119,30 @@ class TestPanelHeaderToggle:
         assert load.panel is not None
         assert load.panel.title_label.cget("text") == PLUGIN_NAME
         assert load.panel._title_font.actual("weight") == "bold"
+
+    def test_header_credit_totals_show_zero_not_a_question_mark(self, plugin:TestHarness) -> None:
+        """ _credits() shows "?" for 0 (unknown-vs-empty ambiguity elsewhere) -- but here 0
+        pending is a real, known state, so the header should say "0 Cr", not "?". """
+        import load
+        assert load.panel is not None
+        load.panel.refresh()
+        assert load.panel.cart_value_label.cget("text") == "0 Cr"
+        assert load.panel.exo_value_label.cget("text") == "0 Cr"
+
+    def test_system_header_state_renders_bold(self, plugin:TestHarness) -> None:
+        """ "SystemName — N bodies —" stays normal weight; only the state word is bold. """
+        import tkinter.font as tkfont
+
+        plugin.load_events("explorer_events.json")
+        plugin.play_sequence("honk_only", 0.02)
+
+        import load
+        assert load.panel is not None
+        header_row = load.panel.scroll.interior.winfo_children()[0]
+        prefix_cell, state_cell = header_row.winfo_children()
+        assert tkfont.Font(font=prefix_cell.cget("font")).actual("weight") == "normal"
+        assert tkfont.Font(font=state_cell.cget("font")).actual("weight") == "bold"
+        assert state_cell.cget("text") == "Done"
 
     def test_toggle_hides_and_shows_the_scrollable_content(self, plugin:TestHarness) -> None:
         from explorer.ui.panel import PANEL_SHOWN_GLYPH, PANEL_HIDDEN_GLYPH

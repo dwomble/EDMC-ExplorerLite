@@ -8,7 +8,7 @@ from explorer.utils.overlay import Overlay
 
 from explorer.db.store import ExplorerStore
 from explorer.state import ExplorerState
-from explorer.ui.panel import ExplorerPanel, system_status_text, flagged_body_sort_key
+from explorer.ui.panel import ExplorerPanel, system_status_text, system_body_count_text, flagged_body_sort_key
 from explorer.constants import (
     CFG_PANEL_ENABLED, CFG_OVERLAY_SUMMARY_ENABLED,
     CFG_OVERLAY_SUMMARY_TEXT_COLOR, DEFAULT_OVERLAY_SUMMARY_TEXT_COLOR,
@@ -20,6 +20,7 @@ PLUGIN_GROUP:str = "EDMC-ExplorerLite"
 ANCHOR_X:int = 20
 ANCHOR_Y:int = 20
 LINE_HEIGHT_PX:int = 20
+HEADER_LINE_HEIGHT_PX:int = 25 # "large" text needs more room than LINE_HEIGHT_PX
 CURRENT_BODY_INDENT_PX:int = 20 # matches panel's own indent treatment
 MAX_BODY_LINES:int = 6 # no scrolling on the overlay, unlike the panel
 MAX_CURRENT_BODY_LINES:int = 6
@@ -86,6 +87,11 @@ class SystemSummaryOverlay:
             self._clear_all()
             return
 
+        if not state.overlay_relevant:
+            self._log_skip("docked, on-foot in a station, or a UI panel has focus")
+            self._clear_all()
+            return
+
         if state.system_id is None:
             self._log_skip("no system known yet")
             self._clear_all()
@@ -101,40 +107,51 @@ class SystemSummaryOverlay:
         self._ensure_group()
         color:str = _text_color()
 
-        self.overlay.send_text(f"{FRAME_PREFIX}header", system_status_text(store, system), color, ANCHOR_X, ANCHOR_Y, ttl=TTL)
+        body_count:str = system_body_count_text(system)
+        header_text:str = f"{body_count} — {system_status_text(store, system)}" if body_count else system_status_text(store, system)
+        self.overlay.send_text(f"{FRAME_PREFIX}header", header_text, color, ANCHOR_X, ANCHOR_Y, ttl=TTL, size="large")
         self._last_had_header = True
+        next_y:int = ANCHOR_Y + HEADER_LINE_HEIGHT_PX
 
         flagged:list[sqlite3.Row] = sorted(store.get_flagged_bodies_for_system(system["id"]), key=flagged_body_sort_key)
-        rows:list[str] = []
+        rows:list[tuple[int, str]] = []
         for body in flagged:
             row = self.panel._flagged_body_row(system["name"], body)
             if row is not None:
-                rows.append(_format_body_line(row))
+                rows.append((body["body_id"], _format_body_line(row)))
 
-        shown:list[str] = rows[:MAX_BODY_LINES]
-        for i, line in enumerate(shown):
-            y:int = ANCHOR_Y + LINE_HEIGHT_PX * (i + 1)
-            self.overlay.send_text(f"{FRAME_PREFIX}body-{i}", line, color, ANCHOR_X, y, ttl=TTL)
+        shown:list[tuple[int, str]] = rows[:MAX_BODY_LINES]
+        current_lines:list[str] = self._current_body_lines(store, state)[:MAX_CURRENT_BODY_LINES]
+        current_shown:bool = False # nests under the current body, matching the panel
+        for i, (body_id, line) in enumerate(shown):
+            self.overlay.send_text(f"{FRAME_PREFIX}body-{i}", line, color, ANCHOR_X, next_y, ttl=TTL)
+            next_y += LINE_HEIGHT_PX
+            if body_id == state.body_id:
+                next_y = self._send_current_lines(current_lines, color, next_y)
+                current_shown = True
         for i in range(len(shown), self._last_body_count): # clear slots dropped since last render
             self.overlay.clear(f"{FRAME_PREFIX}body-{i}")
         self._last_body_count = len(shown)
 
-        next_row:int = len(shown) + 1
         overflow:int = len(rows) - len(shown)
         if overflow > 0:
-            self.overlay.send_text(f"{FRAME_PREFIX}overflow", f"+{overflow} more", OVERFLOW_COLOR, ANCHOR_X, ANCHOR_Y + LINE_HEIGHT_PX * next_row, ttl=TTL)
-            next_row += 1
+            self.overlay.send_text(f"{FRAME_PREFIX}overflow", f"+{overflow} more", OVERFLOW_COLOR, ANCHOR_X, next_y, ttl=TTL)
+            next_y += LINE_HEIGHT_PX
         elif self._last_had_overflow:
             self.overlay.clear(f"{FRAME_PREFIX}overflow")
         self._last_had_overflow = overflow > 0
 
-        current_lines:list[str] = self._current_body_lines(store, state)[:MAX_CURRENT_BODY_LINES]
-        for i, line in enumerate(current_lines):
-            y = ANCHOR_Y + LINE_HEIGHT_PX * (next_row + i)
-            self.overlay.send_text(f"{FRAME_PREFIX}current-{i}", line, color, ANCHOR_X + CURRENT_BODY_INDENT_PX, y, ttl=TTL)
+        if not current_shown: # current body wasn't in shown -- e.g. bumped to overflow
+            self._send_current_lines(current_lines, color, next_y)
         for i in range(len(current_lines), self._last_current_count):
             self.overlay.clear(f"{FRAME_PREFIX}current-{i}")
         self._last_current_count = len(current_lines)
+
+    def _send_current_lines(self, lines:list[str], color:str, y:int) -> int:
+        for i, line in enumerate(lines):
+            self.overlay.send_text(f"{FRAME_PREFIX}current-{i}", line, color, ANCHOR_X + CURRENT_BODY_INDENT_PX, y, ttl=TTL)
+            y += LINE_HEIGHT_PX
+        return y
 
     def _current_body_lines(self, store:ExplorerStore, state:ExplorerState) -> list[str]:
         """ Mirrors panel's exobio-section selection logic. """

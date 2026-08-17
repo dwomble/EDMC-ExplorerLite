@@ -3,7 +3,7 @@ dashboard_entry handler: Status.json updates. Feeds the overlay radar's live pos
 (Latitude/Longitude/Heading/Altitude) and general context-sensitivity (on-foot, landed) --
 no DB writes here, purely live state.
 """
-from edmc_data import FlagsLanded, FlagsHasLatLong, Flags2OnFoot # type: ignore
+from edmc_data import FlagsLanded, FlagsHasLatLong, FlagsDocked, Flags2OnFoot, Flags2OnFootInStation # type: ignore
 
 from explorer.state import ExplorerState
 
@@ -21,6 +21,9 @@ def on_dashboard_entry(state:ExplorerState, entry:dict) -> dict:
     state.landed = bool(flags & FlagsLanded)
     state.on_foot = bool(flags2 & Flags2OnFoot)
     state.has_lat_long = bool(flags & FlagsHasLatLong)
+    state.docked = bool(flags & FlagsDocked)
+    state.on_foot_in_station = bool(flags2 & Flags2OnFootInStation)
+    state.gui_focus = entry.get("GuiFocus", 0)
 
     if state.has_lat_long:
         state.latitude = entry.get("Latitude")

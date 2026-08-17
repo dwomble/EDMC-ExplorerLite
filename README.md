@@ -20,7 +20,7 @@ Create a directory into your EDMC `plugins` folder called `EDMC-ExplorerLite`, d
 
 ## Honk
 
-The system line always shows the single next thing worth doing: `Honk` → `FSS` → `DSS` / `Sample` / `DSS + Sample` → `Done`. `FSS` stays up for the whole scan pass, even once a body is already flagged — it only moves on once the FSS is actually complete. `DSS` means a scanned body is worth mapping; `Sample` means a mapped body still needs its biology sampled; `DSS + Sample` means both are true somewhere in the system. `Done` covers both "nothing here was worth a full scan" and "genuinely nothing left to do."
+The system line shows the known body count plus the single next thing worth doing (bold), e.g. `Deltius — 7 bodies — **DSS**`: `Honk` → `FSS` → `DSS` / `Sample` / `DSS + Sample` → `Done`. `FSS` stays up for the whole scan pass, even once a body is already flagged — it only moves on once the FSS is actually complete. `DSS` means a scanned body is worth mapping; `Sample` means a mapped body still needs its biology sampled; `DSS + Sample` means both are true somewhere in the system. `Done` covers both "nothing here was worth a full scan" and "genuinely nothing left to do."
 
 ## FSS
 
@@ -38,7 +38,7 @@ Per-species genetic sampling progress (`N/M scanned`) is shown live while you're
 
 ## Overlay
 
-Requires the [modern overlay](https://github.com/SweetJonnySauce/EDMCModernOverlay), the legacy `EDMCOverlay`/`edmcoverlay2` plugins aren't supported. Without it, ExplorerLite still works fully — the overlay is a heads-up convenience, not a requirement. The panel's 👁/🙈 header toggle hides both overlay elements too, alongside the panel's own content.
+Requires the [modern overlay](https://github.com/SweetJonnySauce/EDMCModernOverlay), the legacy `EDMCOverlay`/`edmcoverlay2` plugins aren't supported. Without it, ExplorerLite still works fully — the overlay is a heads-up convenience, not a requirement. The panel's 👁/🙈 header toggle hides both overlay elements too, alongside the panel's own content. Both also hide automatically whenever they'd just be in the way — docked, on-foot inside a station, or with any ship/on-foot panel (galaxy map, system map, station services, etc.) open.
 
 Two independently toggleable overlay elements:
 

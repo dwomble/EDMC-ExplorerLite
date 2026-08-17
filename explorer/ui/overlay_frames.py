@@ -135,6 +135,10 @@ class RadarOverlay:
             self._log_skip("radar disabled in EDMC-ExplorerLite settings")
             return
 
+        if not state.overlay_relevant:
+            self._log_skip("docked, on-foot in a station, or a UI panel has focus")
+            return
+
         if not state.has_lat_long or state.latitude is None or state.longitude is None:
             self._log_skip("no lat/long from Status.json yet")
             return

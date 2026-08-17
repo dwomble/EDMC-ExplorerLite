@@ -371,6 +371,32 @@ class TestRadarOverlayModern:
         assert f"{FRAME_PREFIX}player" not in radar.overlay._overlay.shapes
 
     @pytest.mark.overlay('Modern')
+    def test_render_is_a_noop_while_docked(self, overlay_mode, store:ExplorerStore) -> None:
+        radar = RadarOverlay(Overlay())
+        state = _landed_state(store)
+        state.docked = True
+        radar.render(store, state)
+        assert f"{FRAME_PREFIX}player" not in radar.overlay._overlay.shapes
+
+    @pytest.mark.overlay('Modern')
+    def test_render_is_a_noop_on_foot_in_a_station(self, overlay_mode, store:ExplorerStore) -> None:
+        radar = RadarOverlay(Overlay())
+        state = _landed_state(store)
+        state.on_foot_in_station = True
+        radar.render(store, state)
+        assert f"{FRAME_PREFIX}player" not in radar.overlay._overlay.shapes
+
+    @pytest.mark.overlay('Modern')
+    def test_render_is_a_noop_while_a_ui_panel_has_focus(self, overlay_mode, store:ExplorerStore) -> None:
+        """ e.g. galaxy map / system map open in the ship -- GuiFocus != 0. """
+        from edmc_data import GuiFocusGalaxyMap # type: ignore
+        radar = RadarOverlay(Overlay())
+        state = _landed_state(store)
+        state.gui_focus = GuiFocusGalaxyMap
+        radar.render(store, state)
+        assert f"{FRAME_PREFIX}player" not in radar.overlay._overlay.shapes
+
+    @pytest.mark.overlay('Modern')
     def test_render_respects_configured_radar_size(self, overlay_mode, harness:TestHarness, store:ExplorerStore) -> None:
         from explorer.constants import CFG_OVERLAY_RADAR_SIZE
         from explorer.ui.overlay_frames import RING_AREA_FRAC
