@@ -1,12 +1,14 @@
 # EDMC-ExplorerLite
 
-A lightweight exploration and exobiology assistant for [EDMC](https://github.com/EDCD/EDMarketConnector).
+An unobtrusive, lightweight exploration and exobiology assistant for [EDMC](https://github.com/EDCD/EDMarketConnector).
+
+<img width="478" height="47" alt="Screenshot 2026-08-16 215121" src="https://github.com/user-attachments/assets/92830698-5053-4837-85f4-17b48ed7cbc1" />
 
 At every stage of exploring a system ExplorerLite tells you whether it's worth your time and what's worth doing next, in a clean, compact panel that gets out of the way when there's nothing to report. It's designed to be lightweight and self-contained with overlay support for single-screen/VR/heads-up operation.
 
 ## Key Features
 
-- Clean, simple UI shows the information you need and nothing you don't.
+- Clean, simple, theme-aware UI shows the information you need and nothing you don't.
 - Honk heuristic flags whether a system is worth a full FSS pass, based on star type and body/signal counts.
 - Flags bodies whose cartography (scan/mapping) value or exobiology potential clears your configured credit thresholds, including first-discovery/first-mapped bonus.
 - Pre-DSS genus/species prediction: ranks likely biology from a body's atmosphere, temperature, gravity, and volcanism as soon as it's scanned
@@ -15,6 +17,8 @@ At every stage of exploring a system ExplorerLite tells you whether it's worth y
 - In-game overlay: a sample-tracking radar plus a glanceable system summary, so you rarely need to alt-tab to the panel.
 - Per-commander history browser with running sold/pending totals for both cartography and exobiology.
 - 👁/🙈 toggle minimizes the display when not exploring.
+
+<img width="477" height="173" alt="Screenshot 2026-08-16 183627" src="https://github.com/user-attachments/assets/15b6d141-8385-47ee-ba5d-9474bd56aaa6" />
 
 ## Installation
 
@@ -38,6 +42,9 @@ When the FSS reports biological signals on a body, ExplorerLite indicates likely
 
 Per-species genetic sampling progress (`N/M scanned`) is shown live while you're on the body, along with the minimum distance required between samples for that genus. Values shown always include the first-discovery/first-logged bonus you'd actually be paid — not just the base value that only matters for in-game session-progression math.
 
+<img width="406" height="177" alt="Screenshot 2026-08-16 215440" src="https://github.com/user-attachments/assets/cd1d5511-7c9f-4243-9878-236ebaba80fa" />
+
+
 ## Overlay
 
 Requires the [modern overlay](https://github.com/SweetJonnySauce/EDMCModernOverlay), the legacy `EDMCOverlay`/`edmcoverlay2` plugins aren't supported. Without it, ExplorerLite still works fully — the overlay is a heads-up convenience, not a requirement. The panel's 👁/🙈 header toggle hides both overlay elements too, alongside the panel's own content. Both also hide automatically whenever they'd just be in the way — docked, on-foot inside a station, with any ship/on-foot panel (galaxy map, system map, station services, etc.) open, etc..
@@ -47,6 +54,8 @@ Two independently toggleable overlay elements:
 - **System summary** — mirrors the panel's own header and flagged-body list (same columns: distance, gravity, type, value), capped to a handful of lines (with a "+N more" overflow) so it stays glanceable. The body you're currently standing on gets its own indented species-progress detail underneath. Text colour is configurable. Background, border and position are configurable via Modern Overlay's overlay controller.
 
 - **Radar** — centered on you, shows distance rings, a highlighted ring at the current genus's minimum sample distance, a marker for each logged sample (filled = in range, hollow = out of range), and a hollow triangle for any comp. scanner-tagged waypoint, colored by variant. Rotates with your heading. Radar size is configurable.
+
+<img width="200" height="196" alt="Screenshot 2026-08-16 182145" src="https://github.com/user-attachments/assets/6dca3cd4-35f2-4770-8d06-a8da67d768fd" />
 
 ## Panel header
 
@@ -60,6 +69,8 @@ The top row of the panel is always visible — the plugin name on the left, your
 Click 🕓 on the panel to open a System → Body → Species browser (per Cmdr), showing status, date, and both estimated and actual value for cartography (`Cart. Est.`/`Cart. Actual`) and exobiology (`Exo. Base`/`Exo. Full`). A running totals line at the top shows sold vs. still-pending credits for both categories, alongside an "Unsold only" checkbox (on by default) and a time-range dropdown (All time/Last day/Last week/Last month) so a long career's history stays manageable — both choices are remembered across sessions, as is window size/position. The underlying query is also capped to the 1,000 most recently visited systems.
 
 Actual sold values always come straight from the ED journal — ground truth, never a formula. Estimates exist purely to flag what's worth your time before you sell.
+
+<img width="1030" height="397" alt="Screenshot 2026-08-16 214935" src="https://github.com/user-attachments/assets/db8f58ab-8669-49bd-8f74-56c2277c63bc" />
 
 ## Settings
 
