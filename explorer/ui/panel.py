@@ -19,8 +19,8 @@ from explorer.valuation import cartography, exobiology, exobiology_data, signal_
 from explorer.constants import CFG_VISIBLE_LINES, DEFAULT_VISIBLE_LINES, CFG_PANEL_ENABLED, PLUGIN_NAME, VERSION
 
 HISTORY_GLYPH:str = "\U0001F553" # clock face
-PANEL_SHOWN_GLYPH:str = "\U0001F441" # eye
-PANEL_HIDDEN_GLYPH:str = "\U0001F648" # see-no-evil monkey
+PANEL_SHOWN_GLYPH:str = "\U0001F648" # eye
+PANEL_HIDDEN_GLYPH:str = "\U0001F441" # see-no-evil monkey
 
 WIDTH_CHARS:int = 60
 LINE_HEIGHT_PX:int = 18 # approximate for the default EDMC font; tune once seen in a real window
