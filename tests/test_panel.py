@@ -13,7 +13,14 @@ import pytest
 from typing import Generator, cast
 
 from harness import TestHarness, reset_plugin_modules
+from explorer.db.store import ExplorerStore
 from explorer.ui.panel import _credits_range, system_status_text, system_header_line
+
+@pytest.fixture
+def store(tmp_path) -> Generator[ExplorerStore, None, None]:
+    s = ExplorerStore(tmp_path / "explorer.sqlite")
+    yield s
+    s.close()
 
 @pytest.fixture
 def plugin(harness:TestHarness, tmp_path, monkeypatch) -> Generator[TestHarness, None, None]:
@@ -47,7 +54,10 @@ def _panel_lines(load) -> list[str]:
     an equivalent line, so callers don't need to know whether a given row is columnar or not.
     """
     lines:list[str] = []
-    for child in load.panel.scroll.interior.winfo_children():
+    # sorted by grid row, not creation order -- a widget rebuilt out of sync with its siblings
+    # (e.g. the header changing while a body row stays put) otherwise lands at the wrong index
+    children:list[tk.Widget] = sorted(load.panel.scroll.interior.winfo_children(), key=lambda c: int(c.grid_info()["row"]))
+    for child in children:
         if isinstance(child, tk.Frame):
             rows:dict[int, dict[int, str]] = {}
             for cell in child.winfo_children():
@@ -73,32 +83,73 @@ class TestCreditsRange:
         assert _credits_range(1_000_000, 1_000_000) == "1M Cr"
 
 class TestSystemStatusText:
-    """ system_status_text()/system_header_line() take anything dict-like ("system[key]") --
-    a plain dict stands in for a real sqlite3.Row here, no store/harness needed. """
+    """ Honk -> FSS -> DSS/Sample/"DSS + Sample" -> Done. Needs a real store now (checking
+    per-body DSS/sample status), not just a dict standing in for a sqlite3.Row. """
 
-    def test_before_honking(self) -> None:
-        system = {"honk_body_count": None}
-        assert system_status_text(system, scanned_count=0) == "honk needed"
+    def test_before_honking(self, store:ExplorerStore) -> None:
+        cmdr_id = store.get_or_create_cmdr("Testy")
+        system_id = store.get_or_create_system(cmdr_id, 1, "Deltius")
+        assert system_status_text(store, store.get_system(system_id)) == "Honk"
 
-    def test_progress_while_worth_a_full_scan(self) -> None:
-        """ Real change: "scan needed" used to stay static throughout the FSS pass -- now shows
-        live "N of M scanned" progress. """
-        system = {"honk_body_count": 7, "all_bodies_found": 0, "honk_hint": "worth a full scan"}
-        assert system_status_text(system, scanned_count=3) == "3 of 7 scanned"
+    def test_quiet_system_is_done_even_mid_fss(self, store:ExplorerStore) -> None:
+        cmdr_id = store.get_or_create_cmdr("Testy")
+        system_id = store.get_or_create_system(cmdr_id, 1, "Deltius")
+        store.update_system(system_id, honk_body_count=1, honk_hint="probably quiet", all_bodies_found=0)
+        assert system_status_text(store, store.get_system(system_id)) == "Done"
 
-    def test_probably_quiet_stays_done(self) -> None:
-        """ Unaffected by the progress change -- "done" is the heuristic's own opinion, not
-        literal FSS completion, so it doesn't get a scanned-count treatment. """
-        system = {"honk_body_count": 1, "all_bodies_found": 0, "honk_hint": "probably quiet"}
-        assert system_status_text(system, scanned_count=0) == "1 body — done"
+    def test_fss_shown_until_all_bodies_found(self, store:ExplorerStore) -> None:
+        """ FSS stays shown for the whole pass, even once a body is already flagged -- FSS
+        must finish before DSS/Sample/Done are even considered. """
+        cmdr_id = store.get_or_create_cmdr("Testy")
+        system_id = store.get_or_create_system(cmdr_id, 1, "Deltius")
+        store.update_system(system_id, honk_body_count=7, honk_hint="worth a full scan", all_bodies_found=0)
+        body_pk = store.get_or_create_body(cmdr_id, system_id, 1, "Deltius A 1", "Planet")
+        store.update_body(body_pk, flagged_value=1, estimated_scan_value=1_000_000)
+        assert system_status_text(store, store.get_system(system_id)) == "FSS"
 
-    def test_all_bodies_found(self) -> None:
-        system = {"honk_body_count": 3, "all_bodies_found": 1, "honk_hint": "worth a full scan"}
-        assert system_status_text(system, scanned_count=3) == "3 bodies — scan complete"
+    def test_dss_once_fss_completes_with_an_unmapped_flagged_body(self, store:ExplorerStore) -> None:
+        cmdr_id = store.get_or_create_cmdr("Testy")
+        system_id = store.get_or_create_system(cmdr_id, 1, "Deltius")
+        store.update_system(system_id, honk_body_count=1, honk_hint="worth a full scan", all_bodies_found=1)
+        body_pk = store.get_or_create_body(cmdr_id, system_id, 1, "Deltius A 1", "Planet")
+        store.update_body(body_pk, flagged_value=1, estimated_scan_value=1_000_000)
+        assert system_status_text(store, store.get_system(system_id)) == "DSS"
 
-    def test_header_line_prepends_the_system_name(self) -> None:
-        system = {"name": "Deltius", "honk_body_count": 7, "all_bodies_found": 0, "honk_hint": "worth a full scan"}
-        assert system_header_line(system, scanned_count=3) == "Deltius — 3 of 7 scanned"
+    def test_sample_once_mapped_with_active_species(self, store:ExplorerStore) -> None:
+        cmdr_id = store.get_or_create_cmdr("Testy")
+        system_id = store.get_or_create_system(cmdr_id, 1, "Deltius")
+        store.update_system(system_id, honk_body_count=1, honk_hint="worth a full scan", all_bodies_found=1)
+        body_pk = store.get_or_create_body(cmdr_id, system_id, 1, "Deltius A 1", "Planet")
+        store.update_body(body_pk, has_biological_signals=1, mapped_at="2026-08-17T00:00:00Z")
+        store.get_or_create_species_progress(body_pk, "Bacterium")
+        assert system_status_text(store, store.get_system(system_id)) == "Sample"
+
+    def test_dss_and_sample_combine(self, store:ExplorerStore) -> None:
+        cmdr_id = store.get_or_create_cmdr("Testy")
+        system_id = store.get_or_create_system(cmdr_id, 1, "Deltius")
+        store.update_system(system_id, honk_body_count=2, honk_hint="worth a full scan", all_bodies_found=1)
+        unmapped_pk = store.get_or_create_body(cmdr_id, system_id, 1, "Deltius A 1", "Planet")
+        store.update_body(unmapped_pk, flagged_value=1, estimated_scan_value=1_000_000)
+        mapped_pk = store.get_or_create_body(cmdr_id, system_id, 2, "Deltius A 2", "Planet")
+        store.update_body(mapped_pk, has_biological_signals=1, mapped_at="2026-08-17T00:00:00Z")
+        store.get_or_create_species_progress(mapped_pk, "Bacterium")
+        assert system_status_text(store, store.get_system(system_id)) == "DSS + Sample"
+
+    def test_done_once_fully_sampled_and_mapped(self, store:ExplorerStore) -> None:
+        cmdr_id = store.get_or_create_cmdr("Testy")
+        system_id = store.get_or_create_system(cmdr_id, 1, "Deltius")
+        store.update_system(system_id, honk_body_count=1, honk_hint="worth a full scan", all_bodies_found=1)
+        body_pk = store.get_or_create_body(cmdr_id, system_id, 1, "Deltius A 1", "Planet")
+        store.update_body(body_pk, has_biological_signals=1, mapped_at="2026-08-17T00:00:00Z")
+        progress_id = store.get_or_create_species_progress(body_pk, "Bacterium")
+        store.update_species_progress(progress_id, completed_at="2026-08-17T00:00:00Z")
+        assert system_status_text(store, store.get_system(system_id)) == "Done"
+
+    def test_header_line_prepends_the_system_name(self, store:ExplorerStore) -> None:
+        cmdr_id = store.get_or_create_cmdr("Testy")
+        system_id = store.get_or_create_system(cmdr_id, 1, "Deltius")
+        store.update_system(system_id, honk_body_count=7, honk_hint="worth a full scan", all_bodies_found=0)
+        assert system_header_line(store, store.get_system(system_id)) == "Deltius — FSS"
 
 class TestPanelStates:
 
@@ -162,7 +213,7 @@ class TestPanelStates:
         import load
         assert load.store is not None and load.panel is not None
         lines = _panel_lines(load)
-        assert lines[0] == "QuietSpace — 1 body — done"
+        assert lines[0] == "QuietSpace — Done"
 
     def test_full_walkthrough_shows_flagged_bodies_section(self, plugin:TestHarness) -> None:
         plugin.config.set("EDMCExplorerLite_ScanValueThreshold", 50000)
@@ -188,8 +239,33 @@ class TestPanelStates:
         import load
         assert load.store is not None and load.panel is not None
         lines = _panel_lines(load)
-        assert any(" — done" in line or " scanned" in line for line in lines)
+        assert any(line.endswith("FSS") for line in lines)
         assert any(line.startswith("A 1 ") for line in lines)
+
+    def test_flagged_body_order_matches_the_overlay(self, plugin:TestHarness) -> None:
+        """
+        Real-world report: the panel and overlay listed a system's flagged bodies in different
+        orders. The panel used plain body_id order; the overlay already sorted biological
+        bodies first (see test_overlay_summary.py's own version of this regression). Both now
+        share flagged_body_sort_key(), so a biological body always leads regardless of body_id.
+        """
+        plugin.load_events("explorer_events.json")
+        plugin.play_sequence("honk_only", 0.02)
+
+        import load
+        assert load.store is not None and load.panel is not None
+        assert load.explorer_state.cmdr_id is not None and load.explorer_state.system_id is not None
+
+        cart_pk:int = load.store.get_or_create_body(load.explorer_state.cmdr_id, load.explorer_state.system_id, 1, "QuietSpace 1")
+        load.store.update_body(cart_pk, flagged_value=1, estimated_scan_value=1_000_000, was_discovered=1, was_mapped=1)
+        bio_pk:int = load.store.get_or_create_body(load.explorer_state.cmdr_id, load.explorer_state.system_id, 2, "QuietSpace Bio")
+        load.store.update_body(bio_pk, has_biological_signals=1, biological_signal_count=3)
+
+        load.panel.refresh()
+        lines = _panel_lines(load)
+        bio_index:int = next(i for i, line in enumerate(lines) if "Bio" in line)
+        cart_index:int = next(i for i, line in enumerate(lines) if line.startswith("1 "))
+        assert bio_index < cart_index, lines
 
     def test_binary_star_system_is_quiet(self, plugin:TestHarness) -> None:
         """ A system with no planets at all (e.g. a bare binary) has nothing to flag -- just the
@@ -200,7 +276,7 @@ class TestPanelStates:
         import load
         assert load.store is not None and load.panel is not None
         lines = _panel_lines(load)
-        assert lines == ["Starrock — 2 bodies — scan complete"], lines
+        assert lines == ["Starrock — Done"], lines
 
     def test_exobio_line_shows_progress_then_drops_once_done(self, plugin:TestHarness) -> None:
         """
@@ -631,6 +707,28 @@ class TestPanelStates:
         assert row is not None
         assert row[4] == "8 – 10 possible genera", row
 
+    def test_confirmed_zero_signals_suppresses_a_stale_prediction(self, plugin:TestHarness) -> None:
+        """
+        Real-world report: a Terraformable HMC still showed a "?3 genera" guess even though
+        FSSBodySignals had already confirmed zero biological signals. genus_predictions rows
+        are written at Scan time from planetary conditions alone, unaware of what
+        FSSBodySignals later confirms (or already confirmed) -- a stale guess must never
+        override a confirmed zero.
+        """
+        from explorer.state import state as explorer_state
+
+        plugin.load_events("explorer_events.json")
+        plugin.play_sequence("honk_only", 0.02)
+
+        import load
+        assert load.store is not None and load.panel is not None
+        assert explorer_state.cmdr_id is not None and explorer_state.system_id is not None
+        body_pk:int = load.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 1, "QuietSpace A 1")
+        load.store.update_body(body_pk, has_biological_signals=0, biological_signal_count=0)
+        load.store.replace_genus_predictions(body_pk, [("Bacterium", "Bacterium X", 1.0)])
+
+        assert load.panel._best_predictions_for_body(body_pk) == []
+
     def test_signal_count_bias_prefers_chain_expected_genus_over_raw_confidence(self, plugin:TestHarness) -> None:
         """
         Regression/coverage for the signal-count chain bias (valuation/signal_count_bias.py): on
@@ -1000,15 +1098,15 @@ class TestNoDuplicateWidgets:
         assert managers == {"grid", ""}
 
 class TestPanelHeaderToggle:
-    """ The always-visible header (name/version + History/toggle buttons) and the show/hide
-    toggle for everything below it -- data collection continues regardless of toggle state. """
+    """ The always-visible header (name + credit totals + History/toggle buttons) and the
+    show/hide toggle for everything below it -- collection continues regardless of state. """
 
-    def test_header_shows_plugin_name_and_version(self, plugin:TestHarness) -> None:
-        from explorer.constants import PLUGIN_NAME, VERSION
+    def test_header_shows_plugin_name(self, plugin:TestHarness) -> None:
+        from explorer.constants import PLUGIN_NAME
 
         import load
         assert load.panel is not None
-        assert load.panel.title_label.cget("text") == f"{PLUGIN_NAME} v{VERSION}"
+        assert load.panel.title_label.cget("text") == PLUGIN_NAME
         assert load.panel._title_font.actual("weight") == "bold"
 
     def test_toggle_hides_and_shows_the_scrollable_content(self, plugin:TestHarness) -> None:
@@ -1048,7 +1146,7 @@ class TestPanelHeaderToggle:
 
         load.panel._toggle_panel() # hide
         assert load.explorer_state.system_id is not None
-        load.store.update_system(load.explorer_state.system_id, all_bodies_found=1, fss_body_count=1)
+        load.store.update_system(load.explorer_state.system_id, honk_hint="worth a full scan")
         load.panel.refresh() # e.g. a journal-driven refresh() while hidden -- must not touch the UI
         assert _panel_lines(load) == before
 

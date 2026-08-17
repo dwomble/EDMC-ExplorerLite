@@ -582,3 +582,79 @@ present, so the two halves still read as visually distinct groups rather than on
 **Color button now reads "Foreground", not the hex value.** The button's text no longer changes
 per pick -- only its `foreground=` (text color) does, still previewing the actual chosen color.
 A hex string as the only label was harder to parse than a fixed, readable word at a glance.
+
+## explorer/ui/panel.py — Next-action status text
+
+Replaced the honk-count-based status ("honk needed" / "N bodies -- scan complete/done" / "N of
+M scanned") with a next-action state: `Honk` -> `FSS` -> `DSS`/`Sample`/`DSS + Sample` -> `Done`.
+Per explicit direction: FSS stays shown for the *entire* FSS pass regardless of what's already
+flagged mid-scan (DSS/Sample never pre-empt it); a "probably quiet"/"no bodies" honk verdict
+reads as `Done` immediately, same terminal label as a fully-finished system; the body count is
+dropped entirely, just the bare word/phrase.
+
+`_next_actions(store, system_id)` walks `get_flagged_bodies_for_system()` once FSS is complete:
+any unmapped flagged body sets `needs_dss`; any mapped body with an incomplete (`completed_at`
+IS NULL) `species_progress` row sets `needs_sample`. Both `system_status_text()` and
+`system_header_line()` now take `(store, system)` instead of `(system, scanned_count)` --
+`count_scanned_bodies_for_system()` is no longer called from either render path (the store
+method itself stays, still directly tested).
+
+**Regression found while updating tests:** `_panel_lines()` (the `test_panel.py` helper that
+flattens the scrollable frame's children into text for assertions) read `winfo_children()` in
+raw widget-creation order, not sorted by actual grid row. That was invisible before because the
+header rarely got destroyed-and-recreated out of step with the rows below it -- but the new,
+more talkative state text changes more often, so the header sometimes rebuilds *after* an
+already-stable body row has stabilized, appending it to the end of Tk's internal child list
+even though it's still grid row 0 visually. Fixed by sorting by `grid_info()["row"]` in the test
+helper -- this was a test-helper-only ordering bug, the actual panel was never mis-rendered
+(every widget is explicitly `.grid(row=...)`'d regardless of creation order).
+
+## explorer/ui/overlay_summary.py — Body line matches the panel's own columns
+
+`_format_body_line()` was dropping distance and gravity (`_distance`/`_gravity`, explicitly
+unused) to save width -- per explicit request, the overlay should show the same columns as the
+panel's own table. Now includes both, same order: designator, distance, gravity, value, species.
+
+## explorer/ui/panel.py — Header: pending totals + tooltips
+
+Added two more labels to the always-visible header, between the title and the icon buttons:
+pending cartography value and pending exobiology value (`store.get_pending_cartography_value`/
+`get_pending_exobiology_value`, same queries the history view already uses). Both update every
+`refresh()` call -- including while the panel is toggled hidden, since they're part of the
+header, not `self.scroll` (see `_update_header_totals()`, called before the hidden-early-return
+in `refresh()`). Dropped the version number from the title label (now just `PLUGIN_NAME`) to
+free up width for the two new labels, per explicit direction.
+
+`header.columnconfigure()` gives weight to the title/cart/exo columns (not the icon-button
+columns), spreading the three labels out across any slack width rather than leaving one large
+gap after the title -- same technique used in `prefs.py`'s own header row.
+
+All four header widgets (cart value, exo value, History button, toggle button) now have a
+`th.Tooltip`. The toggle button's tooltip text ("Hide panel"/"Show panel") updates alongside its
+glyph in `_toggle_panel()`, via `Tooltip.set_text()` rather than re-binding.
+
+## explorer/ui/panel.py — flagged_body_sort_key shared with the overlay
+
+**Regression:** the panel and overlay listed a system's flagged bodies in different orders. The
+overlay already sorted biological bodies first (`_sort_key()`, added earlier to keep them from
+being pushed into its "+N more" overflow -- a real constraint the overlay has and the panel,
+which scrolls, doesn't). The panel itself never got the same treatment and just used the raw
+`ORDER BY body_id` from the store query. Moved the sort key into `panel.py` as
+`flagged_body_sort_key()` (a plain function, not a method -- it only touches its `body` argument)
+and had both `_render_system_summary()` and `overlay_summary.py`'s `render()` sort with it, so
+the two surfaces can never show a system in two different orders again.
+
+## explorer/ui/panel.py — Confirmed-zero signals now suppress stale predictions
+
+**Regression:** a Terraformable HMC with `FSSBodySignals` already confirming zero biological
+signals still showed a "?N genera" guess. `on_scan()` writes `genus_predictions` rows purely
+from planetary conditions (atmosphere/temperature/gravity/volcanism/star type) at Scan time --
+it has no way to know whether *this specific body* actually rolled biology, only whether the
+genus *could* spawn under these conditions. If `FSSBodySignals` (which can arrive before or
+after `Scan`) confirms zero signals, those rows go stale but were never re-checked before
+display. Fixed in `_best_predictions_for_body()` -- the one shared source all three call sites
+(`_flagged_body_row()`, `_render_exobiology_section()`, and `overlay_summary.py`'s
+`_current_body_lines()`, which calls it via `self.panel._best_predictions_for_body()`) already
+funnel through -- so a confirmed `has_biological_signals == 0` now returns `[]` regardless of
+what's still sitting in `genus_predictions`, rather than needing the same guard duplicated at
+every caller.

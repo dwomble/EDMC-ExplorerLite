@@ -8,7 +8,7 @@ from explorer.utils.overlay import Overlay
 
 from explorer.db.store import ExplorerStore
 from explorer.state import ExplorerState
-from explorer.ui.panel import ExplorerPanel, system_status_text
+from explorer.ui.panel import ExplorerPanel, system_status_text, flagged_body_sort_key
 from explorer.constants import (
     CFG_PANEL_ENABLED, CFG_OVERLAY_SUMMARY_ENABLED,
     CFG_OVERLAY_SUMMARY_TEXT_COLOR, DEFAULT_OVERLAY_SUMMARY_TEXT_COLOR,
@@ -101,11 +101,10 @@ class SystemSummaryOverlay:
         self._ensure_group()
         color:str = _text_color()
 
-        scanned_count:int = store.count_scanned_bodies_for_system(system["id"])
-        self.overlay.send_text(f"{FRAME_PREFIX}header", system_status_text(system, scanned_count), color, ANCHOR_X, ANCHOR_Y, ttl=TTL)
+        self.overlay.send_text(f"{FRAME_PREFIX}header", system_status_text(store, system), color, ANCHOR_X, ANCHOR_Y, ttl=TTL)
         self._last_had_header = True
 
-        flagged:list[sqlite3.Row] = sorted(store.get_flagged_bodies_for_system(system["id"]), key=_sort_key)
+        flagged:list[sqlite3.Row] = sorted(store.get_flagged_bodies_for_system(system["id"]), key=flagged_body_sort_key)
         rows:list[str] = []
         for body in flagged:
             row = self.panel._flagged_body_row(system["name"], body)
@@ -167,15 +166,11 @@ class SystemSummaryOverlay:
 
         return []
 
-def _sort_key(body:sqlite3.Row) -> bool:
-    """ Biological bodies sort first so they don't overflow. """
-    biological:bool = bool(body["has_biological_signals"] == 1 or body["flagged_exobio"] or body["has_prediction"])
-    return not biological
-
 def _format_body_line(row:tuple[str, str, str, str, str]) -> str:
-    """ Collapses the row tuple to name/value/species text. """
-    designator, _distance, _gravity, value_str, species_desc = row
-    return f"{designator}  {value_str}  {species_desc}" if species_desc else f"{designator}  {value_str}"
+    """ Same columns as the panel's own flagged-body table. """
+    designator, distance, gravity, value_str, species_desc = row
+    line:str = f"{designator}  {distance}  {gravity}  {value_str}"
+    return f"{line}  {species_desc}" if species_desc else line
 
 def _format_progress_line(row:tuple[str, str, str, str]) -> str:
     """ Formats an _exobio_progress_row() tuple. """

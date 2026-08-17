@@ -20,11 +20,11 @@ Create a directory into your EDMC `plugins` folder called `EDMC-ExplorerLite`, d
 
 ## Honk
 
-As soon as you honk, ExplorerLite gives a quick verdict — `worth a full scan` or `probably quiet` — based on the star type and body counts.
+The system line always shows the single next thing worth doing: `Honk` → `FSS` → `DSS` / `Sample` / `DSS + Sample` → `Done`. `FSS` stays up for the whole scan pass, even once a body is already flagged — it only moves on once the FSS is actually complete. `DSS` means a scanned body is worth mapping; `Sample` means a mapped body still needs its biology sampled; `DSS + Sample` means both are true somewhere in the system. `Done` covers both "nothing here was worth a full scan" and "genuinely nothing left to do."
 
 ## FSS
 
-As bodies are scanned, any whose estimated cartography value clears your threshold are listed with distance, gravity, type (`T HMC`, `WW`, `ELW`, `AW`, `GG`, etc. — `T` prefix for terraformable), and approximate value. The system line itself updates live: `N of M scanned` while the FSS pass is still in progress, then `N bodies — scan complete` once done.
+As bodies are scanned, any whose estimated cartography value clears your threshold are listed with distance, gravity, type (`T HMC`, `WW`, `ELW`, `AW`, `GG`, etc. — `T` prefix for terraformable), and approximate value.
 
 ## DSS
 
@@ -42,16 +42,16 @@ Requires the [modern overlay](https://github.com/SweetJonnySauce/EDMCModernOverl
 
 Two independently toggleable overlay elements:
 
-- **System summary** — mirrors the panel's own header and flagged-body list, capped to a handful of lines (with a "+N more" overflow) so it stays glanceable. The body you're currently standing on gets its own indented species-progress detail underneath. Text colour is configurable. Background, border and position are configurable via Modern Overlay's overlay controller.
+- **System summary** — mirrors the panel's own header and flagged-body list (same columns: distance, gravity, type, value), capped to a handful of lines (with a "+N more" overflow) so it stays glanceable. The body you're currently standing on gets its own indented species-progress detail underneath. Text colour is configurable. Background, border and position are configurable via Modern Overlay's overlay controller.
 
 - **Radar** — centered on you, shows distance rings, a highlighted ring at the current genus's minimum sample distance, a marker for each logged sample (filled = in range, hollow = out of range), and a hollow triangle for any codex-tagged waypoint, colored by variant. Rotates with your heading. Radar size is configurable.
 
 ## Panel header
 
-The top row of the panel is always visible — the plugin name and version on the left, and two icon buttons on the right:
+The top row of the panel is always visible — the plugin name on the left, your pending cartography and exobiology credits in the middle, and two icon buttons on the right (all four have tooltips):
 
 - 🕓 opens the History browser (below).
-- 👁/🙈 shows or hides everything below the header as well as the overlays. Data collection continues but this declutters the EDMC window. Your choice is remembered across restarts.
+- 🙈/👁 shows or hides everything below the header as well as the overlays. Data collection continues but this declutters the EDMC window. Your choice is remembered across restarts.
 
 ## History
 

@@ -16,11 +16,11 @@ from explorer.utils.misc import hfplus, str_truncate
 from explorer.db.store import ExplorerStore
 from explorer.state import ExplorerState
 from explorer.valuation import cartography, exobiology, exobiology_data, signal_count_bias
-from explorer.constants import CFG_VISIBLE_LINES, DEFAULT_VISIBLE_LINES, CFG_PANEL_ENABLED, PLUGIN_NAME, VERSION
+from explorer.constants import CFG_VISIBLE_LINES, DEFAULT_VISIBLE_LINES, CFG_PANEL_ENABLED, PLUGIN_NAME
 
 HISTORY_GLYPH:str = "\U0001F553" # clock face
-PANEL_SHOWN_GLYPH:str = "\U0001F648" # eye
-PANEL_HIDDEN_GLYPH:str = "\U0001F441" # see-no-evil monkey
+PANEL_SHOWN_GLYPH:str = "\U0001F648" # see-no-evil monkey -- "pause" analog while visible
+PANEL_HIDDEN_GLYPH:str = "\U0001F441" # eye -- "play" analog while hidden
 
 WIDTH_CHARS:int = 60
 LINE_HEIGHT_PX:int = 18 # approximate for the default EDMC font; tune once seen in a real window
@@ -70,29 +70,50 @@ def _sampling_distance_str(genera:list[str]) -> str:
 
     return f"{min(distances)}m" if min(distances) == max(distances) else f"{min(distances)}-{max(distances)}m"
 
-def system_status_text(system:sqlite3.Row, scanned_count:int) -> str:
-    """ "honk needed" / "N bodies -- scan complete/done" / "N of M scanned" while the FSS pass
-    is still in progress. No system name -- module-level (not a panel method) so
-    overlay_summary.py can mirror this without repeating the name it already shows elsewhere. """
-    hbc:int|None = system["honk_body_count"]
-    if hbc is None:
-        return "honk needed"
+def _next_actions(store:ExplorerStore, system_id:int) -> tuple[bool, bool]:
+    """ (needs_dss, needs_sample) for the system. """
+    needs_dss:bool = False
+    needs_sample:bool = False
+    for body in store.get_flagged_bodies_for_system(system_id):
+        if not body["mapped_at"]:
+            needs_dss = True
+            continue
+        if any(not p["completed_at"] for p in store.get_species_progress_for_body(body["id"])):
+            needs_sample = True
+    return needs_dss, needs_sample
 
-    if system["all_bodies_found"]:
-        return f"{hbc} bod{'ies' if hbc != 1 else 'y'} — scan complete"
+def system_status_text(store:ExplorerStore, system:sqlite3.Row) -> str:
+    """ No system name -- shared as-is with the overlay. """
+    if system["honk_body_count"] is None:
+        return "Honk"
 
-    if system["honk_hint"] == "worth a full scan":
-        return f"{scanned_count} of {hbc} scanned"
+    if system["honk_hint"] != "worth a full scan":
+        return "Done" # not worth a full scan -- nothing else to do here
 
-    return f"{hbc} bod{'ies' if hbc != 1 else 'y'} — done"
+    if not system["all_bodies_found"]:
+        return "FSS"
 
-def system_header_line(system:sqlite3.Row, scanned_count:int) -> str:
+    needs_dss, needs_sample = _next_actions(store, system["id"])
+    if needs_dss and needs_sample:
+        return "DSS + Sample"
+    if needs_dss:
+        return "DSS"
+    if needs_sample:
+        return "Sample"
+    return "Done"
+
+def system_header_line(store:ExplorerStore, system:sqlite3.Row) -> str:
     """ The panel's own header line -- system_status_text() prefixed with the system name. """
-    return f"{system['name']} — {system_status_text(system, scanned_count)}"
+    return f"{system['name']} — {system_status_text(store, system)}"
 
 def _bold_font() -> tkfont.Font:
     default:tkfont.Font = tkfont.nametofont("TkDefaultFont")
     return tkfont.Font(family=default.actual("family"), size=default.actual("size"), weight="bold")
+
+def flagged_body_sort_key(body:sqlite3.Row) -> bool:
+    """ Biological first, shared so panel/overlay agree. """
+    biological:bool = bool(body["has_biological_signals"] == 1 or body["flagged_exobio"] or body["has_prediction"])
+    return not biological
 
 def _body_designator(system_name:str, body_name:str) -> str:
     """ The short local part of a body's name, e.g. "Deltius B 6 c" -> "B 6 c" -- system name
@@ -120,17 +141,29 @@ class ExplorerPanel:
         # grid, not pack -- th.Base's pack() renders light/dark widget pairs twice
         header:th.Frame = th.Frame(self.frame) # always shown -- only self.scroll below hides
         header.grid(row=0, column=0, sticky=tk.EW)
-        header.columnconfigure(0, weight=1)
+        header.columnconfigure(0, weight=1) # title/cart/exo share slack, spreading them out
+        header.columnconfigure(1, weight=1)
+        header.columnconfigure(2, weight=1)
 
         self._title_font:tkfont.Font = _bold_font()
-        self.title_label:th.Label = th.Label(header, text=f"{PLUGIN_NAME} v{VERSION}", font=self._title_font, anchor="w")
+        self.title_label:th.Label = th.Label(header, text=PLUGIN_NAME, font=self._title_font, anchor="w")
         self.title_label.grid(row=0, column=0, sticky=tk.W)
 
+        self.cart_value_label:th.Label = th.Label(header, text=_credits(0), anchor="w")
+        self.cart_value_label.grid(row=0, column=1, sticky=tk.W)
+        th.Tooltip(self.cart_value_label, "Pending cartography value")
+
+        self.exo_value_label:th.Label = th.Label(header, text=_credits(0), anchor="w")
+        self.exo_value_label.grid(row=0, column=2, sticky=tk.W)
+        th.Tooltip(self.exo_value_label, "Pending exobiology value")
+
         self.history_button:th.Button = th.Button(header, text=HISTORY_GLYPH, width=3, command=self._open_history)
-        self.history_button.grid(row=0, column=1, sticky=tk.E)
+        self.history_button.grid(row=0, column=3, sticky=tk.E)
+        th.Tooltip(self.history_button, "Open history")
 
         self.toggle_button:th.Button = th.Button(header, text=self._toggle_glyph(), width=3, command=self._toggle_panel)
-        self.toggle_button.grid(row=0, column=2, sticky=tk.E)
+        self.toggle_button.grid(row=0, column=4, sticky=tk.E)
+        self._toggle_tooltip:th.Tooltip = th.Tooltip(self.toggle_button, self._toggle_tooltip_text())
 
         self.scroll:th.ScrollableFrame = th.ScrollableFrame(self.frame, maxheight=_visible_lines_px())
         self.scroll.grid(row=1, column=0, sticky=tk.EW)
@@ -151,16 +184,27 @@ class ExplorerPanel:
     def _toggle_glyph(self) -> str:
         return PANEL_SHOWN_GLYPH if self._panel_enabled else PANEL_HIDDEN_GLYPH
 
+    def _toggle_tooltip_text(self) -> str:
+        return "Hide panel" if self._panel_enabled else "Show panel"
+
     def _toggle_panel(self) -> None:
         """ Shows/hides content; collection keeps going. """
         self._panel_enabled = not self._panel_enabled
         config.set(CFG_PANEL_ENABLED, self._panel_enabled)
         self.toggle_button.configure(text=self._toggle_glyph())
+        self._toggle_tooltip.set_text(self._toggle_tooltip_text())
         if self._panel_enabled:
             self.scroll.grid(row=1, column=0, sticky=tk.EW)
             self.refresh()
         else:
             self.scroll.grid_forget()
+
+    def _update_header_totals(self) -> None:
+        cmdr_id:int|None = self.state.cmdr_id
+        cart:int = self.store.get_pending_cartography_value(cmdr_id) if cmdr_id is not None else 0
+        exo:int = self.store.get_pending_exobiology_value(cmdr_id) if cmdr_id is not None else 0
+        self.cart_value_label.configure(text=_credits(cart))
+        self.exo_value_label.configure(text=_credits(exo))
 
     def _line(self, text:str) -> None:
         self._pending.append(("line", str_truncate(text, WIDTH_CHARS)))
@@ -189,6 +233,8 @@ class ExplorerPanel:
 
     def refresh(self) -> None:
         """ Diffs _pending against _last_rendered row by row -- only rebuilds rows that changed. """
+        self._update_header_totals() # header stays live even while the rest is hidden
+
         if not self._panel_enabled:
             return # hidden -- _toggle_panel() rebuilds fully once shown again
 
@@ -216,15 +262,14 @@ class ExplorerPanel:
         self._last_rendered = self._pending
 
     def _render_system_summary(self, system:sqlite3.Row) -> None:
-        scanned_count:int = self.store.count_scanned_bodies_for_system(system["id"])
-        self._line(system_header_line(system, scanned_count))
+        self._line(system_header_line(self.store, system))
         if system["honk_body_count"] is None:
             return
 
         name:str = system["name"]
         # Current body's exobiology detail nests under its own row, not after the whole table
         anchors:tuple = ("w", "e", "e", "e", "w")
-        flagged:list[sqlite3.Row] = self.store.get_flagged_bodies_for_system(system["id"])
+        flagged:list[sqlite3.Row] = sorted(self.store.get_flagged_bodies_for_system(system["id"]), key=flagged_body_sort_key)
         pending_rows:list = []
         current_row_shown:bool = False
         for body in flagged:
@@ -344,6 +389,9 @@ class ExplorerPanel:
             return []
 
         body:sqlite3.Row|None = self.store.get_body(body_pk)
+        if body and body["has_biological_signals"] == 0:
+            return [] # confirmed zero signals beats a stale pre-Scan guess
+
         signal_count:int|None = body["biological_signal_count"] if body else None
         atmosphere_type:str = (body["atmosphere_type"] if body else None) or ""
 

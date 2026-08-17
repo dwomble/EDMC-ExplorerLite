@@ -60,7 +60,7 @@ class TestSystemSummaryOverlay:
         messages = load.summary_overlay.overlay._overlay.messages
         header = messages[f"{FRAME_PREFIX}header"]
         # No system name -- it's already shown elsewhere in the game's own UI, see system_status_text()
-        assert header[1] == "1 body — done"
+        assert header[1] == "Done"
 
         body_line = messages[f"{FRAME_PREFIX}body-0"]
         assert body_line[1].startswith("A 1")
