@@ -1244,11 +1244,11 @@ class TestPrefs:
 
     def test_header_shows_name_version_and_github_link(self, plugin:TestHarness) -> None:
         from explorer.ui import prefs as prefs_ui
-        from explorer.constants import PLUGIN_NAME, VERSION
+        from explorer.constants import PLUGIN_NAME
 
-        frame = prefs_ui.build_prefs(plugin.parent, "Testy", False)
+        frame = prefs_ui.build_prefs(plugin.parent, "Testy", False, version="1.2.3")
         labels = {c.cget("text") for c in frame.winfo_children() if "text" in c.keys()}
-        assert f"{PLUGIN_NAME} v{VERSION}" in labels
+        assert f"{PLUGIN_NAME} v1.2.3" in labels
 
         links = [c for c in frame.winfo_children() if type(c).__name__ == "HyperlinkLabel"]
         assert len(links) == 1 and links[0].cget("text") == "GitHub"

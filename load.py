@@ -6,10 +6,10 @@ import tkinter as tk
 from config import config # type: ignore
 
 from explorer.utils.debug import Debug
-from explorer.utils.updater import Updater
+from explorer.utils.updater import Updater, read_version_file
 from explorer.utils.overlay import Overlay
 
-from explorer.constants import PLUGIN_NAME, PLUGIN_VERSION, GH_OWNER, GH_PROJECT, CFG_DEV_MODE
+from explorer.constants import PLUGIN_NAME, GH_OWNER, GH_PROJECT, CFG_DEV_MODE
 from explorer.db.store import ExplorerStore
 from explorer.state import state as explorer_state
 from explorer.journal.dispatch import dispatch
@@ -29,13 +29,19 @@ summary_overlay:SystemSummaryOverlay|None = None
 history_view:HistoryView|None = None
 overlay_backend:Overlay|None = None
 
+VERSION:str = "0.0.0" # placeholder -- plugin_start3() overwrites this
+
 def plugin_start3(plugin_dir:str) -> str:
     """ Load this plugin into EDMC """
+    global VERSION
+    version = read_version_file(plugin_dir, "0.0.0")
+    VERSION = str(version)
+
     Debug(plugin_dir, config.get_bool(CFG_DEV_MODE, default=False))
 
     global updater, store, radar, overlay_backend
     updater = Updater(plugin_dir, GH_OWNER, GH_PROJECT)
-    updater.check_for_update(PLUGIN_VERSION)
+    updater.check_for_update(version)
     store = ExplorerStore()
     overlay_backend = Overlay()
     radar = RadarOverlay(overlay_backend)
@@ -64,7 +70,7 @@ def plugin_app(parent:tk.Frame) -> tk.Widget:
 def plugin_prefs(parent:tk.Widget, cmdr:str, is_beta:bool) -> tk.Widget:
     """ Return a TK Frame for adding to the EDMC settings dialog. """
     overlay_available:bool = overlay_backend is not None and overlay_backend.available
-    return prefs_ui.build_prefs(parent, cmdr, is_beta, overlay_available)
+    return prefs_ui.build_prefs(parent, cmdr, is_beta, overlay_available, VERSION)
 
 def prefs_changed(cmdr:str, is_beta:bool) -> None:
     """ Save settings. """

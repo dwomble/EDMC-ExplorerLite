@@ -826,3 +826,65 @@ behavior, or a simpler non-interactive position indicator, dropping click-drag s
 mouse-wheel scrolling already works) -- a real feature build, not a fix, and not undertaken here.
 Reverted to the original plain `ttk.Scrollbar` with no special theming -- native look, wrong
 color in dark mode, accepted as a known limitation of current Tk on macOS.
+
+## load.py + explorer/utils/updater.py -- Two PLUGINS.md compliance gaps
+
+Prompted by an explicit ask to check adherence to EDMC's own `PLUGINS.md`. Full audit found the
+plugin already compliant on lifecycle signatures, threading, config-key namespacing, logger
+naming, and its own-code import list (only `config`/`edmc_data`/`myNotebook`/`ttkHyperlinkLabel`
+used, nothing off the documented stable-API list). Two real gaps, both fixed:
+
+- **`VERSION` never reached `load.py`**: `explorer/constants.py` already defined `VERSION`
+  ("For compatability with the EDMC Plugin Registry" -- a comment written well before this
+  fix, evidently intending exactly this) but `load.py` only imported `PLUGIN_VERSION` (the
+  `semantic_version.Version` object, used by the updater), never the plain string. Fixed by
+  adding `VERSION` to `load.py`'s existing import from `explorer.constants` -- no new code,
+  just wiring an already-built piece through. PLUGINS.md's own convention is exactly this:
+  `load.VERSION`/`load.__version__` as a plain module attribute for plugin-browser tooling to
+  read via `getattr()`, not something the plugin's own code needs to call.
+
+- **`updater.py`'s HTTP calls used a bespoke User-Agent**: `'EDMC-PluginLib Updater'`, sent via
+  a raw `requests.get()` rather than the documented `timeout_session.new_session()` helper or
+  EDMC's own centrally-tracked `user_agent` string. Fixed by importing `user_agent` from
+  `config` and `new_session` from `timeout_session`, and building the header as
+  `f'{user_agent} {gh_project}-Updater'` (`_headers()`) -- keeps a distinguishing suffix (useful
+  for GitHub-side diagnostics, the same reason the old bespoke string existed) while actually
+  blending into EDMC's own tracked UA as documented, and gets `new_session()`'s built-in
+  timeout-enforcing adapter for free (the explicit `timeout=TIMEOUT` per call stays too, since
+  the test harness's own `new_session()` stub doesn't replicate that adapter).
+
+  Neither `timeout_session` nor `user_agent` existed in the test harness's vendored `config`
+  mock before this -- added `user_agent` to `tests/edmc/mocks.py`'s `_cfg_attrs` and a new,
+  deliberately minimal `tests/edmc/timeout_session.py` stub (`new_session()` just returns the
+  existing mocked `requests.Session()`, since the harness never does real socket I/O anyway --
+  no need to replicate the real module's `TimeoutAdapter` machinery for that).
+
+## explorer/utils/updater.py + load.py + constants.py -- Version read from a file, not hardcoded
+
+**Regression (in the sense of dead infrastructure, not a crash):** `.github/workflows/release.yml`
+already stamps a `version` file at the repo root on every published release -- `echo
+"${VERSION}" | sed 's/^v//' > version`, committed back to `main` -- and `Updater.install()`
+already writes the same file after an in-app auto-update. But nothing ever *read* it back:
+`explorer/constants.py`'s `PLUGIN_VERSION` was a hardcoded `semantic_version.Version.coerce
+("0.1.0-dev")`, unrelated to either writer, and easy to forget to bump by hand. (Checked: the
+repo's actual `version` file already says `0.1.0` from a real past release -- confirming this
+plumbing was live and correct on the write side the whole time, just never consumed.) Matches
+EDMC-NeutronDancer's own `load.py`, which reads the same file the same way.
+
+Added `read_version_file(plugin_dir, default)` to `updater.py` (co-located with `install()`,
+the writer of the same file/format, so the two can't drift on filename or parsing convention)
+-- returns the parsed `Version` if `<plugin_dir>/version` exists and parses, else
+`Version.coerce(default)`. `load.py` owns the result as a single `VERSION:str` global, starting
+at a `"0.0.0"` placeholder and overwritten by `plugin_start3()` -- the only place that actually
+knows `plugin_dir` -- via a local `version = read_version_file(plugin_dir, "0.0.0")`, which also
+feeds `updater.check_for_update(version)` directly (no second copy needed there).
+
+First pass at this kept a second, mirrored copy in `explorer/constants.py` (`DEFAULT_VERSION`
+plus placeholder `PLUGIN_VERSION`/`VERSION` attributes), reasoning that `explorer/ui/prefs.py`'s
+settings-dialog header needed a copy too. Simplified twice over: `load.py` is the one place
+that resolves the version, so it's the one place that holds it -- no mirrored constant in
+`constants.py` to drift out of sync. And rather than having `prefs.py`'s `build_prefs()` reach
+back into `load.py` for it (even a lazy, load-time-safe import), `build_prefs()` just takes
+`version:str = "0.0.0"` as a parameter -- `load.py`'s `plugin_prefs()` (the only real caller)
+passes its own `VERSION` straight through. `prefs.py` stays a pure function of its arguments,
+with no knowledge of `load.py` at all, importable and testable in complete isolation.

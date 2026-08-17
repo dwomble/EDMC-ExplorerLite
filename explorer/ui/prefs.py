@@ -9,7 +9,7 @@ from ttkHyperlinkLabel import HyperlinkLabel # type: ignore
 from config import config # type: ignore
 
 from explorer.constants import (
-    PLUGIN_NAME, VERSION, GH_OWNER, GH_PROJECT,
+    PLUGIN_NAME, GH_OWNER, GH_PROJECT,
     CFG_SCAN_VALUE_THRESHOLD, DEFAULT_SCAN_VALUE_THRESHOLD,
     CFG_EXOBIO_VALUE_THRESHOLD, DEFAULT_EXOBIO_VALUE_THRESHOLD,
     CFG_OVERLAY_RADAR_ENABLED, CFG_OVERLAY_SUMMARY_ENABLED, CFG_DEV_MODE,
@@ -98,7 +98,7 @@ def _build_section(frame:nb.Frame, section_prefs:list[Pref], row:int, enabled:bo
 
     return row + 1 if col != 0 else row
 
-def build_prefs(parent:tk.Widget, cmdr:str, is_beta:bool, overlay_available:bool = True) -> tk.Widget:
+def build_prefs(parent:tk.Widget, cmdr:str, is_beta:bool, overlay_available:bool = True, version:str = "0.0.0") -> tk.Widget:
     global _pref_vars
     _pref_vars = {}
 
@@ -107,7 +107,7 @@ def build_prefs(parent:tk.Widget, cmdr:str, is_beta:bool, overlay_available:bool
     bold:tkfont.Font = _bold_font()
 
     row:int = 0
-    nb.Label(frame, text=f"{PLUGIN_NAME} v{VERSION}", font=bold).grid(row=row, column=0, columnspan=3, sticky=tk.W)
+    nb.Label(frame, text=f"{PLUGIN_NAME} v{version}", font=bold).grid(row=row, column=0, columnspan=3, sticky=tk.W)
     HyperlinkLabel(frame, text="GitHub", url=GH_URL, underline=True).grid(row=row, column=3, sticky=tk.E)
     row += 1
     ttk.Separator(frame).grid(row=row, column=0, columnspan=4, sticky=tk.EW, pady=6)
