@@ -9,6 +9,15 @@ from explorer import session_persist
 def _persist(state:ExplorerState) -> None:
     session_persist.save(state.cmdr, state.system_address, state.system_name, state.body_id, state.body_name)
 
+def _restore_sample_positions(store:ExplorerStore, state:ExplorerState) -> None:
+    """ Reloads this visit's radar samples on restart. """
+    if state.cmdr_id is None or state.system_id is None or state.body_id is None:
+        return
+    body_pk:int = store.get_or_create_body(state.cmdr_id, state.system_id, state.body_id, state.body_name)
+    for row in store.get_sample_positions_for_body(body_pk):
+        state.sample_positions.setdefault(row["genus"], []).append((row["latitude"], row["longitude"], None))
+        state.current_genus = row["genus"] # last row wins, insertion-ordered
+
 def restore_last_session(store:ExplorerStore, state:ExplorerState) -> None:
     """ Called once at plugin startup, before any journal event arrives, so the panel doesn't
     sit at "Explorer -- idle" until the next live event. enter_system()'s cold-start check
@@ -62,6 +71,7 @@ def enter_system(store:ExplorerStore, state:ExplorerState, edmc_state:dict) -> d
     if saved and saved.get("cmdr") == state.cmdr and saved.get("system_address") == system_address:
         state.body_id = saved.get("body_id")
         state.body_name = saved.get("body_name") or ""
+        _restore_sample_positions(store, state)
 
     _persist(state)
     return {"panel": True}

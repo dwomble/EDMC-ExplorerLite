@@ -749,3 +749,81 @@ their other gates -- no separate logic per overlay, so the two surfaces can't dr
 regardless of ship or on-foot, since any focused panel implies the overlay is covered either way
 -- simpler than trying to enumerate "only these panels count," and Status.json's `GuiFocus` is
 already the single source of truth for "is a panel focused right now."
+
+## explorer/db/schema.py + store.py + handlers -- Radar samples survive an EDMC restart
+
+**Regression:** a user restarted EDMC mid-visit (game still running) and the radar had lost
+track of the samples/waypoints they'd already logged for the body they were standing on. Two
+things resume today across a restart: `session_persist.py`'s 5-field JSON snapshot (cmdr/system/
+body) and everything already written to `db/store.py` (species progress, values, etc.) --
+`enter_system()`'s cold-start check already resumes `body_id` correctly. But `state.py`'s
+`sample_positions` (the radar's per-sample lat/lon markers) and `current_genus` (which ring is
+active) are explicitly session-only, populated purely from live journal events
+(`ScanOrganic`/`CodexEntry`) that EDMC never replays to a plugin on restart -- so even though
+`body_id` came back, the markers and active ring stayed empty.
+
+Added a new `sample_positions` table (`body_id, genus, latitude, longitude` -- real samples
+only, not codex-tagged waypoints, since those get filtered/discarded by proximity logic in
+`handlers_exobiology.py` that would need syncing against DB rows too; out of scope for this
+fix). `on_scan_organic()` writes a row via `store.add_sample_position()` alongside its existing
+`state.sample_positions` append, for every real sample (`SAMPLE_SCAN_TYPES`, not `Analyse`). A
+new `handlers_context._restore_sample_positions()` reloads all rows for the resumed body into
+`state.sample_positions`/`current_genus` (last row wins for `current_genus`, since rows are
+insertion-ordered) -- called from `enter_system()`'s existing cold-start resume branch, right
+where `body_id` itself gets restored, not from `restore_last_session()` -- that call always runs
+before the real `Location`/`FSDJump` event, and `enter_system()` unconditionally calls
+`reset_body()` first thing, which would just wipe out an earlier restore anyway.
+
+## explorer/db/store.py + ui/history_view.py -- History popup no longer grows forever
+
+Every system ever visited stayed in the history tree permanently -- fine early on, but a long
+career would eventually make the popup (and the query building it) unbounded. Three
+independent measures, all in `get_history_tree(cmdr_id, unsold_only=False, since=None)`:
+
+- **Hard cap**: `MAX_HISTORY_SYSTEMS = 1000`, applied as `LIMIT` on the already-`ORDER BY
+  visited_at DESC` systems query -- keeps only the N most recent regardless of any other
+  filter, a backstop rather than something the user tunes.
+- **`since`**: an ISO cutoff on `visited_at`, driving the popup's new time-range dropdown
+  ("All time"/"Last day"/"Last week"/"Last month" -- `TIME_RANGES` in `history_view.py`).
+- **`unsold_only`**: drops a system only when BOTH cartography and exobio have nothing left
+  pending -- cartography via `system["sold_at"]`/`lost_at` (only meaningful if there was ever
+  any `cart_est` to begin with, so an empty system isn't kept just because it's technically
+  "unsold"), exobio via every `species_progress` row being `sold` or `lost_at`. Either one still
+  pending keeps the whole system listed, since the two are sold independently in-game.
+
+The popup gained a filter row (checkbox + dropdown) sharing the same line as the credit summary
+label -- filters packed `side=tk.LEFT`, summary label `side=tk.RIGHT`, per explicit layout
+request. Both filters persist via config (`CFG_HISTORY_UNSOLD_ONLY`, default **on**;
+`CFG_HISTORY_TIME_RANGE`, default "All time"), read into `tk.BooleanVar`/`tk.StringVar` at
+`open()` and written back on change (`_on_filter_changed()`, which also calls `refresh()`
+immediately -- no separate "Apply" step). The store method's own defaults
+(`unsold_only=False, since=None`) stay unfiltered, so every existing direct caller/test of
+`get_history_tree()` is unaffected -- only the UI opts into the new defaults explicitly.
+
+## explorer/utils/th/scrollableframe.py -- Scrollbar now follows dark mode
+
+**Regression:** the panel's scrollbar stayed light-colored in EDMC's dark mode. Root cause:
+it was a `ttk.Scrollbar`, and EDMC's own `theme.py` docstring says outright it can't theme ttk
+widgets ("Because of various ttk limitations... have to change colors manually") -- its
+`_update_widget()` only sets plain-tk widget options (`foreground`/`background`/etc.), which
+`ttk.Scrollbar` doesn't expose the same way. Worse, on macOS/Windows the native ttk theme
+engines (aqua/vista) largely ignore `ttk.Style().configure()` color overrides for Scrollbar
+specifically -- a real, well-known Tk limitation, not something fixable by registering it
+differently. No other plugin in this ecosystem themes a ttk.Scrollbar either (checked
+BGS-Tally, EDMC-Mining-Analytics) -- this was a real gap, not a missed one-line fix.
+
+Switched to a plain `tk.Scrollbar` instead -- a classic Tk widget with real, settable
+`background`/`troughcolor`/`activebackground` options, same as every other `th.*` widget.
+`theme.register()` already covers `background` for free (matches `Canvas`/`Frame`'s existing
+treatment, since `tk.Scrollbar` has a `background` key but no `foreground` one, landing in
+`_update_widget()`'s Frame/Canvas fallback branch). `troughcolor`/`activebackground` aren't
+touched by EDMC's generic logic, so a new `_theme_scrollbar()` sets those by hand from
+`theme.current`, called once at construction and again every `_apply_resize()` (which already
+runs on essentially every content change) -- riding on an existing hook rather than adding a
+new theme-change event plumbed in through `load.py`/`prefs_changed()`. Guards with
+`getattr(theme, 'current', None)` since the test harness's `MockTheme` stub has no `.current`
+at all (only real EDMC's `theme.py` does).
+
+This file is a vendored copy of EDMC-PluginLib's `utils/th/scrollableframe.py` -- the same bug
+almost certainly exists upstream too, but fixing PluginLib itself is a separate repo/decision,
+not folded into this change.

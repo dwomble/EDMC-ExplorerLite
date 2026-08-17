@@ -81,6 +81,7 @@ def on_scan_organic(store:ExplorerStore, state:ExplorerState, entry:dict) -> dic
         state.current_genus = genus # the radar's one active ring belongs to whichever genus you're actually sampling
         if state.has_lat_long and state.latitude is not None and state.longitude is not None:
             state.sample_positions.setdefault(genus, []).append((state.latitude, state.longitude, None)) # None -- a real sample, not a color-coded tag
+            store.add_sample_position(body_pk, genus, state.latitude, state.longitude) # survives an EDMC restart, unlike state.py alone
             _discard_tags_within_min_distance(state, genus, state.latitude, state.longitude)
     elif scan_type == "Analyse" and (not row or not row["completed_at"]):
         fields["completed_at"] = now

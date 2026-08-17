@@ -134,3 +134,31 @@ class TestEnterSystemResume:
         handlers_context.enter_system(store, state, {"SystemAddress": 123, "SystemName": "Deltius"})
 
         assert state.body_id is None
+
+    def test_resumes_radar_samples_alongside_the_body(self, store:ExplorerStore) -> None:
+        """ Regression: body_id resumed, radar markers didn't. """
+        prior = self._cold_state(store)
+        handlers_context.enter_system(store, prior, {"SystemAddress": 123, "SystemName": "Deltius"})
+        handlers_context.on_approach_body(store, prior, {"BodyID": 5, "Body": "Deltius 5"})
+        assert prior.system_id is not None and prior.cmdr_id is not None
+        body_pk:int = store.get_or_create_body(prior.cmdr_id, prior.system_id, 5, "Deltius 5")
+        store.add_sample_position(body_pk, "Bacterium", 10.0, 20.0)
+        store.add_sample_position(body_pk, "Bacterium", 10.001, 20.0)
+
+        resumed = self._cold_state(store)
+        handlers_context.enter_system(store, resumed, {"SystemAddress": 123, "SystemName": "Deltius"})
+
+        assert resumed.sample_positions["Bacterium"] == [(10.0, 20.0, None), (10.001, 20.0, None)]
+        assert resumed.current_genus == "Bacterium"
+
+    def test_does_not_resume_radar_samples_on_a_normal_jump(self, store:ExplorerStore) -> None:
+        state = self._cold_state(store)
+        handlers_context.enter_system(store, state, {"SystemAddress": 123, "SystemName": "Deltius"})
+        handlers_context.on_approach_body(store, state, {"BodyID": 5, "Body": "Deltius 5"})
+        assert state.system_id is not None and state.cmdr_id is not None
+        body_pk:int = store.get_or_create_body(state.cmdr_id, state.system_id, 5, "Deltius 5")
+        store.add_sample_position(body_pk, "Bacterium", 10.0, 20.0)
+
+        handlers_context.enter_system(store, state, {"SystemAddress": 123, "SystemName": "Deltius"}) # not a cold start
+
+        assert state.sample_positions == {}

@@ -44,7 +44,7 @@ Two independently toggleable overlay elements:
 
 - **System summary** — mirrors the panel's own header and flagged-body list (same columns: distance, gravity, type, value), capped to a handful of lines (with a "+N more" overflow) so it stays glanceable. The body you're currently standing on gets its own indented species-progress detail underneath. Text colour is configurable. Background, border and position are configurable via Modern Overlay's overlay controller.
 
-- **Radar** — centered on you, shows distance rings, a highlighted ring at the current genus's minimum sample distance, a marker for each logged sample (filled = in range, hollow = out of range), and a hollow triangle for any codex-tagged waypoint, colored by variant. Rotates with your heading. Radar size is configurable.
+- **Radar** — centered on you, shows distance rings, a highlighted ring at the current genus's minimum sample distance, a marker for each logged sample (filled = in range, hollow = out of range), and a hollow triangle for any codex-tagged waypoint, colored by variant. Rotates with your heading. Radar size is configurable. Logged samples survive an EDMC-only restart (game still running) — they reload from the database rather than being lost.
 
 ## Panel header
 
@@ -55,7 +55,7 @@ The top row of the panel is always visible — the plugin name on the left, your
 
 ## History
 
-Click 🕓 on the panel to open a System → Body → Species browser (per Cmdr), showing status, date, and both estimated and actual value for cartography (`Cart. Est.`/`Cart. Actual`) and exobiology (`Exo. Base`/`Exo. Full`). A running totals line at the top shows sold vs. still-pending credits for both categories. Window size/position is remembered across sessions.
+Click 🕓 on the panel to open a System → Body → Species browser (per Cmdr), showing status, date, and both estimated and actual value for cartography (`Cart. Est.`/`Cart. Actual`) and exobiology (`Exo. Base`/`Exo. Full`). A running totals line at the top shows sold vs. still-pending credits for both categories, alongside an "Unsold only" checkbox (on by default) and a time-range dropdown (All time/Last day/Last week/Last month) so a long career's history stays manageable — both choices are remembered across sessions, as is window size/position. The underlying query is also capped to the 1,000 most recently visited systems.
 
 Actual sold values always come straight from the ED journal — ground truth, never a formula. Estimates exist purely to flag what's worth your time before you sell.
 

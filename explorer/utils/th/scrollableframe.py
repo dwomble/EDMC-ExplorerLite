@@ -5,7 +5,6 @@ The scrollbar only appears once packed/gridded content in `.interior` exceeds `m
 pixels; while content fits, the widget looks and behaves like a plain frame.
 """
 import tkinter as tk
-from tkinter import ttk
 
 from theme import theme # type: ignore
 
@@ -33,7 +32,10 @@ class ScrollableFrame(tk.Frame):
         theme.register(self._canvas)
         self._canvas.grid(row=0, column=0, sticky="nsew")
 
-        self._scrollbar = ttk.Scrollbar(self, orient=tk.VERTICAL, command=self._canvas.yview)
+        # Plain tk -- ttk.Scrollbar can't recolor on mac/Windows.
+        self._scrollbar = tk.Scrollbar(self, orient=tk.VERTICAL, command=self._canvas.yview)
+        theme.register(self._scrollbar)
+        self._theme_scrollbar()
         self._canvas.configure(yscrollcommand=self._scrollbar.set)
         # Not gridded yet -- shown/hidden by _update_scrollbar_visibility() as content changes.
 
@@ -54,11 +56,19 @@ class ScrollableFrame(tk.Frame):
         self._resize_pending = True
         self.after_idle(self._apply_resize)
 
+    def _theme_scrollbar(self) -> None:
+        """ theme.register() misses trough/active colors. """
+        current:dict|None = getattr(theme, 'current', None) # test harness's mock lacks this
+        if not current:
+            return
+        self._scrollbar.configure(troughcolor=current['background'], activebackground=current['highlight'])
+
     def _apply_resize(self) -> None:
         self._resize_pending = False
         if not self._canvas.winfo_exists():
             return
 
+        self._theme_scrollbar()
         for child in self.interior.winfo_children():
             theme.update(child) # colors it if the theme is already known...
             theme.register(child) # ...and covers it for a later apply() if not

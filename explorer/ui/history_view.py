@@ -5,6 +5,7 @@ for a multi-column tree. """
 import tkinter as tk
 from tkinter import ttk
 import sqlite3
+from datetime import datetime, timedelta, timezone
 from typing import Literal
 
 from config import config # type: ignore
@@ -14,13 +15,20 @@ from explorer.utils.misc import hfplus
 
 from explorer.db.store import ExplorerStore
 from explorer.state import ExplorerState
-from explorer.constants import CFG_HISTORY_WINDOW_GEOMETRY
+from explorer.constants import CFG_HISTORY_WINDOW_GEOMETRY, CFG_HISTORY_UNSOLD_ONLY, CFG_HISTORY_TIME_RANGE, DEFAULT_HISTORY_TIME_RANGE
+
+# Label -> days back; None = no cutoff; also dropdown order
+TIME_RANGES:dict[str, int|None] = {"All time": None, "Last day": 1, "Last week": 7, "Last month": 30}
 
 def _credits(value:int|None) -> str:
     return hfplus((value, 'num', '-', ''))
 
 def _date_str(iso:str) -> str:
     return iso[:10] if iso else ""
+
+def _since_cutoff(range_label:str) -> str|None:
+    days:int|None = TIME_RANGES.get(range_label)
+    return (datetime.now(timezone.utc) - timedelta(days=days)).isoformat() if days is not None else None
 
 # (column, heading, anchor, width, stretch, sort_by) -- date sorts as plain text ("name"), not
 # TreeviewPlus's "datetime" helper, since _date_str's ISO YYYY-MM-DD format already sorts
@@ -43,6 +51,8 @@ class HistoryView:
         self.store:ExplorerStore = store
         self.state:ExplorerState = state
         self.window:tk.Toplevel|None = None
+        self.unsold_only_var:tk.BooleanVar|None = None
+        self.time_range_var:tk.StringVar|None = None
         self.summary_label:tk.Label|None = None
         self.tree:TreeviewPlus|None = None
 
@@ -62,8 +72,22 @@ class HistoryView:
         content:tk.Frame = tk.Frame(self.window) # type: ignore[arg-type] -- a Toplevel is a valid Tk master even though th.Frame's hint says tk.Widget
         content.pack(fill=tk.BOTH, expand=True)
 
-        self.summary_label = tk.Label(content, text="", justify=tk.LEFT)
-        self.summary_label.pack(fill=tk.X, padx=4, pady=4)
+        filter_row:tk.Frame = tk.Frame(content)
+        filter_row.pack(fill=tk.X, padx=4, pady=4)
+
+        self.unsold_only_var = tk.BooleanVar(value=config.get_bool(CFG_HISTORY_UNSOLD_ONLY, default=True))
+        unsold_check:tk.Checkbutton = tk.Checkbutton(filter_row, text="Unsold only", variable=self.unsold_only_var, command=self._on_filter_changed)
+        unsold_check.pack(side=tk.LEFT)
+
+        self.time_range_var = tk.StringVar(value=config.get_str(CFG_HISTORY_TIME_RANGE, default=DEFAULT_HISTORY_TIME_RANGE))
+        time_range_menu:ttk.Combobox = ttk.Combobox(
+            filter_row, textvariable=self.time_range_var, values=list(TIME_RANGES), state="readonly", width=10,
+        )
+        time_range_menu.pack(side=tk.LEFT, padx=(8, 0))
+        time_range_menu.bind("<<ComboboxSelected>>", lambda event: self._on_filter_changed())
+
+        self.summary_label = tk.Label(filter_row, text="", justify=tk.RIGHT)
+        self.summary_label.pack(side=tk.RIGHT)
 
         tree_frame:tk.Frame = tk.Frame(content)
         tree_frame.pack(fill=tk.BOTH, expand=True, padx=4, pady=4)
@@ -89,13 +113,22 @@ class HistoryView:
             config.set(CFG_HISTORY_WINDOW_GEOMETRY, self.window.geometry())
             self.window.destroy()
         self.window = None
+        self.unsold_only_var = None
+        self.time_range_var = None
         self.summary_label = None
         self.tree = None
+
+    def _on_filter_changed(self) -> None:
+        assert self.unsold_only_var is not None and self.time_range_var is not None
+        config.set(CFG_HISTORY_UNSOLD_ONLY, self.unsold_only_var.get())
+        config.set(CFG_HISTORY_TIME_RANGE, self.time_range_var.get())
+        self.refresh()
 
     def refresh(self) -> None:
         if self.window is None or not self.window.winfo_exists():
             return
         assert self.summary_label is not None and self.tree is not None
+        assert self.unsold_only_var is not None and self.time_range_var is not None
 
         if self.state.cmdr_id is None:
             self.summary_label.configure(text="No Cmdr yet")
@@ -116,7 +149,9 @@ class HistoryView:
         for item in self.tree.get_children():
             self.tree.delete(item)
 
-        for system in self.store.get_history_tree(self.state.cmdr_id):
+        unsold_only:bool = self.unsold_only_var.get()
+        since:str|None = _since_cutoff(self.time_range_var.get())
+        for system in self.store.get_history_tree(self.state.cmdr_id, unsold_only=unsold_only, since=since):
             system_iid:str = self.tree.insert("", "end", text=system["name"], values=self._row_values(system))
             for body in system["children"]:
                 body_iid:str = self.tree.insert(system_iid, "end", text=body["name"], values=self._row_values(body))

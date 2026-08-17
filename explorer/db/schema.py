@@ -7,7 +7,7 @@ implementation plan for the rationale behind each table.
 """
 import sqlite3
 
-SCHEMA_VERSION = 8
+SCHEMA_VERSION = 9
 
 DDL = """
 CREATE TABLE IF NOT EXISTS schema_meta (
@@ -116,6 +116,15 @@ CREATE TABLE IF NOT EXISTS genus_predictions (
     species TEXT, -- NULL = genus-only guess (no species-level ruleset data for this genus)
     confidence REAL NOT NULL,
     UNIQUE(body_id, genus, species)
+);
+
+-- Real samples only -- radar marker restart recovery.
+CREATE TABLE IF NOT EXISTS sample_positions (
+    id INTEGER PRIMARY KEY,
+    body_id INTEGER NOT NULL REFERENCES bodies(id),
+    genus TEXT NOT NULL,
+    latitude REAL NOT NULL,
+    longitude REAL NOT NULL
 );
 """
 

@@ -89,6 +89,27 @@ class TestOnScanOrganic:
         assert len(positions) == 1 # the tag is gone -- only the new real sample remains
         assert positions[0] == (10.0, 20.0, None)
 
+    def test_persists_the_sample_position_to_the_db(self, store:ExplorerStore) -> None:
+        """ Survives an EDMC restart, unlike state.py alone. """
+        state = ExplorerState()
+        state.cmdr_id = store.get_or_create_cmdr("Testy")
+        state.system_id = store.get_or_create_system(state.cmdr_id, 1, "Deltius")
+        state.body_id = 1
+        state.body_name = "Deltius 1"
+        state.has_lat_long = True
+        state.latitude = 10.0
+        state.longitude = 20.0
+
+        handlers_exobiology.on_scan_organic(store, state, {
+            "event": "ScanOrganic", "ScanType": "Log", "Body": 1, "Genus_Localised": "Bacterium",
+        })
+
+        body_pk:int = store.get_or_create_body(state.cmdr_id, state.system_id, 1, "Deltius 1")
+        rows = store.get_sample_positions_for_body(body_pk)
+        assert len(rows) == 1
+        assert rows[0]["genus"] == "Bacterium"
+        assert rows[0]["latitude"] == 10.0 and rows[0]["longitude"] == 20.0
+
     def test_real_sample_keeps_an_existing_tag_that_is_still_far_enough(self, store:ExplorerStore) -> None:
         state = ExplorerState()
         state.cmdr_id = store.get_or_create_cmdr("Testy")

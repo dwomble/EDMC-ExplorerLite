@@ -21,6 +21,11 @@ def _species_status(row:sqlite3.Row) -> str:
         return "done"
     return f"{row['samples_taken']}/3"
 
+def _species_pending(row:sqlite3.Row) -> bool:
+    return not row["sold"] and not row["lost_at"]
+
+MAX_HISTORY_SYSTEMS:int = 1000 # hard cap -- keeps a long career's query bounded
+
 def resolve_db_path() -> Path:
     """ Under config.app_dir_path, not plugin_dir -- a manual reinstall wipes plugin_dir outright. """
     directory:Path = Path(config.app_dir_path) / GH_PROJECT
@@ -199,6 +204,20 @@ class ExplorerStore:
             "SELECT * FROM genus_predictions WHERE body_id = ? ORDER BY confidence DESC", (body_pk,)
         ).fetchall()
 
+    # -- Sample positions (radar restart recovery) --
+
+    def add_sample_position(self, body_pk:int, genus:str, latitude:float, longitude:float) -> None:
+        self.conn.execute(
+            "INSERT INTO sample_positions (body_id, genus, latitude, longitude) VALUES (?, ?, ?, ?)",
+            (body_pk, genus, latitude, longitude),
+        )
+        self.conn.commit()
+
+    def get_sample_positions_for_body(self, body_pk:int) -> list[sqlite3.Row]:
+        return self.conn.execute(
+            "SELECT * FROM sample_positions WHERE body_id = ? ORDER BY id", (body_pk,)
+        ).fetchall()
+
     # -- Body genuses (pre/post-DSS biological signal genus hints) --
 
     def upsert_body_genus(self, body_pk:int, genus:str, signal_count:int|None, revealed_by:str) -> None:
@@ -272,15 +291,24 @@ class ExplorerStore:
 
     # -- Sales (ground truth) --
 
-    def get_history_tree(self, cmdr_id:int) -> list[dict]:
-        """ Nested System -> Body -> Species structure for the history view. Cartography actual
-        isn't attributable per-system/body (only the cmdr-level total from record_sale is real)
-        -- always 0 here; cart_est is bonus-adjusted for known discovery/mapped eligibility.
-        Exobiology tracks Base (the value that counts toward ED's own progression -- never
-        includes the first-logged bonus) and Full (the real payout: sold_value once sold, else
-        Base with the bonus projected in). """
-        # DESC -- most recently visited system first, matching a "history" log's natural order
-        systems:list[sqlite3.Row] = self.conn.execute("SELECT * FROM systems WHERE cmdr_id = ? ORDER BY visited_at DESC", (cmdr_id,)).fetchall()
+    def get_history_tree(self, cmdr_id:int, unsold_only:bool = False, since:str|None = None) -> list[dict]:
+        """ Nested System -> Body -> Species tree for history.
+        Cartography actual isn't attributable per-body, always 0;
+        cart_est adjusts for discovery/mapped eligibility.
+        Exobio Base excludes the first-logged bonus; Full is the
+        real payout (sold_value once sold, else Base + bonus).
+        `since` (ISO ts) filters to systems visited on/after it.
+        `unsold_only` drops systems already fully sold/lost --
+        both cartography and every species. """
+        # DESC + LIMIT -- most recent first, capped to stay bounded
+        query:str = "SELECT * FROM systems WHERE cmdr_id = ?"
+        params:list = [cmdr_id]
+        if since is not None:
+            query += " AND visited_at >= ?"
+            params.append(since)
+        query += " ORDER BY visited_at DESC LIMIT ?"
+        params.append(MAX_HISTORY_SYSTEMS)
+        systems:list[sqlite3.Row] = self.conn.execute(query, params).fetchall()
 
         tree:list[dict] = []
         for system in systems:
@@ -290,8 +318,11 @@ class ExplorerStore:
             system_cart_est:int = 0
             system_exo_base:int = 0
             system_exo_full:int = 0
+            exobio_pending:bool = False
             for body in bodies:
                 was_footfalled:bool = bool(body["was_footfalled"])
+                progress_rows:list[sqlite3.Row] = self.get_species_progress_for_body(body["id"])
+                exobio_pending = exobio_pending or any(_species_pending(row) for row in progress_rows)
                 species_nodes:list[dict] = [
                     {
                         "name": row["species"] or f"{row['genus']} sp.",
@@ -302,7 +333,7 @@ class ExplorerStore:
                         "exo_base": row["confirmed_value"] or 0,
                         "exo_full": row["sold_value"] if row["sold"] else exobiology.with_first_logged_bonus(row["confirmed_value"] or 0, was_footfalled),
                     }
-                    for row in self.get_species_progress_for_body(body["id"])
+                    for row in progress_rows
                 ]
                 scan_full:int = cartography.scan_value_with_bonus(body["estimated_scan_value"] or 0, bool(body["was_discovered"]))
                 mapping_full:int = cartography.mapping_value_for_eligibility(body["estimated_mapping_value"] or 0, bool(body["was_mapped"]))
@@ -323,6 +354,10 @@ class ExplorerStore:
                     "exo_full": body_exo_full,
                     "children": species_nodes,
                 })
+
+            cart_pending:bool = system_cart_est > 0 and not system["sold_at"] and not system["lost_at"]
+            if unsold_only and not cart_pending and not exobio_pending:
+                continue
 
             tree.append({
                 "name": system["name"],

@@ -103,6 +103,65 @@ class TestHistoryTreeQuery:
         tree = store.get_history_tree(cmdr_id)
         assert [system["name"] for system in tree] == ["Second", "Third", "First"]
 
+class TestUnsoldOnlyAndLimits:
+    """ get_history_tree()'s unsold_only/since/limit filters --
+    keeps a long career's popup from growing unbounded. """
+
+    def test_unsold_only_hides_a_fully_settled_system(self, store:ExplorerStore) -> None:
+        cmdr_id:int = store.get_or_create_cmdr("Testy")
+        system_id:int = store.get_or_create_system(cmdr_id, 1, "Deltius")
+        store.update_system(system_id, sold_at="2026-01-01T00:00:00Z")
+        body_pk:int = store.get_or_create_body(cmdr_id, system_id, 1, "Deltius 1")
+        progress_id:int = store.get_or_create_species_progress(body_pk, "Bacterium")
+        store.update_species_progress(progress_id, sold=1, sold_value=1_000_000)
+
+        assert store.get_history_tree(cmdr_id, unsold_only=True) == []
+        assert len(store.get_history_tree(cmdr_id, unsold_only=False)) == 1
+
+    def test_unsold_only_keeps_a_system_with_pending_cartography(self, store:ExplorerStore) -> None:
+        cmdr_id:int = store.get_or_create_cmdr("Testy")
+        system_id:int = store.get_or_create_system(cmdr_id, 1, "Deltius")
+        body_pk:int = store.get_or_create_body(cmdr_id, system_id, 1, "Deltius 1")
+        store.update_body(body_pk, estimated_scan_value=1_000_000, was_discovered=1)
+
+        assert len(store.get_history_tree(cmdr_id, unsold_only=True)) == 1
+
+    def test_unsold_only_keeps_a_system_with_an_unsold_species(self, store:ExplorerStore) -> None:
+        """ Cartography and exobio are independent -- either one
+        still pending keeps the system listed. """
+        cmdr_id:int = store.get_or_create_cmdr("Testy")
+        system_id:int = store.get_or_create_system(cmdr_id, 1, "Deltius")
+        store.update_system(system_id, sold_at="2026-01-01T00:00:00Z")
+        body_pk:int = store.get_or_create_body(cmdr_id, system_id, 1, "Deltius 1")
+        store.get_or_create_species_progress(body_pk, "Bacterium") # untouched -- not sold or lost
+
+        assert len(store.get_history_tree(cmdr_id, unsold_only=True)) == 1
+
+    def test_since_filters_by_visited_at(self, store:ExplorerStore) -> None:
+        cmdr_id:int = store.get_or_create_cmdr("Testy")
+        old_id:int = store.get_or_create_system(cmdr_id, 1, "Old")
+        store.update_system(old_id, visited_at="2026-01-01T00:00:00")
+        recent_id:int = store.get_or_create_system(cmdr_id, 2, "Recent")
+        store.update_system(recent_id, visited_at="2026-06-01T00:00:00")
+
+        tree = store.get_history_tree(cmdr_id, since="2026-03-01T00:00:00")
+
+        assert [system["name"] for system in tree] == ["Recent"]
+
+    def test_hard_limit_caps_the_systems_returned(self, store:ExplorerStore, monkeypatch) -> None:
+        import explorer.db.store as store_module
+        monkeypatch.setattr(store_module, "MAX_HISTORY_SYSTEMS", 3)
+
+        cmdr_id:int = store.get_or_create_cmdr("Testy")
+        for i in range(5):
+            system_id:int = store.get_or_create_system(cmdr_id, i, f"System{i}")
+            store.update_system(system_id, visited_at=f"2026-01-0{i + 1}T00:00:00")
+
+        tree = store.get_history_tree(cmdr_id)
+
+        assert len(tree) == 3
+        assert [system["name"] for system in tree] == ["System4", "System3", "System2"] # most recent 3
+
 class TestHistoryViewPopup:
 
     def test_open_populates_tree_and_summary(self, plugin:TestHarness) -> None:
@@ -112,6 +171,9 @@ class TestHistoryViewPopup:
         import load
         assert load.history_view is not None
         load.history_view.open()
+        assert load.history_view.unsold_only_var is not None
+        load.history_view.unsold_only_var.set(False) # this fixture's system is fully sold
+        load.history_view.refresh()
 
         assert load.history_view.window is not None
         assert load.history_view.window.winfo_exists()
@@ -127,6 +189,40 @@ class TestHistoryViewPopup:
         # Status is title-cased for display ("Sold" not "sold").
         system_values = load.history_view.tree.item(systems[0], "values")
         assert system_values[0] == "Sold"
+
+        load.history_view._on_close()
+
+    def test_unsold_only_defaults_to_checked_and_hides_a_sold_system(self, plugin:TestHarness) -> None:
+        plugin.load_events("explorer_events.json")
+        plugin.play_sequence("full_walkthrough", 0.02) # this fixture's system ends up fully sold
+
+        import load
+        assert load.history_view is not None
+        load.history_view.open()
+
+        assert load.history_view.unsold_only_var is not None
+        assert load.history_view.unsold_only_var.get() is True
+        assert load.history_view.tree is not None
+        assert load.history_view.tree.get_children() == ()
+
+        load.history_view._on_close()
+
+    def test_toggling_unsold_only_persists_and_refreshes(self, plugin:TestHarness) -> None:
+        from explorer.constants import CFG_HISTORY_UNSOLD_ONLY
+
+        plugin.load_events("explorer_events.json")
+        plugin.play_sequence("full_walkthrough", 0.02)
+
+        import load
+        assert load.history_view is not None
+        load.history_view.open()
+        assert load.history_view.unsold_only_var is not None and load.history_view.tree is not None
+
+        load.history_view.unsold_only_var.set(False)
+        load.history_view._on_filter_changed()
+
+        assert plugin.config.get_bool(CFG_HISTORY_UNSOLD_ONLY, default=True) is False
+        assert len(load.history_view.tree.get_children()) == 1
 
         load.history_view._on_close()
 
@@ -157,7 +253,9 @@ class TestHistoryViewPopup:
 
         assert load.history_view is not None
         load.history_view.open()
-        assert load.history_view.tree is not None
+        assert load.history_view.unsold_only_var is not None and load.history_view.tree is not None
+        load.history_view.unsold_only_var.set(False) # need the sold rows on-screen too
+        load.history_view.refresh()
 
         load.history_view.tree._sort_by_name("date", False) # must not raise despite a blank date among the rows
 
