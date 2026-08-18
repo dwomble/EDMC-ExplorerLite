@@ -542,14 +542,11 @@ class ExplorerPanel:
         return value_range if value_range else (0, 0)
 
     def _predicted_genus_row(self, slot:dict, confirmed_signal:bool, was_footfalled:bool) -> tuple[str, str, str]:
-        """ '?' only when the signal itself is unconfirmed; '~' only when a value range remains.
-        Value shown is Full (bonus-included), matching _flagged_body_row/_exobio_progress_row. """
+        """ Value shown is Full (bonus-included), matching _flagged_body_row/_exobio_progress_row. """
         prefix:str = "" if confirmed_signal else "?"
         value_min:int = exobiology.with_first_logged_bonus(slot["value_min"], was_footfalled)
         value_max:int = exobiology.with_first_logged_bonus(slot["value_max"], was_footfalled)
         value_str:str = _credits_range(value_min, value_max)
-        if value_min != value_max:
-            value_str = f"~{value_str}"
         return (f"{prefix}{slot['name']}", _sampling_distance_str(slot["genera"]), value_str)
 
     def _exobio_row_range(self, row:sqlite3.Row) -> tuple[int, int]:
@@ -600,8 +597,5 @@ class ExplorerPanel:
         value_max = exobiology.with_first_logged_bonus(value_max, was_footfalled)
         distance:str = _sampling_distance_str([genus])
         value_str:str = _credits_range(value_min, value_max)
-
-        if value_min != value_max:
-            value_str = f"~{value_str}"
 
         return (name, progress, distance, value_str)

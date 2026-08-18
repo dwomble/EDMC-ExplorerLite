@@ -489,8 +489,7 @@ class TestPanelStates:
         assert best[0]["value_min"] < best[0]["value_max"], "test premise: Anemone should have a real min-max spread"
 
         rendered:tuple[str, str, str] = load.panel._predicted_genus_row(best[0], confirmed_signal=False, was_footfalled=True)
-        assert "-" in rendered[2], rendered # e.g. "~1.5-3.4M Cr", not a single number
-        assert rendered[2].startswith("~"), rendered # genuine range -- "~" is warranted here
+        assert "-" in rendered[2], rendered # e.g. "1.5-3.4M Cr", not a single number
 
     def test_predicted_row_has_no_uncertainty_marker_once_narrowed_to_one_species(self, plugin:TestHarness) -> None:
         """
@@ -543,7 +542,6 @@ class TestPanelStates:
             ("Bacterium", "Bacterium Tela", 1.0),
         ])
         rendered = load.panel._exobio_progress_row(row, was_footfalled=True)
-        assert rendered[3].startswith("~"), rendered
 
     def test_scan_narrows_prediction_to_species_when_data_available(self, plugin:TestHarness) -> None:
         """
