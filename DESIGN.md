@@ -1001,3 +1001,28 @@ Along the way, extracted `panel.py`'s private `_header_credits()` ("0 Cr" for a 
 zero, not `hfplus`'s usual "unknown" placeholder) into a public `explorer/util.py::
 format_pending_credits()`, since `_clear_unsold_data()`'s summary message needed the exact same
 zero-handling and duplicating it a second time wasn't worth it.
+
+## explorer/ui/panel.py — flagged_body_sort_key gains distance as a secondary key
+
+**Request:** order flagged bodies by distance. `flagged_body_sort_key()` already returned a
+bare `bool` (biological-first); widened it to `tuple[bool, float]`, appending each body's
+`distance_ls` (falling back to `float('inf')` when unknown, so those bodies sort last within
+their group instead of arbitrarily). Tuple comparison keeps biological-first as the primary
+key and makes distance-ascending a tie-breaker within each group, so the earlier overflow-safety
+guarantee (biological bodies never pushed out by non-biological ones) is unchanged.
+
+## explorer/ui/panel.py — "N of M possibilities", and "+" for concurrent slots
+
+**Request:** "N of M possible genera" read as too long; shorten to "N of M possibilities".
+Separately, a merged row like "2 of Bac. Cerbrus/3 possible genera" read as confusing -- the
+"/" implied an either/or between the two chunks, but they're actually two distinct concurrent
+signal slots (an addition), not alternatives.
+
+`_collapse_prediction_names()`'s bare-count fallback text changed to "N possibilities"
+(`_flagged_body_row()`'s `sep` check for the "of" connector updated to match the new suffix).
+Separately, `_collapse_prediction_names()` gained a `joiner` parameter (default `"/"`, used
+unchanged by `_merge_prediction_group()` -- tied candidate genera within one slot really are
+an either/or) and `_flagged_body_row()`'s own top-level call, which collapses across the
+*outer* predictions list (one distinct real signal per slot), now passes `joiner="+"`. Both
+values flow into the overlay for free -- `overlay_summary.py` calls these same panel methods
+rather than re-deriving the text itself.

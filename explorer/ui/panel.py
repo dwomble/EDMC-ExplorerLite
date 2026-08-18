@@ -123,10 +123,11 @@ def _bold_font() -> tkfont.Font:
     default:tkfont.Font = tkfont.nametofont("TkDefaultFont")
     return tkfont.Font(family=default.actual("family"), size=default.actual("size"), weight="bold")
 
-def flagged_body_sort_key(body:sqlite3.Row) -> bool:
-    """ Biological first, shared so panel/overlay agree. """
+def flagged_body_sort_key(body:sqlite3.Row) -> tuple[bool, float]:
+    """ Biological first, then nearest; the overlay agrees. """
     biological:bool = bool(body["has_biological_signals"] == 1 or body["flagged_exobio"] or body["has_prediction"])
-    return not biological
+    distance:float = body["distance_ls"] if body["distance_ls"] is not None else float('inf')
+    return not biological, distance
 
 def _body_designator(system_name:str, body_name:str) -> str:
     """ The short local part of a body's name, e.g. "Deltius B 6 c" -> "B 6 c" -- system name
@@ -349,8 +350,8 @@ class ExplorerPanel:
             # "?" only for a purely speculative guess -- a confirmed signal means a genus IS here
             prefix:str = "" if body["has_biological_signals"] else "?"
             signal_count:int|None = body["biological_signal_count"] # ground truth count, vs. the guessed kinds below
-            collapsed:str = self._collapse_prediction_names(predictions)
-            sep:str = "of" if collapsed.endswith("possible genera") else "–" # "N of M possible genera" reads clearer than "N – M"
+            collapsed:str = self._collapse_prediction_names(predictions, joiner="+")
+            sep:str = "of" if collapsed.endswith("possibilities") else "–" # "N of M possibilities" reads clearer than "N – M"
             count_prefix:str = f"{signal_count} {sep} " if signal_count else ""
             species_desc = f"{count_prefix}{prefix}{collapsed}"
             value_min += exobiology.with_first_logged_bonus(sum(p["value_min"] for p in predictions), was_footfalled)
@@ -496,19 +497,20 @@ class ExplorerPanel:
             remaining = 0
         return slots
 
-    def _collapse_prediction_names(self, items:list[dict]) -> str:
-        """ Full, abbreviated, then a bare genus count. """
+    def _collapse_prediction_names(self, items:list[dict], joiner:str = "/") -> str:
+        """ Full, abbreviated, then a bare genus count. joiner: "/" for
+        tied alternatives, "+" for distinct concurrent slots. """
         if len(items) <= 2:
             full:str = ", ".join(item["name"] for item in items)
             if len(full) <= MAX_FULL_NAME_CHARS:
                 return full
 
-        abbreviated:str = "/".join(self._abbreviated_name(item) for item in items)
+        abbreviated:str = joiner.join(self._abbreviated_name(item) for item in items)
         if len(abbreviated) <= MAX_MERGED_TAG_CHARS:
             return abbreviated
 
         genera:list[str] = list(dict.fromkeys(genus for item in items for genus in item["genera"]))
-        return f"{len(genera)} possible genera" # distinct genera, not slots
+        return f"{len(genera)} possibilities" # distinct genera, not slots
 
     def _abbreviated_name(self, item:dict) -> str:
         """ Abbreviates via the radar's own genus code. """

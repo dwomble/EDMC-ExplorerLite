@@ -278,6 +278,26 @@ class TestPanelStates:
         cart_index:int = next(i for i, line in enumerate(lines) if line.startswith("1 "))
         assert bio_index < cart_index, lines
 
+    def test_flagged_bodies_within_a_group_are_ordered_by_distance(self, plugin:TestHarness) -> None:
+        """ Distance, not body_id, breaks ties in each group. """
+        plugin.load_events("explorer_events.json")
+        plugin.play_sequence("honk_only", 0.02)
+
+        import load
+        assert load.store is not None and load.panel is not None
+        assert load.explorer_state.cmdr_id is not None and load.explorer_state.system_id is not None
+
+        far_pk:int = load.store.get_or_create_body(load.explorer_state.cmdr_id, load.explorer_state.system_id, 1, "QuietSpace 1")
+        load.store.update_body(far_pk, flagged_value=1, estimated_scan_value=1_000_000, was_discovered=1, was_mapped=1, distance_ls=500)
+        near_pk:int = load.store.get_or_create_body(load.explorer_state.cmdr_id, load.explorer_state.system_id, 2, "QuietSpace 2")
+        load.store.update_body(near_pk, flagged_value=1, estimated_scan_value=1_000_000, was_discovered=1, was_mapped=1, distance_ls=50)
+
+        load.panel.refresh()
+        lines = _panel_lines(load)
+        near_index:int = next(i for i, line in enumerate(lines) if line.startswith("2 "))
+        far_index:int = next(i for i, line in enumerate(lines) if line.startswith("1 "))
+        assert near_index < far_index, lines
+
     def test_binary_star_system_is_quiet(self, plugin:TestHarness) -> None:
         """ A system with no planets at all (e.g. a bare binary) has nothing to flag -- just the
         top summary line, no extra "nothing found" commentary. """
@@ -558,7 +578,7 @@ class TestPanelStates:
         sweep of the system happens before flying to each body. This body's conditions are
         generic enough that 8 genera tie at top confidence (a real, common occurrence -- hard
         categorical gates alone decide eligibility for most rulesets), so the shown guess is a
-        "N possible genera" summary rather than any one species name -- but it must still show
+        "N possibilities" summary rather than any one species name -- but it must still show
         SOMETHING, not silently vanish into a bare "biological signal" line just because the
         underlying species-level values happen to be low.
         """
@@ -568,7 +588,7 @@ class TestPanelStates:
         import load
         assert load.store is not None and load.panel is not None
         lines = _panel_lines(load)
-        assert any(line.startswith("A 1 ") and "possible genera" in line for line in lines), lines
+        assert any(line.startswith("A 1 ") and "possibilities" in line for line in lines), lines
         assert not any("biological signal" in line for line in lines), lines
 
     def test_many_tied_genera_collapse_to_count(self, plugin:TestHarness) -> None:
@@ -592,7 +612,7 @@ class TestPanelStates:
         body = next(b for b in flagged if b["body_name"] == "Speciesia A 1")
         best = load.panel._best_predictions_for_body(body["id"])
         assert len(best) == 1, best # only 1 real signal -- everything tied collapses to 1 slot
-        assert best[0]["name"] == "8 possible genera", best
+        assert best[0]["name"] == "8 possibilities", best
 
     def test_predicted_value_does_not_double_count_same_genus_species_guesses(self, plugin:TestHarness) -> None:
         """
@@ -656,7 +676,7 @@ class TestPanelStates:
         """
         Real-world regression: a 7-signal body had 9 genera all tie at confidence 1.0 (common --
         most rulesets only use hard categorical gates, no numeric axis to break a tie). With 7
-        slots available, collapsing straight to "9 possible genera" throws away information we
+        slots available, collapsing straight to "9 possibilities" throws away information we
         actually have: the chain's priority order (Bacterium/Stratum/Tussock/Osseus-or-Tubus/
         Concha-or-Frutexa) still applies even past signal count 5 -- tiers 1-5 remain expected,
         the extra 2 signals are just unclassified. Each matching tier should get its own
@@ -684,13 +704,13 @@ class TestPanelStates:
         for chain_genus in ("Bacterium X", "Stratum X", "Tussock X", "Osseus X"):
             assert chain_genus in names, best # each chain tier got its own dedicated slot
         assert any("Concha X" in n and "Frutexa X" in n for n in names), best # tier 5's own pair, merged as one slot
-        assert not any("possible genera" in n for n in names), best # room enough that nothing needed to collapse to a count
+        assert not any("possibilities" in n for n in names), best # room enough that nothing needed to collapse to a count
 
     def test_flagged_row_genus_count_is_distinct_genera_not_slot_count(self, plugin:TestHarness) -> None:
         """
         An 8-signal body with Osseus-or-Tubus and Concha-or-Frutexa each tied for their own tier
-        has 10 distinct possible genus names spread across 8 real signal slots. "10 possible
-        genera" is the right label -- it tells the player 10 different kinds of organism could
+        has 10 distinct possible genus names spread across 8 real signal slots. "10
+        possibilities" is the right label -- it tells the player 10 different kinds could
         turn up here, even though only 8 of them actually will. The summed value alongside it
         still only adds up 8 slots (one per real signal); the two numbers describe different
         things and aren't meant to match.
@@ -716,7 +736,31 @@ class TestPanelStates:
         assert body is not None
         row = load.panel._flagged_body_row("QuietSpace", body)
         assert row is not None
-        assert row[4] == "8 of 10 possible genera", row
+        assert row[4] == "8 of 10 possibilities", row
+
+    def test_flagged_row_joins_distinct_slots_with_plus_not_slash(self, plugin:TestHarness) -> None:
+        """ Regression: separate concurrent signals read as an
+        either/or with "/" -- "+" makes clear it's both, not one. """
+        from explorer.state import state as explorer_state
+
+        plugin.load_events("explorer_events.json")
+        plugin.play_sequence("honk_only", 0.02)
+
+        import load
+        assert load.store is not None and load.panel is not None
+        assert explorer_state.cmdr_id is not None and explorer_state.system_id is not None
+        body_pk:int = load.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 1, "QuietSpace A 1")
+        load.store.update_body(body_pk, has_biological_signals=1, biological_signal_count=2)
+        load.store.replace_genus_predictions(body_pk, [
+            ("Bacterium", "Bacterium Cerbrus", 1.0),
+            ("Stratum", "Stratum Tectonicas", 0.9),
+        ])
+
+        body:sqlite3.Row|None = load.store.get_body(body_pk)
+        assert body is not None
+        row = load.panel._flagged_body_row("QuietSpace", body)
+        assert row is not None
+        assert row[4] == "2 – Bac. Cerbrus+Str. Tectonicas", row
 
     def test_confirmed_zero_signals_suppresses_a_stale_prediction(self, plugin:TestHarness) -> None:
         """
