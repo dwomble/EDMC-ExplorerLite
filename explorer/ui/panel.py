@@ -15,6 +15,7 @@ from explorer.utils.misc import hfplus, str_truncate
 
 from explorer.db.store import ExplorerStore
 from explorer.state import ExplorerState
+from explorer.util import format_pending_credits
 from explorer.valuation import cartography, exobiology, exobiology_data, signal_count_bias
 from explorer.constants import CFG_VISIBLE_LINES, DEFAULT_VISIBLE_LINES, CFG_PANEL_ENABLED, PLUGIN_NAME
 
@@ -38,10 +39,6 @@ def _visible_lines_px() -> int:
 
 def _credits(value:int) -> str:
     return hfplus((value, 'num', '? Cr', ' Cr'))
-
-def _header_credits(value:int) -> str:
-    """ Here 0 means "nothing pending", not "unknown". """
-    return "0 Cr" if value == 0 else _credits(value)
 
 _NUMERIC_PREFIX:re.Pattern = re.compile(r'^-?[\d,]+(?:\.\d+)?')
 
@@ -165,11 +162,11 @@ class ExplorerPanel:
         self.title_label:th.Label = th.Label(header, text=PLUGIN_NAME, font=self._title_font, anchor="w")
         self.title_label.grid(row=0, column=0, sticky=tk.W)
 
-        self.cart_value_label:th.Label = th.Label(header, text=_header_credits(0), anchor="w")
+        self.cart_value_label:th.Label = th.Label(header, text=format_pending_credits(0), anchor="w")
         self.cart_value_label.grid(row=0, column=1, sticky=tk.W)
         th.Tooltip(self.cart_value_label, "Pending cartography value")
 
-        self.exo_value_label:th.Label = th.Label(header, text=_header_credits(0), anchor="w")
+        self.exo_value_label:th.Label = th.Label(header, text=format_pending_credits(0), anchor="w")
         self.exo_value_label.grid(row=0, column=2, sticky=tk.W)
         th.Tooltip(self.exo_value_label, "Pending exobiology value")
 
@@ -219,8 +216,8 @@ class ExplorerPanel:
         cmdr_id:int|None = self.state.cmdr_id
         cart:int = self.store.get_pending_cartography_value(cmdr_id) if cmdr_id is not None else 0
         exo:int = self.store.get_pending_exobiology_value(cmdr_id) if cmdr_id is not None else 0
-        self.cart_value_label.configure(text=_header_credits(cart))
-        self.exo_value_label.configure(text=_header_credits(exo))
+        self.cart_value_label.configure(text=format_pending_credits(cart))
+        self.exo_value_label.configure(text=format_pending_credits(exo))
 
     def _line(self, text:str) -> None:
         self._pending.append(("line", str_truncate(text, WIDTH_CHARS)))

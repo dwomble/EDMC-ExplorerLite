@@ -888,3 +888,116 @@ back into `load.py` for it (even a lazy, load-time-safe import), `build_prefs()`
 `version:str = "0.0.0"` as a parameter -- `load.py`'s `plugin_prefs()` (the only real caller)
 passes its own `VERSION` straight through. `prefs.py` stays a pure function of its arguments,
 with no knowledge of `load.py` at all, importable and testable in complete isolation.
+
+## explorer/utils/misc.py -- hfplus() number/date formatting is now locale-aware
+
+**Request:** `hfplus()`'s number formatting hardcoded a comma as the thousands separator
+(`f"{value:,.0f}"` and friends) and always rendered dates as `"%Y-%m-%d %H:%M"` -- correct for
+US/UK conventions, wrong for locales that group with a period and use a comma as the decimal
+point (most of continental Europe), or that write dates in a different order entirely.
+
+EDMC's own entry point (`EDMarketConnector.py`) already calls `locale.setlocale(locale.LC_ALL,
+'')` at startup, adopting the user's OS locale process-wide before any plugin loads -- so
+`hfplus()` doesn't need to call `setlocale()` itself, just use the locale that's already active.
+
+- **Numbers**: the four fixed-precision branches (`.0f`/`.1f`/`.2f`, plus the >10k abbreviated
+  path's fractional digit) now go through `locale.format_string('%.Nf', value, grouping=True)`
+  instead of Python's `:,` format-spec (which always inserts a literal comma, full stop).
+  `locale.format_string` reads the process locale's actual grouping character and decimal
+  point (`locale.localeconv()`) -- under the default `'C'` locale that means *no* separator
+  gets inserted at all (rather than a comma appearing regardless), which is itself more
+  correct than before, not just differently correct.
+- **The one branch that doesn't need fixed precision** (a bare int, or a small `'num'`-typed
+  float with no explicit decimal-place requirement) first tried `f"{value:n}"` -- Python's
+  locale-aware "n" presentation type. Wrong call: for floats, `:n` behaves like `:g`, whose
+  *default* precision is 6 significant digits, not "however many digits the value has" --
+  `9.999999` came out as `10` and `3.14159265358979` as `3.14159`, a real precision change
+  from the old `f"{value:,}"` (full float repr, no cap at all) that went unnoticed until asked
+  directly what precision line 168 would produce. Since ED-domain values here never need more
+  than 2 decimal places anyway, fixed on a `locale.format_string('%.2f', value, grouping=True)`
+  capped at 2dp, trimmed of trailing zeros via a new shared `_strip_trailing_zeros()` helper --
+  the same trim-to-shortest-form logic the abbreviated-number path already needed, now shared
+  instead of duplicated a second time.
+- **Dates**: `strftime('%x')` is itself locale-aware (it's a standard C-library format code),
+  so the date half of the datetime case just switched to it directly -- no `locale.format_string`
+  involved. The time half stays an explicit `%H:%M`, not `%X`, specifically to preserve the
+  existing no-seconds behavior (`%X` can reintroduce seconds, or 12-hour/AM-PM, depending on
+  locale -- a real behavior change nobody asked for).
+
+New `tests/test_hfplus.py` (didn't exist before -- `hfplus()` had no dedicated tests) covers
+both the deterministic `'C'`-locale baseline (portable, no external locale dependency) and
+`de_DE.UTF-8`'s different grouping/decimal characters (skipped gracefully via `pytest.skip()`
+if that locale isn't installed on the machine running the tests) -- proving the formatting is
+genuinely locale-driven rather than merely "still produces a string." Applied identically to
+both `EDMC-ExplorerLite/explorer/utils/misc.py` and the canonical `EDMC-PluginLib/utils/misc.py`.
+
+## explorer/journal/handlers_*.py -- Overlay lagged behind the panel by up to a tick
+
+**Report:** a noticeable delay between the panel updating and the overlay updating.
+
+Root cause was in `load.py`'s `_apply_flags(flags)` -- it refreshes the panel whenever a
+handler's returned flags include `"panel"`, and refreshes *both* overlays (radar and system
+summary) whenever they include `"overlay"`, but these are independent checks, and several
+handlers that change exactly what the overlay displays only ever returned `{"panel": True}`:
+`on_fss_body_signals`/`on_scan`/`on_saa_scan_complete` (all change the flagged-body list the
+summary overlay mirrors from the panel), `on_honk`/`on_all_bodies_found` (change the shared
+Honk/FSS/DSS header state text), and `enter_system`/`on_approach_body`/`on_supercruise_exit`/
+`on_leave_body` (change which body's detail nests where). So the panel updated immediately on
+these journal events, but the overlay didn't catch up until the *next* `dashboard_entry()`
+tick -- `on_dashboard_entry()` unconditionally returns `{"overlay": "radar"}` every tick
+(confirmed in `explorer/dashboard.py`), which is what actually drove the eventual overlay
+refresh -- roughly once a second, not on the same event as the panel.
+
+Ruled out first: this isn't the overlay transport being slow. `explorer/utils/overlay.py`'s
+`send_text()`/`send_shape()`/`send_vect()` call straight into `edmcoverlay.Overlay()`'s
+methods; for the actual EDMCModernOverlay backend this project requires, that ultimately
+reaches a `queue.Queue.put_nowait()` on a `SocketBroadcaster` (confirmed by reading
+EDMCModernOverlay's own source) -- a non-blocking, in-memory queue push, not a network round
+trip. Nothing on our side of that call was ever the bottleneck.
+
+Fixed by adding `"overlay": "radar"` to the nine handlers listed above -- `_apply_flags()`
+doesn't care about the string's exact value, any truthy `"overlay"` entry refreshes both
+overlays, so the existing `"radar"` string (originally chosen for `on_touchdown`/`on_liftoff`,
+which already had it) was reused rather than inventing a second convention. Left as
+panel-only, deliberately: `on_load_game`/`on_start_jump` (about to be immediately superseded by
+the very next event -- `enter_system`/a body reset -- so fixing their lag bought nothing) and
+`on_sell_organic_data`/`handlers_sales.py`'s two sale handlers (selling changes credit totals,
+which only the panel's header shows -- neither overlay surface displays them at all).
+
+New `tests/test_overlay_refresh_flags.py` calls each of the nine fixed handlers directly and
+asserts `"overlay"` is present in the returned dict -- a plain dict-shape assertion, since
+that's exactly what was missing.
+
+## explorer/ui/prefs.py + load.py -- Manual "Clear unsold data" button
+
+**Request:** a way to reset pending counts if a death happens without EDMC knowing about it
+(e.g. it wasn't running). `handlers_sales.on_died()` already handled the in-session case --
+`Died` marks every currently-unsold system/species_progress row as `lost_at` -- but there was
+no way to trigger that same correction after the fact, for a death EDMC's own journal watcher
+never saw.
+
+Extracted the two-call pairing `on_died()` already did (`mark_all_unsold_systems_lost` +
+`mark_all_unsold_species_progress_lost`) into a shared `handlers_sales.mark_everything_
+unsold_lost(store, cmdr_id, timestamp)`, so `on_died()` and the new manual path can never
+define "everything" differently. `load.py`'s new `_clear_unsold_data(cmdr)` reads the pending
+totals first (for the confirmation message), calls that shared function, then refreshes both
+`panel` and `history_view` immediately -- without this, the panel's header wouldn't reflect
+the change until whatever journal/dashboard event happened to fire next.
+
+`prefs.py` gained a new "Data" section (outside the `SECTIONS`/`Pref` machinery, like the
+version/GitHub header row -- a stateless action button doesn't fit a model built for persisted
+`config`-backed settings) with a "Clear unsold data" button, confirmed via `messagebox.askyesno`
+before running (this can't be undone) and reported back via `messagebox.showinfo` afterward.
+The button itself is styled with a new `DANGER_COLOR` (`background`/`activebackground`,
+white `foreground`) -- a plain `tk.Button` option, matching the existing "Foreground"
+color-picker button's own precedent for using real Tk color options in this file, rather than
+looking identical to every other, reversible setting. `build_prefs()` takes the actual
+clear-data function as an injected `Callable[[str], str]` parameter rather than importing
+`load.py` or `ExplorerStore` directly -- `prefs.py` stays a pure function of its arguments (the
+same principle the `version` parameter already established), fully testable by passing a plain
+lambda instead of the real callback.
+
+Along the way, extracted `panel.py`'s private `_header_credits()` ("0 Cr" for a real pending
+zero, not `hfplus`'s usual "unknown" placeholder) into a public `explorer/util.py::
+format_pending_credits()`, since `_clear_unsold_data()`'s summary message needed the exact same
+zero-handling and duplicating it a second time wasn't worth it.

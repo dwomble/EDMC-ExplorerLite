@@ -64,3 +64,21 @@ class TestOnDied:
 
     def test_is_a_noop_without_a_cmdr(self, store:ExplorerStore) -> None:
         handlers_sales.on_died(store, ExplorerState(), {"event": "Died"}) # must not raise
+
+class TestMarkEverythingUnsoldLost:
+    """ Shared by on_died() and the manual-clear button -- one
+    definition of "everything", so they can't drift apart. """
+
+    def test_marks_both_cartography_and_exobiology_lost(self, store:ExplorerStore) -> None:
+        cmdr_id:int = store.get_or_create_cmdr("Testy")
+        system_id:int = store.get_or_create_system(cmdr_id, 1, "Deltius")
+        body_pk:int = store.get_or_create_body(cmdr_id, system_id, 1, "Deltius 1")
+        progress_id:int = store.get_or_create_species_progress(body_pk, "Bacterium")
+        store.update_species_progress(progress_id, completed_at="2026-01-01T00:00:00Z", confirmed_value=1_000_000)
+
+        handlers_sales.mark_everything_unsold_lost(store, cmdr_id, "2026-01-02T00:00:00Z")
+
+        system:sqlite3.Row|None = store.get_system(system_id)
+        progress:sqlite3.Row|None = store.get_species_progress_row(progress_id)
+        assert system is not None and system["lost_at"] is not None
+        assert progress is not None and progress["lost_at"] is not None

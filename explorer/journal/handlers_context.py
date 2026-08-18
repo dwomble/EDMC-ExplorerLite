@@ -74,7 +74,7 @@ def enter_system(store:ExplorerStore, state:ExplorerState, edmc_state:dict) -> d
         _restore_sample_positions(store, state)
 
     _persist(state)
-    return {"panel": True}
+    return {"panel": True, "overlay": "radar"}
 
 def on_start_jump(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict:
     state.reset_body()
@@ -85,7 +85,7 @@ def on_approach_body(store:ExplorerStore, state:ExplorerState, entry:dict) -> di
     state.body_id = entry.get("BodyID")
     state.body_name = entry.get("Body", "")
     _persist(state)
-    return {"panel": True}
+    return {"panel": True, "overlay": "radar"}
 
 def on_supercruise_exit(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict:
     """ Dropping out of supercruise near a body -- often the first real look at a body's
@@ -98,12 +98,12 @@ def on_supercruise_exit(store:ExplorerStore, state:ExplorerState, entry:dict) ->
     state.body_id = body_id
     state.body_name = entry.get("Body", "")
     _persist(state)
-    return {"panel": True}
+    return {"panel": True, "overlay": "radar"}
 
 def on_leave_body(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict:
     state.reset_body()
     _persist(state)
-    return {"panel": True}
+    return {"panel": True, "overlay": "radar"}
 
 def on_touchdown(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict:
     state.body_id = entry.get("BodyID", state.body_id)

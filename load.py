@@ -12,8 +12,10 @@ from explorer.utils.overlay import Overlay
 from explorer.constants import PLUGIN_NAME, GH_OWNER, GH_PROJECT, CFG_DEV_MODE
 from explorer.db.store import ExplorerStore
 from explorer.state import state as explorer_state
+from explorer.util import now_iso, format_pending_credits
 from explorer.journal.dispatch import dispatch
 from explorer.journal.handlers_context import restore_last_session
+from explorer.journal.handlers_sales import mark_everything_unsold_lost
 from explorer.dashboard import on_dashboard_entry
 from explorer.ui.panel import ExplorerPanel
 from explorer.ui import prefs as prefs_ui
@@ -67,10 +69,24 @@ def plugin_app(parent:tk.Frame) -> tk.Widget:
     summary_overlay = SystemSummaryOverlay(overlay_backend, panel) # needs panel's row formatting, so built after it
     return panel.frame
 
+def _clear_unsold_data(cmdr:str) -> str:
+    """ For a death EDMC never saw, e.g. it wasn't running. """
+    if store is None:
+        return "Not ready yet -- try again in a moment."
+    cmdr_id:int = store.get_or_create_cmdr(cmdr)
+    cart_pending:int = store.get_pending_cartography_value(cmdr_id)
+    exo_pending:int = store.get_pending_exobiology_value(cmdr_id)
+    mark_everything_unsold_lost(store, cmdr_id, now_iso())
+    if panel is not None:
+        panel.refresh()
+    if history_view is not None:
+        history_view.refresh()
+    return f"Marked {format_pending_credits(cart_pending)} cartography and {format_pending_credits(exo_pending)} exobiology as lost."
+
 def plugin_prefs(parent:tk.Widget, cmdr:str, is_beta:bool) -> tk.Widget:
     """ Return a TK Frame for adding to the EDMC settings dialog. """
     overlay_available:bool = overlay_backend is not None and overlay_backend.available
-    return prefs_ui.build_prefs(parent, cmdr, is_beta, overlay_available, VERSION)
+    return prefs_ui.build_prefs(parent, cmdr, is_beta, overlay_available, VERSION, _clear_unsold_data)
 
 def prefs_changed(cmdr:str, is_beta:bool) -> None:
     """ Save settings. """

@@ -84,6 +84,7 @@ The following settings are configurable from the EDMC preferences panel:
 - **Thresholds** — minimum cartography (scan/mapping) value, minimum exobiology species value, panel lines before scrolling
 - **Overlays** — radar on/off, system summary on/off, radar size, overlay summary text colour (greyed out entirely if no overlay backend is installed)
 - **Debug** — developer/debug logging
+- **Data** — a **Clear unsold data** button for when your ship was destroyed while EDMC wasn't running to see it happen (normally, dying marks all held-but-unsold cartography and exobiology data as lost automatically). Asks for confirmation first, since it can't be undone.
 
 ## Persistence
 

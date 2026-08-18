@@ -71,7 +71,7 @@ def on_fss_body_signals(store:ExplorerStore, state:ExplorerState, entry:dict) ->
             bio_count = signal.get("Count", 0)
 
     store.update_body(body_pk, has_biological_signals=1 if bio_count else 0, biological_signal_count=bio_count)
-    return {"panel": True}
+    return {"panel": True, "overlay": "radar"}
 
 def on_scan(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict:
     if state.system_id is None or state.cmdr_id is None:
@@ -127,7 +127,7 @@ def on_scan(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict:
             body_pk, _worthwhile_predictions(entry, state.nearest_star_type, bypass_threshold=confirmed_biology)
         )
 
-    return {"panel": True}
+    return {"panel": True, "overlay": "radar"}
 
 def _worthwhile_predictions(entry:dict, nearest_star_type:str|None, bypass_threshold:bool = False) -> list[tuple[str, str|None, float]]:
     """ Predicted (genus, species, confidence) rows whose value clears the exobio threshold,
@@ -171,7 +171,7 @@ def on_saa_scan_complete(store:ExplorerStore, state:ExplorerState, entry:dict) -
     mapping_value:int = cartography.mapping_value_from_scan_value(scan_value, mapped_efficiently=efficient)
 
     store.update_body(body_pk, mapped_efficiently=1 if efficient else 0, estimated_mapping_value=mapping_value, mapped_at=now_iso())
-    return {"panel": True}
+    return {"panel": True, "overlay": "radar"}
 
 def on_saa_signals_found(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict:
     if state.system_id is None or state.cmdr_id is None:

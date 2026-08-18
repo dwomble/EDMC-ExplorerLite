@@ -32,10 +32,13 @@ def on_sell_exploration_data(store:ExplorerStore, state:ExplorerState, entry:dic
 
     return {"panel": True}
 
+def mark_everything_unsold_lost(store:ExplorerStore, cmdr_id:int, timestamp:str) -> None:
+    """ Shared by on_died() and the manual-clear action. """
+    store.mark_all_unsold_systems_lost(cmdr_id, timestamp)
+    store.mark_all_unsold_species_progress_lost(cmdr_id, timestamp)
+
 def on_died(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict:
     if state.cmdr_id is None:
         return {}
-    now:str = now_iso()
-    store.mark_all_unsold_systems_lost(state.cmdr_id, now)
-    store.mark_all_unsold_species_progress_lost(state.cmdr_id, now)
+    mark_everything_unsold_lost(store, state.cmdr_id, now_iso())
     return {"panel": True}

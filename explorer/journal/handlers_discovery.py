@@ -18,10 +18,10 @@ def on_honk(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict:
     verdict:str = honk_heuristic.assess(body_count, star_types)
 
     store.update_system(state.system_id, honk_body_count=body_count, honk_non_body_count=non_body_count, honk_hint=verdict)
-    return {"panel": True}
+    return {"panel": True, "overlay": "radar"}
 
 def on_all_bodies_found(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict:
     if state.system_id is None:
         return {}
     store.update_system(state.system_id, all_bodies_found=1, fss_body_count=entry.get("Count", 0))
-    return {"panel": True}
+    return {"panel": True, "overlay": "radar"}

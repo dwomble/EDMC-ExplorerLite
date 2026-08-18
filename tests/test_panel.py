@@ -1254,12 +1254,12 @@ class TestPrefs:
         assert len(links) == 1 and links[0].cget("text") == "GitHub"
         assert links[0].url == prefs_ui.GH_URL
 
-    def test_all_three_sections_are_present(self, plugin:TestHarness) -> None:
+    def test_all_sections_are_present(self, plugin:TestHarness) -> None:
         from explorer.ui import prefs as prefs_ui
 
         frame = prefs_ui.build_prefs(plugin.parent, "Testy", False)
         labels = {c.cget("text") for c in frame.winfo_children() if "text" in c.keys()}
-        assert {"Thresholds", "Overlays", "Debug"} <= labels
+        assert {"Thresholds", "Overlays", "Debug", prefs_ui.DATA_SECTION_TITLE} <= labels
 
     def test_every_pref_still_has_a_live_widget(self, plugin:TestHarness) -> None:
         """ Regression guard for the two-up layout: every Pref must still end up with a
@@ -1285,6 +1285,83 @@ class TestPrefs:
         frame = prefs_ui.build_prefs(plugin.parent, "Testy", False, overlay_available=True)
         radar_cb = next(c for c in frame.winfo_children() if "text" in c.keys() and c.cget("text") == "Show radar on overlay")
         assert str(radar_cb.cget("state")) == "normal"
+
+    def test_clear_unsold_data_button_is_present(self, plugin:TestHarness) -> None:
+        from explorer.ui import prefs as prefs_ui
+
+        frame = prefs_ui.build_prefs(plugin.parent, "Testy", False)
+        btn = next(c for c in frame.winfo_children() if "text" in c.keys() and c.cget("text") == "Clear unsold data")
+        assert btn.cget("command")
+
+    def test_clear_unsold_data_button_is_flagged_as_dangerous(self, plugin:TestHarness) -> None:
+        """ Irreversible -- red sets it apart from other prefs. """
+        from explorer.ui import prefs as prefs_ui
+
+        frame = prefs_ui.build_prefs(plugin.parent, "Testy", False)
+        btn = next(c for c in frame.winfo_children() if "text" in c.keys() and c.cget("text") == "Clear unsold data")
+        assert str(btn.cget("background")) == prefs_ui.DANGER_COLOR
+
+    def test_clear_unsold_data_calls_through_only_after_confirming(self, plugin:TestHarness, monkeypatch) -> None:
+        from explorer.ui import prefs as prefs_ui
+
+        calls:list[str] = []
+        monkeypatch.setattr(prefs_ui.messagebox, "askyesno", lambda *a, **kw: False)
+        monkeypatch.setattr(prefs_ui.messagebox, "showinfo", lambda *a, **kw: None)
+
+        frame = prefs_ui.build_prefs(plugin.parent, "Testy", False, clear_unsold_data=calls.append)
+        btn = next(c for c in frame.winfo_children() if "text" in c.keys() and c.cget("text") == "Clear unsold data")
+        btn.invoke()
+
+        assert calls == [] # declined the confirmation -- must not have run
+
+        monkeypatch.setattr(prefs_ui.messagebox, "askyesno", lambda *a, **kw: True)
+        btn.invoke()
+
+        assert calls == ["Testy"]
+
+    def test_clear_unsold_data_shows_the_callbacks_summary(self, plugin:TestHarness, monkeypatch) -> None:
+        from explorer.ui import prefs as prefs_ui
+
+        shown:list[str] = []
+        monkeypatch.setattr(prefs_ui.messagebox, "askyesno", lambda *a, **kw: True)
+        monkeypatch.setattr(prefs_ui.messagebox, "showinfo", lambda title, message, **kw: shown.append(message))
+
+        frame = prefs_ui.build_prefs(plugin.parent, "Testy", False, clear_unsold_data=lambda cmdr: f"cleared for {cmdr}")
+        btn = next(c for c in frame.winfo_children() if "text" in c.keys() and c.cget("text") == "Clear unsold data")
+        btn.invoke()
+
+        assert shown == ["cleared for Testy"]
+
+class TestClearUnsoldData:
+    """ load._clear_unsold_data() -- wired into the prefs panel's button. """
+
+    def test_marks_pending_data_lost_and_reports_it(self, plugin:TestHarness) -> None:
+        import load
+        assert load.store is not None
+        cmdr_id = load.store.get_or_create_cmdr("Testy")
+        system_id = load.store.get_or_create_system(cmdr_id, 1, "Deltius")
+        body_pk = load.store.get_or_create_body(cmdr_id, system_id, 1, "Deltius 1")
+        load.store.update_body(body_pk, estimated_scan_value=1_000_000, was_discovered=1)
+
+        message = load._clear_unsold_data("Testy")
+
+        assert load.store.get_pending_cartography_value(cmdr_id) == 0
+        assert "cartography" in message and "exobiology" in message
+
+    def test_refreshes_the_panel_header_immediately(self, plugin:TestHarness) -> None:
+        import load
+        assert load.store is not None and load.panel is not None
+        cmdr_id = load.store.get_or_create_cmdr("Testy")
+        system_id = load.store.get_or_create_system(cmdr_id, 1, "Deltius")
+        body_pk = load.store.get_or_create_body(cmdr_id, system_id, 1, "Deltius 1")
+        load.store.update_body(body_pk, estimated_scan_value=1_000_000, was_discovered=1)
+        load.explorer_state.cmdr_id = cmdr_id
+        load.panel.refresh()
+        assert load.panel.cart_value_label.cget("text") != "0 Cr"
+
+        load._clear_unsold_data("Testy")
+
+        assert load.panel.cart_value_label.cget("text") == "0 Cr"
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v', '--tb=short'])

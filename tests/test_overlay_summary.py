@@ -186,12 +186,12 @@ class TestSystemSummaryOverlay:
 
     def test_a_body_dropping_off_the_list_clears_immediately_not_after_ttl(self, plugin:TestHarness) -> None:
         """
-        Real-world regression: mapping a body drops it from the panel's list synchronously
-        (on_saa_scan_complete only returns {"panel": True}), but the overlay only used to stop
-        RE-SENDING that body's frame, relying on its own TTL to make it disappear -- fine at the
-        original 8s TTL, but after bumping TTL to 30s (see the "stay on screen longer" fix) a
-        mapped body's stale line could visibly linger for up to that long. render() must now
-        explicitly clear a dropped slot the moment it notices, not just stop refreshing it.
+        Real-world regression: mapping a body drops it from the panel's list synchronously,
+        but the overlay only used to stop RE-SENDING that body's frame, relying on its own TTL
+        to make it disappear -- fine at the original 8s TTL, but after bumping TTL to 30s (see
+        the "stay on screen longer" fix) a mapped body's stale line could visibly linger for up
+        to that long. render() must now explicitly clear a dropped slot the moment it notices a
+        body dropped out of the flagged list, not just stop refreshing it.
         """
         plugin.load_events("explorer_events.json")
         plugin.play_sequence("honk_only", 0.02)

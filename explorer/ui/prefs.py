@@ -1,8 +1,9 @@
 """ nb.* not th.*, matches EDMC settings dialog theming. """
 import tkinter as tk
-from tkinter import ttk, colorchooser, font as tkfont
+from tkinter import ttk, colorchooser, messagebox, font as tkfont
 from dataclasses import dataclass
 from functools import partial
+from typing import Callable
 
 import myNotebook as nb # type: ignore
 from ttkHyperlinkLabel import HyperlinkLabel # type: ignore
@@ -19,6 +20,7 @@ from explorer.constants import (
 )
 
 OVERLAYS_SECTION:str = "Overlays" # must match its title in SECTIONS below
+DATA_SECTION_TITLE:str = "Data"
 
 GH_URL:str = f"https://github.com/{GH_OWNER}/{GH_PROJECT}"
 
@@ -50,6 +52,7 @@ PREFS:list[Pref] = [p for _, section_prefs in SECTIONS for p in section_prefs] #
 LABEL_GAP_PX:int = 16 # between a pref's own label and its control
 GROUP_GAP_PX:int = 24 # between the left half and the right half
 ROW_GAP_PX:int = 6 # vertical space between pref rows
+DANGER_COLOR:str = "#aa3333" # flags an irreversible action, e.g. Clear unsold data
 
 _pref_vars:dict[str, tk.Variable] = {}
 
@@ -88,6 +91,18 @@ def _place_pref(frame:nb.Frame, p:Pref, row:int, col:int, enabled:bool) -> None:
             btn.configure(command=partial(_pick_color, frame, color_var, btn))
             btn.grid(row=row, column=col + 1, sticky=tk.W, pady=pady)
 
+def _on_clear_unsold_data(parent:tk.Widget, cmdr:str, clear_unsold_data:Callable[[str], str]|None) -> None:
+    if clear_unsold_data is None:
+        return
+    confirmed:bool = messagebox.askyesno(
+        "Clear unsold data",
+        "Mark all pending cartography and exobiology data as lost?\nThis can't be undone.",
+        parent=parent,
+    )
+    if not confirmed:
+        return
+    messagebox.showinfo("Clear unsold data", clear_unsold_data(cmdr), parent=parent)
+
 def _build_section(frame:nb.Frame, section_prefs:list[Pref], row:int, enabled:bool = True) -> int:
     """ Flows prefs two-up, alternating left then right. """
     col:int = 0
@@ -98,7 +113,10 @@ def _build_section(frame:nb.Frame, section_prefs:list[Pref], row:int, enabled:bo
 
     return row + 1 if col != 0 else row
 
-def build_prefs(parent:tk.Widget, cmdr:str, is_beta:bool, overlay_available:bool = True, version:str = "0.0.0") -> tk.Widget:
+def build_prefs(
+    parent:tk.Widget, cmdr:str, is_beta:bool, overlay_available:bool = True, version:str = "0.0.0",
+    clear_unsold_data:Callable[[str], str]|None = None,
+) -> tk.Widget:
     global _pref_vars
     _pref_vars = {}
 
@@ -118,6 +136,16 @@ def build_prefs(parent:tk.Widget, cmdr:str, is_beta:bool, overlay_available:bool
         row += 1
         enabled:bool = overlay_available or title != OVERLAYS_SECTION
         row = _build_section(frame, section_prefs, row, enabled)
+
+    nb.Label(frame, text=DATA_SECTION_TITLE, font=bold).grid(row=row, column=0, columnspan=4, sticky=tk.W, pady=(4, 2))
+    row += 1
+    nb.Label(frame, text="For a death EDMC didn't see, e.g. it wasn't running:").grid(
+        row=row, column=0, columnspan=4, sticky=tk.W, pady=(0, ROW_GAP_PX))
+    row += 1
+    tk.Button(
+        frame, text="Clear unsold data", background=DANGER_COLOR, foreground="white", activebackground=DANGER_COLOR,
+        command=partial(_on_clear_unsold_data, frame, cmdr, clear_unsold_data),
+    ).grid(row=row, column=0, sticky=tk.W, pady=(0, ROW_GAP_PX))
 
     return frame
 
