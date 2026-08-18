@@ -1047,3 +1047,48 @@ the new focus property -- the fallback shows on both surfaces for free, same as 
 shared-state change this session. `enter_system()` clears the fallback on a system jump (its
 body_id is only meaningful paired with the system it was DSSed in) but `on_leave_body`
 deliberately leaves it alone -- clearing it there would defeat the whole point.
+
+## explorer/journal/handlers_exobiology.py + db/store.py -- Abandoned samples weren't discarded
+
+**Bug report:** starting to sample a new organism before finishing the current one's 3 samples
+loses that progress in-game (confirmed: Log -> Sample -> Sample -> Analyse, only completable by
+staying on the same organism throughout) -- but the plugin kept showing the old organism's
+partial count indefinitely, since nothing ever reset it.
+
+Added `store.abandon_other_species_progress(body_pk, keep_genus)`, called from
+`on_scan_organic()` whenever a fresh `ScanType == "Log"` arrives -- it resets `samples_taken`/
+`first_sample_at`/`last_sample_at`/`last_stage` back to zero/null for every *other*
+`species_progress` row on that body still mid-sequence (`samples_taken > 0`, no
+`completed_at`). Completed rows are excluded by the same `WHERE` clause, since a finished sample
+is real data, not an abandoned attempt.
+
+A second, related bug shared the same fix: `species_progress` is keyed `UNIQUE(body_id, genus)`
+-- one row per genus, not per species -- so restarting on a *different species of the same
+genus* reused the old row and kept incrementing its counter under the new species' name instead
+of restarting from zero. `on_scan_organic()` now detects this in-place (row exists, `0 <
+samples_taken`, not completed, recorded species differs from the incoming one) and treats the
+row as fresh before applying the increment, rather than adding a second identity key to the
+schema for what's still fundamentally one row.
+
+## explorer/ui/panel.py -- Per-cell styling for genus/species rows
+
+**Request:** color the on-body genus/species name lines steelblue (reads well in both light and
+dark theme), and bold the "N/M" sample-progress cell once N > 0 (the species actively being
+sampled).
+
+`_render_table()`/`_materialize_row()` previously built every cell identically
+(`th.Label(..., text=text, anchor=anchor)`), so there was no per-cell customization hook.
+Added an optional `cell_kwargs:list[dict[int, dict]]` parameter -- one dict per row mapping
+column index to extra `th.Label` kwargs -- threaded through the `"table"` pending-command tuple
+and applied via `**row_kwargs.get(c, {})` in the render loop. The other two `_render_table`
+callers (`_flagged_body_row`, which isn't a genus/species line, and any future one) pass
+nothing and render exactly as before.
+
+`_render_exobiology_section()` now builds this per-row: column 0 (name) always gets
+`{"foreground": GENUS_COLOR}` for both the active-sampling table and the predicted-genus table;
+column 1 (progress) additionally gets `{"font": self._title_font}` (the same bold font already
+used for the header's state word) whenever `row["samples_taken"]` is truthy. `foreground` is
+set at construction time, not via a later `.configure()` -- EDMC's `theme.register()` only
+protects a color from being stomped on dark/light toggle if it already differs from the
+system default the first time the widget is seen, so setting it any later would work visually
+until the next theme switch silently reverted it.

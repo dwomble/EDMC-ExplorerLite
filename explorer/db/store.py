@@ -251,6 +251,16 @@ class ExplorerStore:
     def get_species_progress_row(self, progress_id:int) -> sqlite3.Row|None:
         return self.conn.execute("SELECT * FROM species_progress WHERE id = ?", (progress_id,)).fetchone()
 
+    def abandon_other_species_progress(self, body_pk:int, keep_genus:str) -> None:
+        """ Logging a new organism discards any other mid-sequence. """
+        self.conn.execute(
+            """UPDATE species_progress SET samples_taken = 0, first_sample_at = NULL,
+                   last_sample_at = NULL, last_stage = NULL
+               WHERE body_id = ? AND genus != ? AND completed_at IS NULL AND samples_taken > 0""",
+            (body_pk, keep_genus),
+        )
+        self.conn.commit()
+
     def get_completed_unsold_species_for_cmdr(self, cmdr_id:int) -> list[sqlite3.Row]:
         """ Every completed-but-unsold sample across this Cmdr's bodies, with each body's
         was_footfalled joined in -- used by handlers_exobiology.on_sell_organic_data to compute

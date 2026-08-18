@@ -71,6 +71,24 @@ def _panel_lines(load) -> list[str]:
             lines.append(child["text"])
     return lines
 
+def _find_label(widget:tk.Widget, text:str) -> tk.Widget|None:
+    """ Depth-first search for the th.Label showing this text. """
+    for child in widget.winfo_children():
+        if "text" in child.keys() and child.cget("text") == text:
+            return child
+        found:tk.Widget|None = _find_label(child, text)
+        if found is not None:
+            return found
+    return None
+
+def _row_cell(label:tk.Widget, column:int) -> tk.Widget:
+    """ The cell at a given column in label's own gridded row. """
+    row:int = int(label.grid_info()["row"])
+    return next(
+        c for c in label.master.winfo_children()
+        if int(c.grid_info()["row"]) == row and int(c.grid_info()["column"]) == column
+    )
+
 class TestCreditsRange:
 
     def test_shared_unit_suffix_is_shown_once(self) -> None:
@@ -1060,6 +1078,41 @@ class TestPanelStates:
         load.panel.refresh()
         lines = _panel_lines(load)
         assert any("Bacterium Aurasus" in line for line in lines), lines
+
+    def test_active_species_name_and_progress_styling(self, plugin:TestHarness) -> None:
+        """ Genus/species names read steelblue in both themes; the
+        progress cell bolds once sampling has actually started. """
+        import tkinter.font as tkfont
+        from explorer.state import state as explorer_state
+
+        plugin.load_events("explorer_events.json")
+        plugin.play_sequence("honk_only", 0.02)
+
+        import load
+        assert load.store is not None and load.panel is not None
+        assert explorer_state.cmdr_id is not None and explorer_state.system_id is not None
+        body_pk:int = load.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 1, "QuietSpace A 1")
+        started_id:int = load.store.get_or_create_species_progress(body_pk, "Bacterium")
+        load.store.update_species_progress(started_id, species="Bacterium Aurasus", samples_taken=1)
+        unstarted_id:int = load.store.get_or_create_species_progress(body_pk, "Tussock")
+        load.store.update_species_progress(unstarted_id, species="Tussock Stigmasis")
+
+        explorer_state.body_id = 1
+        explorer_state.body_name = "QuietSpace A 1"
+        load.panel.refresh()
+
+        started_name = _find_label(load.panel.scroll.interior, "Bacterium Aurasus")
+        unstarted_name = _find_label(load.panel.scroll.interior, "Tussock Stigmasis")
+        assert started_name is not None and unstarted_name is not None
+        assert str(started_name.cget("foreground")) == "steelblue"
+        assert str(unstarted_name.cget("foreground")) == "steelblue"
+
+        started_progress = _row_cell(started_name, column=1)
+        unstarted_progress = _row_cell(unstarted_name, column=1)
+        assert started_progress.cget("text") == "1/3", started_progress.cget("text")
+        assert unstarted_progress.cget("text") == "0/3", unstarted_progress.cget("text")
+        assert tkfont.Font(font=started_progress.cget("font")).actual("weight") == "bold"
+        assert tkfont.Font(font=unstarted_progress.cget("font")).actual("weight") == "normal"
 
     def test_flagged_row_drops_off_once_every_confirmed_genus_is_fully_sampled(self, plugin:TestHarness) -> None:
         """

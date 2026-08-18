@@ -33,6 +33,7 @@ MAX_FULL_NAME_CHARS:int = 24 # above this, try abbreviated genus codes before gi
 MAX_MERGED_TAG_CHARS:int = 32 # above this even abbreviated, collapse to just a genus count
 SAMPLES_REQUIRED:int = 3 # every species needs exactly 3 real samples (Log/Sample x2) to complete -- see handlers_exobiology.py
 GRAVITY_MS2_PER_G:float = 9.797759 # matches genus_prediction.py's own constant, not the textbook 9.80665
+GENUS_COLOR:str = "steelblue" # reads well on both light and dark theme backgrounds
 
 def _visible_lines_px() -> int:
     return config.get_int(CFG_VISIBLE_LINES, default=DEFAULT_VISIBLE_LINES) * LINE_HEIGHT_PX
@@ -226,9 +227,11 @@ class ExplorerPanel:
     def _header_line(self, prefix:str, state:str) -> None:
         self._pending.append(("header", str_truncate(prefix, WIDTH_CHARS), state))
 
-    def _render_table(self, rows:list[tuple[str, ...]], anchors:tuple[str, ...], indent:int = 0) -> None:
+    def _render_table(self, rows:list[tuple[str, ...]], anchors:tuple[str, ...], indent:int = 0,
+                       cell_kwargs:list[dict[int, dict]]|None = None) -> None:
+        """ cell_kwargs: per-row {column: extra th.Label kwargs}. """
         if rows:
-            self._pending.append(("table", tuple(rows), anchors, indent))
+            self._pending.append(("table", tuple(rows), anchors, indent, cell_kwargs))
 
     def _materialize_row(self, command:tuple, row:int) -> tk.Widget:
         """ Grid (not pack) so a single row can be replaced in place without re-sequencing others. """
@@ -245,14 +248,16 @@ class ExplorerPanel:
             header.grid(row=row, column=0, sticky=tk.EW)
             return header
 
-        _, rows, anchors, indent = command
+        _, rows, anchors, indent, cell_kwargs = command
         table:th.Frame = th.Frame(self.scroll.interior)
         for r, table_row in enumerate(rows):
             last:int = len(table_row) - 1
+            row_kwargs:dict[int, dict] = cell_kwargs[r] if cell_kwargs else {}
             for c, (text, anchor) in enumerate(zip(table_row, anchors)):
                 sticky:str = tk.W if anchor == "w" else tk.E
                 pad:tuple[int, int] = (0, 0) if c == last else (0, 8)
-                th.Label(table, text=text, anchor=anchor, pady=0).grid(row=r, column=c, sticky=sticky, padx=pad)
+                th.Label(table, text=text, anchor=anchor, pady=0, **row_kwargs.get(c, {})).grid(
+                    row=r, column=c, sticky=sticky, padx=pad)
         table.grid(row=row, column=0, sticky=tk.EW, padx=(indent, 0))
         return table
 
@@ -396,8 +401,13 @@ class ExplorerPanel:
         was_footfalled:bool = bool(body and body["was_footfalled"])
 
         if active:
+            styles:list[dict[int, dict]] = [
+                {0: {"foreground": GENUS_COLOR}} | ({1: {"font": self._title_font}} if row["samples_taken"] else {})
+                for row in active
+            ]
             self._render_table(
-                [self._exobio_progress_row(row, was_footfalled) for row in active], anchors=("w", "e", "e", "e"), indent=INDENT_PX
+                [self._exobio_progress_row(row, was_footfalled) for row in active], anchors=("w", "e", "e", "e"),
+                indent=INDENT_PX, cell_kwargs=styles,
             )
             return
 
@@ -406,6 +416,7 @@ class ExplorerPanel:
             self._render_table(
                 [self._predicted_genus_row(slot, confirmed_signal, was_footfalled) for slot in predictions],
                 anchors=("w", "e", "e"), indent=INDENT_PX,
+                cell_kwargs=[{0: {"foreground": GENUS_COLOR}} for _ in predictions],
             )
             return
 

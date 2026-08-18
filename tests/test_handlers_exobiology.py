@@ -110,6 +110,79 @@ class TestOnScanOrganic:
         assert rows[0]["genus"] == "Bacterium"
         assert rows[0]["latitude"] == 10.0 and rows[0]["longitude"] == 20.0
 
+    def test_logging_a_new_genus_abandons_partial_progress_on_the_old_one(self, store:ExplorerStore) -> None:
+        """ Real ED behavior: starting a new organism before finishing
+        the current one's samples discards that progress entirely. """
+        state = ExplorerState()
+        state.cmdr_id = store.get_or_create_cmdr("Testy")
+        state.system_id = store.get_or_create_system(state.cmdr_id, 1, "Deltius")
+        state.body_id = 1
+        state.body_name = "Deltius 1"
+
+        handlers_exobiology.on_scan_organic(store, state, {
+            "event": "ScanOrganic", "ScanType": "Log", "Body": 1, "Genus_Localised": "Bacterium",
+        })
+        handlers_exobiology.on_scan_organic(store, state, {
+            "event": "ScanOrganic", "ScanType": "Sample", "Body": 1, "Genus_Localised": "Bacterium",
+        })
+        handlers_exobiology.on_scan_organic(store, state, {
+            "event": "ScanOrganic", "ScanType": "Log", "Body": 1, "Genus_Localised": "Tussock",
+        })
+
+        body_pk:int = store.get_or_create_body(state.cmdr_id, state.system_id, 1, "Deltius 1")
+        bacterium_id:int = store.get_or_create_species_progress(body_pk, "Bacterium")
+        row = store.get_species_progress_row(bacterium_id)
+        assert row is not None
+        assert row["samples_taken"] == 0, dict(row)
+        assert row["first_sample_at"] is None, dict(row)
+
+    def test_abandonment_does_not_touch_an_already_completed_species(self, store:ExplorerStore) -> None:
+        """ A completed species is real data, not an in-progress try --
+        logging elsewhere afterward must never wipe it out. """
+        state = ExplorerState()
+        state.cmdr_id = store.get_or_create_cmdr("Testy")
+        state.system_id = store.get_or_create_system(state.cmdr_id, 1, "Deltius")
+        state.body_id = 1
+        state.body_name = "Deltius 1"
+
+        body_pk:int = store.get_or_create_body(state.cmdr_id, state.system_id, 1, "Deltius 1")
+        bacterium_id:int = store.get_or_create_species_progress(body_pk, "Bacterium")
+        store.update_species_progress(bacterium_id, samples_taken=3, completed_at="2026-01-01T00:00:00Z")
+
+        handlers_exobiology.on_scan_organic(store, state, {
+            "event": "ScanOrganic", "ScanType": "Log", "Body": 1, "Genus_Localised": "Tussock",
+        })
+
+        row = store.get_species_progress_row(bacterium_id)
+        assert row is not None
+        assert row["samples_taken"] == 3, dict(row)
+        assert row["completed_at"] is not None, dict(row)
+
+    def test_switching_species_within_a_genus_restarts_rather_than_continues(self, store:ExplorerStore) -> None:
+        """ One row per genus (see schema) -- a species switch must
+        restart its count, not keep adding to the old species. """
+        state = ExplorerState()
+        state.cmdr_id = store.get_or_create_cmdr("Testy")
+        state.system_id = store.get_or_create_system(state.cmdr_id, 1, "Deltius")
+        state.body_id = 1
+        state.body_name = "Deltius 1"
+
+        handlers_exobiology.on_scan_organic(store, state, {
+            "event": "ScanOrganic", "ScanType": "Log", "Body": 1,
+            "Genus_Localised": "Bacterium", "Species_Localised": "Bacterium Aurasus",
+        })
+        handlers_exobiology.on_scan_organic(store, state, {
+            "event": "ScanOrganic", "ScanType": "Log", "Body": 1,
+            "Genus_Localised": "Bacterium", "Species_Localised": "Bacterium Alcyoneum",
+        })
+
+        body_pk:int = store.get_or_create_body(state.cmdr_id, state.system_id, 1, "Deltius 1")
+        progress_id:int = store.get_or_create_species_progress(body_pk, "Bacterium")
+        row = store.get_species_progress_row(progress_id)
+        assert row is not None
+        assert row["samples_taken"] == 1, dict(row) # fresh count, not 2
+        assert row["species"] == "Bacterium Alcyoneum", dict(row)
+
     def test_real_sample_keeps_an_existing_tag_that_is_still_far_enough(self, store:ExplorerStore) -> None:
         state = ExplorerState()
         state.cmdr_id = store.get_or_create_cmdr("Testy")

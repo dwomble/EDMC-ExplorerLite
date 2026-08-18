@@ -63,9 +63,17 @@ def on_scan_organic(store:ExplorerStore, state:ExplorerState, entry:dict) -> dic
     variant:str = entry.get("Variant_Localised") or entry.get("Variant", "")
     scan_type:str = entry.get("ScanType", "")
 
+    if scan_type == "Log":
+        store.abandon_other_species_progress(body_pk, genus)
+
     progress_id:int = store.get_or_create_species_progress(body_pk, genus)
     row:sqlite3.Row|None = store.get_species_progress_row(progress_id)
     now:str = now_iso()
+
+    # A same-genus species switch mid-sequence is discarded too.
+    if scan_type == "Log" and row and row["samples_taken"] and not row["completed_at"] \
+       and species and row["species"] and row["species"] != species:
+        row = None # treat as fresh, not a continuation of the abandoned count
 
     fields:dict = dict(species=species, variant=variant, last_stage=scan_type)
 
