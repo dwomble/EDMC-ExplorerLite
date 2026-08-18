@@ -181,8 +181,13 @@ def on_saa_signals_found(store:ExplorerStore, state:ExplorerState, entry:dict) -
         return {}
     body_pk:int = store.get_or_create_body(state.cmdr_id, state.system_id, body_id, entry.get("BodyName", ""))
 
+    genuses:list[dict] = entry.get("Genuses", [])
+    if genuses:
+        state.last_bio_body_id = body_id
+        state.last_bio_body_name = entry.get("BodyName", "")
+
     value_max_overall:int = 0
-    for g in entry.get("Genuses", []):
+    for g in genuses:
         genus:str = g.get("Genus_Localised") or g.get("Genus", "")
         store.upsert_body_genus(body_pk, genus, None, "SAASignalsFound")
         store.get_or_create_species_progress(body_pk, genus)

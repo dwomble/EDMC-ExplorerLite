@@ -122,11 +122,11 @@ class SystemSummaryOverlay:
 
         shown:list[tuple[int, str]] = rows[:MAX_BODY_LINES]
         current_lines:list[str] = self._current_body_lines(store, state)[:MAX_CURRENT_BODY_LINES]
-        current_shown:bool = False # nests under the current body, matching the panel
+        current_shown:bool = False # nests under the focus body, matching the panel
         for i, (body_id, line) in enumerate(shown):
             self.overlay.send_text(f"{FRAME_PREFIX}body-{i}", line, color, ANCHOR_X, next_y, ttl=TTL)
             next_y += LINE_HEIGHT_PX
-            if body_id == state.body_id:
+            if body_id == state.exobio_focus_body_id:
                 next_y = self._send_current_lines(current_lines, color, next_y)
                 current_shown = True
         for i in range(len(shown), self._last_body_count): # clear slots dropped since last render
@@ -155,10 +155,11 @@ class SystemSummaryOverlay:
 
     def _current_body_lines(self, store:ExplorerStore, state:ExplorerState) -> list[str]:
         """ Mirrors panel's exobio-section selection logic. """
-        if state.cmdr_id is None or state.system_id is None or state.body_id is None:
+        focus_id:int|None = state.exobio_focus_body_id
+        if state.cmdr_id is None or state.system_id is None or focus_id is None:
             return []
 
-        body_pk:int = store.get_or_create_body(state.cmdr_id, state.system_id, state.body_id, state.body_name)
+        body_pk:int = store.get_or_create_body(state.cmdr_id, state.system_id, focus_id, state.exobio_focus_body_name)
         all_progress:list[sqlite3.Row] = store.get_species_progress_for_body(body_pk)
         active:list[sqlite3.Row] = [row for row in all_progress if not row["completed_at"]]
         predictions:list[dict] = [] if (active or all_progress) else self.panel._best_predictions_for_body(body_pk)

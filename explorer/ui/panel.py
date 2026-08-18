@@ -295,13 +295,14 @@ class ExplorerPanel:
         # Current body's exobiology detail nests under its own row, not after the whole table
         anchors:tuple = ("w", "e", "e", "e", "w")
         flagged:list[sqlite3.Row] = sorted(self.store.get_flagged_bodies_for_system(system["id"]), key=flagged_body_sort_key)
+        focus_id:int|None = self.state.exobio_focus_body_id
         pending_rows:list = []
         current_row_shown:bool = False
         for body in flagged:
             row:tuple[str, str, str, str, str]|None = self._flagged_body_row(name, body)
             if row is None:
                 continue
-            if self.state.body_id is not None and body["body_id"] == self.state.body_id:
+            if focus_id is not None and body["body_id"] == focus_id:
                 if pending_rows:
                     self._render_table(pending_rows, anchors=anchors)
                     pending_rows = []
@@ -313,8 +314,8 @@ class ExplorerPanel:
         if pending_rows:
             self._render_table(pending_rows, anchors=anchors)
 
-        # Current body may not be in the flagged list at all (e.g. on-foot, uninteresting body)
-        if not current_row_shown and self.state.body_id is not None and self.state.cmdr_id is not None:
+        # Focus body may not be in the flagged list (e.g. on-foot)
+        if not current_row_shown and focus_id is not None and self.state.cmdr_id is not None:
             self._render_exobiology_section()
 
     def _flagged_body_row(self, system_name:str, body:sqlite3.Row) -> tuple[str, str, str, str, str]|None:
@@ -377,8 +378,9 @@ class ExplorerPanel:
 
     def _render_exobiology_section(self) -> None:
         """ Silent for an uninteresting body unless on-foot there. No header -- caller nests this under the body's own row. """
-        assert self.state.cmdr_id is not None and self.state.system_id is not None and self.state.body_id is not None
-        body_pk:int = self.store.get_or_create_body(self.state.cmdr_id, self.state.system_id, self.state.body_id, self.state.body_name)
+        focus_id:int|None = self.state.exobio_focus_body_id
+        assert self.state.cmdr_id is not None and self.state.system_id is not None and focus_id is not None
+        body_pk:int = self.store.get_or_create_body(self.state.cmdr_id, self.state.system_id, focus_id, self.state.exobio_focus_body_name)
 
         all_progress:list[sqlite3.Row] = self.store.get_species_progress_for_body(body_pk)
         active:list[sqlite3.Row] = [row for row in all_progress if not row["completed_at"]]

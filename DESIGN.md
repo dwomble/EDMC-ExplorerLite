@@ -1026,3 +1026,24 @@ an either/or) and `_flagged_body_row()`'s own top-level call, which collapses ac
 *outer* predictions list (one distinct real signal per slot), now passes `joiner="+"`. Both
 values flow into the overlay for free -- `overlay_summary.py` calls these same panel methods
 rather than re-deriving the text itself.
+
+## explorer/state.py + handlers_bodies.py + handlers_context.py -- Exobio list survives leaving the body
+
+**Request:** once a planet with biologicals is DSSed, show its genus/species list -- but only
+for one planet at a time: either the last one DSSed with biology, or whichever one we're
+physically at now. Previously the on-body exobiology section was keyed strictly to
+`state.body_id`, which every context handler (`on_leave_body`, `enter_system`) nulls out the
+moment we leave -- so the list vanished the instant you flew away from a body you'd just DSSed,
+well before you reached anywhere else worth showing instead.
+
+Added `state.last_bio_body_id`/`last_bio_body_name`, set by `on_saa_signals_found()` whenever
+its `Genuses` list is non-empty -- the one place "this body has confirmed biology" is already
+known. A new `ExplorerState.exobio_focus_body_id`/`exobio_focus_body_name` property pair picks
+`body_id`/`body_name` when we're at a body, else falls back to the last-DSSed one, so "which
+body are we showing" has one shared definition instead of being re-derived at each call site.
+`panel.py`'s `_render_system_summary()`/`_render_exobiology_section()` and
+`overlay_summary.py`'s `render()`/`_current_body_lines()` all switched from `state.body_id` to
+the new focus property -- the fallback shows on both surfaces for free, same as every other
+shared-state change this session. `enter_system()` clears the fallback on a system jump (its
+body_id is only meaningful paired with the system it was DSSed in) but `on_leave_body`
+deliberately leaves it alone -- clearing it there would defeat the whole point.

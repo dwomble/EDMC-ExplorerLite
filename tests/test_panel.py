@@ -1031,6 +1031,38 @@ class TestPanelStates:
         assert row[4] == "0 of 1 scanned", row
         assert "biological signal" not in row[4], row
 
+    def test_exobio_section_persists_after_leaving_the_dssed_body(self, plugin:TestHarness) -> None:
+        """
+        Regression: leaving a DSSed body (LeaveBody, or a system jump) used to blank the
+        on-body section entirely, since it was keyed strictly to state.body_id. It should
+        keep showing the last body DSSed with confirmed biology until another becomes current.
+        """
+        from explorer.state import state as explorer_state
+        from explorer.journal import handlers_context
+
+        plugin.load_events("explorer_events.json")
+        plugin.play_sequence("honk_only", 0.02)
+
+        import load
+        assert load.store is not None and load.panel is not None
+        assert explorer_state.cmdr_id is not None and explorer_state.system_id is not None
+        body_pk:int = load.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 1, "QuietSpace A 1")
+        progress_id:int = load.store.get_or_create_species_progress(body_pk, "Bacterium")
+        load.store.update_species_progress(progress_id, species="Bacterium Aurasus", samples_taken=1)
+
+        explorer_state.body_id = 1
+        explorer_state.body_name = "QuietSpace A 1"
+        explorer_state.last_bio_body_id = 1
+        explorer_state.last_bio_body_name = "QuietSpace A 1"
+
+        handlers_context.on_leave_body(load.store, explorer_state, {"event": "LeaveBody"})
+        assert explorer_state.body_id is None
+        assert explorer_state.exobio_focus_body_id == 1
+
+        load.panel.refresh()
+        lines = _panel_lines(load)
+        assert any("Bacterium Aurasus" in line for line in lines), lines
+
     def test_flagged_row_drops_off_once_every_confirmed_genus_is_fully_sampled(self, plugin:TestHarness) -> None:
         """
         Real-world regression: once every confirmed genus on a body is fully sampled, the row

@@ -64,6 +64,8 @@ def enter_system(store:ExplorerStore, state:ExplorerState, edmc_state:dict) -> d
     state.system_address = system_address
     state.system_name = edmc_state.get("SystemName") or ""
     state.nearest_star_type = None
+    state.last_bio_body_id = None
+    state.last_bio_body_name = ""
     state.reset_body()
     if state.cmdr_id is not None:
         state.system_id = store.get_or_create_system(state.cmdr_id, system_address, state.system_name)

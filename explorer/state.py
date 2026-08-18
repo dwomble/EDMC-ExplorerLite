@@ -21,6 +21,9 @@ class ExplorerState:
     body_id:int|None = None
     body_name:str = ""
 
+    last_bio_body_id:int|None = None # last body DSSed with confirmed biology, kept after
+    last_bio_body_name:str = "" # leaving it so its list keeps showing until we reach another
+
     landed:bool = False
     on_foot:bool = False # from Status.json (dashboard.py), not EDMC's journal-derived state['OnFoot'] --
     # more immediate, and EDMC's own docs admit theirs "might not set this 100% correctly"
@@ -60,6 +63,15 @@ class ExplorerState:
     def exobiology_relevant(self) -> bool:
         """ Whether the on-body exobiology UI/overlay section is currently relevant. """
         return self.landed and self.on_foot and self.body_id is not None
+
+    @property
+    def exobio_focus_body_id(self) -> int|None:
+        """ Here if at a body, else the last one DSSed with biology. """
+        return self.body_id if self.body_id is not None else self.last_bio_body_id
+
+    @property
+    def exobio_focus_body_name(self) -> str:
+        return self.body_name if self.body_id is not None else self.last_bio_body_name
 
     @property
     def overlay_relevant(self) -> bool:
