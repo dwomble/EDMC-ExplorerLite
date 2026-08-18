@@ -52,7 +52,7 @@ PREFS:list[Pref] = [p for _, section_prefs in SECTIONS for p in section_prefs] #
 LABEL_GAP_PX:int = 16 # between a pref's own label and its control
 GROUP_GAP_PX:int = 24 # between the left half and the right half
 ROW_GAP_PX:int = 6 # vertical space between pref rows
-DANGER_COLOR:str = "#aa3333" # flags an irreversible action, e.g. Clear unsold data
+DANGER_COLOR:str = "#ee0000" # flags an irreversible action, e.g. Clear unsold data
 
 _pref_vars:dict[str, tk.Variable] = {}
 
@@ -87,6 +87,7 @@ def _place_pref(frame:nb.Frame, p:Pref, row:int, col:int, enabled:bool) -> None:
             color_var:tk.StringVar = tk.StringVar(value=color)
             _pref_vars[p.key] = color_var
             nb.Label(frame, text=p.desc).grid(row=row, column=col, sticky=tk.W, padx=(left_pad, LABEL_GAP_PX), pady=pady)
+
             btn:tk.Button = tk.Button(frame, text="Foreground", foreground=color, background="#555555", state=state)
             btn.configure(command=partial(_pick_color, frame, color_var, btn))
             btn.grid(row=row, column=col + 1, sticky=tk.W, pady=pady)
@@ -124,11 +125,11 @@ def build_prefs(
     frame.columnconfigure(3, weight=1) # only the trailing column stretches -- keeps halves close
     bold:tkfont.Font = _bold_font()
 
-    row:int = 0
+    row:int = 0; col:int = 0
     nb.Label(frame, text=f"{PLUGIN_NAME} v{version}", font=bold).grid(row=row, column=0, columnspan=3, sticky=tk.W)
     HyperlinkLabel(frame, text="GitHub", url=GH_URL, underline=True).grid(row=row, column=3, sticky=tk.E)
     row += 1
-    ttk.Separator(frame).grid(row=row, column=0, columnspan=4, sticky=tk.EW, pady=6)
+    ttk.Separator(frame).grid(row=row, column=col, columnspan=4, sticky=tk.EW, pady=6)
     row += 1
 
     for title, section_prefs in SECTIONS:
@@ -137,15 +138,13 @@ def build_prefs(
         enabled:bool = overlay_available or title != OVERLAYS_SECTION
         row = _build_section(frame, section_prefs, row, enabled)
 
-    nb.Label(frame, text=DATA_SECTION_TITLE, font=bold).grid(row=row, column=0, columnspan=4, sticky=tk.W, pady=(4, 2))
-    row += 1
-    nb.Label(frame, text="For a death EDMC didn't see, e.g. it wasn't running:").grid(
-        row=row, column=0, columnspan=4, sticky=tk.W, pady=(0, ROW_GAP_PX))
-    row += 1
-    tk.Button(
-        frame, text="Clear unsold data", background=DANGER_COLOR, foreground="white", activebackground=DANGER_COLOR,
-        command=partial(_on_clear_unsold_data, frame, cmdr, clear_unsold_data),
-    ).grid(row=row, column=0, sticky=tk.W, pady=(0, ROW_GAP_PX))
+    nb.Label(frame, text=DATA_SECTION_TITLE, font=bold).grid(row=row, column=col, columnspan=4, sticky=tk.W, pady=(4, 2))
+    row += 1; col = 0
+    nb.Label(frame, text="Danger! This is an irreversible action:").grid(row=row, column=0, sticky=tk.W, pady=(0, ROW_GAP_PX))
+    col += 1
+    tk.Button(frame, text="Clear unsold data", background=DANGER_COLOR, foreground="white", activebackground=DANGER_COLOR,
+                command=partial(_on_clear_unsold_data, frame, cmdr, clear_unsold_data),
+    ).grid(row=row, column=col, rowspan=3, sticky=tk.W, pady=(0, ROW_GAP_PX))
 
     return frame
 
