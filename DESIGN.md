@@ -1084,10 +1084,12 @@ and applied via `**row_kwargs.get(c, {})` in the render loop. The other two `_re
 callers (`_flagged_body_row`, which isn't a genus/species line, and any future one) pass
 nothing and render exactly as before.
 
-`_render_exobiology_section()` now builds this per-row: column 0 (name) always gets
-`{"foreground": GENUS_COLOR}` for both the active-sampling table and the predicted-genus table;
-column 1 (progress) additionally gets `{"font": self._title_font}` (the same bold font already
-used for the header's state word) whenever `row["samples_taken"]` is truthy. `foreground` is
+`_render_exobiology_section()` now builds this per-row: every column gets
+`{"foreground": GENUS_COLOR}` for both the active-sampling table and the predicted-genus table
+-- an earlier pass only colored column 0, but the request was for the whole line, not just the
+name, so the color loop covers every column that table has. Column 1 (progress) additionally
+gets `{"font": self._title_font}` (the same bold font already used for the header's state word)
+whenever `row["samples_taken"]` is truthy. `foreground` is
 set at construction time, not via a later `.configure()` -- EDMC's `theme.register()` only
 protects a color from being stomped on dark/light toggle if it already differs from the
 system default the first time the widget is seen, so setting it any later would work visually

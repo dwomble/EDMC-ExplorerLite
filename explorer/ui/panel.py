@@ -401,10 +401,12 @@ class ExplorerPanel:
         was_footfalled:bool = bool(body and body["was_footfalled"])
 
         if active:
-            styles:list[dict[int, dict]] = [
-                {0: {"foreground": GENUS_COLOR}} | ({1: {"font": self._title_font}} if row["samples_taken"] else {})
-                for row in active
-            ]
+            styles:list[dict[int, dict]] = []
+            for row in active:
+                style:dict[int, dict] = {c: {"foreground": GENUS_COLOR} for c in range(4)}
+                if row["samples_taken"]:
+                    style[1]["font"] = self._title_font
+                styles.append(style)
             self._render_table(
                 [self._exobio_progress_row(row, was_footfalled) for row in active], anchors=("w", "e", "e", "e"),
                 indent=INDENT_PX, cell_kwargs=styles,
@@ -416,7 +418,7 @@ class ExplorerPanel:
             self._render_table(
                 [self._predicted_genus_row(slot, confirmed_signal, was_footfalled) for slot in predictions],
                 anchors=("w", "e", "e"), indent=INDENT_PX,
-                cell_kwargs=[{0: {"foreground": GENUS_COLOR}} for _ in predictions],
+                cell_kwargs=[{c: {"foreground": GENUS_COLOR} for c in range(3)} for _ in predictions],
             )
             return
 

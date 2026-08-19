@@ -1079,9 +1079,9 @@ class TestPanelStates:
         lines = _panel_lines(load)
         assert any("Bacterium Aurasus" in line for line in lines), lines
 
-    def test_active_species_name_and_progress_styling(self, plugin:TestHarness) -> None:
-        """ Genus/species names read steelblue in both themes; the
-        progress cell bolds once sampling has actually started. """
+    def test_active_species_line_styling(self, plugin:TestHarness) -> None:
+        """ The whole line reads steelblue in both themes; the progress
+        cell also bolds once sampling has actually started. """
         import tkinter.font as tkfont
         from explorer.state import state as explorer_state
 
@@ -1104,8 +1104,12 @@ class TestPanelStates:
         started_name = _find_label(load.panel.scroll.interior, "Bacterium Aurasus")
         unstarted_name = _find_label(load.panel.scroll.interior, "Tussock Stigmasis")
         assert started_name is not None and unstarted_name is not None
-        assert str(started_name.cget("foreground")) == "steelblue"
-        assert str(unstarted_name.cget("foreground")) == "steelblue"
+
+        # Every cell in the row, not just the name, reads steelblue
+        for label in (started_name, unstarted_name):
+            for column in range(4):
+                cell = _row_cell(label, column=column)
+                assert str(cell.cget("foreground")) == "steelblue", (column, cell.cget("text"))
 
         started_progress = _row_cell(started_name, column=1)
         unstarted_progress = _row_cell(unstarted_name, column=1)
