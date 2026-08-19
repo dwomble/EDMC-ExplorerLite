@@ -32,7 +32,19 @@ Create a directory in your EDMC `plugins` folder called `EDMC-ExplorerLite`, dow
 
 ## Honk
 
-The system line shows the known body count plus the next thing worth doing, e.g. `Deltius — 7 bodies — **DSS**`. `Honk` → `FSS` → `DSS` / `Sample` / `DSS + Sample` → `Done`. `FSS` (Full Spectrum Scan) stays until you've finished scanning the system bodies. `DSS` (Detailed Surface Scan) means a scanned body is worth mapping, either for its cargographic value or its biological value; `Sample` (Genetic Sampling) means a mapped body still needs its biology sampled; `DSS + Sample` means both are true somewhere in the system. `Done` covers both "nothing here was worth a full scan" and "genuinely nothing left to do."
+The system line shows the known body count plus the next thing worth doing, e.g. `Deltius — 7 bodies — **DSS**`. 
+
+The order is `Honk` → `FSS` → `DSS` / `Sample` / `DSS + Sample` → `Done`. 
+
+`FSS` (Full Spectrum Scan) stays until you've finished scanning the system bodies. 
+
+`DSS` (Detailed Surface Scan) means a scanned body is worth mapping, either for its cargographic value or its biological value.
+
+`Sample` (Genetic Sampling) means a mapped body still needs its biology sampled.
+
+`DSS + Sample` means both are true somewhere in the system. 
+
+`Done` there's nothing else recommended to do.
 
 ## FSS
 
