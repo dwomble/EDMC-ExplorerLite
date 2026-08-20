@@ -35,7 +35,7 @@ jobs:
         git push origin HEAD:main
 
     - name: Zip Folder
-      run: zip -r ${{ github.event.repository.name }}.zip . -x ".git*"".git*/*" ".DS_Store" ".python-version" "pyrightconfig.json" ".editorconfig" ".isort.cfg" ".venv/*" "AGENTS.md" "CLAUDE.md" "DESGIN.md" "SECURITY.md" "pytest.ini" "pyproject.toml" "requirements*.txt" "history/*" "tests/*"
+      run: zip -r ${{ github.event.repository.name }}.zip explorer LICENSE load.py version -x \*__pycache__\* \*.pytest_cache\*
 
     - name: Release
       uses: softprops/action-gh-release@v2
