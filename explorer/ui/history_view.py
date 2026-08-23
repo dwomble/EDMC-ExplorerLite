@@ -4,7 +4,6 @@ prefs' open/close lifecycle doesn't fit a live data browser, and its notebook is
 for a multi-column tree. """
 import tkinter as tk
 from tkinter import ttk
-import sqlite3
 from datetime import datetime, timedelta, timezone
 from typing import Literal
 
@@ -136,9 +135,12 @@ class HistoryView:
                 self.tree.delete(item)
             return
 
-        totals:sqlite3.Row|None = self.store.get_cmdr_totals(self.state.cmdr_id)
-        cart_sold:int = totals["actual_cartography_credits"] if totals else 0
-        exo_sold:int = totals["actual_exobiology_credits"] if totals else 0
+        unsold_only:bool = self.unsold_only_var.get()
+        since:str|None = _since_cutoff(self.time_range_var.get())
+
+        sale_totals:dict[str, int] = self.store.get_sale_totals(self.state.cmdr_id, since=since)
+        cart_sold:int = sale_totals.get("cartography", 0)
+        exo_sold:int = sale_totals.get("exobiology", 0)
         cart_pending:int = self.store.get_pending_cartography_value(self.state.cmdr_id)
         exo_pending:int = self.store.get_pending_exobiology_value(self.state.cmdr_id)
         self.summary_label.configure(text=(
@@ -148,9 +150,6 @@ class HistoryView:
 
         for item in self.tree.get_children():
             self.tree.delete(item)
-
-        unsold_only:bool = self.unsold_only_var.get()
-        since:str|None = _since_cutoff(self.time_range_var.get())
         for system in self.store.get_history_tree(self.state.cmdr_id, unsold_only=unsold_only, since=since):
             system_iid:str = self.tree.insert("", "end", text=system["name"], values=self._row_values(system))
             for body in system["children"]:

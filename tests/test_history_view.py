@@ -103,6 +103,28 @@ class TestHistoryTreeQuery:
         tree = store.get_history_tree(cmdr_id)
         assert [system["name"] for system in tree] == ["Second", "Third", "First"]
 
+class TestSaleTotals:
+    """ get_sale_totals() -- filtered summary, unlike
+    get_cmdr_totals()'s all-time total. """
+
+    def test_sums_by_event_type(self, store:ExplorerStore) -> None:
+        cmdr_id:int = store.get_or_create_cmdr("Testy")
+        store.record_sale(cmdr_id, "cartography", "2026-06-01T00:00:00", "Old", 1_000_000, "{}")
+        store.record_sale(cmdr_id, "exobiology", "2026-06-01T00:00:00", "Old", 500_000, "{}")
+
+        totals:dict[str, int] = store.get_sale_totals(cmdr_id)
+
+        assert totals == {"cartography": 1_000_000, "exobiology": 500_000}
+
+    def test_since_excludes_older_sales(self, store:ExplorerStore) -> None:
+        cmdr_id:int = store.get_or_create_cmdr("Testy")
+        store.record_sale(cmdr_id, "cartography", "2026-01-01T00:00:00", "Old", 1_000_000, "{}")
+        store.record_sale(cmdr_id, "cartography", "2026-06-01T00:00:00", "Recent", 200_000, "{}")
+
+        totals:dict[str, int] = store.get_sale_totals(cmdr_id, since="2026-03-01T00:00:00")
+
+        assert totals == {"cartography": 200_000}
+
 class TestUnsoldOnlyAndLimits:
     """ get_history_tree()'s unsold_only/since/limit filters --
     keeps a long career's popup from growing unbounded. """
@@ -147,6 +169,29 @@ class TestUnsoldOnlyAndLimits:
         tree = store.get_history_tree(cmdr_id, since="2026-03-01T00:00:00")
 
         assert [system["name"] for system in tree] == ["Recent"]
+
+    def test_since_also_includes_a_system_sold_after_an_old_visit(self, store:ExplorerStore) -> None:
+        """ A sale can land well after the visit; visited_at
+        alone hides it. """
+        cmdr_id:int = store.get_or_create_cmdr("Testy")
+        system_id:int = store.get_or_create_system(cmdr_id, 1, "Old")
+        store.update_system(system_id, visited_at="2026-01-01T00:00:00", sold_at="2026-06-01T00:00:00")
+
+        tree = store.get_history_tree(cmdr_id, since="2026-03-01T00:00:00")
+
+        assert [system["name"] for system in tree] == ["Old"]
+
+    def test_since_also_includes_a_system_with_a_recently_sold_species(self, store:ExplorerStore) -> None:
+        cmdr_id:int = store.get_or_create_cmdr("Testy")
+        system_id:int = store.get_or_create_system(cmdr_id, 1, "Old")
+        store.update_system(system_id, visited_at="2026-01-01T00:00:00")
+        body_pk:int = store.get_or_create_body(cmdr_id, system_id, 1, "Old 1")
+        progress_id:int = store.get_or_create_species_progress(body_pk, "Bacterium")
+        store.update_species_progress(progress_id, sold=1, sold_value=1_000_000, sold_at="2026-06-01T00:00:00")
+
+        tree = store.get_history_tree(cmdr_id, since="2026-03-01T00:00:00")
+
+        assert [system["name"] for system in tree] == ["Old"]
 
     def test_hard_limit_caps_the_systems_returned(self, store:ExplorerStore, monkeypatch) -> None:
         import explorer.db.store as store_module

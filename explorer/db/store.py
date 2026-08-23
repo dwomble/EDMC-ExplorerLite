@@ -67,6 +67,18 @@ class ExplorerStore:
             "SELECT actual_cartography_credits, actual_exobiology_credits FROM cmdrs WHERE id = ?", (cmdr_id,)
         ).fetchone()
 
+    def get_sale_totals(self, cmdr_id:int, since:str|None = None) -> dict[str, int]:
+        """ Sold credits by type, since cutoff -- unlike
+        get_cmdr_totals()'s all-time count. """
+        query:str = "SELECT event_type, SUM(total_value) AS total FROM sale_events WHERE cmdr_id = ?"
+        params:list = [cmdr_id]
+        if since is not None:
+            query += " AND timestamp >= ?"
+            params.append(since)
+        query += " GROUP BY event_type"
+        rows:list[sqlite3.Row] = self.conn.execute(query, params).fetchall()
+        return {row["event_type"]: row["total"] for row in rows}
+
     def get_pending_cartography_value(self, cmdr_id:int) -> int:
         """ Scan + mapping value (each bonus-adjusted for known discovery/mapped eligibility) of
         bodies whose system isn't sold/lost yet -- an approximation, distinct from
@@ -275,11 +287,15 @@ class ExplorerStore:
             (cmdr_id,),
         ).fetchall()
 
-    def mark_species_progress_sold(self, sold_values:list[tuple[int, int]]) -> None:
-        """ (progress_id, sold_value) pairs -- bulk-marks each as sold with its given value. """
+    def mark_species_progress_sold(self, sold_values:list[tuple[int, int]], timestamp:str) -> None:
+        """ (progress_id, sold_value) pairs -- marks each as
+        sold at timestamp. """
         if not sold_values:
             return
-        self.conn.executemany("UPDATE species_progress SET sold = 1, sold_value = ? WHERE id = ?", [(value, pid) for pid, value in sold_values])
+        self.conn.executemany(
+            "UPDATE species_progress SET sold = 1, sold_value = ?, sold_at = ? WHERE id = ?",
+            [(value, timestamp, pid) for pid, value in sold_values],
+        )
         self.conn.commit()
 
     def mark_all_unsold_species_progress_lost(self, cmdr_id:int, timestamp:str) -> None:
@@ -307,15 +323,20 @@ class ExplorerStore:
         cart_est adjusts for discovery/mapped eligibility.
         Exobio Base excludes the first-logged bonus; Full is the
         real payout (sold_value once sold, else Base + bonus).
-        `since` (ISO ts) filters to systems visited on/after it.
+        `since` (ISO ts) keeps a system if visited, sold, or any of
+        its species sold, on/after it -- a sale can land long after
+        the visit, so visited_at alone could hide a recent sale.
         `unsold_only` drops systems already fully sold/lost --
         both cartography and every species. """
         # DESC + LIMIT -- most recent first, capped to stay bounded
         query:str = "SELECT * FROM systems WHERE cmdr_id = ?"
         params:list = [cmdr_id]
         if since is not None:
-            query += " AND visited_at >= ?"
-            params.append(since)
+            query += """ AND (visited_at >= ? OR sold_at >= ? OR EXISTS (
+                SELECT 1 FROM species_progress JOIN bodies ON bodies.id = species_progress.body_id
+                WHERE bodies.system_id = systems.id AND species_progress.sold_at >= ?
+            ))"""
+            params.extend([since, since, since])
         query += " ORDER BY visited_at DESC LIMIT ?"
         params.append(MAX_HISTORY_SYSTEMS)
         systems:list[sqlite3.Row] = self.conn.execute(query, params).fetchall()

@@ -7,7 +7,7 @@ implementation plan for the rationale behind each table.
 """
 import sqlite3
 
-SCHEMA_VERSION = 9
+SCHEMA_VERSION = 10
 
 DDL = """
 CREATE TABLE IF NOT EXISTS schema_meta (
@@ -95,6 +95,7 @@ CREATE TABLE IF NOT EXISTS species_progress (
     confirmed_value INTEGER,
     sold INTEGER NOT NULL DEFAULT 0,
     sold_value INTEGER,
+    sold_at TEXT,
     lost_at TEXT, -- completed data lost (ship destroyed) before it could be sold
     UNIQUE(body_id, genus)
 );
@@ -139,6 +140,7 @@ COLUMN_ADDITIONS:list[tuple[str, str, str]] = [
     ("bodies", "was_footfalled", "INTEGER"),
     ("systems", "lost_at", "TEXT"),
     ("species_progress", "lost_at", "TEXT"),
+    ("species_progress", "sold_at", "TEXT"),
 ]
 
 def _ensure_columns(conn:sqlite3.Connection) -> None:

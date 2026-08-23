@@ -143,15 +143,16 @@ def on_sell_organic_data(store:ExplorerStore, state:ExplorerState, entry:dict) -
     entries back to specific bodies. """
     if state.cmdr_id is None:
         return {}
+    now:str = now_iso()
     bio_data:list = entry.get("BioData", [])
     total:int = sum(item.get("Value", 0) + item.get("Bonus", 0) for item in bio_data)
     if total > 0:
-        store.record_sale(state.cmdr_id, "exobiology", now_iso(), state.system_name or None, total, json.dumps(entry))
+        store.record_sale(state.cmdr_id, "exobiology", now, state.system_name or None, total, json.dumps(entry))
 
     completed:list[sqlite3.Row] = store.get_completed_unsold_species_for_cmdr(state.cmdr_id)
     sold_values:list[tuple[int, int]] = [
         (row["id"], exobiology.with_first_logged_bonus(row["confirmed_value"] or 0, bool(row["was_footfalled"])))
         for row in completed
     ]
-    store.mark_species_progress_sold(sold_values)
+    store.mark_species_progress_sold(sold_values, now)
     return {"panel": True}
