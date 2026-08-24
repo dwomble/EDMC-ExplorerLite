@@ -3,6 +3,8 @@ In-memory session state: "where are we right now" -- current Cmdr/system/body/su
 context, plus the live position data the overlay radar needs. No DB writes happen here;
 journal/dashboard handlers read and update this directly.
 """
+import edmc_data as ed # type: ignore
+
 from dataclasses import dataclass, field
 
 @dataclass
@@ -31,7 +33,7 @@ class ExplorerState:
 
     docked:bool = False
     on_foot_in_station:bool = False
-    gui_focus:int = 0 # Status.json GuiFocus -- 0 = no UI panel focused
+    gui_focus:int = ed.GuiFocusNoFocus # Status.json GuiFocus -- 0 = no UI panel focused
 
     latitude:float|None = None
     longitude:float|None = None
@@ -76,7 +78,8 @@ class ExplorerState:
     @property
     def overlay_relevant(self) -> bool:
         """ False if docked, on-foot in-station, or UI-focused. """
-        return not (self.docked or self.on_foot_in_station or self.gui_focus != 0)
+        return not (self.docked or self.on_foot_in_station or \
+                    self.gui_focus not in (ed.GuiFocusNoFocus, ed.GuiFocusExternalPanel, ed.GuiFocusFSS))
 
     def reset_all(self) -> None:
         """ Fresh-session reset -- for tests, which reuse this module-level singleton and need real isolation. """
