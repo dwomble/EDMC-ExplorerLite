@@ -14,15 +14,15 @@ At every stage of exploring a system ExplorerLite tells you whether it's worth y
 ## Key Features
 
 - Clean, simple, theme-aware UI shows the information you need and nothing you don't.
-- Unobtrusive when you aren't exploring (👁/🙈 toggle minimizes the display and hides overlays)
+- Unobtrusive when you aren't exploring (👁/🙈 toggle minimizes the display and hides overlays).
 - In-game overlays provide a summary and a sample-tracking radar.
 - Honk heuristic flags whether a system is worth a full FSS pass, based on star type and body/signal counts.
 - Flags bodies whose cartography (scan/mapping) value or exobiology potential meets your configured credit thresholds, including first-discovery/first-mapped bonuses.
 - FSS prediction ranks likely biology from a body's atmosphere, temperature, gravity, and volcanism as soon as it's scanned
 - Live per-species sampling progress once you're on the ground, including the first-logged bonus.
-- Waypoints track other species tagged with the compisition scanner.
+- Waypoints track other species tagged with the composition scanner.
 - History browser with running sold/pending totals for both cartography and exobiology.
-- Multi-commander support
+- Multi-commander support.
 
 <img width="477" height="173" alt="Screenshot 2026-08-16 183627" src="https://github.com/user-attachments/assets/15b6d141-8385-47ee-ba5d-9474bd56aaa6" />
 
