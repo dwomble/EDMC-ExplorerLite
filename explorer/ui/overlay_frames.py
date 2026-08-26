@@ -21,11 +21,13 @@ PLUGIN_GROUP:str = "EDMC-ExplorerLite"
 
 CENTER_X:int = 640
 CENTER_Y:int = 480
-# Higher = rounder, but the overlay transport appears to
-# silently drop a vect message above ~a few hundred points
-# -- 384 made rings vanish entirely. 96 is the highest
-# value actually confirmed still rendering.
-RING_SEGMENTS:int = 96
+# The overlay protocol has no native circle shape -- a connected vect polyline either looks
+# jagged (few points) or the transport drops it (many points, confirmed at 384). Rings are
+# drawn as individually-sent dot markers instead: no connecting-line facets to look jagged,
+# and each message stays tiny regardless of ring size.
+RING_DOT_SPACING_PX:float = 24.0 # target on-screen gap between adjacent dots
+RING_DOT_MIN:int = 12
+RING_DOT_MAX:int = 32
 TTL:int = 8 # generous vs. the ~1/sec dashboard-tick refresh cadence, so a missed/delayed tick doesn't visibly blank the radar
 TAG_TRIANGLE_SIZE_PX:int = 5 # vertex-to-center radius for a codex-tagged waypoint's triangle marker
 
@@ -92,10 +94,21 @@ def _triangle_points(cx:float, cy:float, r:float) -> list[dict]:
 def _genus_label(genus:str) -> str:
     return exobiology_data.genus_code(genus)
 
-def _circle_points(cx:float, cy:float, r:float) -> list[dict]:
+def _ring_dot_count(r:float) -> int:
+    """ Scales with circumference so dot spacing stays roughly constant across ring sizes
+    (~19-140px radius) -- a fixed count would overlap solid on the smallest ring or read
+    sparse on the largest. """
+    if r <= 0:
+        return 0
+    raw:int = round(2 * math.pi * r / RING_DOT_SPACING_PX)
+    return max(RING_DOT_MIN, min(RING_DOT_MAX, raw))
+
+def _ring_dot_positions(cx:float, cy:float, r:float) -> list[tuple[float, float]]:
+    """ Dot 0 sits at angle 0 (due "east" in screen space), matching the old polyline's start. """
+    count:int = _ring_dot_count(r)
     return [
-        {"x": round(cx + r * math.cos(2 * math.pi * i / RING_SEGMENTS)), "y": round(cy + r * math.sin(2 * math.pi * i / RING_SEGMENTS))}
-        for i in range(RING_SEGMENTS + 1)
+        (cx + r * math.cos(2 * math.pi * i / count), cy + r * math.sin(2 * math.pi * i / count))
+        for i in range(count)
     ]
 
 def _rotate_to_heading(east:float, north:float, heading:float) -> tuple[float, float]:
@@ -201,17 +214,22 @@ class RadarOverlay:
         """ Best pre-DSS guess (highest confidence, already the query's own ordering). """
         return predictions[0]["genus"] if predictions else None
 
+    def _send_ring_dots(self, frame_id_prefix:str, r:float, color:str) -> None:
+        for i, (x, y) in enumerate(_ring_dot_positions(CENTER_X, CENTER_Y, r)):
+            point:dict = {"x": round(x), "y": round(y), "marker": "circle"}
+            self.overlay.send_vect(f"{frame_id_prefix}-{i}", [point], color, ttl=TTL)
+
     def _draw_distance_rings(self, radius_px:int) -> None:
         for distance_m in RING_DISTANCES_M:
             r:float = radius_px * _radius_frac(distance_m) * RING_AREA_FRAC
-            self.overlay.send_vect(f"{FRAME_PREFIX}ring-{distance_m}", _circle_points(CENTER_X, CENTER_Y, r), RING_COLOR, ttl=TTL)
+            self._send_ring_dots(f"{FRAME_PREFIX}ring-{distance_m}", r, RING_COLOR)
 
     def _draw_genus_ring(self, radius_px:int, genus:str, color:str) -> None:
         min_dist:int|None = exobiology_data.genus_min_distance(genus)
         if not min_dist or min_dist > DISPLAY_RANGE_M:
             return
         r:float = radius_px * _radius_frac(min_dist) * RING_AREA_FRAC
-        self.overlay.send_vect(f"{FRAME_PREFIX}ring-active-{genus}", _circle_points(CENTER_X, CENTER_Y, r), color, ttl=TTL)
+        self._send_ring_dots(f"{FRAME_PREFIX}ring-active-{genus}", r, color)
 
     def _draw_genus_label(self, radius_px:int, genus:str) -> None:
         """ Only called when SHOW_TAGGED_GENUS is on. """
