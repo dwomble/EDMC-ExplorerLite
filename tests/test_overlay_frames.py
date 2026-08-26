@@ -155,10 +155,11 @@ class TestRadarOverlayModern:
         assert f"{FRAME_PREFIX}sample-Bacterium-1" in shapes
 
     @pytest.mark.overlay('Modern')
-    def test_ring_is_drawn_as_multiple_single_point_dot_messages(self, overlay_mode, store:ExplorerStore) -> None:
-        """ Each dot is its own vect message with exactly one marker point -- not one big
-        connected polyline (see RING_DOT_MIN/_ring_dot_count's module docstring for why). """
-        from explorer.ui.overlay_frames import RING_DOT_MIN
+    def test_ring_is_drawn_as_multiple_small_dot_messages(self, overlay_mode, store:ExplorerStore) -> None:
+        """ Each dot is its own small closed-polygon vect message -- not one big connected
+        polyline (see RING_DOT_MIN/_ring_dot_count's module docstring for why), and not the
+        protocol's fixed 12px "circle" marker either (too big -- see DOT_RADIUS_PX). """
+        from explorer.ui.overlay_frames import RING_DOT_MIN, DOT_SIDES
 
         radar = RadarOverlay(Overlay())
         radar.render(store, _landed_state(store, samples=0))
@@ -168,8 +169,8 @@ class TestRadarOverlayModern:
         assert f"{FRAME_PREFIX}ring-1400-{RING_DOT_MIN - 1}" in shapes
 
         msg, _ = shapes[f"{FRAME_PREFIX}ring-1400-0"]
-        assert len(msg["vector"]) == 1
-        assert msg["vector"][0]["marker"] == "circle"
+        assert len(msg["vector"]) == DOT_SIDES + 1 # closed polygon
+        assert msg["vector"][0] == msg["vector"][-1]
 
     @pytest.mark.overlay('Modern')
     def test_codex_tagged_sample_is_a_triangle_in_its_variant_color(self, overlay_mode, store:ExplorerStore) -> None:
@@ -446,9 +447,12 @@ class TestRadarOverlayModern:
             radar.render(store, state)
 
             msg, _ = radar.overlay._overlay.shapes[f"{FRAME_PREFIX}ring-1400-0"]
+            # dot 0's own small polygon is centered on the ring point itself, so average its
+            # vertices (dropping the closing duplicate) rather than reading a single vertex --
             # the outermost ring sits at RING_AREA_FRAC of the configured size, not the full
             # radius -- the remaining margin is reserved for out-of-range dots (see module docstring)
-            assert msg["vector"][0]["x"] - CENTER_X == pytest.approx(300 * RING_AREA_FRAC)
+            dot_cx:float = sum(p["x"] for p in msg["vector"][:-1]) / (len(msg["vector"]) - 1)
+            assert dot_cx - CENTER_X == pytest.approx(300 * RING_AREA_FRAC, abs=1.0)
         finally:
             harness.config.set(CFG_OVERLAY_RADAR_SIZE, 150)
 
