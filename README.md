@@ -116,6 +116,6 @@ All data and progress is stored locally in a per-install database segmented per 
 
 ## Suggestions
 
-Please let me know if you have any suggestions or find any bugs by submitting an [issue](https://github.com/dwomble/EDMC-NeutronDancer/issues), and if you like ExplorerLite I don't need a coffee, I live in Seattle so I'm plenty caffeinated already, but please give it a ⭐.
+Please let me know if you have any suggestions or find any bugs by submitting an [issue](https://github.com/dwomble/EDMC-ExplorerLite/issues), and if you like ExplorerLite I don't need a coffee, I live in Seattle so I'm plenty caffeinated already, but please give it a ⭐.
 
 Fly dangerous! o7
