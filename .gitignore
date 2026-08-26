@@ -228,6 +228,7 @@ __marimo__/
 # Streamlit
 .streamlit/secrets.toml
 
+updates/
 tests/logs/
 tests/backups/
 tests/updates/
