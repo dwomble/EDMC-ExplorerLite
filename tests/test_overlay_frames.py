@@ -87,7 +87,7 @@ def _landed_state(store:ExplorerStore, genus:str = "Bacterium", samples:int = 1,
     if mark_done:
         store.update_species_progress(progress_id, completed_at="2026-01-01T00:00:00Z")
     if samples:
-        state.sample_positions[genus] = [(10.0 + i * 0.0001, 20.0, None) for i in range(samples)]
+        state.sample_positions[genus] = [(10.0 + i * 0.0001, 20.0, None, False) for i in range(samples)]
         state.current_genus = genus
     return state
 
@@ -143,8 +143,8 @@ class TestRadarOverlayModern:
         from explorer.ui.overlay_frames import CODEX_TAG_COLORS
 
         radar = RadarOverlay(Overlay())
-        state = _landed_state(store, genus="Bacterium", samples=1) # a real sample -- (lat, lon, None)
-        state.sample_positions["Bacterium"].append((10.0002, 20.0, "Lime")) # a codex-tagged waypoint
+        state = _landed_state(store, genus="Bacterium", samples=1) # a real sample -- (lat, lon, None, False)
+        state.sample_positions["Bacterium"].append((10.0002, 20.0, "Lime", True)) # a codex-tagged waypoint
 
         radar.render(store, state)
 
@@ -171,7 +171,7 @@ class TestRadarOverlayModern:
 
         state = _landed_state(store, samples=0)
         state.heading = 0.0
-        state.sample_positions["Bacterium"] = [(10.01, 20.0, None)] # ~87m due north of the player
+        state.sample_positions["Bacterium"] = [(10.01, 20.0, None, False)] # ~87m due north of the player
         radar.render(store, state)
         shape = radar.overlay._overlay.shapes[f"{FRAME_PREFIX}sample-Bacterium-0"]
         sx, sy, w, h = shape[4], shape[5], shape[6], shape[7]
@@ -200,7 +200,7 @@ class TestRadarOverlayModern:
         """
         radar = RadarOverlay(Overlay())
         state = _landed_state(store, genus="Bacterium", samples=1) # sets current_genus = "Bacterium"
-        state.sample_positions["Fonticulua"] = [(10.0001, 20.0, None)]
+        state.sample_positions["Fonticulua"] = [(10.0001, 20.0, None, False)]
         assert state.cmdr_id is not None and state.system_id is not None and state.body_id is not None
         body_pk:int = store.get_or_create_body(state.cmdr_id, state.system_id, state.body_id, state.body_name)
         store.get_or_create_species_progress(body_pk, "Fonticulua")
@@ -272,7 +272,7 @@ class TestRadarOverlayModern:
 
         radar = RadarOverlay(Overlay())
         state = _landed_state(store, genus="Bacterium", samples=0)
-        state.sample_positions["Bacterium"] = [(10.23, 20.0, None)] # ~2007m north -- past the fixed 1400m display range
+        state.sample_positions["Bacterium"] = [(10.23, 20.0, None, False)] # ~2007m north -- past the fixed 1400m display range
 
         radar.render(store, state)
 

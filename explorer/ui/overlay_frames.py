@@ -21,7 +21,11 @@ PLUGIN_GROUP:str = "EDMC-ExplorerLite"
 
 CENTER_X:int = 640
 CENTER_Y:int = 480
-RING_SEGMENTS:int = 384 # higher = a rounder-looking circle -- the overlay draws straight segments, no arcs
+# Higher = rounder, but the overlay transport appears to
+# silently drop a vect message above ~a few hundred points
+# -- 384 made rings vanish entirely. 96 is the highest
+# value actually confirmed still rendering.
+RING_SEGMENTS:int = 96
 TTL:int = 8 # generous vs. the ~1/sec dashboard-tick refresh cadence, so a missed/delayed tick doesn't visibly blank the radar
 TAG_TRIANGLE_SIZE_PX:int = 5 # vertex-to-center radius for a codex-tagged waypoint's triangle marker
 
@@ -55,7 +59,7 @@ def _radius() -> int:
 RING_COLOR:str = "#999999" # neutral grey -- distinct from every CODEX_TAG_COLORS entry below, so it never reads as a species color
 ACTIVE_RING_COLOR:str = "#ffaa00" # the current species being sampled this visit
 TAGGED_RING_COLOR:str = "#cc66ff" # a genus confirmed but not yet approached this visit -- see SHOW_TAGGED_GENUS
-SAMPLE_COLOR:str = "#00aaff" # a real ScanOrganic sample -- never reused below, so a codex-tagged dot is never mistaken for one
+SAMPLE_COLOR:str = "#00aaff" # fallback for a real sample with no recognized variant color
 PLAYER_COLOR:str = "#ffffff"
 LABEL_COLOR:str = "#ffffff"
 
@@ -73,6 +77,11 @@ DEFAULT_TAG_COLOR:str = "#ff66aa" # an unrecognized color name -- still distinct
 
 def _tag_color(color_name:str|None) -> str:
     return CODEX_TAG_COLORS.get(color_name, DEFAULT_TAG_COLOR) if color_name else DEFAULT_TAG_COLOR
+
+def _sample_color(color_name:str|None) -> str:
+    """ Same lookup as _tag_color(), but falls back to
+    SAMPLE_COLOR rather than DEFAULT_TAG_COLOR. """
+    return CODEX_TAG_COLORS.get(color_name, SAMPLE_COLOR) if color_name else SAMPLE_COLOR
 
 def _triangle_points(cx:float, cy:float, r:float) -> list[dict]:
     """ Equilateral triangle, point-up, vertices r px from center. """
@@ -218,11 +227,11 @@ class RadarOverlay:
     def _draw_samples(self, state:ExplorerState, genus:str, radius_px:int, heading:float) -> None:
         """ Bearing (unit direction) and pixel radius (non-linear) computed separately, then combined. """
 
-        positions:list[tuple[float, float, str|None]] = state.sample_positions.get(genus, [])
+        positions:list[tuple[float, float, str|None, bool]] = state.sample_positions.get(genus, [])
         if not positions or state.planet_radius is None or state.latitude is None or state.longitude is None:
             return
 
-        for i, (lat, lon, color_name) in enumerate(positions):
+        for i, (lat, lon, color_name, is_tag) in enumerate(positions):
             east, north = local_offset_m(state.latitude, state.longitude, lat, lon, state.planet_radius)
             dist:float = math.hypot(east, north)
             in_range:bool = dist <= DISPLAY_RANGE_M
@@ -234,10 +243,11 @@ class RadarOverlay:
             sy:float = CENTER_Y - forward * pixel_r
 
             frame_id:str = f"{FRAME_PREFIX}sample-{genus}-{i}"
-            if color_name is None:
-                # a real sample -- filled/hollow square in the fixed sample color
-                fill:str = SAMPLE_COLOR if in_range else "" # hollow once out of range -- position is only a bearing now, not exact
-                self.overlay.send_shape(frame_id, "rect", SAMPLE_COLOR, fill, round(sx) - 3, round(sy) - 3, 6, 6, ttl=TTL)
+            if not is_tag:
+                # a real sample -- square, its variant color
+                border:str = _sample_color(color_name)
+                fill:str = border if in_range else "" # hollow once out of range -- position is only a bearing now, not exact
+                self.overlay.send_shape(frame_id, "rect", border, fill, round(sx) - 3, round(sy) - 3, 6, 6, ttl=TTL)
                 continue
 
             # a codex-tagged waypoint -- always-hollow triangle, distinct shape from a real sample

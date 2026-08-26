@@ -5,17 +5,21 @@ body/exobiology-specific handlers know what they're looking at.
 from explorer.db.store import ExplorerStore
 from explorer.state import ExplorerState
 from explorer import session_persist
+from explorer.util import split_localised_color
 
 def _persist(state:ExplorerState) -> None:
     session_persist.save(state.cmdr, state.system_address, state.system_name, state.body_id, state.body_name)
 
 def _restore_sample_positions(store:ExplorerStore, state:ExplorerState) -> None:
-    """ Reloads this visit's radar samples on restart. """
+    """ Reloads this visit's radar samples on restart,
+    colored the way a fresh sample is. """
     if state.cmdr_id is None or state.system_id is None or state.body_id is None:
         return
     body_pk:int = store.get_or_create_body(state.cmdr_id, state.system_id, state.body_id, state.body_name)
+    variants:dict[str, str] = {row["genus"]: row["variant"] or "" for row in store.get_species_progress_for_body(body_pk)}
     for row in store.get_sample_positions_for_body(body_pk):
-        state.sample_positions.setdefault(row["genus"], []).append((row["latitude"], row["longitude"], None))
+        _, color_name = split_localised_color(variants.get(row["genus"], ""))
+        state.sample_positions.setdefault(row["genus"], []).append((row["latitude"], row["longitude"], color_name, False))
         state.current_genus = row["genus"] # last row wins, insertion-ordered
 
 def restore_last_session(store:ExplorerStore, state:ExplorerState) -> None:

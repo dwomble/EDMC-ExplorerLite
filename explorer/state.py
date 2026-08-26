@@ -41,9 +41,12 @@ class ExplorerState:
     altitude:float|None = None
     planet_radius:float|None = None
 
-    # Session-only, keyed by genus: (lat, lon, color_name) per sample/tag for the radar's markers.
-    # color_name is the tag's variant color, or None for a real sample. Cleared on reset_body().
-    sample_positions:dict[str, list[tuple[float, float, str|None]]] = field(default_factory=dict)
+    # Session-only, keyed by genus: (lat, lon, color_name,
+    # is_tag) per sample/tag, for the radar's markers.
+    # color_name is the variant color, or None if unknown.
+    # is_tag picks square (sample) vs triangle (codex spot).
+    # Cleared on reset_body().
+    sample_positions:dict[str, list[tuple[float, float, str|None, bool]]] = field(default_factory=dict)
 
     current_genus:str|None = None # genus of the most recent real sample -- the radar's one active ring
 

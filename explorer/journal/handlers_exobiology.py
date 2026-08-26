@@ -8,7 +8,7 @@ import sqlite3
 
 from explorer.db.store import ExplorerStore
 from explorer.state import ExplorerState
-from explorer.util import now_iso, surface_distance_m
+from explorer.util import now_iso, surface_distance_m, split_localised_color
 from explorer.valuation import exobiology, exobiology_data
 
 # Confirmed against real journal lines: Log -> Sample -> Sample -> Analyse. Only Log/Sample
@@ -32,7 +32,7 @@ def _discard_tags_within_min_distance(state:ExplorerState, genus:str, lat:float,
         return
     state.sample_positions[genus] = [
         p for p in positions
-        if p[2] is None or surface_distance_m(lat, lon, p[0], p[1], state.planet_radius) >= min_dist
+        if not p[3] or surface_distance_m(lat, lon, p[0], p[1], state.planet_radius) >= min_dist
     ]
 
 def _too_close_to_existing_sample(state:ExplorerState, genus:str, lat:float, lon:float) -> bool:
@@ -45,7 +45,7 @@ def _too_close_to_existing_sample(state:ExplorerState, genus:str, lat:float, lon
     if min_dist is None:
         return False
     return any(
-        p[2] is None and surface_distance_m(lat, lon, p[0], p[1], state.planet_radius) < min_dist
+        not p[3] and surface_distance_m(lat, lon, p[0], p[1], state.planet_radius) < min_dist
         for p in state.sample_positions.get(genus, [])
     )
 
@@ -88,7 +88,8 @@ def on_scan_organic(store:ExplorerStore, state:ExplorerState, entry:dict) -> dic
         # see state.py). Only for real samples, not the Analyse finalize step.
         state.current_genus = genus # the radar's one active ring belongs to whichever genus you're actually sampling
         if state.has_lat_long and state.latitude is not None and state.longitude is not None:
-            state.sample_positions.setdefault(genus, []).append((state.latitude, state.longitude, None)) # None -- a real sample, not a color-coded tag
+            _, color_name = split_localised_color(variant) # radar square matches the species' own variant color
+            state.sample_positions.setdefault(genus, []).append((state.latitude, state.longitude, color_name, False))
             store.add_sample_position(body_pk, genus, state.latitude, state.longitude) # survives an EDMC restart, unlike state.py alone
             _discard_tags_within_min_distance(state, genus, state.latitude, state.longitude)
     elif scan_type == "Analyse" and (not row or not row["completed_at"]):
@@ -115,9 +116,7 @@ def on_codex_entry(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict
     longitude:float|None = entry.get("Longitude")
     if body_id is None or latitude is None or longitude is None:
         return {}
-    name_parts:list[str] = entry.get("Name_Localised", "").split(" - ", 1)
-    species:str = name_parts[0].strip()
-    color_name:str|None = name_parts[1].strip() if len(name_parts) > 1 else None
+    species, color_name = split_localised_color(entry.get("Name_Localised", ""))
     genus:str|None = exobiology_data.genus_from_species_name(species)
     if genus is None:
         return {}
@@ -133,7 +132,7 @@ def on_codex_entry(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict
     store.update_species_progress(progress_id, **fields)
 
     if not _too_close_to_existing_sample(state, genus, latitude, longitude):
-        state.sample_positions.setdefault(genus, []).append((latitude, longitude, color_name))
+        state.sample_positions.setdefault(genus, []).append((latitude, longitude, color_name, True))
     return {"panel": True, "overlay": "radar"}
 
 def on_sell_organic_data(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict:
