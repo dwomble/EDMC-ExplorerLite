@@ -147,30 +147,31 @@ class TestRadarOverlayModern:
         state = _landed_state(store, samples=2)
         radar.render(store, state)
 
+        messages = radar.overlay._overlay.messages
+        assert f"{FRAME_PREFIX}ring-1400-0" in messages
+        assert f"{FRAME_PREFIX}ring-active-Bacterium-0" in messages # Bacterium's 500m min-distance fits within the fixed 1400m display range
+        assert f"{FRAME_PREFIX}player" in messages
         shapes = radar.overlay._overlay.shapes
-        assert f"{FRAME_PREFIX}ring-1400-0" in shapes
-        assert f"{FRAME_PREFIX}ring-active-Bacterium-0" in shapes # Bacterium's 500m min-distance fits within the fixed 1400m display range
-        assert f"{FRAME_PREFIX}player" in shapes
         assert f"{FRAME_PREFIX}sample-Bacterium-0" in shapes
         assert f"{FRAME_PREFIX}sample-Bacterium-1" in shapes
 
     @pytest.mark.overlay('Modern')
-    def test_ring_is_drawn_as_multiple_small_dot_messages(self, overlay_mode, store:ExplorerStore) -> None:
-        """ Each dot is its own small closed-polygon vect message -- not one big connected
-        polyline (see RING_DOT_MIN/_ring_dot_count's module docstring for why), and not the
-        protocol's fixed 12px "circle" marker either (too big -- see DOT_RADIUS_PX). """
-        from explorer.ui.overlay_frames import RING_DOT_MIN, DOT_SIDES
+    def test_ring_is_drawn_as_multiple_small_dot_glyphs(self, overlay_mode, store:ExplorerStore) -> None:
+        """ Each dot is its own small text-glyph message -- not one big connected polyline
+        (see RING_DOT_MIN/_ring_dot_count's module docstring for why). A vect shape is
+        outline-only, so a filled dot has to be a real glyph instead (see DOT_GLYPH). """
+        from explorer.ui.overlay_frames import RING_DOT_MIN, DOT_GLYPH
 
         radar = RadarOverlay(Overlay())
         radar.render(store, _landed_state(store, samples=0))
 
-        shapes = radar.overlay._overlay.shapes
-        assert f"{FRAME_PREFIX}ring-1400-1" in shapes # more than just dot 0 -- an actual ring, not a single point
-        assert f"{FRAME_PREFIX}ring-1400-{RING_DOT_MIN - 1}" in shapes
+        messages = radar.overlay._overlay.messages
+        assert f"{FRAME_PREFIX}ring-1400-1" in messages # more than just dot 0 -- an actual ring, not a single point
+        assert f"{FRAME_PREFIX}ring-1400-{RING_DOT_MIN - 1}" in messages
 
-        msg, _ = shapes[f"{FRAME_PREFIX}ring-1400-0"]
-        assert len(msg["vector"]) == DOT_SIDES + 1 # closed polygon
-        assert msg["vector"][0] == msg["vector"][-1]
+        _, text, _, _, _, kwargs = messages[f"{FRAME_PREFIX}ring-1400-0"]
+        assert text == DOT_GLYPH
+        assert kwargs["size"] == "small"
 
     @pytest.mark.overlay('Modern')
     def test_codex_tagged_sample_is_a_triangle_in_its_variant_color(self, overlay_mode, store:ExplorerStore) -> None:
@@ -247,9 +248,10 @@ class TestRadarOverlayModern:
 
         radar.render(store, state)
 
+        messages = radar.overlay._overlay.messages
+        assert f"{FRAME_PREFIX}ring-active-Bacterium-0" in messages # current_genus -- gets the ring
+        assert f"{FRAME_PREFIX}ring-active-Fonticulua-0" not in messages # in progress too, but not current -- no ring
         shapes = radar.overlay._overlay.shapes
-        assert f"{FRAME_PREFIX}ring-active-Bacterium-0" in shapes # current_genus -- gets the ring
-        assert f"{FRAME_PREFIX}ring-active-Fonticulua-0" not in shapes # in progress too, but not current -- no ring
         assert f"{FRAME_PREFIX}sample-Bacterium-0" in shapes
         assert f"{FRAME_PREFIX}sample-Fonticulua-0" in shapes # samples still show for both
 
@@ -270,9 +272,10 @@ class TestRadarOverlayModern:
 
         radar.render(store, state)
 
+        messages = radar.overlay._overlay.messages
+        assert f"{FRAME_PREFIX}ring-active-Bacterium-0" in messages
+        assert f"{FRAME_PREFIX}ring-active-Fonticulua-0" not in messages
         shapes = radar.overlay._overlay.shapes
-        assert f"{FRAME_PREFIX}ring-active-Bacterium-0" in shapes
-        assert f"{FRAME_PREFIX}ring-active-Fonticulua-0" not in shapes
         assert f"{FRAME_PREFIX}sample-Fonticulua-0" not in shapes # nothing taken yet -- nothing to draw
 
     @pytest.mark.overlay('Modern')
@@ -292,10 +295,9 @@ class TestRadarOverlayModern:
 
         radar.render(store, state)
 
-        shapes = radar.overlay._overlay.shapes
         messages = radar.overlay._overlay.messages
-        assert shapes[f"{FRAME_PREFIX}ring-active-Bacterium-0"][0]["color"] == overlay_frames.ACTIVE_RING_COLOR
-        assert shapes[f"{FRAME_PREFIX}ring-active-Fonticulua-0"][0]["color"] == overlay_frames.TAGGED_RING_COLOR
+        assert messages[f"{FRAME_PREFIX}ring-active-Bacterium-0"][2] == overlay_frames.ACTIVE_RING_COLOR
+        assert messages[f"{FRAME_PREFIX}ring-active-Fonticulua-0"][2] == overlay_frames.TAGGED_RING_COLOR
         assert messages[f"{FRAME_PREFIX}label-Fonticulua"][1] == "FON"
 
     @pytest.mark.overlay('Modern')
@@ -335,10 +337,10 @@ class TestRadarOverlayModern:
         state = _landed_state(store, samples=0)
         radar.render(store, state)
 
-        shapes = radar.overlay._overlay.shapes
-        assert f"{FRAME_PREFIX}ring-1400-0" in shapes
-        assert f"{FRAME_PREFIX}ring-active-Bacterium-0" not in shapes
-        assert f"{FRAME_PREFIX}player" in shapes
+        messages = radar.overlay._overlay.messages
+        assert f"{FRAME_PREFIX}ring-1400-0" in messages
+        assert f"{FRAME_PREFIX}ring-active-Bacterium-0" not in messages
+        assert f"{FRAME_PREFIX}player" in messages
 
     @pytest.mark.overlay('Modern')
     def test_render_draws_rings_while_flying_over_surface_not_landed(self, overlay_mode, store:ExplorerStore) -> None:
@@ -356,9 +358,9 @@ class TestRadarOverlayModern:
 
         radar.render(store, state)
 
-        shapes = radar.overlay._overlay.shapes
-        assert f"{FRAME_PREFIX}ring-1400-0" in shapes
-        assert f"{FRAME_PREFIX}player" in shapes
+        messages = radar.overlay._overlay.messages
+        assert f"{FRAME_PREFIX}ring-1400-0" in messages
+        assert f"{FRAME_PREFIX}player" in messages
 
     @pytest.mark.overlay('Modern')
     def test_render_draws_base_rings_from_predicted_genus_before_confirmation(self, overlay_mode, store:ExplorerStore) -> None:
@@ -373,16 +375,16 @@ class TestRadarOverlayModern:
 
         radar.render(store, state)
 
-        shapes = radar.overlay._overlay.shapes
-        assert f"{FRAME_PREFIX}ring-1400-0" in shapes
-        assert f"{FRAME_PREFIX}ring-active-Bacterium-0" not in shapes
+        messages = radar.overlay._overlay.messages
+        assert f"{FRAME_PREFIX}ring-1400-0" in messages
+        assert f"{FRAME_PREFIX}ring-active-Bacterium-0" not in messages
 
     @pytest.mark.overlay('Modern')
     def test_render_is_a_noop_when_no_genus_known_at_all(self, overlay_mode, store:ExplorerStore) -> None:
         """ Flying over a body with no confirmed or predicted genus -- nothing useful to show yet. """
         radar = RadarOverlay(Overlay())
         radar.render(store, _flying_state(store))
-        assert f"{FRAME_PREFIX}player" not in radar.overlay._overlay.shapes
+        assert f"{FRAME_PREFIX}player" not in radar.overlay._overlay.messages
 
     @pytest.mark.overlay('Modern')
     def test_render_hides_once_every_genus_is_fully_sampled(self, overlay_mode, store:ExplorerStore) -> None:
@@ -400,7 +402,7 @@ class TestRadarOverlayModern:
 
         radar.render(store, state)
 
-        assert f"{FRAME_PREFIX}player" not in radar.overlay._overlay.shapes
+        assert f"{FRAME_PREFIX}player" not in radar.overlay._overlay.messages
 
     @pytest.mark.overlay('Modern')
     def test_render_is_a_noop_without_lat_long(self, overlay_mode, store:ExplorerStore) -> None:
@@ -408,7 +410,7 @@ class TestRadarOverlayModern:
         state = _landed_state(store)
         state.has_lat_long = False
         radar.render(store, state)
-        assert f"{FRAME_PREFIX}player" not in radar.overlay._overlay.shapes
+        assert f"{FRAME_PREFIX}player" not in radar.overlay._overlay.messages
 
     @pytest.mark.overlay('Modern')
     def test_render_is_a_noop_while_docked(self, overlay_mode, store:ExplorerStore) -> None:
@@ -416,7 +418,7 @@ class TestRadarOverlayModern:
         state = _landed_state(store)
         state.docked = True
         radar.render(store, state)
-        assert f"{FRAME_PREFIX}player" not in radar.overlay._overlay.shapes
+        assert f"{FRAME_PREFIX}player" not in radar.overlay._overlay.messages
 
     @pytest.mark.overlay('Modern')
     def test_render_is_a_noop_on_foot_in_a_station(self, overlay_mode, store:ExplorerStore) -> None:
@@ -424,7 +426,7 @@ class TestRadarOverlayModern:
         state = _landed_state(store)
         state.on_foot_in_station = True
         radar.render(store, state)
-        assert f"{FRAME_PREFIX}player" not in radar.overlay._overlay.shapes
+        assert f"{FRAME_PREFIX}player" not in radar.overlay._overlay.messages
 
     @pytest.mark.overlay('Modern')
     def test_render_is_a_noop_while_a_ui_panel_has_focus(self, overlay_mode, store:ExplorerStore) -> None:
@@ -434,25 +436,23 @@ class TestRadarOverlayModern:
         state = _landed_state(store)
         state.gui_focus = GuiFocusGalaxyMap
         radar.render(store, state)
-        assert f"{FRAME_PREFIX}player" not in radar.overlay._overlay.shapes
+        assert f"{FRAME_PREFIX}player" not in radar.overlay._overlay.messages
 
     @pytest.mark.overlay('Modern')
     def test_render_respects_configured_radar_size(self, overlay_mode, harness:TestHarness, store:ExplorerStore) -> None:
         from explorer.constants import CFG_OVERLAY_RADAR_SIZE
-        from explorer.ui.overlay_frames import RING_AREA_FRAC
+        from explorer.ui.overlay_frames import RING_AREA_FRAC, DOT_GLYPH_OFFSET_X
         harness.config.set(CFG_OVERLAY_RADAR_SIZE, 300)
         try:
             radar = RadarOverlay(Overlay())
             state = _landed_state(store, samples=0)
             radar.render(store, state)
 
-            msg, _ = radar.overlay._overlay.shapes[f"{FRAME_PREFIX}ring-1400-0"]
-            # dot 0's own small polygon is centered on the ring point itself, so average its
-            # vertices (dropping the closing duplicate) rather than reading a single vertex --
+            _, _, _, x, _, _ = radar.overlay._overlay.messages[f"{FRAME_PREFIX}ring-1400-0"]
+            # dot 0's glyph position is nudged by DOT_GLYPH_OFFSET_X off the actual ring point --
             # the outermost ring sits at RING_AREA_FRAC of the configured size, not the full
             # radius -- the remaining margin is reserved for out-of-range dots (see module docstring)
-            dot_cx:float = sum(p["x"] for p in msg["vector"][:-1]) / (len(msg["vector"]) - 1)
-            assert dot_cx - CENTER_X == pytest.approx(300 * RING_AREA_FRAC, abs=1.0)
+            assert x - DOT_GLYPH_OFFSET_X - CENTER_X == pytest.approx(300 * RING_AREA_FRAC)
         finally:
             harness.config.set(CFG_OVERLAY_RADAR_SIZE, 150)
 
@@ -463,7 +463,7 @@ class TestRadarOverlayModern:
         try:
             radar = RadarOverlay(Overlay())
             radar.render(store, _landed_state(store))
-            assert f"{FRAME_PREFIX}player" not in radar.overlay._overlay.shapes
+            assert f"{FRAME_PREFIX}player" not in radar.overlay._overlay.messages
         finally:
             harness.config.set(CFG_OVERLAY_RADAR_ENABLED, True)
 
@@ -474,7 +474,7 @@ class TestRadarOverlayModern:
         try:
             radar = RadarOverlay(Overlay())
             radar.render(store, _landed_state(store))
-            assert f"{FRAME_PREFIX}player" not in radar.overlay._overlay.shapes
+            assert f"{FRAME_PREFIX}player" not in radar.overlay._overlay.messages
         finally:
             harness.config.set(CFG_PANEL_ENABLED, True)
 

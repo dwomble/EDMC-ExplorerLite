@@ -28,8 +28,13 @@ CENTER_Y:int = 480
 RING_DOT_SPACING_PX:float = 24.0 # target on-screen gap between adjacent dots
 RING_DOT_MIN:int = 12
 RING_DOT_MAX:int = 32
-DOT_RADIUS_PX:int = 3 # matches the player marker's old 6x6 square footprint
-DOT_SIDES:int = 8 # small closed polygon standing in for a circle -- see _dot_points
+# A vect shape (any polygon) is outline-only -- the renderer never fills one. Text glyphs are
+# the one primitive that's genuinely filled, so a dot is a bullet character instead of a shape.
+DOT_GLYPH:str = "•" # bullet
+# send_text's x/y is the text block's top-left, not its center -- these nudge the glyph to
+# roughly center on its target point. Guessed, not measured -- tune visually in-game.
+DOT_GLYPH_OFFSET_X:int = -3
+DOT_GLYPH_OFFSET_Y:int = -6
 TTL:int = 8 # generous vs. the ~1/sec dashboard-tick refresh cadence, so a missed/delayed tick doesn't visibly blank the radar
 TAG_TRIANGLE_SIZE_PX:int = 5 # vertex-to-center radius for a codex-tagged waypoint's triangle marker
 
@@ -90,14 +95,6 @@ def _sample_color(color_name:str|None) -> str:
 def _triangle_points(cx:float, cy:float, r:float) -> list[dict]:
     """ Equilateral triangle, point-up, vertices r px from center. """
     angles:list[float] = [-math.pi / 2 + 2 * math.pi * i / 3 for i in range(3)]
-    points:list[dict] = [{"x": round(cx + r * math.cos(a)), "y": round(cy + r * math.sin(a))} for a in angles]
-    return points + [points[0]]
-
-def _dot_points(cx:float, cy:float, r:float = DOT_RADIUS_PX) -> list[dict]:
-    """ Small closed polygon standing in for a circle -- the protocol's own "circle" marker
-    is a fixed 12px-diameter blob with no size control, too big at this scale. Facets aren't
-    visible at DOT_SIDES this small. """
-    angles:list[float] = [2 * math.pi * i / DOT_SIDES for i in range(DOT_SIDES)]
     points:list[dict] = [{"x": round(cx + r * math.cos(a)), "y": round(cy + r * math.sin(a))} for a in angles]
     return points + [points[0]]
 
@@ -226,7 +223,10 @@ class RadarOverlay:
 
     def _send_ring_dots(self, frame_id_prefix:str, r:float, color:str) -> None:
         for i, (x, y) in enumerate(_ring_dot_positions(CENTER_X, CENTER_Y, r)):
-            self.overlay.send_vect(f"{frame_id_prefix}-{i}", _dot_points(x, y), color, ttl=TTL)
+            self.overlay.send_text(
+                f"{frame_id_prefix}-{i}", DOT_GLYPH, color,
+                round(x) + DOT_GLYPH_OFFSET_X, round(y) + DOT_GLYPH_OFFSET_Y, ttl=TTL, size="small",
+            )
 
     def _draw_distance_rings(self, radius_px:int) -> None:
         for distance_m in RING_DISTANCES_M:
@@ -249,7 +249,10 @@ class RadarOverlay:
         self.overlay.send_text(f"{FRAME_PREFIX}label-{genus}", _genus_label(genus), LABEL_COLOR, CENTER_X - 10, round(CENTER_Y - r - 14), ttl=TTL)
 
     def _draw_player(self) -> None:
-        self.overlay.send_vect(f"{FRAME_PREFIX}player", _dot_points(CENTER_X, CENTER_Y), PLAYER_COLOR, ttl=TTL)
+        self.overlay.send_text(
+            f"{FRAME_PREFIX}player", DOT_GLYPH, PLAYER_COLOR,
+            CENTER_X + DOT_GLYPH_OFFSET_X, CENTER_Y + DOT_GLYPH_OFFSET_Y, ttl=TTL, size="small",
+        )
 
     def _draw_samples(self, state:ExplorerState, genus:str, radius_px:int, heading:float) -> None:
         """ Bearing (unit direction) and pixel radius (non-linear) computed separately, then combined. """
