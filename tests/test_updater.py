@@ -9,7 +9,7 @@ import pytest
 from typing import Generator
 
 import tests.edmc.requests as mock_requests
-from explorer.utils.updater import Updater, read_version_file
+from explorer.utils.updater import Notices, Updater, read_version_file
 
 @pytest.fixture(autouse=True)
 def clear_mock_calls() -> Generator[None, None, None]:
@@ -61,6 +61,27 @@ class TestReadVersionFile:
         """ CI's release.yml writes the tag via `echo`, which appends a newline. """
         (tmp_path / "version").write_text("1.2.3\n")
         assert str(read_version_file(str(tmp_path), "0.0.0-dev")) == "1.2.3"
+
+class TestNotices:
+    """ Cursory integration check -- Notices' parsing and
+    dismissal logic is exhaustively covered by EDMC-PluginLib's
+    tests/test_notices.py; this just confirms fetch, parse, and
+    dismiss-then-newer-shows-again round-trip in this plugin's
+    own stack. """
+
+    def test_fetch_parse_and_dismiss_round_trip(self) -> None:
+        mock_requests.queue_response("get", mock_requests.MockResponse(
+            status_code=200, content="## 3\nFleet Carrier routes now track tritium separately from cargo."))
+        notices = Notices("dwomble", "EDMC-ExplorerLite-NoticesTest")
+        notices._check_notices()
+        assert notices.pending_notice == "Fleet Carrier routes now track tritium separately from cargo."
+
+        notices.dismiss_notice()
+        assert notices.pending_notice is None
+
+        mock_requests.queue_response("get", mock_requests.MockResponse(status_code=200, content="## 4\nA newer notice."))
+        notices._check_notices()
+        assert notices.pending_notice == "A newer notice."
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v', '--tb=short'])

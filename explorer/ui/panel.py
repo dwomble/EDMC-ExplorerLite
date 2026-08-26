@@ -6,12 +6,14 @@ import tkinter as tk
 import tkinter.font as tkfont
 import sqlite3
 import re
+from functools import partial
 from typing import Callable
 
 from config import config # type: ignore
 
 import explorer.utils.th as th
 from explorer.utils.misc import hfplus, str_truncate
+from explorer.utils.updater import Notices
 
 from explorer.db.store import ExplorerStore
 from explorer.state import ExplorerState
@@ -143,9 +145,11 @@ def _body_designator(system_name:str, body_name:str) -> str:
 class ExplorerPanel:
     """ Owns the plugin_app frame and everything in it. Call refresh() after any DB change. """
 
-    def __init__(self, parent:tk.Widget, store:ExplorerStore, state:ExplorerState) -> None:
+    def __init__(self, parent:tk.Widget, store:ExplorerStore, state:ExplorerState, notices:Notices|None = None) -> None:
         self.store:ExplorerStore = store
         self.state:ExplorerState = state
+        self.notices:Notices|None = notices
+        self.notice:th.RichText|None = None
         self.on_history_open:Callable[[], None]|None = None # wired up externally by load.py
 
         self._panel_enabled:bool = config.get_bool(CFG_PANEL_ENABLED, default=True)
@@ -181,7 +185,7 @@ class ExplorerPanel:
         self._toggle_tooltip:th.Tooltip = th.Tooltip(self.toggle_button, self._toggle_tooltip_text())
 
         self.scroll:th.ScrollableFrame = th.ScrollableFrame(self.frame, maxheight=_visible_lines_px())
-        self.scroll.grid(row=1, column=0, sticky=tk.EW)
+        self.scroll.grid(row=2, column=0, sticky=tk.EW) # row 1 is the notice bar, shown/hidden lazily
         self.scroll.interior.columnconfigure(0, weight=1) # each row below is gridded, not packed -- see refresh()
         if not self._panel_enabled:
             self.scroll.grid_forget()
@@ -191,6 +195,25 @@ class ExplorerPanel:
         self._row_widgets:list[tk.Widget] = [] # the live widget for each _last_rendered row, same order
 
         self.refresh()
+        parent.after(15000, self.show_notice) # give check_for_notices()'s thread time to land
+
+    def show_notice(self) -> None:
+        """ Display the pending NOTICES.md entry, if any """
+        if not self.notices or not self.notices.pending_notice or self.notice is not None:
+            return
+        notice:str = self.notices.pending_notice
+        width:int = max(len(line) for line in notice.split("\n"))
+        self.notice = th.RichText(self.frame, width=width, markdown=notice, cursor='hand2')
+        self.notice.bind("<Button-1>", partial(self.dismiss_notice))
+        self.notice.grid(row=1, column=0, sticky=tk.EW)
+
+    def dismiss_notice(self, tkEvent=None) -> None:
+        """ Hide the notice and never show it again """
+        if not self.notices or self.notice is None:
+            return
+        self.notices.dismiss_notice()
+        self.notice.destroy()
+        self.notice = None
 
     def _open_history(self) -> None:
         if self.on_history_open:

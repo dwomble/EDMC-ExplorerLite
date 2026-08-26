@@ -13,6 +13,7 @@ import pytest
 from typing import Generator, cast
 
 from harness import TestHarness, reset_plugin_modules
+import tests.edmc.requests as mock_requests
 from explorer.db.store import ExplorerStore
 from explorer.ui.panel import _credits_range, system_status_text, system_header_line, system_body_count_text
 
@@ -1493,6 +1494,29 @@ class TestClearUnsoldData:
         load._clear_unsold_data("Testy")
 
         assert load.panel.cart_value_label.cget("text") == "0 Cr"
+
+class TestNoticeDisplay:
+    """ Ties the real fetch/parse path (Notices, tested in
+    EDMC-PluginLib) to this plugin's own show_notice()/
+    dismiss_notice() UI code. """
+
+    def test_a_fetched_notice_is_displayed_and_dismissible(self, plugin:TestHarness) -> None:
+        import load
+        assert load.notices is not None and load.panel is not None
+
+        mock_requests.queue_response("get", mock_requests.MockResponse(
+            status_code=200, content="## 9\nA freshly fetched notice."))
+        load.notices._check_notices()
+
+        load.panel.show_notice()
+
+        assert load.panel.notice is not None
+        assert "A freshly fetched notice." in load.panel.notice.get("1.0", tk.END)
+
+        load.panel.dismiss_notice()
+
+        assert load.panel.notice is None
+        assert load.notices.pending_notice is None
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v', '--tb=short'])

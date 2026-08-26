@@ -6,7 +6,7 @@ import tkinter as tk
 from config import config # type: ignore
 
 from explorer.utils.debug import Debug
-from explorer.utils.updater import Updater, read_version_file
+from explorer.utils.updater import Notices, Updater, read_version_file
 from explorer.utils.overlay import Overlay
 
 from explorer.constants import PLUGIN_NAME, GH_OWNER, GH_PROJECT, CFG_DEV_MODE
@@ -24,6 +24,7 @@ from explorer.ui.overlay_summary import SystemSummaryOverlay
 from explorer.ui.history_view import HistoryView
 
 updater:Updater|None = None
+notices:Notices|None = None
 store:ExplorerStore|None = None
 panel:ExplorerPanel|None = None
 radar:RadarOverlay|None = None
@@ -41,9 +42,11 @@ def plugin_start3(plugin_dir:str) -> str:
 
     Debug(plugin_dir, config.get_bool(CFG_DEV_MODE, default=False))
 
-    global updater, store, radar, overlay_backend
+    global updater, notices, store, radar, overlay_backend
     updater = Updater(plugin_dir, GH_OWNER, GH_PROJECT)
     updater.check_for_update(version)
+    notices = Notices(GH_OWNER, GH_PROJECT)
+    notices.check_for_notices()
     store = ExplorerStore()
     overlay_backend = Overlay()
     radar = RadarOverlay(overlay_backend)
@@ -63,7 +66,7 @@ def plugin_app(parent:tk.Frame) -> tk.Widget:
 
     assert store is not None and overlay_backend is not None, "plugin_app called before plugin_start3"
     restore_last_session(store, explorer_state) # shows the last known system/body immediately, before any journal event
-    panel = ExplorerPanel(parent, store, explorer_state)
+    panel = ExplorerPanel(parent, store, explorer_state, notices)
     history_view = HistoryView(parent, store, explorer_state)
     panel.on_history_open = history_view.open
     summary_overlay = SystemSummaryOverlay(overlay_backend, panel) # needs panel's row formatting, so built after it
