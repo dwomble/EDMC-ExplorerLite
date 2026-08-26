@@ -23,7 +23,6 @@ LINE_HEIGHT_PX:int = 20
 HEADER_LINE_HEIGHT_PX:int = 25 # "large" text needs more room than LINE_HEIGHT_PX
 CURRENT_BODY_INDENT_PX:int = 20 # matches panel's own indent treatment
 MAX_BODY_LINES:int = 6 # no scrolling on the overlay, unlike the panel
-MAX_CURRENT_BODY_LINES:int = 6
 
 TTL:int = 30 # longer than radar's TTL -- refreshes were too sparse
 OVERFLOW_COLOR:str = "#999999" # same grey as radar's rings, a subdued hint
@@ -121,7 +120,7 @@ class SystemSummaryOverlay:
                 rows.append((body["body_id"], _format_body_line(row)))
 
         shown:list[tuple[int, str]] = rows[:MAX_BODY_LINES]
-        current_lines:list[str] = self._current_body_lines(store, state)[:MAX_CURRENT_BODY_LINES]
+        current_lines:list[str] = self._current_body_lines(store, state)
         current_shown:bool = False # nests under the focus body, matching the panel
         for i, (body_id, line) in enumerate(shown):
             self.overlay.send_text(f"{FRAME_PREFIX}body-{i}", line, color, ANCHOR_X, next_y, ttl=TTL)

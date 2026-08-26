@@ -162,6 +162,31 @@ class TestSystemSummaryOverlay:
         assert "2/3" in current_line[1]
         assert current_line[3] == ANCHOR_X + CURRENT_BODY_INDENT_PX # indented, not at the left margin
 
+    def test_current_body_species_are_not_truncated(self, plugin:TestHarness) -> None:
+        """ Unlike the flagged-body list (capped, with a "+N
+        more" hint), the current body's species list has no
+        overflow indicator -- every genus must show. """
+        plugin.load_events("explorer_events.json")
+        plugin.play_sequence("honk_only", 0.02)
+
+        import load
+        assert load.store is not None and load.summary_overlay is not None
+        assert load.explorer_state.cmdr_id is not None and load.explorer_state.system_id is not None
+        body_pk:int = load.store.get_or_create_body(load.explorer_state.cmdr_id, load.explorer_state.system_id, 1, "QuietSpace A 1")
+        genera:list[str] = ["Bacterium", "Aleoida", "Fonticulua", "Tussock", "Osseus", "Stratum", "Recepta", "Clypeus"]
+        for genus in genera:
+            progress_id:int = load.store.get_or_create_species_progress(body_pk, genus)
+            load.store.update_species_progress(progress_id, species=f"{genus} Test", samples_taken=1)
+
+        load.explorer_state.body_id = 1
+        load.explorer_state.body_name = "QuietSpace A 1"
+
+        load.summary_overlay.render(load.store, load.explorer_state)
+
+        messages = load.summary_overlay.overlay._overlay.messages
+        for i in range(len(genera)):
+            assert f"{FRAME_PREFIX}current-{i}" in messages
+
     def test_current_body_section_hidden_once_fully_sampled(self, plugin:TestHarness) -> None:
         from explorer.util import now_iso
 
