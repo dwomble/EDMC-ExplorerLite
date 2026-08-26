@@ -118,9 +118,7 @@ def on_scan(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict:
     )
 
     if not is_star and entry.get("Landable"):
-        # FSSBodySignals often arrives before Scan (Detailed) -- if it already confirmed real
-        # biology here, existence isn't speculative anymore, so show the best guess regardless
-        # of its predicted value rather than going silent just because that guess is low-value.
+        # FSSBodySignals often arrives before Scan (Detailed)
         existing:sqlite3.Row|None = store.get_body(body_pk)
         confirmed_biology:bool = bool(existing and existing["has_biological_signals"] == 1)
         store.replace_genus_predictions(
@@ -196,13 +194,13 @@ def on_saa_signals_found(store:ExplorerStore, state:ExplorerState, entry:dict) -
         if value_range is not None:
             value_max_overall = max(value_max_overall, value_range[1])
 
-    # Threshold check uses the bonus-inclusive value -- was_footfalled was already captured at
-    # Scan time (see on_scan), same reasoning as the cartography threshold check above.
+    # Threshold check uses the bonus-inclusive value -- was_footfalled was already captured at scan time
     existing_body:sqlite3.Row|None = store.get_body(body_pk)
     was_footfalled:bool = bool(existing_body and existing_body["was_footfalled"])
     value_max_full:int = exobiology.with_first_logged_bonus(value_max_overall, was_footfalled)
     flagged_exobio:bool = exobiology.exceeds_threshold(value_max_full or None, _exobio_threshold())
+    # DSS is ground truth -- FSSBodySignals never fires at all for a body with zero total signal.
     store.update_body(body_pk, estimated_exobio_value_min=0, estimated_exobio_value_max=value_max_overall,
-                      flagged_exobio=1 if flagged_exobio else 0)
+                      flagged_exobio=1 if flagged_exobio else 0, has_biological_signals=1 if genuses else 0)
 
     return {"panel": True, "overlay": "radar"}
