@@ -38,6 +38,7 @@ def restore_last_session(store:ExplorerStore, state:ExplorerState) -> None:
     state.body_id = saved.get("body_id")
     state.body_name = saved.get("body_name") or ""
     state.restored_at_startup = True
+    _restore_sample_positions(store, state) # else the radar starts blank until the next jump
 
 def on_load_game(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict:
     state.reset_body()

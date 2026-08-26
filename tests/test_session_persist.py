@@ -55,6 +55,23 @@ class TestRestoreLastSession:
         assert state.body_id == 5
         assert state.body_name == "Deltius 5"
 
+    def test_resumes_radar_samples_alongside_the_body(self, store:ExplorerStore) -> None:
+        """ Regression: EDMC-only restarts never get a
+        fresh Location/FSDJump -- enter_system()'s own
+        radar-samples fix never runs; this needs it too. """
+        cmdr_id:int = store.get_or_create_cmdr("Testy")
+        system_id:int = store.get_or_create_system(cmdr_id, 123, "Deltius")
+        body_pk:int = store.get_or_create_body(cmdr_id, system_id, 5, "Deltius 5")
+        store.add_sample_position(body_pk, "Bacterium", 10.0, 20.0)
+        store.add_sample_position(body_pk, "Bacterium", 10.001, 20.0)
+        session_persist.save("Testy", 123, "Deltius", 5, "Deltius 5")
+
+        state = ExplorerState()
+        handlers_context.restore_last_session(store, state)
+
+        assert state.sample_positions["Bacterium"] == [(10.0, 20.0, None), (10.001, 20.0, None)]
+        assert state.current_genus == "Bacterium"
+
     def test_is_a_noop_when_no_snapshot_exists_yet(self, store:ExplorerStore) -> None:
         state = ExplorerState()
         handlers_context.restore_last_session(store, state)

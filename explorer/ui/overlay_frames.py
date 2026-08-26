@@ -21,7 +21,7 @@ PLUGIN_GROUP:str = "EDMC-ExplorerLite"
 
 CENTER_X:int = 640
 CENTER_Y:int = 480
-RING_SEGMENTS:int = 96 # higher = a rounder-looking circle -- the overlay draws straight segments, no arcs
+RING_SEGMENTS:int = 384 # higher = a rounder-looking circle -- the overlay draws straight segments, no arcs
 TTL:int = 8 # generous vs. the ~1/sec dashboard-tick refresh cadence, so a missed/delayed tick doesn't visibly blank the radar
 TAG_TRIANGLE_SIZE_PX:int = 5 # vertex-to-center radius for a codex-tagged waypoint's triangle marker
 
