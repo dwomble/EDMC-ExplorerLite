@@ -428,10 +428,10 @@ class ExplorerPanel:
             for row in active:
                 style:dict[int, dict] = {c: {"foreground": GENUS_COLOR} for c in range(4)}
                 if row["samples_taken"]:
-                    style[1]["font"] = self._title_font
+                    style[0]["font"] = self._title_font
                 styles.append(style)
             self._render_table(
-                [self._exobio_progress_row(row, was_footfalled) for row in active], anchors=("w", "e", "e", "e"),
+                [self._exobio_progress_row(row, was_footfalled) for row in active], anchors=("w", "w", "e", "e"),
                 indent=INDENT_PX, cell_kwargs=styles,
             )
             return
@@ -624,14 +624,15 @@ class ExplorerPanel:
     def _exobio_progress_row(self, row:sqlite3.Row, was_footfalled:bool) -> tuple[str, str, str, str]:
         """ Genus placeholder becomes the species name (and value the confirmed value) once
         sampled. Value shown is Full (bonus-included) -- the base value counting toward ED's own
-        progression is never shown in this compact panel, only in the history view. """
+        progression is never shown in this compact panel, only in the history view. Progress
+        leads the line, and reads "-" rather than "0/N" so an untouched row stands out. """
         genus:str = row["genus"] or "biological"
         name:str = row["species"] or self._possible_species_label(row["body_id"], genus)
-        progress:str = f"{row['samples_taken']}/{SAMPLES_REQUIRED}"
+        progress:str = f"{row['samples_taken']}/{SAMPLES_REQUIRED}" if row["samples_taken"] else "-"
         value_min, value_max = self._exobio_row_range(row)
         value_min = exobiology.with_first_logged_bonus(value_min, was_footfalled)
         value_max = exobiology.with_first_logged_bonus(value_max, was_footfalled)
         distance:str = _sampling_distance_str([genus])
         value_str:str = _credits_range(value_min, value_max)
 
-        return (name, progress, distance, value_str)
+        return (progress, name, distance, value_str)

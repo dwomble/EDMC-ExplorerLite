@@ -25,12 +25,13 @@ CENTER_Y:int = 480
 # jagged (few points) or the transport drops it (many points, confirmed at 384). Rings are
 # drawn as individually-sent dot markers instead: no connecting-line facets to look jagged,
 # and each message stays tiny regardless of ring size.
-RING_DOT_SPACING_PX:float = 24.0 # target on-screen gap between adjacent dots
+RING_DOT_SPACING_PX:float = 20.0 # target on-screen gap between adjacent dots
 RING_DOT_MIN:int = 12
-RING_DOT_MAX:int = 32
+RING_DOT_MAX:int = 40
 # A vect shape (any polygon) is outline-only -- the renderer never fills one. Text glyphs are
 # the one primitive that's genuinely filled, so a dot is a bullet character instead of a shape.
 DOT_GLYPH:str = "•" # bullet
+DOT_GLYPH_SIZE:str = "normal" # one of small/normal/large/huge -- no arbitrary pixel size
 # send_text's x/y is the text block's top-left, not its center -- these nudge the glyph to
 # roughly center on its target point. Guessed, not measured -- tune visually in-game.
 DOT_GLYPH_OFFSET_X:int = -3
@@ -225,7 +226,7 @@ class RadarOverlay:
         for i, (x, y) in enumerate(_ring_dot_positions(CENTER_X, CENTER_Y, r)):
             self.overlay.send_text(
                 f"{frame_id_prefix}-{i}", DOT_GLYPH, color,
-                round(x) + DOT_GLYPH_OFFSET_X, round(y) + DOT_GLYPH_OFFSET_Y, ttl=TTL, size="small",
+                round(x) + DOT_GLYPH_OFFSET_X, round(y) + DOT_GLYPH_OFFSET_Y, ttl=TTL, size=DOT_GLYPH_SIZE,
             )
 
     def _draw_distance_rings(self, radius_px:int) -> None:
@@ -251,7 +252,7 @@ class RadarOverlay:
     def _draw_player(self) -> None:
         self.overlay.send_text(
             f"{FRAME_PREFIX}player", DOT_GLYPH, PLAYER_COLOR,
-            CENTER_X + DOT_GLYPH_OFFSET_X, CENTER_Y + DOT_GLYPH_OFFSET_Y, ttl=TTL, size="small",
+            CENTER_X + DOT_GLYPH_OFFSET_X, CENTER_Y + DOT_GLYPH_OFFSET_Y, ttl=TTL, size=DOT_GLYPH_SIZE,
         )
 
     def _draw_samples(self, state:ExplorerState, genus:str, radius_px:int, heading:float) -> None:

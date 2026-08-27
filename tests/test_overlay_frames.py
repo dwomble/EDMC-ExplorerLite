@@ -160,7 +160,7 @@ class TestRadarOverlayModern:
         """ Each dot is its own small text-glyph message -- not one big connected polyline
         (see RING_DOT_MIN/_ring_dot_count's module docstring for why). A vect shape is
         outline-only, so a filled dot has to be a real glyph instead (see DOT_GLYPH). """
-        from explorer.ui.overlay_frames import RING_DOT_MIN, DOT_GLYPH
+        from explorer.ui.overlay_frames import RING_DOT_MIN, DOT_GLYPH, DOT_GLYPH_SIZE
 
         radar = RadarOverlay(Overlay())
         radar.render(store, _landed_state(store, samples=0))
@@ -171,7 +171,7 @@ class TestRadarOverlayModern:
 
         _, text, _, _, _, kwargs = messages[f"{FRAME_PREFIX}ring-1400-0"]
         assert text == DOT_GLYPH
-        assert kwargs["size"] == "small"
+        assert kwargs["size"] == DOT_GLYPH_SIZE
 
     @pytest.mark.overlay('Modern')
     def test_codex_tagged_sample_is_a_triangle_in_its_variant_color(self, overlay_mode, store:ExplorerStore) -> None:

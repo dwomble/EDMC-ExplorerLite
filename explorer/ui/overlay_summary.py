@@ -191,8 +191,8 @@ def _format_body_line(row:tuple[str, str, str, str, str]) -> str:
 
 def _format_progress_line(row:tuple[str, str, str, str]) -> str:
     """ Formats an _exobio_progress_row() tuple. """
-    name, progress, distance, value_str = row
-    return f"{name}  {progress}  {distance}  {value_str}"
+    progress, name, distance, value_str = row
+    return f"{progress}  {name}  {distance}  {value_str}"
 
 def _format_predicted_line(row:tuple[str, str, str]) -> str:
     """ Formats a _predicted_genus_row() tuple. """

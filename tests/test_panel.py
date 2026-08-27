@@ -357,7 +357,7 @@ class TestPanelStates:
         lines = _panel_lines(load)
         # 5M Cr, not 1M -- this fixture's body has no WasFootfalled (unset defaults to "nobody
         # has yet"), so the shown value is Full (base 1M x5 first-logged bonus), not Base.
-        assert any("Bacterium Aurasus 2/3 500m 5M Cr" in line for line in lines)
+        assert any("2/3 Bacterium Aurasus 500m 5M Cr" in line for line in lines)
 
         for event in events[cutoff:]:
             plugin.fire_event(event)
@@ -1112,10 +1112,10 @@ class TestPanelStates:
                 cell = _row_cell(label, column=column)
                 assert str(cell.cget("foreground")) == "steelblue", (column, cell.cget("text"))
 
-        started_progress = _row_cell(started_name, column=1)
-        unstarted_progress = _row_cell(unstarted_name, column=1)
+        started_progress = _row_cell(started_name, column=0)
+        unstarted_progress = _row_cell(unstarted_name, column=0)
         assert started_progress.cget("text") == "1/3", started_progress.cget("text")
-        assert unstarted_progress.cget("text") == "0/3", unstarted_progress.cget("text")
+        assert unstarted_progress.cget("text") == "-", unstarted_progress.cget("text")
         assert tkfont.Font(font=started_progress.cget("font")).actual("weight") == "bold"
         assert tkfont.Font(font=unstarted_progress.cget("font")).actual("weight") == "normal"
 
