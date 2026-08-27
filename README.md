@@ -1,6 +1,7 @@
 # EDMC-ExplorerLite
 
 ![Python](https://img.shields.io/badge/Python-3.x-blue?logo=python)
+![AI Disclosure](https://img.shields.io/badge/AI%20Contribution-Interactive?logo=claudecode)
 [![CodeQL](https://github.com/dwomble/EDMC-ExplorerLite/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/dwomble/EDMC-ExplorerLite/actions/workflows/github-code-scanning/codeql)
 [![GitHub Latest Version](https://img.shields.io/github/v/release/dwomble/EDMC-ExplorerLite)](https://github.com/dwomble/EDMC-ExplorerLite/releases/latest)
 [![Github All Releases](https://img.shields.io/github/downloads/dwomble/EDMC-ExplorerLite/total.svg)](https://github.com/dwomble/EDMC-ExplorerLite/releases/latest)
@@ -32,17 +33,17 @@ Create a directory in your EDMC `plugins` folder called `EDMC-ExplorerLite`, dow
 
 ## Honk
 
-The system line shows the known body count plus the next thing worth doing, e.g. `Deltius — 7 bodies — **DSS**`. 
+The system line shows the known body count plus the next thing worth doing, e.g. `Deltius — 7 bodies — **DSS**`.
 
-The order is `Honk` → `FSS` → `DSS` / `Sample` / `DSS + Sample` → `Done`. 
+The order is `Honk` → `FSS` → `DSS` / `Sample` / `DSS + Sample` → `Done`.
 
-`FSS` (Full Spectrum Scan) stays until you've finished scanning the system bodies. 
+`FSS` (Full Spectrum Scan) stays until you've finished scanning the system bodies.
 
 `DSS` (Detailed Surface Scan) means a scanned body is worth mapping, either for its cargographic value or its biological value.
 
 `Sample` (Genetic Sampling) means a mapped body still needs its biology sampled.
 
-`DSS + Sample` means both are true somewhere in the system. 
+`DSS + Sample` means both are true somewhere in the system.
 
 `Done` there's nothing else recommended to do.
 
