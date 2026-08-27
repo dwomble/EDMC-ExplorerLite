@@ -2,7 +2,7 @@
 
 ![Python](https://img.shields.io/badge/Python-3.x-blue?logo=python)
 [![CodeQL](https://github.com/dwomble/EDMC-ExplorerLite/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/dwomble/EDMC-ExplorerLite/actions/workflows/github-code-scanning/codeql)
-![AI Contribution](https://img.shields.io/badge/Contribution-Interactive-purple?logo=claudecode&logoColor=D97757)
+![AI Contribution](https://img.shields.io/badge/Level-3.%20Collaborator-purple?logo=claudecode&logoColor=D97757)
 [![GitHub Latest Version](https://img.shields.io/github/v/release/dwomble/EDMC-ExplorerLite)](https://github.com/dwomble/EDMC-ExplorerLite/releases/latest)
 [![Github All Releases](https://img.shields.io/github/downloads/dwomble/EDMC-ExplorerLite/total.svg)](https://github.com/dwomble/EDMC-ExplorerLite/releases/latest)
 
@@ -107,6 +107,12 @@ All data and progress is stored locally in a per-install database segmented per 
 
 - A recent version of EDMC (needs `plugin_app`/`dashboard_entry` support).
 - Optional: [EDMCModernOverlay](https://github.com/SweetJonnySauce/EDMCModernOverlay) for the radar and system-summary overlays.
+
+## AI Disclosure
+
+I'm a long time professional software developer and, like virtually all professional developers, I use AI on a daily basis for anything from commit comments to writing code.
+
+This plugin was conceived, specified, and designed by a human. The code was substantially written by AI with human oversight. This falls into Category 3: Collaborator / Task Agent.
 
 ## Acknowledgements
 
