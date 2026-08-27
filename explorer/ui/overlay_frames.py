@@ -21,15 +21,18 @@ PLUGIN_GROUP:str = "EDMC-ExplorerLite"
 
 CENTER_X:int = 640
 CENTER_Y:int = 480
-# The overlay protocol has no native circle shape -- a connected vect polyline either looks
-# jagged (few points) or the transport drops it (many points, confirmed at 384). Rings are
-# drawn as individually-sent dot markers instead: no connecting-line facets to look jagged,
-# and each message stays tiny regardless of ring size.
-RING_DOT_SPACING_PX:float = 20.0 # target on-screen gap between adjacent dots
+# A native "circle" send_shape is pre-release as of this writing (see Overlay.supports_circle)
+# -- when it's there, a ring/dot is one real circle, perfectly round regardless of size. Older
+# backends fall back to the dot-glyph approach below: a connected vect polyline either looks
+# jagged (few points) or the transport drops it (many points, confirmed at 384), so a ring is
+# individually-sent dot markers instead -- no connecting-line facets, each message stays tiny.
+RING_THICKNESS_PX:int = 2 # legacy-canvas border width for a native circle ring/dot
+DOT_RADIUS_PX:int = 3 # native-circle player marker radius -- matches the old 6x6 square footprint
+RING_DOT_SPACING_PX:float = 20.0 # fallback only: target on-screen gap between adjacent dots
 RING_DOT_MIN:int = 12
 RING_DOT_MAX:int = 40
 # A vect shape (any polygon) is outline-only -- the renderer never fills one. Text glyphs are
-# the one primitive that's genuinely filled, so a dot is a bullet character instead of a shape.
+# the one primitive that's genuinely filled, so a fallback dot is a bullet character.
 DOT_GLYPH:str = "•" # bullet
 DOT_GLYPH_SIZE:str = "normal" # one of small/normal/large/huge -- no arbitrary pixel size
 # send_text's x/y is the text block's top-left, not its center -- these nudge the glyph to
@@ -78,7 +81,7 @@ LABEL_COLOR:str = "#ffffff"
 CODEX_TAG_COLORS:dict[str, str] = {
     "Amethyst": "#9966cc", "Aquamarine": "#7fffd4", "Blue": "#3366ff", "Cobalt": "#3355aa",
     "Cyan": "#00e5e5", "Emerald": "#2ecc71", "Gold": "#ffd700", "Green": "#33aa33",
-    "Grey": "#aaaaaa", "Indigo": "#6633cc", "Lime": "#bfff00", "Magenta": "#ff33ff",
+    "Grey": "#aaaaaa", "Indigo": "#8758e6", "Lime": "#bfff00", "Magenta": "#ff33ff",
     "Maroon": "#aa3344", "Mauve": "#aa77aa", "Mulberry": "#993366", "Ocher": "#bb9933",
     "Orange": "#ff8822", "Peach": "#ffaa88", "Red": "#ee3333", "Sage": "#889977",
     "Teal": "#118877", "Turquoise": "#33cccc", "White": "#eeeeee", "Yellow": "#eedd22",
@@ -222,24 +225,31 @@ class RadarOverlay:
         """ Best pre-DSS guess (highest confidence, already the query's own ordering). """
         return predictions[0]["genus"] if predictions else None
 
-    def _send_ring_dots(self, frame_id_prefix:str, r:float, color:str) -> None:
+    def _draw_ring(self, frame_id:str, r:float, color:str) -> None:
+        """ A native circle when the overlay supports it (one message, perfectly round
+        regardless of size) -- else the dot-glyph fallback (see module docstring). """
+        if r <= 0:
+            return
+        if self.overlay.supports_circle:
+            self.overlay.send_circle(frame_id, color, "none", CENTER_X, CENTER_Y, round(r), RING_THICKNESS_PX, ttl=TTL)
+            return
         for i, (x, y) in enumerate(_ring_dot_positions(CENTER_X, CENTER_Y, r)):
             self.overlay.send_text(
-                f"{frame_id_prefix}-{i}", DOT_GLYPH, color,
+                f"{frame_id}-{i}", DOT_GLYPH, color,
                 round(x) + DOT_GLYPH_OFFSET_X, round(y) + DOT_GLYPH_OFFSET_Y, ttl=TTL, size=DOT_GLYPH_SIZE,
             )
 
     def _draw_distance_rings(self, radius_px:int) -> None:
         for distance_m in RING_DISTANCES_M:
             r:float = radius_px * _radius_frac(distance_m) * RING_AREA_FRAC
-            self._send_ring_dots(f"{FRAME_PREFIX}ring-{distance_m}", r, RING_COLOR)
+            self._draw_ring(f"{FRAME_PREFIX}ring-{distance_m}", r, RING_COLOR)
 
     def _draw_genus_ring(self, radius_px:int, genus:str, color:str) -> None:
         min_dist:int|None = exobiology_data.genus_min_distance(genus)
         if not min_dist or min_dist > DISPLAY_RANGE_M:
             return
         r:float = radius_px * _radius_frac(min_dist) * RING_AREA_FRAC
-        self._send_ring_dots(f"{FRAME_PREFIX}ring-active-{genus}", r, color)
+        self._draw_ring(f"{FRAME_PREFIX}ring-active-{genus}", r, color)
 
     def _draw_genus_label(self, radius_px:int, genus:str) -> None:
         """ Only called when SHOW_TAGGED_GENUS is on. """
@@ -250,8 +260,12 @@ class RadarOverlay:
         self.overlay.send_text(f"{FRAME_PREFIX}label-{genus}", _genus_label(genus), LABEL_COLOR, CENTER_X - 10, round(CENTER_Y - r - 14), ttl=TTL)
 
     def _draw_player(self) -> None:
+        frame_id:str = f"{FRAME_PREFIX}player"
+        if self.overlay.supports_circle:
+            self.overlay.send_circle(frame_id, PLAYER_COLOR, PLAYER_COLOR, CENTER_X, CENTER_Y, DOT_RADIUS_PX, RING_THICKNESS_PX, ttl=TTL)
+            return
         self.overlay.send_text(
-            f"{FRAME_PREFIX}player", DOT_GLYPH, PLAYER_COLOR,
+            frame_id, DOT_GLYPH, PLAYER_COLOR,
             CENTER_X + DOT_GLYPH_OFFSET_X, CENTER_Y + DOT_GLYPH_OFFSET_Y, ttl=TTL, size=DOT_GLYPH_SIZE,
         )
 

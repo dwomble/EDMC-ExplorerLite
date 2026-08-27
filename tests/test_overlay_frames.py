@@ -157,9 +157,10 @@ class TestRadarOverlayModern:
 
     @pytest.mark.overlay('Modern')
     def test_ring_is_drawn_as_multiple_small_dot_glyphs(self, overlay_mode, store:ExplorerStore) -> None:
-        """ Each dot is its own small text-glyph message -- not one big connected polyline
-        (see RING_DOT_MIN/_ring_dot_count's module docstring for why). A vect shape is
-        outline-only, so a filled dot has to be a real glyph instead (see DOT_GLYPH). """
+        """ Fallback path (Overlay.supports_circle is False, the mock's default): each dot is
+        its own small text-glyph message -- not one big connected polyline (see
+        RING_DOT_MIN/_ring_dot_count's module docstring for why). A vect shape is outline-only,
+        so a filled dot has to be a real glyph instead (see DOT_GLYPH). """
         from explorer.ui.overlay_frames import RING_DOT_MIN, DOT_GLYPH, DOT_GLYPH_SIZE
 
         radar = RadarOverlay(Overlay())
@@ -172,6 +173,39 @@ class TestRadarOverlayModern:
         _, text, _, _, _, kwargs = messages[f"{FRAME_PREFIX}ring-1400-0"]
         assert text == DOT_GLYPH
         assert kwargs["size"] == DOT_GLYPH_SIZE
+
+    @pytest.mark.overlay('Modern')
+    def test_ring_draws_as_one_native_circle_when_the_backend_supports_it(self, overlay_mode, store:ExplorerStore) -> None:
+        """ Pre-release EDMCModernOverlay send_shape("circle", ...) support, detected via
+        Overlay.supports_circle -- one real circle, not the multi-dot fallback above. """
+        from explorer.ui.overlay_frames import RING_THICKNESS_PX
+
+        radar = RadarOverlay(Overlay())
+        radar.overlay.supports_circle = True
+        radar.render(store, _landed_state(store, samples=0))
+
+        shapes = radar.overlay._overlay.shapes
+        assert f"{FRAME_PREFIX}ring-1400-0" not in shapes # no per-dot fallback ids
+        _, shape, kwargs = shapes[f"{FRAME_PREFIX}ring-1400"]
+        assert shape == "circle"
+        assert kwargs["fill"] == "none" # a ring outlines a distance, it doesn't cover the view
+        assert kwargs["thickness"] == RING_THICKNESS_PX
+        assert kwargs["x"] == CENTER_X and kwargs["y"] == CENTER_Y
+
+    @pytest.mark.overlay('Modern')
+    def test_player_draws_as_a_filled_native_circle_when_the_backend_supports_it(self, overlay_mode, store:ExplorerStore) -> None:
+        from explorer.ui.overlay_frames import DOT_RADIUS_PX, PLAYER_COLOR
+
+        radar = RadarOverlay(Overlay())
+        radar.overlay.supports_circle = True
+        radar.render(store, _landed_state(store, samples=0))
+
+        shapes = radar.overlay._overlay.shapes
+        _, shape, kwargs = shapes[f"{FRAME_PREFIX}player"]
+        assert shape == "circle"
+        assert kwargs["radius"] == DOT_RADIUS_PX
+        assert kwargs["fill"] == PLAYER_COLOR # solid, unlike a ring -- it's a single point, not a boundary
+        assert kwargs["x"] == CENTER_X and kwargs["y"] == CENTER_Y
 
     @pytest.mark.overlay('Modern')
     def test_codex_tagged_sample_is_a_triangle_in_its_variant_color(self, overlay_mode, store:ExplorerStore) -> None:

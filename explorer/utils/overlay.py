@@ -11,6 +11,7 @@ This stays deliberately low-level: no per-frame config table, no plugin-specific
 names/colors/positions. A consuming plugin builds that ergonomic layer on top, supplying its
 own frame names and layout on every call.
 """
+import inspect
 from typing import Any
 
 from .debug import Debug
@@ -22,7 +23,8 @@ class Overlay:
     `define_plugin_group` layout API.
 
     Every method is safe to call regardless of whether an overlay is installed/running --
-    check `.available`/`.is_modern` if you need to know, but there's no need to guard calls.
+    check `.available`/`.is_modern`/`.supports_circle` if you need to know, but there's no
+    need to guard calls.
     """
 
     FAILURE_THRESHOLD:int = 5 # consecutive failures before giving up on this overlay for the rest of the session
@@ -31,6 +33,7 @@ class Overlay:
         self._overlay:Any = None
         self.available:bool = False
         self.is_modern:bool = False
+        self.supports_circle:bool = False # a native "circle" send_shape -- pre-release as of this writing
         self._warned:bool = False
         self._consecutive_failures:int = 0
 
@@ -56,9 +59,19 @@ class Overlay:
         try:
             self._overlay = edmcoverlay.Overlay()
             self.available = True
+            self.supports_circle = self._detect_circle_support()
             Debug.logger.info(f"Overlay detected ({'modern' if self.is_modern else 'legacy'})")
         except Exception as e:
             Debug.logger.warning("Overlay plugin found but failed to initialize", exc_info=e)
+
+    def _detect_circle_support(self) -> bool:
+        """ Same process, real imported class -- introspect send_shape's actual signature for
+        the pre-release circle kwargs (radius/thickness) rather than guessing from a version
+        string EDMCModernOverlay doesn't expose to callers anyway. """
+        try:
+            return "radius" in inspect.signature(self._overlay.send_shape).parameters
+        except Exception:
+            return False
 
     def send_text(self, id:str, text:str, color:str, x:int, y:int, ttl:int = 4, size:str = "normal") -> None:
         """ Send/update a text message. No-op if no overlay is available. """
@@ -77,6 +90,18 @@ class Overlay:
             self._succeed()
         except Exception as e:
             self._fail("send_shape", e)
+
+    def send_circle(self, id:str, border_color:str, fill_color:str, x:int, y:int, radius:int, thickness:int, ttl:int = 4) -> None:
+        """ A native filled/outlined circle -- check `.supports_circle` before calling; a
+        backend without this (pre-release) support just drops a shape="circle" payload. """
+        if not self.available: return
+        try:
+            self._overlay.send_shape(
+                id, "circle", color=border_color, fill=fill_color, x=x, y=y, radius=radius, thickness=thickness, ttl=ttl,
+            )
+            self._succeed()
+        except Exception as e:
+            self._fail("send_circle", e)
 
     def send_vect(self, id:str, vector:list[dict], color:str, ttl:int = 4, fill_color:str = "") -> None:
         """ Send/update a vector shape (e.g. a polygon or ring) from a list of {'x':.., 'y':..}
