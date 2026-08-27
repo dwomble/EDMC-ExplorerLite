@@ -19,17 +19,29 @@ def store(tmp_path) -> Generator[ExplorerStore, None, None]:
 
 class TestPendingCartographyValue:
 
-    def test_sums_estimated_value_of_bodies_in_unsold_not_lost_systems(self, store:ExplorerStore) -> None:
+    def test_sums_across_multiple_bodies(self, store:ExplorerStore) -> None:
         cmdr_id:int = store.get_or_create_cmdr("Testy")
         system_id:int = store.get_or_create_system(cmdr_id, 1, "Deltius")
         b1:int = store.get_or_create_body(cmdr_id, system_id, 1, "Deltius 1")
         b2:int = store.get_or_create_body(cmdr_id, system_id, 2, "Deltius 2")
-        # was_discovered=1 -- no first-discovered bonus. was_mapped=1 backs out the +60% first-
-        # mapped bonus that estimated_mapping_value already assumes (see mapping_value_for_eligibility).
-        store.update_body(b1, estimated_scan_value=500_000, estimated_mapping_value=250_000, was_discovered=1, was_mapped=1)
-        store.update_body(b2, estimated_scan_value=100_000, was_discovered=1, was_mapped=1) # no mapping value -- NULL, treated as 0
+        # b1 is mapped -- scan (500k) beats its reduced mapping value (~156k) here, so scan wins.
+        store.update_body(b1, estimated_scan_value=500_000, estimated_mapping_value=250_000,
+                           was_discovered=1, was_mapped=1, mapped_at="2026-01-01T00:00:00Z")
+        store.update_body(b2, estimated_scan_value=100_000, was_discovered=1) # scan-only, never mapped
 
-        assert store.get_pending_cartography_value(cmdr_id) == 500_000 + round(250_000 / 1.6) + 100_000
+        assert store.get_pending_cartography_value(cmdr_id) == 500_000 + 100_000
+
+    def test_never_counts_mapping_value_for_a_body_we_never_actually_mapped(self, store:ExplorerStore) -> None:
+        """ Regression: estimated_mapping_value is a "would be worth it" ceiling populated at
+        Scan time for every mappable body, whether or not it's ever actually DSS'd -- counting
+        it in unconditionally used to massively inflate the pending total for scan-only bodies. """
+        cmdr_id:int = store.get_or_create_cmdr("Testy")
+        system_id:int = store.get_or_create_system(cmdr_id, 1, "Deltius")
+        body_pk:int = store.get_or_create_body(cmdr_id, system_id, 1, "Deltius 1")
+        store.update_body(body_pk, estimated_scan_value=100_000, estimated_mapping_value=250_000,
+                           was_discovered=1, was_mapped=1) # mapped_at left unset -- never actually mapped
+
+        assert store.get_pending_cartography_value(cmdr_id) == 100_000
 
     def test_excludes_bodies_in_a_sold_system(self, store:ExplorerStore) -> None:
         cmdr_id:int = store.get_or_create_cmdr("Testy")
@@ -55,23 +67,26 @@ class TestPendingCartographyValue:
 
     def test_applies_first_discovered_and_first_mapped_bonuses(self, store:ExplorerStore) -> None:
         """ was_discovered/was_mapped=0 (nobody has yet) -- scan value gets +60%, and mapping
-        value keeps FIRST_MAPPED_MULTIPLIER's already-assumed +60% rather than losing it. """
+        value keeps FIRST_MAPPED_MULTIPLIER's already-assumed +60% rather than losing it.
+        mapped_at is set -- this body was actually DSS'd, so mapping value is in play at all. """
         cmdr_id:int = store.get_or_create_cmdr("Testy")
         system_id:int = store.get_or_create_system(cmdr_id, 1, "Deltius")
         body_pk:int = store.get_or_create_body(cmdr_id, system_id, 1, "Deltius 1")
-        store.update_body(body_pk, estimated_scan_value=500_000, estimated_mapping_value=250_000, was_discovered=0, was_mapped=0)
+        store.update_body(body_pk, estimated_scan_value=100_000, estimated_mapping_value=250_000,
+                           was_discovered=0, was_mapped=0, mapped_at="2026-01-01T00:00:00Z")
 
-        assert store.get_pending_cartography_value(cmdr_id) == 500_000 * 1.6 + 250_000
+        assert store.get_pending_cartography_value(cmdr_id) == 250_000 # mapping (unreduced) beats scan's 160k
 
     def test_removes_first_mapped_bonus_once_someone_else_has_mapped_it(self, store:ExplorerStore) -> None:
         """ was_mapped=1 -- back out FIRST_MAPPED_MULTIPLIER's assumed +60%, since that bonus no
-        longer applies. """
+        longer applies. mapped_at is set -- this body was actually DSS'd. """
         cmdr_id:int = store.get_or_create_cmdr("Testy")
         system_id:int = store.get_or_create_system(cmdr_id, 1, "Deltius")
         body_pk:int = store.get_or_create_body(cmdr_id, system_id, 1, "Deltius 1")
-        store.update_body(body_pk, estimated_scan_value=500_000, estimated_mapping_value=250_000, was_discovered=1, was_mapped=1)
+        store.update_body(body_pk, estimated_scan_value=100_000, estimated_mapping_value=250_000,
+                           was_discovered=1, was_mapped=1, mapped_at="2026-01-01T00:00:00Z")
 
-        assert store.get_pending_cartography_value(cmdr_id) == 500_000 + round(250_000 / 1.6)
+        assert store.get_pending_cartography_value(cmdr_id) == round(250_000 / 1.6) # still beats scan's 100k
 
 class TestPendingExobiologyValue:
 

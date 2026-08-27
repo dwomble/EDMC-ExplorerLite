@@ -26,7 +26,9 @@ CENTER_Y:int = 480
 # backends fall back to the dot-glyph approach below: a connected vect polyline either looks
 # jagged (few points) or the transport drops it (many points, confirmed at 384), so a ring is
 # individually-sent dot markers instead -- no connecting-line facets, each message stays tiny.
-RING_THICKNESS_PX:int = 2 # legacy-canvas border width for a native circle ring/dot
+RING_THICKNESS_PX:int = 1 # legacy-canvas border width for a native circle ring/dot -- this
+# scales by the viewport factor before hitting screen (unlike the triangles' flat 2px vect
+# line width), so 1 lands close to a 2px match at common resolutions instead of overshooting.
 DOT_RADIUS_PX:int = 3 # native-circle player marker radius -- matches the old 6x6 square footprint
 RING_DOT_SPACING_PX:float = 20.0 # fallback only: target on-screen gap between adjacent dots
 RING_DOT_MIN:int = 12
