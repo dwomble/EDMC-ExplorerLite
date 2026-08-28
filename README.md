@@ -1,7 +1,7 @@
 # EDMC-ExplorerLite
 
 ![Python](https://img.shields.io/badge/Python-3.x-blue?logo=python)
-![AI Disclosure](https://img.shields.io/badge/AI%20Contribution-Interactive?logo=claudecode)
+![AI Disclosure](https://img.shields.io/badge/AI%20Contribution-Interactive-?logo=claudecode)
 [![CodeQL](https://github.com/dwomble/EDMC-ExplorerLite/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/dwomble/EDMC-ExplorerLite/actions/workflows/github-code-scanning/codeql)
 [![GitHub Latest Version](https://img.shields.io/github/v/release/dwomble/EDMC-ExplorerLite)](https://github.com/dwomble/EDMC-ExplorerLite/releases/latest)
 [![Github All Releases](https://img.shields.io/github/downloads/dwomble/EDMC-ExplorerLite/total.svg)](https://github.com/dwomble/EDMC-ExplorerLite/releases/latest)

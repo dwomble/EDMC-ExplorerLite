@@ -1,0 +1,109 @@
+{
+  "pre_sale": [
+    {
+      "timestamp": "2026-08-27T04:36:45Z", "event": "LoadGame", "FID": "F00000000", "Commander": "TestCmdr",
+      "Horizons": true, "Odyssey": true, "Ship": "Explorer_NX", "Ship_Localised": "Caspian Explorer",
+      "ShipID": 115, "ShipName": "Perviy", "ShipIdent": "DW-10E", "FuelLevel": 106.828461, "FuelCapacity": 128.0,
+      "GameMode": "Open", "Credits": 11326995195, "Loan": 0, "language": "English/UK", "gameversion": "4.4.0.3",
+      "build": "r330683/r0 "
+    },
+    {
+      "timestamp": "2026-08-27T01:27:35Z", "event": "FSDJump", "Taxi": false, "Multicrew": false,
+      "StarSystem": "Voqooe UO-Z e320", "SystemAddress": 1375582742540, "StarPos": [-4409.1875, -1334.125, 17050.375],
+      "SystemAllegiance": "", "SystemEconomy": "$economy_None;", "SystemEconomy_Localised": "None",
+      "SystemSecondEconomy": "$economy_None;", "SystemSecondEconomy_Localised": "None",
+      "SystemGovernment": "$government_None;", "SystemGovernment_Localised": "None",
+      "SystemSecurity": "$GAlAXY_MAP_INFO_state_anarchy;", "SystemSecurity_Localised": "Anarchy",
+      "Population": 0, "Body": "Voqooe UO-Z e320 A", "BodyID": 1, "BodyType": "Star",
+      "JumpDist": 448.728, "FuelUsed": 6.419739, "FuelLevel": 112.596222, "BoostUsed": 4
+    },
+    {
+      "timestamp": "2026-08-27T01:27:41Z", "event": "Scan", "ScanType": "AutoScan", "BodyName": "Voqooe UO-Z e320 A",
+      "BodyID": 1, "Parents": [{"Null": 0}], "StarSystem": "Voqooe UO-Z e320", "SystemAddress": 1375582742540,
+      "DistanceFromArrivalLS": 0.0, "StarType": "N", "Subclass": 0, "StellarMass": 1.09375, "Radius": 9730.46875,
+      "AbsoluteMagnitude": 5.054276, "Age_MY": 6280, "SurfaceTemperature": 7653497.0, "Luminosity": "VII",
+      "SemiMajorAxis": 12577570080757.140625, "Eccentricity": 0.087061, "OrbitalInclination": 52.509967,
+      "Periapsis": 49.531743, "OrbitalPeriod": 41168661117.553711, "AscendingNode": 27.844195,
+      "MeanAnomaly": 320.127529, "RotationPeriod": 8.83483, "AxialTilt": 0.0,
+      "WasDiscovered": false, "WasMapped": false, "WasFootfalled": false
+    },
+    {
+      "timestamp": "2026-08-27T01:27:48Z", "event": "Scan", "ScanType": "AutoScan", "BodyName": "Voqooe UO-Z e320 D",
+      "BodyID": 7, "Parents": [{"Null": 6}, {"Null": 2}, {"Null": 0}], "StarSystem": "Voqooe UO-Z e320",
+      "SystemAddress": 1375582742540, "DistanceFromArrivalLS": 83581.651965, "StarType": "M", "Subclass": 6,
+      "StellarMass": 0.253906, "Radius": 324572288.0, "AbsoluteMagnitude": 10.055664, "Age_MY": 6280,
+      "SurfaceTemperature": 2540.0, "Luminosity": "Va", "SemiMajorAxis": 7229017913.341522,
+      "Eccentricity": 0.016185, "OrbitalInclination": 25.053073, "Periapsis": 221.733598,
+      "OrbitalPeriod": 4059671.04435, "AscendingNode": -146.41826, "MeanAnomaly": 134.243106,
+      "RotationPeriod": 206908.960438, "AxialTilt": 0.0,
+      "Rings": [{"Name": "Voqooe UO-Z e320 D A Belt", "RingClass": "eRingClass_Rocky", "MassMT": 3.1433e13, "InnerRad": 6.0998e8, "OuterRad": 1.528e9}],
+      "WasDiscovered": false, "WasMapped": false, "WasFootfalled": false
+    },
+    {
+      "timestamp": "2026-08-27T01:27:48Z", "event": "Scan", "ScanType": "AutoScan", "BodyName": "Voqooe UO-Z e320 C",
+      "BodyID": 5, "Parents": [{"Null": 3}, {"Null": 2}, {"Null": 0}], "StarSystem": "Voqooe UO-Z e320",
+      "SystemAddress": 1375582742540, "DistanceFromArrivalLS": 70300.144022, "StarType": "M", "Subclass": 4,
+      "StellarMass": 0.378906, "Radius": 342295168.0, "AbsoluteMagnitude": 9.290146, "Age_MY": 6280,
+      "SurfaceTemperature": 2950.0, "Luminosity": "Va", "SemiMajorAxis": 5878710150.718689,
+      "Eccentricity": 0.027377, "OrbitalInclination": -68.597127, "Periapsis": 188.864006,
+      "OrbitalPeriod": 598066.77103, "AscendingNode": -93.869786, "MeanAnomaly": 56.094022,
+      "RotationPeriod": 157906.69328, "AxialTilt": 0.0,
+      "WasDiscovered": false, "WasMapped": false, "WasFootfalled": false
+    },
+    {
+      "timestamp": "2026-08-27T01:27:48Z", "event": "Scan", "ScanType": "AutoScan", "BodyName": "Voqooe UO-Z e320 E",
+      "BodyID": 8, "Parents": [{"Null": 6}, {"Null": 2}, {"Null": 0}], "StarSystem": "Voqooe UO-Z e320",
+      "SystemAddress": 1375582742540, "DistanceFromArrivalLS": 83518.277834, "StarType": "T", "Subclass": 0,
+      "StellarMass": 0.09375, "Radius": 159442000.0, "AbsoluteMagnitude": 14.703979, "Age_MY": 6280,
+      "SurfaceTemperature": 1243.0, "Luminosity": "V", "SemiMajorAxis": 19578593373.298645,
+      "Eccentricity": 0.016185, "OrbitalInclination": 25.053073, "Periapsis": 41.733603,
+      "OrbitalPeriod": 4059671.04435, "AscendingNode": -146.41826, "MeanAnomaly": 134.243106,
+      "RotationPeriod": 99941.339453, "AxialTilt": 0.0,
+      "Rings": [{"Name": "Voqooe UO-Z e320 E A Belt", "RingClass": "eRingClass_MetalRich", "MassMT": 2.9235e13, "InnerRad": 2.4753e8, "OuterRad": 1.0962e9}],
+      "WasDiscovered": false, "WasMapped": false, "WasFootfalled": false
+    },
+    {
+      "timestamp": "2026-08-27T01:27:48Z", "event": "Scan", "ScanType": "AutoScan", "BodyName": "Voqooe UO-Z e320 B",
+      "BodyID": 4, "Parents": [{"Null": 3}, {"Null": 2}, {"Null": 0}], "StarSystem": "Voqooe UO-Z e320",
+      "SystemAddress": 1375582742540, "DistanceFromArrivalLS": 70276.979974, "StarType": "M", "Subclass": 1,
+      "StellarMass": 0.511719, "Radius": 440651712.0, "AbsoluteMagnitude": 8.07782, "Age_MY": 6280,
+      "SurfaceTemperature": 3437.0, "Luminosity": "Va", "SemiMajorAxis": 4352938055.992126,
+      "Eccentricity": 0.027377, "OrbitalInclination": -68.597127, "Periapsis": 8.864015,
+      "OrbitalPeriod": 598066.77103, "AscendingNode": -93.869786, "MeanAnomaly": 56.094022,
+      "RotationPeriod": 211239.321126, "AxialTilt": 0.0,
+      "WasDiscovered": false, "WasMapped": false, "WasFootfalled": false
+    }
+  ],
+  "sale": [
+    {
+      "timestamp": "2026-08-27T04:55:10Z", "event": "MultiSellExplorationData",
+      "Discovered": [
+        {"SystemName": "Granoae EC-B d1-11", "NumBodies": 1}, {"SystemName": "Voqooe NR-C d12", "NumBodies": 2},
+        {"SystemName": "Voqooe NR-C d13", "NumBodies": 13}, {"SystemName": "Voqooe NR-C d14", "NumBodies": 36},
+        {"SystemName": "Voqooe NR-C d15", "NumBodies": 46}, {"SystemName": "Voqooe NR-C d16", "NumBodies": 10},
+        {"SystemName": "Voqooe NR-C d17", "NumBodies": 30}, {"SystemName": "Voqooe NR-C d18", "NumBodies": 74},
+        {"SystemName": "Dryoea Flyuae SY-S e3-150", "NumBodies": 1}, {"SystemName": "Voqooe NR-C d19", "NumBodies": 12},
+        {"SystemName": "Voqooe NR-C d20", "NumBodies": 9}, {"SystemName": "Voqooe NR-C d21", "NumBodies": 8},
+        {"SystemName": "Voqooe NR-C d22", "NumBodies": 3}, {"SystemName": "Voqooe NR-C d23", "NumBodies": 2},
+        {"SystemName": "Voqooe NR-C d24", "NumBodies": 3}, {"SystemName": "Voqooe NR-C d25", "NumBodies": 20},
+        {"SystemName": "Voqooe NR-C d26", "NumBodies": 2}, {"SystemName": "Voqooe NR-C d27", "NumBodies": 35},
+        {"SystemName": "Voqooe NR-C d28", "NumBodies": 5}, {"SystemName": "Eoch Flyi FC-D d12-29", "NumBodies": 14},
+        {"SystemName": "Voqooe NR-C d29", "NumBodies": 7}, {"SystemName": "Voqooe UO-Z e320", "NumBodies": 5},
+        {"SystemName": "Eol Prou RB-X d1-81", "NumBodies": 1}, {"SystemName": "Voqooe WU-X e1-864", "NumBodies": 1},
+        {"SystemName": "Eoch Flyi DL-P e5-1074", "NumBodies": 2}, {"SystemName": "Voqooe CH-U e3-1476", "NumBodies": 3},
+        {"SystemName": "Eoch Flya SZ-O e6-1599", "NumBodies": 1}, {"SystemName": "Dryoea Flyuae PS-T d3-214", "NumBodies": 22},
+        {"SystemName": "Eoch Pruae AF-A e2094", "NumBodies": 2}, {"SystemName": "Dryio Flyuae AN-A d14-341", "NumBodies": 3},
+        {"SystemName": "Dryoea Flyuae IL-Y e2988", "NumBodies": 24}, {"SystemName": "Eol Prou WY-R d4-404", "NumBodies": 3},
+        {"SystemName": "Eoch Flyi AL-P e5-3668", "NumBodies": 43}, {"SystemName": "Dryoea Flyuae HL-P d5-509", "NumBodies": 1},
+        {"SystemName": "Voqooe KW-C d559", "NumBodies": 1}, {"SystemName": "Eoch Flyi AW-N e6-5489", "NumBodies": 3},
+        {"SystemName": "Voqooe AW-T d4-691", "NumBodies": 8}, {"SystemName": "Dryio Flyuae DA-H d10-702", "NumBodies": 1},
+        {"SystemName": "Dryio Flyuae KS-B d13-993", "NumBodies": 1}, {"SystemName": "Voqooe GO-O d7-1046", "NumBodies": 4},
+        {"SystemName": "Dryio Flyuae TU-F d11-1199", "NumBodies": 4}, {"SystemName": "Eoch Flya IN-H d11-1269", "NumBodies": 2},
+        {"SystemName": "Dryoea Flyuae FZ-S d3-1304", "NumBodies": 5}, {"SystemName": "Voqooe CU-D c1-195", "NumBodies": 32},
+        {"SystemName": "Dryoea Flyuae YF-O d6-1634", "NumBodies": 6}, {"SystemName": "Dryio Flyuae TD-J d9-1716", "NumBodies": 4},
+        {"SystemName": "Eol Prou OG-X d1-2966", "NumBodies": 6}
+      ],
+      "BaseValue": 35638731, "Bonus": 462000, "TotalEarnings": 32490683
+    }
+  ]
+}

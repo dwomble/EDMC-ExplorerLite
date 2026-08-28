@@ -1,0 +1,2828 @@
+{
+  "eol_prou_walkthrough": [
+    {
+      "timestamp": "2026-08-13T20:52:59Z",
+      "event": "LoadGame",
+      "FID": "F00000000",
+      "Commander": "TestCmdr",
+      "Horizons": true,
+      "Odyssey": true,
+      "Credits": 50000000
+    },
+    {
+      "timestamp": "2026-08-13T21:42:54Z",
+      "event": "FSDJump",
+      "Taxi": false,
+      "Multicrew": false,
+      "StarSystem": "Eol Prou IT-S c4-201",
+      "SystemAddress": 55319077331498,
+      "StarPos": [
+        -9073.0,
+        -956.09375,
+        19642.75
+      ],
+      "SystemAllegiance": "",
+      "SystemEconomy": "$economy_None;",
+      "SystemEconomy_Localised": "None",
+      "SystemSecondEconomy": "$economy_None;",
+      "SystemSecondEconomy_Localised": "None",
+      "SystemGovernment": "$government_None;",
+      "SystemGovernment_Localised": "None",
+      "SystemSecurity": "$GAlAXY_MAP_INFO_state_anarchy;",
+      "SystemSecurity_Localised": "Anarchy",
+      "Population": 0,
+      "Body": "Eol Prou IT-S c4-201 A",
+      "BodyID": 1,
+      "BodyType": "Star",
+      "JumpDist": 75.899,
+      "FuelUsed": 6.444371,
+      "FuelLevel": 89.995262
+    },
+    {
+      "timestamp": "2026-08-13T21:43:00Z",
+      "event": "Scan",
+      "ScanType": "AutoScan",
+      "BodyName": "Eol Prou IT-S c4-201 A",
+      "BodyID": 1,
+      "Parents": [
+        {
+          "Null": 0
+        }
+      ],
+      "StarSystem": "Eol Prou IT-S c4-201",
+      "SystemAddress": 55319077331498,
+      "DistanceFromArrivalLS": 0.0,
+      "StarType": "G",
+      "Subclass": 5,
+      "StellarMass": 0.835938,
+      "Radius": 670687936.0,
+      "AbsoluteMagnitude": 5.08696,
+      "Age_MY": 4904,
+      "SurfaceTemperature": 5546.0,
+      "Luminosity": "Vab",
+      "SemiMajorAxis": 79717685580.2536,
+      "Eccentricity": 0.071226,
+      "OrbitalInclination": 13.324485,
+      "Periapsis": 263.859288,
+      "OrbitalPeriod": 72846397.161484,
+      "AscendingNode": 0.52462,
+      "MeanAnomaly": 0.640264,
+      "RotationPeriod": 471088.331138,
+      "AxialTilt": 0.0,
+      "WasDiscovered": false,
+      "WasMapped": false,
+      "WasFootfalled": false
+    },
+    {
+      "timestamp": "2026-08-13T21:43:12Z",
+      "event": "FSSDiscoveryScan",
+      "Progress": 0.23406,
+      "BodyCount": 23,
+      "NonBodyCount": 3,
+      "SystemName": "Eol Prou IT-S c4-201",
+      "SystemAddress": 55319077331498
+    },
+    {
+      "timestamp": "2026-08-13T21:43:12Z",
+      "event": "Scan",
+      "ScanType": "Detailed",
+      "BodyName": "Eol Prou IT-S c4-201 B",
+      "BodyID": 2,
+      "Parents": [
+        {
+          "Null": 0
+        }
+      ],
+      "StarSystem": "Eol Prou IT-S c4-201",
+      "SystemAddress": 55319077331498,
+      "DistanceFromArrivalLS": 854.452209,
+      "StarType": "M",
+      "Subclass": 3,
+      "StellarMass": 0.339844,
+      "Radius": 383344256.0,
+      "AbsoluteMagnitude": 8.878021,
+      "Age_MY": 4904,
+      "SurfaceTemperature": 3065.0,
+      "Luminosity": "Va",
+      "SemiMajorAxis": 196083348989.4867,
+      "Eccentricity": 0.071226,
+      "OrbitalInclination": 13.324485,
+      "Periapsis": 83.859294,
+      "OrbitalPeriod": 72846397.161484,
+      "AscendingNode": 0.52462,
+      "MeanAnomaly": 0.640323,
+      "RotationPeriod": 209950.449413,
+      "AxialTilt": 0.0,
+      "Rings": [
+        {
+          "Name": "Eol Prou IT-S c4-201 B A Belt",
+          "RingClass": "eRingClass_MetalRich",
+          "MassMT": 65450000000000.0,
+          "InnerRad": 592570000.0,
+          "OuterRad": 1684000000.0
+        }
+      ],
+      "WasDiscovered": false,
+      "WasMapped": false,
+      "WasFootfalled": false
+    },
+    {
+      "timestamp": "2026-08-13T21:43:33Z",
+      "event": "Scan",
+      "ScanType": "Detailed",
+      "BodyName": "Eol Prou IT-S c4-201 AB 1",
+      "BodyID": 10,
+      "Parents": [
+        {
+          "Null": 0
+        }
+      ],
+      "StarSystem": "Eol Prou IT-S c4-201",
+      "SystemAddress": 55319077331498,
+      "DistanceFromArrivalLS": 2045.845273,
+      "TidalLock": false,
+      "TerraformState": "",
+      "PlanetClass": "Sudarsky class III gas giant",
+      "Atmosphere": "",
+      "AtmosphereComposition": [
+        {
+          "Name": "Hydrogen",
+          "Percent": 73.756042
+        },
+        {
+          "Name": "Helium",
+          "Percent": 26.243956
+        }
+      ],
+      "Volcanism": "",
+      "MassEM": 1069.436768,
+      "Radius": 75500288.0,
+      "SurfaceGravity": 74.776879,
+      "SurfaceTemperature": 302.833649,
+      "SurfacePressure": 0.0,
+      "Landable": false,
+      "SemiMajorAxis": 568479818105.6976,
+      "Eccentricity": 0.000715,
+      "OrbitalInclination": -0.570485,
+      "Periapsis": 185.500165,
+      "OrbitalPeriod": 215205508.470535,
+      "AscendingNode": 162.574277,
+      "MeanAnomaly": 224.794668,
+      "RotationPeriod": 411255.108648,
+      "AxialTilt": 2.874285,
+      "WasDiscovered": false,
+      "WasMapped": false,
+      "WasFootfalled": false
+    },
+    {
+      "timestamp": "2026-08-13T21:43:41Z",
+      "event": "Scan",
+      "ScanType": "Detailed",
+      "BodyName": "Eol Prou IT-S c4-201 AB 1 d",
+      "BodyID": 15,
+      "Parents": [
+        {
+          "Null": 13
+        },
+        {
+          "Planet": 10
+        },
+        {
+          "Null": 0
+        }
+      ],
+      "StarSystem": "Eol Prou IT-S c4-201",
+      "SystemAddress": 55319077331498,
+      "DistanceFromArrivalLS": 2035.258536,
+      "TidalLock": false,
+      "TerraformState": "",
+      "PlanetClass": "Rocky body",
+      "Atmosphere": "carbon dioxide atmosphere",
+      "AtmosphereType": "CarbonDioxide",
+      "AtmosphereComposition": [
+        {
+          "Name": "CarbonDioxide",
+          "Percent": 98.97979
+        },
+        {
+          "Name": "SulphurDioxide",
+          "Percent": 1.014364
+        }
+      ],
+      "Volcanism": "",
+      "MassEM": 0.000464,
+      "Radius": 545630.625,
+      "SurfaceGravity": 0.621586,
+      "SurfaceTemperature": 214.938385,
+      "SurfacePressure": 45092.25,
+      "Landable": false,
+      "Composition": {
+        "Ice": 0.0,
+        "Rock": 0.910107,
+        "Metal": 0.089893
+      },
+      "SemiMajorAxis": 5691428.780556,
+      "Eccentricity": 0.128826,
+      "OrbitalInclination": -7.272423,
+      "Periapsis": 38.58768,
+      "OrbitalPeriod": 275630.867481,
+      "AscendingNode": 7.494353,
+      "MeanAnomaly": 57.257513,
+      "RotationPeriod": 238344.941683,
+      "AxialTilt": 0.073177,
+      "WasDiscovered": false,
+      "WasMapped": false,
+      "WasFootfalled": false
+    },
+    {
+      "timestamp": "2026-08-13T21:43:45Z",
+      "event": "Scan",
+      "ScanType": "Detailed",
+      "BodyName": "Eol Prou IT-S c4-201 AB 1 c",
+      "BodyID": 14,
+      "Parents": [
+        {
+          "Null": 13
+        },
+        {
+          "Planet": 10
+        },
+        {
+          "Null": 0
+        }
+      ],
+      "StarSystem": "Eol Prou IT-S c4-201",
+      "SystemAddress": 55319077331498,
+      "DistanceFromArrivalLS": 2035.286994,
+      "TidalLock": true,
+      "TerraformState": "",
+      "PlanetClass": "Rocky body",
+      "Atmosphere": "carbon dioxide atmosphere",
+      "AtmosphereType": "CarbonDioxide",
+      "AtmosphereComposition": [
+        {
+          "Name": "CarbonDioxide",
+          "Percent": 98.886864
+        },
+        {
+          "Name": "SulphurDioxide",
+          "Percent": 1.113144
+        }
+      ],
+      "Volcanism": "",
+      "MassEM": 0.00068,
+      "Radius": 619324.25,
+      "SurfaceGravity": 0.706969,
+      "SurfaceTemperature": 190.030563,
+      "SurfacePressure": 12536.484375,
+      "Landable": false,
+      "Composition": {
+        "Ice": 0.0,
+        "Rock": 0.910107,
+        "Metal": 0.089893
+      },
+      "SemiMajorAxis": 3884041.309357,
+      "Eccentricity": 0.128826,
+      "OrbitalInclination": -7.272423,
+      "Periapsis": 218.587674,
+      "OrbitalPeriod": 275630.867481,
+      "AscendingNode": 7.494353,
+      "MeanAnomaly": 57.262621,
+      "RotationPeriod": 432778.787115,
+      "AxialTilt": -0.158394,
+      "WasDiscovered": false,
+      "WasMapped": false,
+      "WasFootfalled": false
+    },
+    {
+      "timestamp": "2026-08-13T21:43:48Z",
+      "event": "FSSBodySignals",
+      "BodyName": "Eol Prou IT-S c4-201 AB 1 b",
+      "BodyID": 12,
+      "SystemAddress": 55319077331498,
+      "Signals": [
+        {
+          "Type": "$SAA_SignalType_Biological;",
+          "Type_Localised": "Biological",
+          "Count": 3
+        }
+      ]
+    },
+    {
+      "timestamp": "2026-08-13T21:43:49Z",
+      "event": "Scan",
+      "ScanType": "Detailed",
+      "BodyName": "Eol Prou IT-S c4-201 AB 1 b",
+      "BodyID": 12,
+      "Parents": [
+        {
+          "Planet": 10
+        },
+        {
+          "Null": 0
+        }
+      ],
+      "StarSystem": "Eol Prou IT-S c4-201",
+      "SystemAddress": 55319077331498,
+      "DistanceFromArrivalLS": 2051.785351,
+      "TidalLock": true,
+      "TerraformState": "",
+      "PlanetClass": "Rocky body",
+      "Atmosphere": "thin carbon dioxide atmosphere",
+      "AtmosphereType": "CarbonDioxide",
+      "AtmosphereComposition": [
+        {
+          "Name": "CarbonDioxide",
+          "Percent": 99.009911
+        },
+        {
+          "Name": "SulphurDioxide",
+          "Percent": 0.990099
+        }
+      ],
+      "Volcanism": "",
+      "MassEM": 0.001394,
+      "Radius": 785405.5,
+      "SurfaceGravity": 0.900807,
+      "SurfaceTemperature": 168.538742,
+      "SurfacePressure": 1592.289185,
+      "Landable": true,
+      "Materials": [
+        {
+          "Name": "iron",
+          "Percent": 19.397982
+        },
+        {
+          "Name": "sulphur",
+          "Percent": 18.864895
+        },
+        {
+          "Name": "carbon",
+          "Percent": 15.863421
+        },
+        {
+          "Name": "nickel",
+          "Percent": 14.671822
+        },
+        {
+          "Name": "phosphorus",
+          "Percent": 10.156035
+        },
+        {
+          "Name": "chromium",
+          "Percent": 8.723917
+        },
+        {
+          "Name": "germanium",
+          "Percent": 5.572672
+        },
+        {
+          "Name": "selenium",
+          "Percent": 2.952515
+        },
+        {
+          "Name": "cadmium",
+          "Percent": 1.506341
+        },
+        {
+          "Name": "tellurium",
+          "Percent": 1.443333
+        },
+        {
+          "Name": "mercury",
+          "Percent": 0.847078
+        }
+      ],
+      "Composition": {
+        "Ice": 0.0,
+        "Rock": 0.910107,
+        "Metal": 0.089893
+      },
+      "SemiMajorAxis": 2048030138.015747,
+      "Eccentricity": 0.000157,
+      "OrbitalInclination": -0.000751,
+      "Periapsis": 319.749955,
+      "OrbitalPeriod": 891961.300373,
+      "AscendingNode": 179.791852,
+      "MeanAnomaly": 309.749649,
+      "RotationPeriod": 891964.528564,
+      "AxialTilt": 0.238591,
+      "WasDiscovered": false,
+      "WasMapped": false,
+      "WasFootfalled": false
+    },
+    {
+      "timestamp": "2026-08-13T21:43:52Z",
+      "event": "FSSBodySignals",
+      "BodyName": "Eol Prou IT-S c4-201 AB 1 a",
+      "BodyID": 11,
+      "SystemAddress": 55319077331498,
+      "Signals": [
+        {
+          "Type": "$SAA_SignalType_Biological;",
+          "Type_Localised": "Biological",
+          "Count": 3
+        }
+      ]
+    },
+    {
+      "timestamp": "2026-08-13T21:43:53Z",
+      "event": "Scan",
+      "ScanType": "Detailed",
+      "BodyName": "Eol Prou IT-S c4-201 AB 1 a",
+      "BodyID": 11,
+      "Parents": [
+        {
+          "Planet": 10
+        },
+        {
+          "Null": 0
+        }
+      ],
+      "StarSystem": "Eol Prou IT-S c4-201",
+      "SystemAddress": 55319077331498,
+      "DistanceFromArrivalLS": 2042.080732,
+      "TidalLock": false,
+      "TerraformState": "",
+      "PlanetClass": "Rocky body",
+      "Atmosphere": "thin carbon dioxide atmosphere",
+      "AtmosphereType": "CarbonDioxide",
+      "AtmosphereComposition": [
+        {
+          "Name": "CarbonDioxide",
+          "Percent": 100.0
+        }
+      ],
+      "Volcanism": "",
+      "MassEM": 0.00121,
+      "Radius": 748626.875,
+      "SurfaceGravity": 0.860792,
+      "SurfaceTemperature": 172.985458,
+      "SurfacePressure": 1432.028076,
+      "Landable": true,
+      "Materials": [
+        {
+          "Name": "iron",
+          "Percent": 19.157215
+        },
+        {
+          "Name": "sulphur",
+          "Percent": 18.456766
+        },
+        {
+          "Name": "carbon",
+          "Percent": 15.520228
+        },
+        {
+          "Name": "nickel",
+          "Percent": 14.489714
+        },
+        {
+          "Name": "phosphorus",
+          "Percent": 9.936317
+        },
+        {
+          "Name": "manganese",
+          "Percent": 7.911734
+        },
+        {
+          "Name": "germanium",
+          "Percent": 5.452111
+        },
+        {
+          "Name": "zinc",
+          "Percent": 5.206213
+        },
+        {
+          "Name": "tellurium",
+          "Percent": 1.412108
+        },
+        {
+          "Name": "niobium",
+          "Percent": 1.309293
+        },
+        {
+          "Name": "tin",
+          "Percent": 1.148312
+        }
+      ],
+      "Composition": {
+        "Ice": 0.0,
+        "Rock": 0.905336,
+        "Metal": 0.094664
+      },
+      "SemiMajorAxis": 1400484859.94339,
+      "Eccentricity": 0.000338,
+      "OrbitalInclination": 0.005674,
+      "Periapsis": 358.240676,
+      "OrbitalPeriod": 504381.44207,
+      "AscendingNode": -32.844143,
+      "MeanAnomaly": 322.556116,
+      "RotationPeriod": -504383.264271,
+      "AxialTilt": -2.535611,
+      "WasDiscovered": false,
+      "WasMapped": false,
+      "WasFootfalled": false
+    },
+    {
+      "timestamp": "2026-08-13T21:43:58Z",
+      "event": "FSSBodySignals",
+      "BodyName": "Eol Prou IT-S c4-201 AB 1 e",
+      "BodyID": 16,
+      "SystemAddress": 55319077331498,
+      "Signals": [
+        {
+          "Type": "$SAA_SignalType_Biological;",
+          "Type_Localised": "Biological",
+          "Count": 2
+        }
+      ]
+    },
+    {
+      "timestamp": "2026-08-13T21:43:59Z",
+      "event": "Scan",
+      "ScanType": "Detailed",
+      "BodyName": "Eol Prou IT-S c4-201 AB 1 e",
+      "BodyID": 16,
+      "Parents": [
+        {
+          "Planet": 10
+        },
+        {
+          "Null": 0
+        }
+      ],
+      "StarSystem": "Eol Prou IT-S c4-201",
+      "SystemAddress": 55319077331498,
+      "DistanceFromArrivalLS": 2038.080725,
+      "TidalLock": true,
+      "TerraformState": "",
+      "PlanetClass": "Rocky body",
+      "Atmosphere": "thin carbon dioxide atmosphere",
+      "AtmosphereType": "CarbonDioxide",
+      "AtmosphereComposition": [
+        {
+          "Name": "CarbonDioxide",
+          "Percent": 99.009911
+        },
+        {
+          "Name": "SulphurDioxide",
+          "Percent": 0.990099
+        }
+      ],
+      "Volcanism": "",
+      "MassEM": 0.001054,
+      "Radius": 715844.1875,
+      "SurfaceGravity": 0.820079,
+      "SurfaceTemperature": 156.060684,
+      "SurfacePressure": 1318.030762,
+      "Landable": true,
+      "Materials": [
+        {
+          "Name": "iron",
+          "Percent": 19.029314
+        },
+        {
+          "Name": "sulphur",
+          "Percent": 18.46446
+        },
+        {
+          "Name": "carbon",
+          "Percent": 15.5267
+        },
+        {
+          "Name": "nickel",
+          "Percent": 14.392975
+        },
+        {
+          "Name": "phosphorus",
+          "Percent": 9.940459
+        },
+        {
+          "Name": "chromium",
+          "Percent": 8.558114
+        },
+        {
+          "Name": "germanium",
+          "Percent": 5.454384
+        },
+        {
+          "Name": "zinc",
+          "Percent": 5.171455
+        },
+        {
+          "Name": "cadmium",
+          "Percent": 1.477712
+        },
+        {
+          "Name": "antimony",
+          "Percent": 1.153462
+        },
+        {
+          "Name": "mercury",
+          "Percent": 0.830979
+        }
+      ],
+      "Composition": {
+        "Ice": 0.0,
+        "Rock": 0.908966,
+        "Metal": 0.091034
+      },
+      "SemiMajorAxis": 5948995471.000671,
+      "Eccentricity": 0.011605,
+      "OrbitalInclination": 0.015325,
+      "Periapsis": 91.370282,
+      "OrbitalPeriod": 4415774.76263,
+      "AscendingNode": -60.697412,
+      "MeanAnomaly": 57.764228,
+      "RotationPeriod": 4415790.738901,
+      "AxialTilt": 0.28304,
+      "WasDiscovered": false,
+      "WasMapped": false,
+      "WasFootfalled": false
+    },
+    {
+      "timestamp": "2026-08-13T21:44:11Z",
+      "event": "Scan",
+      "ScanType": "Detailed",
+      "BodyName": "Eol Prou IT-S c4-201 B 2",
+      "BodyID": 9,
+      "Parents": [
+        {
+          "Star": 2
+        },
+        {
+          "Null": 0
+        }
+      ],
+      "StarSystem": "Eol Prou IT-S c4-201",
+      "SystemAddress": 55319077331498,
+      "DistanceFromArrivalLS": 792.743578,
+      "TidalLock": false,
+      "TerraformState": "",
+      "PlanetClass": "High metal content body",
+      "Atmosphere": "hot thick carbon dioxide atmosphere",
+      "AtmosphereType": "CarbonDioxide",
+      "AtmosphereComposition": [
+        {
+          "Name": "CarbonDioxide",
+          "Percent": 98.981758
+        },
+        {
+          "Name": "SulphurDioxide",
+          "Percent": 0.989818
+        }
+      ],
+      "Volcanism": "minor silicate vapour geysers volcanism",
+      "MassEM": 1.768762,
+      "Radius": 7175268.5,
+      "SurfaceGravity": 13.693128,
+      "SurfaceTemperature": 1410.878052,
+      "SurfacePressure": 26796026.0,
+      "Landable": false,
+      "Composition": {
+        "Ice": 0.0,
+        "Rock": 0.662664,
+        "Metal": 0.337336
+      },
+      "SemiMajorAxis": 21670317053.79486,
+      "Eccentricity": 0.484782,
+      "OrbitalInclination": -143.487651,
+      "Periapsis": 80.423357,
+      "OrbitalPeriod": 2984232.902527,
+      "AscendingNode": 56.26659,
+      "MeanAnomaly": 286.429742,
+      "RotationPeriod": 1989507.983863,
+      "AxialTilt": 0.315447,
+      "WasDiscovered": false,
+      "WasMapped": false,
+      "WasFootfalled": false
+    },
+    {
+      "timestamp": "2026-08-13T21:44:20Z",
+      "event": "Scan",
+      "ScanType": "Detailed",
+      "BodyName": "Eol Prou IT-S c4-201 B 1",
+      "BodyID": 7,
+      "Parents": [
+        {
+          "Star": 2
+        },
+        {
+          "Null": 0
+        }
+      ],
+      "StarSystem": "Eol Prou IT-S c4-201",
+      "SystemAddress": 55319077331498,
+      "DistanceFromArrivalLS": 853.218902,
+      "TidalLock": true,
+      "TerraformState": "",
+      "PlanetClass": "High metal content body",
+      "Atmosphere": "",
+      "AtmosphereType": "None",
+      "Volcanism": "",
+      "MassEM": 0.1539,
+      "Radius": 3402583.0,
+      "SurfaceGravity": 5.298242,
+      "SurfaceTemperature": 732.551453,
+      "SurfacePressure": 0.0,
+      "Landable": true,
+      "Materials": [
+        {
+          "Name": "iron",
+          "Percent": 22.815123
+        },
+        {
+          "Name": "nickel",
+          "Percent": 17.256403
+        },
+        {
+          "Name": "sulphur",
+          "Percent": 15.912487
+        },
+        {
+          "Name": "carbon",
+          "Percent": 13.380753
+        },
+        {
+          "Name": "chromium",
+          "Percent": 10.260719
+        },
+        {
+          "Name": "phosphorus",
+          "Percent": 8.566588
+        },
+        {
+          "Name": "germanium",
+          "Percent": 4.700533
+        },
+        {
+          "Name": "zirconium",
+          "Percent": 2.649306
+        },
+        {
+          "Name": "niobium",
+          "Percent": 1.559292
+        },
+        {
+          "Name": "molybdenum",
+          "Percent": 1.489814
+        },
+        {
+          "Name": "ruthenium",
+          "Percent": 1.408979
+        }
+      ],
+      "Composition": {
+        "Ice": 0.0,
+        "Rock": 0.658014,
+        "Metal": 0.341986
+      },
+      "SemiMajorAxis": 4642839193.344116,
+      "Eccentricity": 0.001853,
+      "OrbitalInclination": -0.017874,
+      "Periapsis": 43.789446,
+      "OrbitalPeriod": 295944.50593,
+      "AscendingNode": 143.014486,
+      "MeanAnomaly": 92.247476,
+      "RotationPeriod": 295947.400932,
+      "AxialTilt": 0.75817,
+      "WasDiscovered": false,
+      "WasMapped": false,
+      "WasFootfalled": false
+    },
+    {
+      "timestamp": "2026-08-13T21:44:25Z",
+      "event": "FSSBodySignals",
+      "BodyName": "Eol Prou IT-S c4-201 B 1 a",
+      "BodyID": 8,
+      "SystemAddress": 55319077331498,
+      "Signals": [
+        {
+          "Type": "$SAA_SignalType_Geological;",
+          "Type_Localised": "Geological",
+          "Count": 3
+        }
+      ]
+    },
+    {
+      "timestamp": "2026-08-13T21:44:25Z",
+      "event": "Scan",
+      "ScanType": "Detailed",
+      "BodyName": "Eol Prou IT-S c4-201 B 1 a",
+      "BodyID": 8,
+      "Parents": [
+        {
+          "Planet": 7
+        },
+        {
+          "Star": 2
+        },
+        {
+          "Null": 0
+        }
+      ],
+      "StarSystem": "Eol Prou IT-S c4-201",
+      "SystemAddress": 55319077331498,
+      "DistanceFromArrivalLS": 853.240199,
+      "TidalLock": true,
+      "TerraformState": "",
+      "PlanetClass": "Rocky body",
+      "Atmosphere": "",
+      "AtmosphereType": "None",
+      "Volcanism": "major silicate vapour geysers volcanism",
+      "MassEM": 0.00921,
+      "Radius": 1444846.5,
+      "SurfaceGravity": 1.75842,
+      "SurfaceTemperature": 732.551453,
+      "SurfacePressure": 0.0,
+      "Landable": true,
+      "Materials": [
+        {
+          "Name": "iron",
+          "Percent": 21.098045
+        },
+        {
+          "Name": "sulphur",
+          "Percent": 18.7806
+        },
+        {
+          "Name": "nickel",
+          "Percent": 15.957679
+        },
+        {
+          "Name": "carbon",
+          "Percent": 15.792539
+        },
+        {
+          "Name": "phosphorus",
+          "Percent": 10.110655
+        },
+        {
+          "Name": "chromium",
+          "Percent": 9.488492
+        },
+        {
+          "Name": "selenium",
+          "Percent": 2.939322
+        },
+        {
+          "Name": "zirconium",
+          "Percent": 2.449918
+        },
+        {
+          "Name": "ruthenium",
+          "Percent": 1.302939
+        },
+        {
+          "Name": "tungsten",
+          "Percent": 1.158495
+        },
+        {
+          "Name": "mercury",
+          "Percent": 0.921317
+        }
+      ],
+      "Composition": {
+        "Ice": 0.0,
+        "Rock": 0.859792,
+        "Metal": 0.140208
+      },
+      "SemiMajorAxis": 9363139.45055,
+      "Eccentricity": 0.0,
+      "OrbitalInclination": -89.005496,
+      "Periapsis": 152.978974,
+      "OrbitalPeriod": 22326.052189,
+      "AscendingNode": -135.973313,
+      "MeanAnomaly": 129.211583,
+      "RotationPeriod": 22984.384231,
+      "AxialTilt": -0.244037,
+      "WasDiscovered": false,
+      "WasMapped": false,
+      "WasFootfalled": false
+    },
+    {
+      "timestamp": "2026-08-13T21:44:34Z",
+      "event": "Scan",
+      "ScanType": "AutoScan",
+      "BodyName": "Eol Prou IT-S c4-201 B A Belt Cluster 1",
+      "BodyID": 4,
+      "Parents": [
+        {
+          "Ring": 3
+        },
+        {
+          "Star": 2
+        },
+        {
+          "Null": 0
+        }
+      ],
+      "StarSystem": "Eol Prou IT-S c4-201",
+      "SystemAddress": 55319077331498,
+      "DistanceFromArrivalLS": 853.674372,
+      "WasDiscovered": false,
+      "WasMapped": false,
+      "WasFootfalled": false
+    },
+    {
+      "timestamp": "2026-08-13T21:44:34Z",
+      "event": "Scan",
+      "ScanType": "AutoScan",
+      "BodyName": "Eol Prou IT-S c4-201 B A Belt Cluster 2",
+      "BodyID": 5,
+      "Parents": [
+        {
+          "Ring": 3
+        },
+        {
+          "Star": 2
+        },
+        {
+          "Null": 0
+        }
+      ],
+      "StarSystem": "Eol Prou IT-S c4-201",
+      "SystemAddress": 55319077331498,
+      "DistanceFromArrivalLS": 852.049278,
+      "WasDiscovered": false,
+      "WasMapped": false,
+      "WasFootfalled": false
+    },
+    {
+      "timestamp": "2026-08-13T21:44:34Z",
+      "event": "Scan",
+      "ScanType": "AutoScan",
+      "BodyName": "Eol Prou IT-S c4-201 B A Belt Cluster 3",
+      "BodyID": 6,
+      "Parents": [
+        {
+          "Ring": 3
+        },
+        {
+          "Star": 2
+        },
+        {
+          "Null": 0
+        }
+      ],
+      "StarSystem": "Eol Prou IT-S c4-201",
+      "SystemAddress": 55319077331498,
+      "DistanceFromArrivalLS": 857.71513,
+      "WasDiscovered": false,
+      "WasMapped": false,
+      "WasFootfalled": false
+    },
+    {
+      "timestamp": "2026-08-13T21:44:50Z",
+      "event": "Scan",
+      "ScanType": "Detailed",
+      "BodyName": "Eol Prou IT-S c4-201 AB 2",
+      "BodyID": 19,
+      "Parents": [
+        {
+          "Null": 0
+        }
+      ],
+      "StarSystem": "Eol Prou IT-S c4-201",
+      "SystemAddress": 55319077331498,
+      "DistanceFromArrivalLS": 2350.267729,
+      "TidalLock": false,
+      "TerraformState": "",
+      "PlanetClass": "Sudarsky class I gas giant",
+      "Atmosphere": "",
+      "AtmosphereComposition": [
+        {
+          "Name": "Hydrogen",
+          "Percent": 73.75605
+        },
+        {
+          "Name": "Helium",
+          "Percent": 26.243958
+        }
+      ],
+      "Volcanism": "",
+      "MassEM": 183.342926,
+      "Radius": 66716912.0,
+      "SurfaceGravity": 16.417297,
+      "SurfaceTemperature": 122.447853,
+      "SurfacePressure": 0.0,
+      "Landable": false,
+      "SemiMajorAxis": 773260164260.8643,
+      "Eccentricity": 0.005928,
+      "OrbitalInclination": -0.050459,
+      "Periapsis": 100.171964,
+      "OrbitalPeriod": 341404563.188553,
+      "AscendingNode": 136.166791,
+      "MeanAnomaly": 256.341915,
+      "RotationPeriod": 97186.611433,
+      "AxialTilt": -0.513621,
+      "WasDiscovered": false,
+      "WasMapped": false,
+      "WasFootfalled": false
+    },
+    {
+      "timestamp": "2026-08-13T21:44:56Z",
+      "event": "Scan",
+      "ScanType": "Detailed",
+      "BodyName": "Eol Prou IT-S c4-201 AB 2 a",
+      "BodyID": 20,
+      "Parents": [
+        {
+          "Planet": 19
+        },
+        {
+          "Null": 0
+        }
+      ],
+      "StarSystem": "Eol Prou IT-S c4-201",
+      "SystemAddress": 55319077331498,
+      "DistanceFromArrivalLS": 2349.93024,
+      "TidalLock": true,
+      "TerraformState": "",
+      "PlanetClass": "Icy body",
+      "Atmosphere": "",
+      "AtmosphereType": "None",
+      "Volcanism": "",
+      "MassEM": 0.00115,
+      "Radius": 924479.0625,
+      "SurfaceGravity": 0.53635,
+      "SurfaceTemperature": 96.021774,
+      "SurfacePressure": 0.0,
+      "Landable": true,
+      "Materials": [
+        {
+          "Name": "sulphur",
+          "Percent": 27.097506
+        },
+        {
+          "Name": "carbon",
+          "Percent": 22.786196
+        },
+        {
+          "Name": "phosphorus",
+          "Percent": 14.588115
+        },
+        {
+          "Name": "iron",
+          "Percent": 12.232239
+        },
+        {
+          "Name": "nickel",
+          "Percent": 9.251953
+        },
+        {
+          "Name": "chromium",
+          "Percent": 5.501244
+        },
+        {
+          "Name": "zinc",
+          "Percent": 3.324264
+        },
+        {
+          "Name": "vanadium",
+          "Percent": 3.003812
+        },
+        {
+          "Name": "cadmium",
+          "Percent": 0.949889
+        },
+        {
+          "Name": "yttrium",
+          "Percent": 0.730617
+        },
+        {
+          "Name": "mercury",
+          "Percent": 0.534162
+        }
+      ],
+      "Composition": {
+        "Ice": 0.825123,
+        "Rock": 0.159157,
+        "Metal": 0.01572
+      },
+      "SemiMajorAxis": 692684024.572372,
+      "Eccentricity": 1e-05,
+      "OrbitalInclination": -0.003856,
+      "Periapsis": 92.542448,
+      "OrbitalPeriod": 423718.249798,
+      "AscendingNode": -2.585985,
+      "MeanAnomaly": 246.178585,
+      "RotationPeriod": 423732.020237,
+      "AxialTilt": -0.243419,
+      "WasDiscovered": false,
+      "WasMapped": false,
+      "WasFootfalled": false
+    },
+    {
+      "timestamp": "2026-08-13T21:44:58Z",
+      "event": "Scan",
+      "ScanType": "Detailed",
+      "BodyName": "Eol Prou IT-S c4-201 AB 2 b",
+      "BodyID": 21,
+      "Parents": [
+        {
+          "Planet": 19
+        },
+        {
+          "Null": 0
+        }
+      ],
+      "StarSystem": "Eol Prou IT-S c4-201",
+      "SystemAddress": 55319077331498,
+      "DistanceFromArrivalLS": 2347.885477,
+      "TidalLock": false,
+      "TerraformState": "",
+      "PlanetClass": "Icy body",
+      "Atmosphere": "",
+      "AtmosphereType": "None",
+      "Volcanism": "",
+      "MassEM": 0.002501,
+      "Radius": 1193602.75,
+      "SurfaceGravity": 0.699621,
+      "SurfaceTemperature": 95.574371,
+      "SurfacePressure": 0.0,
+      "Landable": true,
+      "Materials": [
+        {
+          "Name": "sulphur",
+          "Percent": 26.146545
+        },
+        {
+          "Name": "carbon",
+          "Percent": 21.986538
+        },
+        {
+          "Name": "phosphorus",
+          "Percent": 14.076159
+        },
+        {
+          "Name": "iron",
+          "Percent": 11.938695
+        },
+        {
+          "Name": "nickel",
+          "Percent": 9.029928
+        },
+        {
+          "Name": "chromium",
+          "Percent": 5.369228
+        },
+        {
+          "Name": "manganese",
+          "Percent": 4.930559
+        },
+        {
+          "Name": "selenium",
+          "Percent": 4.092155
+        },
+        {
+          "Name": "cadmium",
+          "Percent": 0.927094
+        },
+        {
+          "Name": "molybdenum",
+          "Percent": 0.77959
+        },
+        {
+          "Name": "antimony",
+          "Percent": 0.723508
+        }
+      ],
+      "Composition": {
+        "Ice": 0.819484,
+        "Rock": 0.164063,
+        "Metal": 0.016453
+      },
+      "SemiMajorAxis": 910596925.020218,
+      "Eccentricity": 3.6e-05,
+      "OrbitalInclination": -0.059124,
+      "Periapsis": 226.137755,
+      "OrbitalPeriod": 638651.156425,
+      "AscendingNode": 9.619912,
+      "MeanAnomaly": 338.112669,
+      "RotationPeriod": -638671.909767,
+      "AxialTilt": -2.072608,
+      "WasDiscovered": false,
+      "WasMapped": false,
+      "WasFootfalled": false
+    },
+    {
+      "timestamp": "2026-08-13T21:45:02Z",
+      "event": "Scan",
+      "ScanType": "Detailed",
+      "BodyName": "Eol Prou IT-S c4-201 AB 2 c",
+      "BodyID": 22,
+      "Parents": [
+        {
+          "Planet": 19
+        },
+        {
+          "Null": 0
+        }
+      ],
+      "StarSystem": "Eol Prou IT-S c4-201",
+      "SystemAddress": 55319077331498,
+      "DistanceFromArrivalLS": 2346.027389,
+      "TidalLock": true,
+      "TerraformState": "",
+      "PlanetClass": "Icy body",
+      "Atmosphere": "",
+      "AtmosphereType": "None",
+      "Volcanism": "",
+      "MassEM": 0.001487,
+      "Radius": 1006579.25,
+      "SurfaceGravity": 0.585042,
+      "SurfaceTemperature": 94.577377,
+      "SurfacePressure": 0.0,
+      "Landable": true,
+      "Materials": [
+        {
+          "Name": "sulphur",
+          "Percent": 26.310938
+        },
+        {
+          "Name": "carbon",
+          "Percent": 22.124775
+        },
+        {
+          "Name": "phosphorus",
+          "Percent": 14.16466
+        },
+        {
+          "Name": "iron",
+          "Percent": 11.877171
+        },
+        {
+          "Name": "nickel",
+          "Percent": 8.983395
+        },
+        {
+          "Name": "chromium",
+          "Percent": 5.341558
+        },
+        {
+          "Name": "manganese",
+          "Percent": 4.90515
+        },
+        {
+          "Name": "selenium",
+          "Percent": 4.117885
+        },
+        {
+          "Name": "cadmium",
+          "Percent": 0.922316
+        },
+        {
+          "Name": "ruthenium",
+          "Percent": 0.733491
+        },
+        {
+          "Name": "mercury",
+          "Percent": 0.518656
+        }
+      ],
+      "Composition": {
+        "Ice": 0.825123,
+        "Rock": 0.159157,
+        "Metal": 0.01572
+      },
+      "SemiMajorAxis": 2007975757.12204,
+      "Eccentricity": 0.002479,
+      "OrbitalInclination": 0.00671,
+      "Periapsis": 178.38541,
+      "OrbitalPeriod": 2091278.970242,
+      "AscendingNode": 123.825657,
+      "MeanAnomaly": 61.454218,
+      "RotationPeriod": 2091347.228778,
+      "AxialTilt": 0.170308,
+      "WasDiscovered": false,
+      "WasMapped": false,
+      "WasFootfalled": false
+    },
+    {
+      "timestamp": "2026-08-13T21:45:06Z",
+      "event": "Scan",
+      "ScanType": "Detailed",
+      "BodyName": "Eol Prou IT-S c4-201 AB 2 d",
+      "BodyID": 23,
+      "Parents": [
+        {
+          "Planet": 19
+        },
+        {
+          "Null": 0
+        }
+      ],
+      "StarSystem": "Eol Prou IT-S c4-201",
+      "SystemAddress": 55319077331498,
+      "DistanceFromArrivalLS": 2355.774396,
+      "TidalLock": true,
+      "TerraformState": "",
+      "PlanetClass": "Icy body",
+      "Atmosphere": "",
+      "AtmosphereType": "None",
+      "Volcanism": "",
+      "MassEM": 0.002499,
+      "Radius": 1194963.5,
+      "SurfaceGravity": 0.69751,
+      "SurfaceTemperature": 94.223503,
+      "SurfacePressure": 0.0,
+      "Landable": true,
+      "Materials": [
+        {
+          "Name": "sulphur",
+          "Percent": 26.776758
+        },
+        {
+          "Name": "carbon",
+          "Percent": 22.516481
+        },
+        {
+          "Name": "phosphorus",
+          "Percent": 14.415439
+        },
+        {
+          "Name": "iron",
+          "Percent": 12.087449
+        },
+        {
+          "Name": "nickel",
+          "Percent": 9.142441
+        },
+        {
+          "Name": "manganese",
+          "Percent": 4.991993
+        },
+        {
+          "Name": "selenium",
+          "Percent": 4.19079
+        },
+        {
+          "Name": "germanium",
+          "Percent": 3.472494
+        },
+        {
+          "Name": "cadmium",
+          "Percent": 0.938645
+        },
+        {
+          "Name": "ruthenium",
+          "Percent": 0.746477
+        },
+        {
+          "Name": "tin",
+          "Percent": 0.721028
+        }
+      ],
+      "Composition": {
+        "Ice": 0.825123,
+        "Rock": 0.159157,
+        "Metal": 0.01572
+      },
+      "SemiMajorAxis": 2929806709.289551,
+      "Eccentricity": 0.001227,
+      "OrbitalInclination": 0.084376,
+      "Periapsis": 292.910129,
+      "OrbitalPeriod": 3685809.254646,
+      "AscendingNode": 177.637962,
+      "MeanAnomaly": 56.342776,
+      "RotationPeriod": 3685928.93394,
+      "AxialTilt": 0.015479,
+      "WasDiscovered": false,
+      "WasMapped": false,
+      "WasFootfalled": false
+    },
+    {
+      "timestamp": "2026-08-13T21:46:06Z",
+      "event": "Scan",
+      "ScanType": "Detailed",
+      "BodyName": "Eol Prou IT-S c4-201 AB 3",
+      "BodyID": 29,
+      "Parents": [
+        {
+          "Null": 0
+        }
+      ],
+      "StarSystem": "Eol Prou IT-S c4-201",
+      "SystemAddress": 55319077331498,
+      "DistanceFromArrivalLS": 3700.059059,
+      "TidalLock": false,
+      "TerraformState": "",
+      "PlanetClass": "Sudarsky class I gas giant",
+      "Atmosphere": "",
+      "AtmosphereComposition": [
+        {
+          "Name": "Hydrogen",
+          "Percent": 73.75605
+        },
+        {
+          "Name": "Helium",
+          "Percent": 26.243958
+        }
+      ],
+      "Volcanism": "",
+      "MassEM": 59.700806,
+      "Radius": 37058800.0,
+      "SurfaceGravity": 17.326343,
+      "SurfaceTemperature": 90.062386,
+      "SurfacePressure": 0.0,
+      "Landable": false,
+      "SemiMajorAxis": 1117943286895.752,
+      "Eccentricity": 0.037102,
+      "OrbitalInclination": -0.368708,
+      "Periapsis": 41.329283,
+      "OrbitalPeriod": 593486058.712006,
+      "AscendingNode": 147.498509,
+      "MeanAnomaly": 279.026801,
+      "RotationPeriod": 149475.675674,
+      "AxialTilt": 2.345221,
+      "WasDiscovered": false,
+      "WasMapped": false,
+      "WasFootfalled": false
+    },
+    {
+      "timestamp": "2026-08-13T21:46:11Z",
+      "event": "FSSBodySignals",
+      "BodyName": "Eol Prou IT-S c4-201 AB 3 a",
+      "BodyID": 30,
+      "SystemAddress": 55319077331498,
+      "Signals": [
+        {
+          "Type": "$SAA_SignalType_Geological;",
+          "Type_Localised": "Geological",
+          "Count": 2
+        }
+      ]
+    },
+    {
+      "timestamp": "2026-08-13T21:46:12Z",
+      "event": "Scan",
+      "ScanType": "Detailed",
+      "BodyName": "Eol Prou IT-S c4-201 AB 3 a",
+      "BodyID": 30,
+      "Parents": [
+        {
+          "Planet": 29
+        },
+        {
+          "Null": 0
+        }
+      ],
+      "StarSystem": "Eol Prou IT-S c4-201",
+      "SystemAddress": 55319077331498,
+      "DistanceFromArrivalLS": 3699.566474,
+      "TidalLock": true,
+      "TerraformState": "",
+      "PlanetClass": "Icy body",
+      "Atmosphere": "",
+      "AtmosphereType": "None",
+      "Volcanism": "minor carbon dioxide geysers volcanism",
+      "MassEM": 0.001491,
+      "Radius": 1007437.4375,
+      "SurfaceGravity": 0.585697,
+      "SurfaceTemperature": 77.854103,
+      "SurfacePressure": 0.0,
+      "Landable": true,
+      "Materials": [
+        {
+          "Name": "sulphur",
+          "Percent": 27.744764
+        },
+        {
+          "Name": "carbon",
+          "Percent": 23.330475
+        },
+        {
+          "Name": "phosphorus",
+          "Percent": 14.936569
+        },
+        {
+          "Name": "iron",
+          "Percent": 12.533012
+        },
+        {
+          "Name": "nickel",
+          "Percent": 9.479446
+        },
+        {
+          "Name": "selenium",
+          "Percent": 4.34229
+        },
+        {
+          "Name": "germanium",
+          "Percent": 3.599951
+        },
+        {
+          "Name": "arsenic",
+          "Percent": 1.609947
+        },
+        {
+          "Name": "niobium",
+          "Percent": 0.856565
+        },
+        {
+          "Name": "molybdenum",
+          "Percent": 0.818398
+        },
+        {
+          "Name": "yttrium",
+          "Percent": 0.748582
+        }
+      ],
+      "Composition": {
+        "Ice": 0.82479,
+        "Rock": 0.159446,
+        "Metal": 0.015763
+      },
+      "SemiMajorAxis": 343323886.394501,
+      "Eccentricity": 5.2e-05,
+      "OrbitalInclination": -0.30975,
+      "Periapsis": 256.29607,
+      "OrbitalPeriod": 259075.74892,
+      "AscendingNode": 70.816334,
+      "MeanAnomaly": 172.726933,
+      "RotationPeriod": 259111.416245,
+      "AxialTilt": -0.159897,
+      "WasDiscovered": false,
+      "WasMapped": false,
+      "WasFootfalled": false
+    },
+    {
+      "timestamp": "2026-08-13T21:46:15Z",
+      "event": "Scan",
+      "ScanType": "Detailed",
+      "BodyName": "Eol Prou IT-S c4-201 AB 3 d",
+      "BodyID": 34,
+      "Parents": [
+        {
+          "Null": 33
+        },
+        {
+          "Planet": 29
+        },
+        {
+          "Null": 0
+        }
+      ],
+      "StarSystem": "Eol Prou IT-S c4-201",
+      "SystemAddress": 55319077331498,
+      "DistanceFromArrivalLS": 3696.299731,
+      "TidalLock": true,
+      "TerraformState": "",
+      "PlanetClass": "Icy body",
+      "Atmosphere": "",
+      "AtmosphereType": "None",
+      "Volcanism": "",
+      "MassEM": 0.002576,
+      "Radius": 1204758.5,
+      "SurfaceGravity": 0.707336,
+      "SurfaceTemperature": 77.344589,
+      "SurfacePressure": 0.0,
+      "Landable": true,
+      "Materials": [
+        {
+          "Name": "sulphur",
+          "Percent": 26.701876
+        },
+        {
+          "Name": "carbon",
+          "Percent": 22.453512
+        },
+        {
+          "Name": "phosphorus",
+          "Percent": 14.375123
+        },
+        {
+          "Name": "iron",
+          "Percent": 12.238043
+        },
+        {
+          "Name": "nickel",
+          "Percent": 9.256343
+        },
+        {
+          "Name": "manganese",
+          "Percent": 5.054186
+        },
+        {
+          "Name": "selenium",
+          "Percent": 4.17907
+        },
+        {
+          "Name": "zinc",
+          "Percent": 3.325842
+        },
+        {
+          "Name": "tellurium",
+          "Percent": 0.907603
+        },
+        {
+          "Name": "niobium",
+          "Percent": 0.836405
+        },
+        {
+          "Name": "tungsten",
+          "Percent": 0.671991
+        }
+      ],
+      "Composition": {
+        "Ice": 0.817598,
+        "Rock": 0.165704,
+        "Metal": 0.016699
+      },
+      "SemiMajorAxis": 4928182.542324,
+      "Eccentricity": 0.010654,
+      "OrbitalInclination": -4.036437,
+      "Periapsis": 97.378325,
+      "OrbitalPeriod": 342587.924004,
+      "AscendingNode": -32.016788,
+      "MeanAnomaly": 120.702233,
+      "RotationPeriod": 623972.79486,
+      "AxialTilt": 0.952168,
+      "WasDiscovered": false,
+      "WasMapped": false,
+      "WasFootfalled": false
+    },
+    {
+      "timestamp": "2026-08-13T21:46:18Z",
+      "event": "Scan",
+      "ScanType": "Detailed",
+      "BodyName": "Eol Prou IT-S c4-201 AB 3 e",
+      "BodyID": 35,
+      "Parents": [
+        {
+          "Null": 33
+        },
+        {
+          "Planet": 29
+        },
+        {
+          "Null": 0
+        }
+      ],
+      "StarSystem": "Eol Prou IT-S c4-201",
+      "SystemAddress": 55319077331498,
+      "DistanceFromArrivalLS": 3696.26766,
+      "TidalLock": true,
+      "TerraformState": "",
+      "PlanetClass": "Icy body",
+      "Atmosphere": "",
+      "AtmosphereType": "None",
+      "Volcanism": "",
+      "MassEM": 0.001112,
+      "Radius": 917765.0,
+      "SurfaceGravity": 0.52599,
+      "SurfaceTemperature": 77.344589,
+      "SurfacePressure": 0.0,
+      "Landable": true,
+      "Materials": [
+        {
+          "Name": "sulphur",
+          "Percent": 27.940229
+        },
+        {
+          "Name": "carbon",
+          "Percent": 23.494839
+        },
+        {
+          "Name": "phosphorus",
+          "Percent": 15.0418
+        },
+        {
+          "Name": "iron",
+          "Percent": 12.171158
+        },
+        {
+          "Name": "nickel",
+          "Percent": 9.205754
+        },
+        {
+          "Name": "chromium",
+          "Percent": 5.473774
+        },
+        {
+          "Name": "zinc",
+          "Percent": 3.307665
+        },
+        {
+          "Name": "zirconium",
+          "Percent": 1.413322
+        },
+        {
+          "Name": "ruthenium",
+          "Percent": 0.751647
+        },
+        {
+          "Name": "tungsten",
+          "Percent": 0.668319
+        },
+        {
+          "Name": "mercury",
+          "Percent": 0.531494
+        }
+      ],
+      "Composition": {
+        "Ice": 0.841458,
+        "Rock": 0.144945,
+        "Metal": 0.013596
+      },
+      "SemiMajorAxis": 11420158.743858,
+      "Eccentricity": 0.010654,
+      "OrbitalInclination": -4.036437,
+      "Periapsis": 277.378319,
+      "OrbitalPeriod": 342587.924004,
+      "AscendingNode": -32.016788,
+      "MeanAnomaly": 120.704755,
+      "RotationPeriod": 409895.334092,
+      "AxialTilt": 0.122945,
+      "WasDiscovered": false,
+      "WasMapped": false,
+      "WasFootfalled": false
+    },
+    {
+      "timestamp": "2026-08-13T21:46:21Z",
+      "event": "Scan",
+      "ScanType": "Detailed",
+      "BodyName": "Eol Prou IT-S c4-201 AB 3 c",
+      "BodyID": 32,
+      "Parents": [
+        {
+          "Planet": 29
+        },
+        {
+          "Null": 0
+        }
+      ],
+      "StarSystem": "Eol Prou IT-S c4-201",
+      "SystemAddress": 55319077331498,
+      "DistanceFromArrivalLS": 3700.519415,
+      "TidalLock": true,
+      "TerraformState": "",
+      "PlanetClass": "Icy body",
+      "Atmosphere": "",
+      "AtmosphereType": "None",
+      "Volcanism": "",
+      "MassEM": 0.004534,
+      "Radius": 1454425.625,
+      "SurfaceGravity": 0.85438,
+      "SurfaceTemperature": 77.430214,
+      "SurfacePressure": 0.0,
+      "Landable": true,
+      "Materials": [
+        {
+          "Name": "sulphur",
+          "Percent": 27.479717
+        },
+        {
+          "Name": "carbon",
+          "Percent": 23.107597
+        },
+        {
+          "Name": "phosphorus",
+          "Percent": 14.79388
+        },
+        {
+          "Name": "iron",
+          "Percent": 12.413284
+        },
+        {
+          "Name": "nickel",
+          "Percent": 9.388888
+        },
+        {
+          "Name": "selenium",
+          "Percent": 4.300808
+        },
+        {
+          "Name": "zinc",
+          "Percent": 3.373466
+        },
+        {
+          "Name": "vanadium",
+          "Percent": 3.048271
+        },
+        {
+          "Name": "molybdenum",
+          "Percent": 0.81058
+        },
+        {
+          "Name": "yttrium",
+          "Percent": 0.741431
+        },
+        {
+          "Name": "mercury",
+          "Percent": 0.542068
+        }
+      ],
+      "Composition": {
+        "Ice": 0.82479,
+        "Rock": 0.159446,
+        "Metal": 0.015763
+      },
+      "SemiMajorAxis": 1211646378.040314,
+      "Eccentricity": 0.002032,
+      "OrbitalInclination": 0.019361,
+      "Periapsis": 337.127745,
+      "OrbitalPeriod": 1717649.936676,
+      "AscendingNode": 140.285443,
+      "MeanAnomaly": 276.168744,
+      "RotationPeriod": 1717886.03096,
+      "AxialTilt": -0.196576,
+      "WasDiscovered": false,
+      "WasMapped": false,
+      "WasFootfalled": false
+    },
+    {
+      "timestamp": "2026-08-13T21:46:22Z",
+      "event": "Scan",
+      "ScanType": "Detailed",
+      "BodyName": "Eol Prou IT-S c4-201 AB 3 b",
+      "BodyID": 31,
+      "Parents": [
+        {
+          "Planet": 29
+        },
+        {
+          "Null": 0
+        }
+      ],
+      "StarSystem": "Eol Prou IT-S c4-201",
+      "SystemAddress": 55319077331498,
+      "DistanceFromArrivalLS": 3701.183579,
+      "TidalLock": true,
+      "TerraformState": "",
+      "PlanetClass": "Icy body",
+      "Atmosphere": "",
+      "AtmosphereType": "None",
+      "Volcanism": "",
+      "MassEM": 0.002632,
+      "Radius": 1213718.75,
+      "SurfaceGravity": 0.712124,
+      "SurfaceTemperature": 77.715179,
+      "SurfacePressure": 0.0,
+      "Landable": true,
+      "Materials": [
+        {
+          "Name": "sulphur",
+          "Percent": 26.352327
+        },
+        {
+          "Name": "carbon",
+          "Percent": 22.159578
+        },
+        {
+          "Name": "phosphorus",
+          "Percent": 14.186943
+        },
+        {
+          "Name": "iron",
+          "Percent": 12.049909
+        },
+        {
+          "Name": "nickel",
+          "Percent": 9.114046
+        },
+        {
+          "Name": "chromium",
+          "Percent": 5.419244
+        },
+        {
+          "Name": "manganese",
+          "Percent": 4.97649
+        },
+        {
+          "Name": "zinc",
+          "Percent": 3.274714
+        },
+        {
+          "Name": "cadmium",
+          "Percent": 0.93573
+        },
+        {
+          "Name": "molybdenum",
+          "Percent": 0.786852
+        },
+        {
+          "Name": "ruthenium",
+          "Percent": 0.744159
+        }
+      ],
+      "Composition": {
+        "Ice": 0.818767,
+        "Rock": 0.164686,
+        "Metal": 0.016547
+      },
+      "SemiMajorAxis": 478875297.307968,
+      "Eccentricity": 6.4e-05,
+      "OrbitalInclination": 0.019622,
+      "Periapsis": 37.493767,
+      "OrbitalPeriod": 426780.366898,
+      "AscendingNode": -36.116814,
+      "MeanAnomaly": 84.721857,
+      "RotationPeriod": 426839.066727,
+      "AxialTilt": -0.956182,
+      "WasDiscovered": false,
+      "WasMapped": false,
+      "WasFootfalled": false
+    },
+    {
+      "timestamp": "2026-08-13T21:46:25Z",
+      "event": "Scan",
+      "ScanType": "Detailed",
+      "BodyName": "Eol Prou IT-S c4-201 AB 3 f",
+      "BodyID": 36,
+      "Parents": [
+        {
+          "Planet": 29
+        },
+        {
+          "Null": 0
+        }
+      ],
+      "StarSystem": "Eol Prou IT-S c4-201",
+      "SystemAddress": 55319077331498,
+      "DistanceFromArrivalLS": 3694.197063,
+      "TidalLock": true,
+      "TerraformState": "",
+      "PlanetClass": "Icy body",
+      "Atmosphere": "",
+      "AtmosphereType": "None",
+      "Volcanism": "",
+      "MassEM": 0.001336,
+      "Radius": 971493.75,
+      "SurfaceGravity": 0.564349,
+      "SurfaceTemperature": 77.245163,
+      "SurfacePressure": 0.0,
+      "Landable": true,
+      "Materials": [
+        {
+          "Name": "sulphur",
+          "Percent": 27.216995
+        },
+        {
+          "Name": "carbon",
+          "Percent": 22.886673
+        },
+        {
+          "Name": "phosphorus",
+          "Percent": 14.652441
+        },
+        {
+          "Name": "iron",
+          "Percent": 12.294604
+        },
+        {
+          "Name": "nickel",
+          "Percent": 9.299124
+        },
+        {
+          "Name": "manganese",
+          "Percent": 5.077546
+        },
+        {
+          "Name": "zinc",
+          "Percent": 3.341213
+        },
+        {
+          "Name": "vanadium",
+          "Percent": 3.019127
+        },
+        {
+          "Name": "molybdenum",
+          "Percent": 0.802831
+        },
+        {
+          "Name": "yttrium",
+          "Percent": 0.734342
+        },
+        {
+          "Name": "tungsten",
+          "Percent": 0.675097
+        }
+      ],
+      "Composition": {
+        "Ice": 0.82479,
+        "Rock": 0.159446,
+        "Metal": 0.015763
+      },
+      "SemiMajorAxis": 3188490629.196167,
+      "Eccentricity": 0.002317,
+      "OrbitalInclination": -2.035093,
+      "Periapsis": 330.890703,
+      "OrbitalPeriod": 7332440.257072,
+      "AscendingNode": 22.74413,
+      "MeanAnomaly": 287.966509,
+      "RotationPeriod": 7333448.148075,
+      "AxialTilt": -0.152658,
+      "WasDiscovered": false,
+      "WasMapped": false,
+      "WasFootfalled": false
+    },
+    {
+      "timestamp": "2026-08-13T21:46:25Z",
+      "event": "FSSAllBodiesFound",
+      "SystemName": "Eol Prou IT-S c4-201",
+      "SystemAddress": 55319077331498,
+      "Count": 23
+    },
+    {
+      "timestamp": "2026-08-13T21:48:34Z",
+      "event": "SAAScanComplete",
+      "BodyName": "Eol Prou IT-S c4-201 B 1 a",
+      "SystemAddress": 55319077331498,
+      "BodyID": 8,
+      "ProbesUsed": 4,
+      "EfficiencyTarget": 4
+    },
+    {
+      "timestamp": "2026-08-13T21:48:34Z",
+      "event": "SAASignalsFound",
+      "BodyName": "Eol Prou IT-S c4-201 B 1 a",
+      "SystemAddress": 55319077331498,
+      "BodyID": 8,
+      "Signals": [
+        {
+          "Type": "$SAA_SignalType_Geological;",
+          "Type_Localised": "Geological",
+          "Count": 3
+        }
+      ],
+      "Genuses": []
+    },
+    {
+      "timestamp": "2026-08-13T21:48:35Z",
+      "event": "Scan",
+      "ScanType": "Detailed",
+      "BodyName": "Eol Prou IT-S c4-201 B 1 a",
+      "BodyID": 8,
+      "Parents": [
+        {
+          "Planet": 7
+        },
+        {
+          "Star": 2
+        },
+        {
+          "Null": 0
+        }
+      ],
+      "StarSystem": "Eol Prou IT-S c4-201",
+      "SystemAddress": 55319077331498,
+      "DistanceFromArrivalLS": 853.322148,
+      "TidalLock": true,
+      "TerraformState": "",
+      "PlanetClass": "Rocky body",
+      "Atmosphere": "",
+      "AtmosphereType": "None",
+      "Volcanism": "major silicate vapour geysers volcanism",
+      "MassEM": 0.00921,
+      "Radius": 1444846.5,
+      "SurfaceGravity": 1.75842,
+      "SurfaceTemperature": 732.551453,
+      "SurfacePressure": 0.0,
+      "Landable": true,
+      "Materials": [
+        {
+          "Name": "iron",
+          "Percent": 21.098045
+        },
+        {
+          "Name": "sulphur",
+          "Percent": 18.7806
+        },
+        {
+          "Name": "nickel",
+          "Percent": 15.957679
+        },
+        {
+          "Name": "carbon",
+          "Percent": 15.792539
+        },
+        {
+          "Name": "phosphorus",
+          "Percent": 10.110655
+        },
+        {
+          "Name": "chromium",
+          "Percent": 9.488492
+        },
+        {
+          "Name": "selenium",
+          "Percent": 2.939322
+        },
+        {
+          "Name": "zirconium",
+          "Percent": 2.449918
+        },
+        {
+          "Name": "ruthenium",
+          "Percent": 1.302939
+        },
+        {
+          "Name": "tungsten",
+          "Percent": 1.158495
+        },
+        {
+          "Name": "mercury",
+          "Percent": 0.921317
+        }
+      ],
+      "Composition": {
+        "Ice": 0.0,
+        "Rock": 0.859792,
+        "Metal": 0.140208
+      },
+      "SemiMajorAxis": 9363139.45055,
+      "Eccentricity": 0.0,
+      "OrbitalInclination": -89.005496,
+      "Periapsis": 152.978974,
+      "OrbitalPeriod": 22326.052189,
+      "AscendingNode": -135.973313,
+      "MeanAnomaly": 133.238831,
+      "RotationPeriod": 22984.384231,
+      "AxialTilt": -0.244037,
+      "WasDiscovered": false,
+      "WasMapped": false,
+      "WasFootfalled": false
+    },
+    {
+      "timestamp": "2026-08-13T21:53:37Z",
+      "event": "SAAScanComplete",
+      "BodyName": "Eol Prou IT-S c4-201 AB 1 a",
+      "SystemAddress": 55319077331498,
+      "BodyID": 11,
+      "ProbesUsed": 3,
+      "EfficiencyTarget": 2
+    },
+    {
+      "timestamp": "2026-08-13T21:53:37Z",
+      "event": "SAASignalsFound",
+      "BodyName": "Eol Prou IT-S c4-201 AB 1 a",
+      "SystemAddress": 55319077331498,
+      "BodyID": 11,
+      "Signals": [
+        {
+          "Type": "$SAA_SignalType_Biological;",
+          "Type_Localised": "Biological",
+          "Count": 3
+        }
+      ],
+      "Genuses": [
+        {
+          "Genus": "$Codex_Ent_Bacterial_Genus_Name;",
+          "Genus_Localised": "Bacterium"
+        },
+        {
+          "Genus": "$Codex_Ent_Tubus_Genus_Name;",
+          "Genus_Localised": "Tubus"
+        },
+        {
+          "Genus": "$Codex_Ent_Tussocks_Genus_Name;",
+          "Genus_Localised": "Tussock"
+        }
+      ]
+    },
+    {
+      "timestamp": "2026-08-13T21:53:38Z",
+      "event": "Scan",
+      "ScanType": "Detailed",
+      "BodyName": "Eol Prou IT-S c4-201 AB 1 a",
+      "BodyID": 11,
+      "Parents": [
+        {
+          "Planet": 10
+        },
+        {
+          "Null": 0
+        }
+      ],
+      "StarSystem": "Eol Prou IT-S c4-201",
+      "SystemAddress": 55319077331498,
+      "DistanceFromArrivalLS": 2042.108081,
+      "TidalLock": false,
+      "TerraformState": "",
+      "PlanetClass": "Rocky body",
+      "Atmosphere": "thin carbon dioxide atmosphere",
+      "AtmosphereType": "CarbonDioxide",
+      "AtmosphereComposition": [
+        {
+          "Name": "CarbonDioxide",
+          "Percent": 100.0
+        }
+      ],
+      "Volcanism": "",
+      "MassEM": 0.00121,
+      "Radius": 748626.875,
+      "SurfaceGravity": 0.860792,
+      "SurfaceTemperature": 172.985458,
+      "SurfacePressure": 1432.028076,
+      "Landable": true,
+      "Materials": [
+        {
+          "Name": "iron",
+          "Percent": 19.157215
+        },
+        {
+          "Name": "sulphur",
+          "Percent": 18.456766
+        },
+        {
+          "Name": "carbon",
+          "Percent": 15.520228
+        },
+        {
+          "Name": "nickel",
+          "Percent": 14.489714
+        },
+        {
+          "Name": "phosphorus",
+          "Percent": 9.936317
+        },
+        {
+          "Name": "manganese",
+          "Percent": 7.911734
+        },
+        {
+          "Name": "germanium",
+          "Percent": 5.452111
+        },
+        {
+          "Name": "zinc",
+          "Percent": 5.206213
+        },
+        {
+          "Name": "tellurium",
+          "Percent": 1.412108
+        },
+        {
+          "Name": "niobium",
+          "Percent": 1.309293
+        },
+        {
+          "Name": "tin",
+          "Percent": 1.148312
+        }
+      ],
+      "Composition": {
+        "Ice": 0.0,
+        "Rock": 0.905336,
+        "Metal": 0.094664
+      },
+      "SemiMajorAxis": 1400484859.94339,
+      "Eccentricity": 0.000338,
+      "OrbitalInclination": 0.005674,
+      "Periapsis": 358.240676,
+      "OrbitalPeriod": 504381.44207,
+      "AscendingNode": -32.844143,
+      "MeanAnomaly": 322.973819,
+      "RotationPeriod": -504383.264271,
+      "AxialTilt": -2.535611,
+      "WasDiscovered": false,
+      "WasMapped": false,
+      "WasFootfalled": false
+    },
+    {
+      "timestamp": "2026-08-13T21:56:08Z",
+      "event": "ApproachBody",
+      "StarSystem": "Eol Prou IT-S c4-201",
+      "SystemAddress": 55319077331498,
+      "Body": "Eol Prou IT-S c4-201 AB 1 a",
+      "BodyID": 11
+    },
+    {
+      "timestamp": "2026-08-13T21:56:59Z",
+      "event": "SupercruiseExit",
+      "Taxi": false,
+      "Multicrew": false,
+      "StarSystem": "Eol Prou IT-S c4-201",
+      "SystemAddress": 55319077331498,
+      "Body": "Eol Prou IT-S c4-201 AB 1 a",
+      "BodyID": 11,
+      "BodyType": "Planet"
+    },
+    {
+      "timestamp": "2026-08-13T21:58:47Z",
+      "event": "Touchdown",
+      "PlayerControlled": true,
+      "Taxi": false,
+      "Multicrew": false,
+      "StarSystem": "Eol Prou IT-S c4-201",
+      "SystemAddress": 55319077331498,
+      "Body": "Eol Prou IT-S c4-201 AB 1 a",
+      "BodyID": 11,
+      "OnStation": false,
+      "OnPlanet": true,
+      "Latitude": -13.84169,
+      "Longitude": -116.611633
+    },
+    {
+      "timestamp": "2026-08-13T21:59:26Z",
+      "event": "CodexEntry",
+      "EntryID": 2430305,
+      "Name": "$Codex_Ent_Tubus_03_G_Name;",
+      "Name_Localised": "Tubus Cavas - Red",
+      "SubCategory": "$Codex_SubCategory_Organic_Structures;",
+      "SubCategory_Localised": "Organic structures",
+      "Category": "$Codex_Category_Biology;",
+      "Category_Localised": "Biological and Geological",
+      "Region": "$Codex_RegionName_9;",
+      "Region_Localised": "Inner Scutum-Centaurus Arm",
+      "System": "Eol Prou IT-S c4-201",
+      "SystemAddress": 55319077331498,
+      "BodyID": 11,
+      "NearestDestination": "",
+      "Latitude": -13.841296,
+      "Longitude": -116.610619,
+      "IsNewEntry": true
+    },
+    {
+      "timestamp": "2026-08-13T21:59:26Z",
+      "event": "ScanOrganic",
+      "ScanType": "Log",
+      "Genus": "$Codex_Ent_Tubus_Genus_Name;",
+      "Genus_Localised": "Tubus",
+      "Species": "$Codex_Ent_Tubus_03_Name;",
+      "Species_Localised": "Tubus Cavas",
+      "Variant": "$Codex_Ent_Tubus_03_G_Name;",
+      "Variant_Localised": "Tubus Cavas - Red",
+      "WasLogged": false,
+      "SystemAddress": 55319077331498,
+      "Body": 11
+    },
+    {
+      "timestamp": "2026-08-13T21:59:46Z",
+      "event": "Liftoff",
+      "PlayerControlled": true,
+      "Taxi": false,
+      "Multicrew": false,
+      "StarSystem": "Eol Prou IT-S c4-201",
+      "SystemAddress": 55319077331498,
+      "Body": "Eol Prou IT-S c4-201 AB 1 a",
+      "BodyID": 11,
+      "OnStation": false,
+      "OnPlanet": true,
+      "Latitude": -13.84169,
+      "Longitude": -116.611633
+    },
+    {
+      "timestamp": "2026-08-13T22:00:09Z",
+      "event": "Touchdown",
+      "PlayerControlled": true,
+      "Taxi": false,
+      "Multicrew": false,
+      "StarSystem": "Eol Prou IT-S c4-201",
+      "SystemAddress": 55319077331498,
+      "Body": "Eol Prou IT-S c4-201 AB 1 a",
+      "BodyID": 11,
+      "OnStation": false,
+      "OnPlanet": true,
+      "Latitude": -13.850962,
+      "Longitude": -116.504723
+    },
+    {
+      "timestamp": "2026-08-13T22:00:30Z",
+      "event": "ScanOrganic",
+      "ScanType": "Sample",
+      "Genus": "$Codex_Ent_Tubus_Genus_Name;",
+      "Genus_Localised": "Tubus",
+      "Species": "$Codex_Ent_Tubus_03_Name;",
+      "Species_Localised": "Tubus Cavas",
+      "Variant": "$Codex_Ent_Tubus_03_G_Name;",
+      "Variant_Localised": "Tubus Cavas - Red",
+      "WasLogged": false,
+      "SystemAddress": 55319077331498,
+      "Body": 11
+    },
+    {
+      "timestamp": "2026-08-13T22:00:40Z",
+      "event": "Liftoff",
+      "PlayerControlled": true,
+      "Taxi": false,
+      "Multicrew": false,
+      "StarSystem": "Eol Prou IT-S c4-201",
+      "SystemAddress": 55319077331498,
+      "Body": "Eol Prou IT-S c4-201 AB 1 a",
+      "BodyID": 11,
+      "OnStation": false,
+      "OnPlanet": true,
+      "Latitude": -13.850962,
+      "Longitude": -116.504723
+    },
+    {
+      "timestamp": "2026-08-13T22:00:55Z",
+      "event": "Touchdown",
+      "PlayerControlled": true,
+      "Taxi": false,
+      "Multicrew": false,
+      "StarSystem": "Eol Prou IT-S c4-201",
+      "SystemAddress": 55319077331498,
+      "Body": "Eol Prou IT-S c4-201 AB 1 a",
+      "BodyID": 11,
+      "OnStation": false,
+      "OnPlanet": true,
+      "Latitude": -13.853977,
+      "Longitude": -116.437927
+    },
+    {
+      "timestamp": "2026-08-13T22:01:21Z",
+      "event": "ScanOrganic",
+      "ScanType": "Sample",
+      "Genus": "$Codex_Ent_Tubus_Genus_Name;",
+      "Genus_Localised": "Tubus",
+      "Species": "$Codex_Ent_Tubus_03_Name;",
+      "Species_Localised": "Tubus Cavas",
+      "Variant": "$Codex_Ent_Tubus_03_G_Name;",
+      "Variant_Localised": "Tubus Cavas - Red",
+      "WasLogged": false,
+      "SystemAddress": 55319077331498,
+      "Body": 11
+    },
+    {
+      "timestamp": "2026-08-13T22:01:26Z",
+      "event": "ScanOrganic",
+      "ScanType": "Analyse",
+      "Genus": "$Codex_Ent_Tubus_Genus_Name;",
+      "Genus_Localised": "Tubus",
+      "Species": "$Codex_Ent_Tubus_03_Name;",
+      "Species_Localised": "Tubus Cavas",
+      "Variant": "$Codex_Ent_Tubus_03_G_Name;",
+      "Variant_Localised": "Tubus Cavas - Red",
+      "WasLogged": false,
+      "SystemAddress": 55319077331498,
+      "Body": 11
+    },
+    {
+      "timestamp": "2026-08-13T22:01:40Z",
+      "event": "Liftoff",
+      "PlayerControlled": true,
+      "Taxi": false,
+      "Multicrew": false,
+      "StarSystem": "Eol Prou IT-S c4-201",
+      "SystemAddress": 55319077331498,
+      "Body": "Eol Prou IT-S c4-201 AB 1 a",
+      "BodyID": 11,
+      "OnStation": false,
+      "OnPlanet": true,
+      "Latitude": -13.853978,
+      "Longitude": -116.437927
+    },
+    {
+      "timestamp": "2026-08-13T22:01:53Z",
+      "event": "Touchdown",
+      "PlayerControlled": true,
+      "Taxi": false,
+      "Multicrew": false,
+      "StarSystem": "Eol Prou IT-S c4-201",
+      "SystemAddress": 55319077331498,
+      "Body": "Eol Prou IT-S c4-201 AB 1 a",
+      "BodyID": 11,
+      "OnStation": false,
+      "OnPlanet": true,
+      "Latitude": -13.860837,
+      "Longitude": -116.426521
+    },
+    {
+      "timestamp": "2026-08-13T22:02:18Z",
+      "event": "CodexEntry",
+      "EntryID": 2450902,
+      "Name": "$Codex_Ent_Tussocks_09_G_Name;",
+      "Name_Localised": "Tussock Propagito - Lime",
+      "SubCategory": "$Codex_SubCategory_Organic_Structures;",
+      "SubCategory_Localised": "Organic structures",
+      "Category": "$Codex_Category_Biology;",
+      "Category_Localised": "Biological and Geological",
+      "Region": "$Codex_RegionName_9;",
+      "Region_Localised": "Inner Scutum-Centaurus Arm",
+      "System": "Eol Prou IT-S c4-201",
+      "SystemAddress": 55319077331498,
+      "BodyID": 11,
+      "NearestDestination": "",
+      "Latitude": -13.861111,
+      "Longitude": -116.426628,
+      "IsNewEntry": true
+    },
+    {
+      "timestamp": "2026-08-13T22:02:18Z",
+      "event": "ScanOrganic",
+      "ScanType": "Log",
+      "Genus": "$Codex_Ent_Tussocks_Genus_Name;",
+      "Genus_Localised": "Tussock",
+      "Species": "$Codex_Ent_Tussocks_09_Name;",
+      "Species_Localised": "Tussock Propagito",
+      "Variant": "$Codex_Ent_Tussocks_09_G_Name;",
+      "Variant_Localised": "Tussock Propagito - Lime",
+      "WasLogged": false,
+      "SystemAddress": 55319077331498,
+      "Body": 11
+    },
+    {
+      "timestamp": "2026-08-13T22:02:34Z",
+      "event": "Liftoff",
+      "PlayerControlled": true,
+      "Taxi": false,
+      "Multicrew": false,
+      "StarSystem": "Eol Prou IT-S c4-201",
+      "SystemAddress": 55319077331498,
+      "Body": "Eol Prou IT-S c4-201 AB 1 a",
+      "BodyID": 11,
+      "OnStation": false,
+      "OnPlanet": true,
+      "Latitude": -13.860838,
+      "Longitude": -116.426521
+    },
+    {
+      "timestamp": "2026-08-13T22:02:49Z",
+      "event": "Touchdown",
+      "PlayerControlled": true,
+      "Taxi": false,
+      "Multicrew": false,
+      "StarSystem": "Eol Prou IT-S c4-201",
+      "SystemAddress": 55319077331498,
+      "Body": "Eol Prou IT-S c4-201 AB 1 a",
+      "BodyID": 11,
+      "OnStation": false,
+      "OnPlanet": true,
+      "Latitude": -13.857599,
+      "Longitude": -116.40786
+    },
+    {
+      "timestamp": "2026-08-13T22:03:08Z",
+      "event": "ScanOrganic",
+      "ScanType": "Sample",
+      "Genus": "$Codex_Ent_Tussocks_Genus_Name;",
+      "Genus_Localised": "Tussock",
+      "Species": "$Codex_Ent_Tussocks_09_Name;",
+      "Species_Localised": "Tussock Propagito",
+      "Variant": "$Codex_Ent_Tussocks_09_G_Name;",
+      "Variant_Localised": "Tussock Propagito - Lime",
+      "WasLogged": false,
+      "SystemAddress": 55319077331498,
+      "Body": 11
+    },
+    {
+      "timestamp": "2026-08-13T22:03:21Z",
+      "event": "Liftoff",
+      "PlayerControlled": true,
+      "Taxi": false,
+      "Multicrew": false,
+      "StarSystem": "Eol Prou IT-S c4-201",
+      "SystemAddress": 55319077331498,
+      "Body": "Eol Prou IT-S c4-201 AB 1 a",
+      "BodyID": 11,
+      "OnStation": false,
+      "OnPlanet": true,
+      "Latitude": -13.857596,
+      "Longitude": -116.40786
+    },
+    {
+      "timestamp": "2026-08-13T22:03:34Z",
+      "event": "Touchdown",
+      "PlayerControlled": true,
+      "Taxi": false,
+      "Multicrew": false,
+      "StarSystem": "Eol Prou IT-S c4-201",
+      "SystemAddress": 55319077331498,
+      "Body": "Eol Prou IT-S c4-201 AB 1 a",
+      "BodyID": 11,
+      "OnStation": false,
+      "OnPlanet": true,
+      "Latitude": -13.851115,
+      "Longitude": -116.387543
+    },
+    {
+      "timestamp": "2026-08-13T22:04:06Z",
+      "event": "ScanOrganic",
+      "ScanType": "Sample",
+      "Genus": "$Codex_Ent_Tussocks_Genus_Name;",
+      "Genus_Localised": "Tussock",
+      "Species": "$Codex_Ent_Tussocks_09_Name;",
+      "Species_Localised": "Tussock Propagito",
+      "Variant": "$Codex_Ent_Tussocks_09_G_Name;",
+      "Variant_Localised": "Tussock Propagito - Lime",
+      "WasLogged": false,
+      "SystemAddress": 55319077331498,
+      "Body": 11
+    },
+    {
+      "timestamp": "2026-08-13T22:04:11Z",
+      "event": "ScanOrganic",
+      "ScanType": "Analyse",
+      "Genus": "$Codex_Ent_Tussocks_Genus_Name;",
+      "Genus_Localised": "Tussock",
+      "Species": "$Codex_Ent_Tussocks_09_Name;",
+      "Species_Localised": "Tussock Propagito",
+      "Variant": "$Codex_Ent_Tussocks_09_G_Name;",
+      "Variant_Localised": "Tussock Propagito - Lime",
+      "WasLogged": false,
+      "SystemAddress": 55319077331498,
+      "Body": 11
+    },
+    {
+      "timestamp": "2026-08-13T22:04:43Z",
+      "event": "Liftoff",
+      "PlayerControlled": true,
+      "Taxi": false,
+      "Multicrew": false,
+      "StarSystem": "Eol Prou IT-S c4-201",
+      "SystemAddress": 55319077331498,
+      "Body": "Eol Prou IT-S c4-201 AB 1 a",
+      "BodyID": 11,
+      "OnStation": false,
+      "OnPlanet": true,
+      "Latitude": -13.851115,
+      "Longitude": -116.387543
+    },
+    {
+      "timestamp": "2026-08-13T22:04:57Z",
+      "event": "Touchdown",
+      "PlayerControlled": true,
+      "Taxi": false,
+      "Multicrew": false,
+      "StarSystem": "Eol Prou IT-S c4-201",
+      "SystemAddress": 55319077331498,
+      "Body": "Eol Prou IT-S c4-201 AB 1 a",
+      "BodyID": 11,
+      "OnStation": false,
+      "OnPlanet": true,
+      "Latitude": -13.856502,
+      "Longitude": -116.384293
+    },
+    {
+      "timestamp": "2026-08-13T22:05:19Z",
+      "event": "CodexEntry",
+      "EntryID": 2320105,
+      "Name": "$Codex_Ent_Bacterial_01_G_Name;",
+      "Name_Localised": "Bacterium Aurasus - Emerald",
+      "SubCategory": "$Codex_SubCategory_Organic_Structures;",
+      "SubCategory_Localised": "Organic structures",
+      "Category": "$Codex_Category_Biology;",
+      "Category_Localised": "Biological and Geological",
+      "Region": "$Codex_RegionName_9;",
+      "Region_Localised": "Inner Scutum-Centaurus Arm",
+      "System": "Eol Prou IT-S c4-201",
+      "SystemAddress": 55319077331498,
+      "BodyID": 11,
+      "NearestDestination": "",
+      "Latitude": -13.856755,
+      "Longitude": -116.384651,
+      "IsNewEntry": true
+    },
+    {
+      "timestamp": "2026-08-13T22:05:19Z",
+      "event": "ScanOrganic",
+      "ScanType": "Log",
+      "Genus": "$Codex_Ent_Bacterial_Genus_Name;",
+      "Genus_Localised": "Bacterium",
+      "Species": "$Codex_Ent_Bacterial_01_Name;",
+      "Species_Localised": "Bacterium Aurasus",
+      "Variant": "$Codex_Ent_Bacterial_01_G_Name;",
+      "Variant_Localised": "Bacterium Aurasus - Emerald",
+      "WasLogged": false,
+      "SystemAddress": 55319077331498,
+      "Body": 11
+    },
+    {
+      "timestamp": "2026-08-13T22:05:35Z",
+      "event": "Liftoff",
+      "PlayerControlled": true,
+      "Taxi": false,
+      "Multicrew": false,
+      "StarSystem": "Eol Prou IT-S c4-201",
+      "SystemAddress": 55319077331498,
+      "Body": "Eol Prou IT-S c4-201 AB 1 a",
+      "BodyID": 11,
+      "OnStation": false,
+      "OnPlanet": true,
+      "Latitude": -13.856502,
+      "Longitude": -116.384293
+    },
+    {
+      "timestamp": "2026-08-13T22:06:38Z",
+      "event": "Touchdown",
+      "PlayerControlled": true,
+      "Taxi": false,
+      "Multicrew": false,
+      "StarSystem": "Eol Prou IT-S c4-201",
+      "SystemAddress": 55319077331498,
+      "Body": "Eol Prou IT-S c4-201 AB 1 a",
+      "BodyID": 11,
+      "OnStation": false,
+      "OnPlanet": true,
+      "Latitude": -13.72163,
+      "Longitude": -116.615349
+    },
+    {
+      "timestamp": "2026-08-13T22:06:57Z",
+      "event": "ScanOrganic",
+      "ScanType": "Sample",
+      "Genus": "$Codex_Ent_Bacterial_Genus_Name;",
+      "Genus_Localised": "Bacterium",
+      "Species": "$Codex_Ent_Bacterial_01_Name;",
+      "Species_Localised": "Bacterium Aurasus",
+      "Variant": "$Codex_Ent_Bacterial_01_G_Name;",
+      "Variant_Localised": "Bacterium Aurasus - Emerald",
+      "WasLogged": false,
+      "SystemAddress": 55319077331498,
+      "Body": 11
+    },
+    {
+      "timestamp": "2026-08-13T22:07:11Z",
+      "event": "Liftoff",
+      "PlayerControlled": true,
+      "Taxi": false,
+      "Multicrew": false,
+      "StarSystem": "Eol Prou IT-S c4-201",
+      "SystemAddress": 55319077331498,
+      "Body": "Eol Prou IT-S c4-201 AB 1 a",
+      "BodyID": 11,
+      "OnStation": false,
+      "OnPlanet": true,
+      "Latitude": -13.721632,
+      "Longitude": -116.615349
+    },
+    {
+      "timestamp": "2026-08-13T22:07:51Z",
+      "event": "Touchdown",
+      "PlayerControlled": true,
+      "Taxi": false,
+      "Multicrew": false,
+      "StarSystem": "Eol Prou IT-S c4-201",
+      "SystemAddress": 55319077331498,
+      "Body": "Eol Prou IT-S c4-201 AB 1 a",
+      "BodyID": 11,
+      "OnStation": false,
+      "OnPlanet": true,
+      "Latitude": -13.596684,
+      "Longitude": -116.696991
+    },
+    {
+      "timestamp": "2026-08-13T22:08:11Z",
+      "event": "ScanOrganic",
+      "ScanType": "Sample",
+      "Genus": "$Codex_Ent_Bacterial_Genus_Name;",
+      "Genus_Localised": "Bacterium",
+      "Species": "$Codex_Ent_Bacterial_01_Name;",
+      "Species_Localised": "Bacterium Aurasus",
+      "Variant": "$Codex_Ent_Bacterial_01_G_Name;",
+      "Variant_Localised": "Bacterium Aurasus - Emerald",
+      "WasLogged": false,
+      "SystemAddress": 55319077331498,
+      "Body": 11
+    },
+    {
+      "timestamp": "2026-08-13T22:08:16Z",
+      "event": "ScanOrganic",
+      "ScanType": "Analyse",
+      "Genus": "$Codex_Ent_Bacterial_Genus_Name;",
+      "Genus_Localised": "Bacterium",
+      "Species": "$Codex_Ent_Bacterial_01_Name;",
+      "Species_Localised": "Bacterium Aurasus",
+      "Variant": "$Codex_Ent_Bacterial_01_G_Name;",
+      "Variant_Localised": "Bacterium Aurasus - Emerald",
+      "WasLogged": false,
+      "SystemAddress": 55319077331498,
+      "Body": 11
+    },
+    {
+      "timestamp": "2026-08-13T22:09:16Z",
+      "event": "Liftoff",
+      "PlayerControlled": true,
+      "Taxi": false,
+      "Multicrew": false,
+      "StarSystem": "Eol Prou IT-S c4-201",
+      "SystemAddress": 55319077331498,
+      "Body": "Eol Prou IT-S c4-201 AB 1 a",
+      "BodyID": 11,
+      "OnStation": false,
+      "OnPlanet": true,
+      "Latitude": -13.596684,
+      "Longitude": -116.696991
+    }
+  ],
+  "sell_organic_data": [
+    {
+      "timestamp": "2026-08-23T16:29:16Z", "event": "SellOrganicData", "MarketID": 128823700,
+      "BioData": [
+        {
+          "Genus": "$Codex_Ent_Stratum_Genus_Name;", "Genus_Localised": "Stratum",
+          "Species": "$Codex_Ent_Stratum_07_Name;", "Species_Localised": "Stratum Tectonicas",
+          "Variant": "$Codex_Ent_Stratum_07_M_Name;", "Variant_Localised": "Stratum Tectonicas - Green",
+          "Value": 19010800, "Bonus": 0
+        },
+        {
+          "Genus": "$Codex_Ent_Stratum_Genus_Name;", "Genus_Localised": "Stratum",
+          "Species": "$Codex_Ent_Stratum_07_Name;", "Species_Localised": "Stratum Tectonicas",
+          "Variant": "$Codex_Ent_Stratum_07_L_Name;", "Variant_Localised": "Stratum Tectonicas - Turquoise",
+          "Value": 19010800, "Bonus": 0
+        },
+        {
+          "Genus": "$Codex_Ent_Stratum_Genus_Name;", "Genus_Localised": "Stratum",
+          "Species": "$Codex_Ent_Stratum_07_Name;", "Species_Localised": "Stratum Tectonicas",
+          "Variant": "$Codex_Ent_Stratum_07_L_Name;", "Variant_Localised": "Stratum Tectonicas - Turquoise",
+          "Value": 19010800, "Bonus": 0
+        }
+      ]
+    }
+  ]
+}
