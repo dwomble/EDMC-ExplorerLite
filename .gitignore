@@ -204,6 +204,10 @@ cython_debug/
 # Temporary file for partial code execution
 tempCodeRunnerFile.py
 
+DESIGN.md
+REQUIREMENTS.md
+CLAUDE.md
+
 # Ruff stuff:
 .ruff_cache/
 
@@ -233,6 +237,3 @@ tests/logs/
 tests/backups/
 tests/updates/
 tests/journal_folder/
-
-# Internal design notes -- not for the public repo
-REQUIREMENTS.md
