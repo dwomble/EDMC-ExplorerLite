@@ -156,6 +156,29 @@ class TestRadarOverlayModern:
         assert f"{FRAME_PREFIX}sample-Bacterium-1" in shapes
 
     @pytest.mark.overlay('Modern')
+    def test_pin_bounds_stay_fixed_regardless_of_sample_count(self, overlay_mode, store:ExplorerStore) -> None:
+        """ EDMCModernOverlay's fill-mode grouping recomputes the group's on-screen anchor from
+        the live bounding box of whatever's currently drawn -- these two invisible pin markers
+        must always sit at the same position so that bounding box (and thus the whole radar's
+        on-screen position) never drifts as the number of logged samples grows. """
+        from explorer.constants import DEFAULT_OVERLAY_RADAR_SIZE
+        r:int = DEFAULT_OVERLAY_RADAR_SIZE
+
+        radar = RadarOverlay(Overlay())
+        radar.render(store, _landed_state(store, samples=1))
+        messages = radar.overlay._overlay.messages
+        nw_first = tuple(messages[f"{FRAME_PREFIX}pin-nw"][3:5])
+        se_first = tuple(messages[f"{FRAME_PREFIX}pin-se"][3:5])
+
+        radar.render(store, _landed_state(store, samples=20))
+        messages = radar.overlay._overlay.messages
+        nw_second = tuple(messages[f"{FRAME_PREFIX}pin-nw"][3:5])
+        se_second = tuple(messages[f"{FRAME_PREFIX}pin-se"][3:5])
+
+        assert nw_first == nw_second == (CENTER_X - r, CENTER_Y - r)
+        assert se_first == se_second == (CENTER_X + r, CENTER_Y + r)
+
+    @pytest.mark.overlay('Modern')
     def test_ring_is_drawn_as_multiple_small_dot_glyphs(self, overlay_mode, store:ExplorerStore) -> None:
         """ Fallback path (Overlay.supports_circle is False, the mock's default): each dot is
         its own small text-glyph message -- not one big connected polyline (see

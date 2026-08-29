@@ -43,6 +43,7 @@ DOT_GLYPH_OFFSET_X:int = -3
 DOT_GLYPH_OFFSET_Y:int = -6
 TTL:int = 8 # generous vs. the ~1/sec dashboard-tick refresh cadence, so a missed/delayed tick doesn't visibly blank the radar
 TAG_TRIANGLE_SIZE_PX:int = 5 # vertex-to-center radius for a codex-tagged waypoint's triangle marker
+INVISIBLE:str = "#00000000" # fully transparent ARGB -- see _pin_bounds
 
 # Disabled: ring/label for a tagged-but-unapproached genus (kept for possible future use).
 SHOW_TAGGED_GENUS:bool = False
@@ -201,6 +202,7 @@ class RadarOverlay:
 
         radius_px:int = _radius()
         heading_rad:float = math.radians(state.heading) if state.heading is not None else 0.0
+        self._pin_bounds(radius_px)
         self._draw_distance_rings(radius_px)
 
         for genus in genera:
@@ -240,6 +242,16 @@ class RadarOverlay:
                 f"{frame_id}-{i}", DOT_GLYPH, color,
                 round(x) + DOT_GLYPH_OFFSET_X, round(y) + DOT_GLYPH_OFFSET_Y, ttl=TTL, size=DOT_GLYPH_SIZE,
             )
+
+    def _pin_bounds(self, radius_px:int) -> None:
+        """ Two invisible markers spanning the radar's full possible extent, sent every tick
+        this is drawing at all. EDMCModernOverlay's fill-mode grouping recomputes this group's
+        on-screen anchor from the live bounding box of whichever frames happen to be active
+        (its own overlay_client/grouping_helper.py:_anchor_from_bounds) -- our own content set
+        varies (fewer/more genera between SRV and on-foot, growing sample count over a visit),
+        so without a fixed bounding box the whole radar visibly drifts as that set changes. """
+        self.overlay.send_text(f"{FRAME_PREFIX}pin-nw", " ", INVISIBLE, CENTER_X - radius_px, CENTER_Y - radius_px, ttl=TTL)
+        self.overlay.send_text(f"{FRAME_PREFIX}pin-se", " ", INVISIBLE, CENTER_X + radius_px, CENTER_Y + radius_px, ttl=TTL)
 
     def _draw_distance_rings(self, radius_px:int) -> None:
         for distance_m in RING_DISTANCES_M:
