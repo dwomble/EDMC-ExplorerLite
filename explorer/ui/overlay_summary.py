@@ -24,7 +24,7 @@ HEADER_LINE_HEIGHT_PX:int = 25 # "large" text needs more room than LINE_HEIGHT_P
 CURRENT_BODY_INDENT_PX:int = 20 # matches panel's own indent treatment
 MAX_BODY_LINES:int = 6 # no scrolling on the overlay, unlike the panel
 
-TTL:int = 30 # longer than radar's TTL -- refreshes were too sparse
+TTL:int = 300
 OVERFLOW_COLOR:str = "#999999" # same grey as radar's rings, a subdued hint
 
 def _text_color() -> str:

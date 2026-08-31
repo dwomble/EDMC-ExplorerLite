@@ -21,15 +21,8 @@ PLUGIN_GROUP:str = "EDMC-ExplorerLite"
 
 CENTER_X:int = 640
 CENTER_Y:int = 480
-# A native "circle" send_shape is pre-release as of this writing (see Overlay.supports_circle)
-# -- when it's there, a ring/dot is one real circle, perfectly round regardless of size. Older
-# backends fall back to the dot-glyph approach below: a connected vect polyline either looks
-# jagged (few points) or the transport drops it (many points, confirmed at 384), so a ring is
-# individually-sent dot markers instead -- no connecting-line facets, each message stays tiny.
-RING_THICKNESS_PX:int = 1 # legacy-canvas border width for a native circle ring/dot -- this
-# scales by the viewport factor before hitting screen (unlike the triangles' flat 2px vect
-# line width), so 1 lands close to a 2px match at common resolutions instead of overshooting.
-DOT_RADIUS_PX:int = 3 # native-circle player marker radius -- matches the old 6x6 square footprint
+RING_THICKNESS_PX:int = 1 # legacy-canvas border width for a native circle ring/dot
+DOT_RADIUS_PX:int = 3 # native-circle player marker radius
 RING_DOT_SPACING_PX:float = 20.0 # fallback only: target on-screen gap between adjacent dots
 RING_DOT_MIN:int = 12
 RING_DOT_MAX:int = 40
@@ -244,12 +237,7 @@ class RadarOverlay:
             )
 
     def _pin_bounds(self, radius_px:int) -> None:
-        """ Two invisible markers spanning the radar's full possible extent, sent every tick
-        this is drawing at all. EDMCModernOverlay's fill-mode grouping recomputes this group's
-        on-screen anchor from the live bounding box of whichever frames happen to be active
-        (its own overlay_client/grouping_helper.py:_anchor_from_bounds) -- our own content set
-        varies (fewer/more genera between SRV and on-foot, growing sample count over a visit),
-        so without a fixed bounding box the whole radar visibly drifts as that set changes. """
+        """ Two invisible markers spanning the radar's full possible extent, sent every ticks or update, to prevent the whole radar from visibly drifting as that set changes. """
         self.overlay.send_text(f"{FRAME_PREFIX}pin-nw", " ", INVISIBLE, CENTER_X - radius_px, CENTER_Y - radius_px, ttl=TTL)
         self.overlay.send_text(f"{FRAME_PREFIX}pin-se", " ", INVISIBLE, CENTER_X + radius_px, CENTER_Y + radius_px, ttl=TTL)
 
