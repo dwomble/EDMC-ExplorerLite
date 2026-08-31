@@ -74,16 +74,18 @@ def plugin_app(parent:tk.Frame) -> tk.Widget:
 
 def _clear_unsold_data(cmdr:str) -> str:
     """ For a death EDMC never saw, e.g. it wasn't running. """
-    if store is None:
-        return "Not ready yet -- try again in a moment."
+    if store is None: return "No data stored."
+
     cmdr_id:int = store.get_or_create_cmdr(cmdr)
     cart_pending:int = store.get_pending_cartography_value(cmdr_id)
     exo_pending:int = store.get_pending_exobiology_value(cmdr_id)
     mark_everything_unsold_lost(store, cmdr_id, now_iso())
+
     if panel is not None:
         panel.refresh()
     if history_view is not None:
         history_view.refresh()
+
     return f"Marked {format_pending_credits(cart_pending)} cartography and {format_pending_credits(exo_pending)} exobiology as lost."
 
 def plugin_prefs(parent:tk.Widget, cmdr:str, is_beta:bool) -> tk.Widget:
@@ -107,12 +109,11 @@ def _apply_flags(flags:dict) -> None:
             summary_overlay.render(store, explorer_state) # same trigger as radar -- steady dashboard-tick cadence, not just discrete events
 
 def journal_entry(cmdr:str, is_beta:bool, system:str, station:str, entry:dict, state:dict) -> None:
-    """ Parse an incoming journal entry and update our own state/DB. `state` is EDMC's own
-    per-Cmdr tracking, already updated for this entry. """
+    """ Handle journal events """
     if store is None:
         return
     _apply_flags(dispatch(store, explorer_state, cmdr, entry, state))
 
 def dashboard_entry(cmdr:str, is_beta:bool, entry:dict) -> None:
-    """ Handle dashboard (Status.json) state changes. """
+    """ Handle dashboard and state changes. """
     _apply_flags(on_dashboard_entry(explorer_state, entry))

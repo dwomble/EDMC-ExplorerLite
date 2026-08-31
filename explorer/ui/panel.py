@@ -26,15 +26,15 @@ PANEL_SHOWN_GLYPH:str = "\U0001F648" # see-no-evil monkey -- "pause" analog whil
 PANEL_HIDDEN_GLYPH:str = "\U0001F441" # eye -- "play" analog while hidden
 
 WIDTH_CHARS:int = 60
-LINE_HEIGHT_PX:int = 18 # approximate for the default EDMC font; tune once seen in a real window
-MAX_PREDICTED_SHOWN:int = 3 # fallback cap on predicted candidates per body, only used until
-# FSSBodySignals tells us the body's real biological_signal_count (see _best_predictions_for_body)
-INDENT_PX:int = 14 # left offset for a table nested under its own header line (e.g. per-body biologicals)
-MAX_SPECIES_LABEL_CHARS:int = 28 # cap on the "Genus Acies/Aurasus" possible-species label
-MAX_FULL_NAME_CHARS:int = 24 # above this, try abbreviated genus codes before giving up
-MAX_MERGED_TAG_CHARS:int = 32 # above this even abbreviated, collapse to just a genus count
-SAMPLES_REQUIRED:int = 3 # every species needs exactly 3 real samples (Log/Sample x2) to complete -- see handlers_exobiology.py
-GRAVITY_MS2_PER_G:float = 9.797759 # matches genus_prediction.py's own constant, not the textbook 9.80665
+LINE_HEIGHT_PX:int = 18
+MAX_PREDICTED_SHOWN:int = 3
+
+INDENT_PX:int = 14
+MAX_SPECIES_LABEL_CHARS:int = 28
+MAX_FULL_NAME_CHARS:int = 24
+MAX_MERGED_TAG_CHARS:int = 32
+SAMPLES_REQUIRED:int = 3
+GRAVITY_MS2_PER_G:float = 9.797759
 GENUS_COLOR:str = "steelblue" # reads well on both light and dark theme backgrounds
 
 def _visible_lines_px() -> int:
@@ -46,9 +46,7 @@ def _credits(value:int) -> str:
 _NUMERIC_PREFIX:re.Pattern = re.compile(r'^-?[\d,]+(?:\.\d+)?')
 
 def _credits_range(min_val:int, max_val:int) -> str:
-    """ A single exact credits string when the range has collapsed to one number; otherwise a
-    compact min-max range. Drops the min's unit suffix when it matches the max's (e.g.
-    "12.2-16.3M Cr" not "12.2M Cr-16.3M Cr") rather than repeating it. """
+    """ Single value or range of credits """
     if min_val >= max_val:
         return _credits(max_val)
     min_str:str = _credits(min_val)
@@ -59,11 +57,6 @@ def _credits_range(min_val:int, max_val:int) -> str:
         return f"{min_str[:min_match.end()]}-{max_str}"
     return f"{min_str}-{max_str}"
 
-def _distance_str(dist:float|None) -> str:
-    return hfplus((dist, 'num', '? ls', ' ls'))
-
-def _gravity_str(gravity:float|None) -> str:
-    return "?g" if gravity is None else f"{gravity / GRAVITY_MS2_PER_G:.2f}g"
 
 def _sampling_distance_str(genera:list[str]) -> str:
     """ Minimum walking distance between samples -- a range when a merged slot spans genera
@@ -231,11 +224,12 @@ class ExplorerPanel:
         config.set(CFG_PANEL_ENABLED, self._panel_enabled)
         self.toggle_button.configure(text=self._toggle_glyph())
         self._toggle_tooltip.set_text(self._toggle_tooltip_text())
-        if self._panel_enabled:
-            self.scroll.grid(row=1, column=0, sticky=tk.EW)
-            self.refresh()
-        else:
+        if not self._panel_enabled:
             self.scroll.grid_forget()
+            return
+
+        self.scroll.grid(row=1, column=0, sticky=tk.EW)
+        self.refresh()
 
     def _update_header_totals(self) -> None:
         cmdr_id:int|None = self.state.cmdr_id
@@ -335,7 +329,7 @@ class ExplorerPanel:
                     self._render_table(pending_rows, anchors=anchors)
                     pending_rows = []
                 self._render_table([row], anchors=anchors)
-                self._render_exobiology_section()
+                self._render_exobio()
                 current_row_shown = True
             else:
                 pending_rows.append(row)
@@ -344,7 +338,7 @@ class ExplorerPanel:
 
         # Focus body may not be in the flagged list (e.g. on-foot)
         if not current_row_shown and focus_id is not None and self.state.cmdr_id is not None:
-            self._render_exobiology_section()
+            self._render_exobio()
 
     def _flagged_body_row(self, system_name:str, body:sqlite3.Row) -> tuple[str, str, str, str, str]|None:
         """ A body drops off this to-do list once nothing's left to do there. Shown value is
@@ -399,13 +393,11 @@ class ExplorerPanel:
         if body["type_label"]:
             designator = f"{designator} ({body['type_label']})"
 
-        return (
-            designator, _distance_str(body["distance_ls"]), _gravity_str(body["surface_gravity"]),
-            _credits_range(value_min, value_max), species_desc,
-        )
+        dist:str = hfplus((body["distance_ls"], 'num', '? ls', ' ls'))
+        gravity:str = "?g" if body["surface_gravity"] is None else f"{body['surface_gravity'] / GRAVITY_MS2_PER_G:.2f}g"
+        return (designator, dist, gravity, _credits_range(value_min, value_max), species_desc)
 
-    def _render_exobiology_section(self) -> None:
-        """ Silent for an uninteresting body unless on-foot there. No header -- caller nests this under the body's own row. """
+    def _render_exobio(self) -> None:
         focus_id:int|None = self.state.exobio_focus_body_id
         assert self.state.cmdr_id is not None and self.state.system_id is not None and focus_id is not None
         body_pk:int = self.store.get_or_create_body(self.state.cmdr_id, self.state.system_id, focus_id, self.state.exobio_focus_body_name)
@@ -430,25 +422,19 @@ class ExplorerPanel:
                 if row["samples_taken"]:
                     style[0]["font"] = self._title_font
                 styles.append(style)
-            self._render_table(
-                [self._exobio_progress_row(row, was_footfalled) for row in active], anchors=("w", "w", "e", "e"),
-                indent=INDENT_PX, cell_kwargs=styles,
-            )
+            self._render_table([self._exobio_progress_row(row, was_footfalled) for row in active], anchors=("w", "w", "e", "e"),
+                               indent=INDENT_PX, cell_kwargs=styles)
             return
 
         if predictions:
             confirmed_signal:bool = bool(body and body["has_biological_signals"])
-            self._render_table(
-                [self._predicted_genus_row(slot, confirmed_signal, was_footfalled) for slot in predictions],
-                anchors=("w", "e", "e"), indent=INDENT_PX,
-                cell_kwargs=[{c: {"foreground": GENUS_COLOR} for c in range(3)} for _ in predictions],
-            )
+            self._render_table([self._predicted_genus_row(slot, confirmed_signal, was_footfalled) for slot in predictions],
+                               anchors=("w", "e", "e"), indent=INDENT_PX,
+                               cell_kwargs=[{c: {"foreground": GENUS_COLOR} for c in range(3)} for _ in predictions])
             return
 
 
     def _best_predictions_for_body(self, body_pk:int) -> list[dict]:
-        """ Best-per-genus predicted slots, capped to biological_signal_count (or MAX_PREDICTED_SHOWN).
-        Chain tiers count as one slot each; ties beyond the cap fold into one merged slot. """
         all_predictions:list[sqlite3.Row] = self.store.get_genus_predictions_for_body(body_pk)
         if not all_predictions:
             return []
@@ -495,6 +481,7 @@ class ExplorerPanel:
                 unit["chain_tier"] = tier
                 units.append(unit)
                 claimed.update(tier_genera)
+
         for genus, slot in genus_slots.items():
             if genus not in claimed:
                 units.append({**slot, "chain_tier": None})
@@ -506,6 +493,7 @@ class ExplorerPanel:
                 groups[-1].append(unit)
             else:
                 groups.append([unit])
+
         for group in groups:
             group.sort(key=lambda u: u["chain_tier"] if u["chain_tier"] is not None else 999)
 
@@ -533,11 +521,11 @@ class ExplorerPanel:
             slots.extend(self._merge_prediction_group([unit]) for unit in group[:remaining - 1])
             slots.append(self._merge_prediction_group(group[remaining - 1:]))
             remaining = 0
+
         return slots
 
     def _collapse_prediction_names(self, items:list[dict], joiner:str = "/") -> str:
-        """ Full, abbreviated, then a bare genus count. joiner: "/" for
-        tied alternatives, "+" for distinct concurrent slots. """
+        """ Full, abbreviated, or bare genus count """
         if len(items) <= 2:
             full:str = ", ".join(item["name"] for item in items)
             if len(full) <= MAX_FULL_NAME_CHARS:
@@ -568,9 +556,6 @@ class ExplorerPanel:
         }
 
     def _predicted_row_range(self, row:sqlite3.Row) -> tuple[int, int]:
-        """ (min, max) value for a predicted row -- an exact species-narrowed guess collapses to
-        a single number (min==max); a bare genus-level guess spans that genus's full known
-        range, since the real species present could turn out to be anywhere in it. """
         if row["species"]:
             value:int = exobiology.estimate_confirmed_value(row["genus"], row["species"]) or 0
             return (value, value)
@@ -578,7 +563,7 @@ class ExplorerPanel:
         return value_range if value_range else (0, 0)
 
     def _predicted_genus_row(self, slot:dict, confirmed_signal:bool, was_footfalled:bool) -> tuple[str, str, str]:
-        """ Value shown is Full (bonus-included), matching _flagged_body_row/_exobio_progress_row. """
+        """ Full (bonus-included) value. """
         prefix:str = "" if confirmed_signal else "?"
         value_min:int = exobiology.with_first_logged_bonus(slot["value_min"], was_footfalled)
         value_max:int = exobiology.with_first_logged_bonus(slot["value_max"], was_footfalled)
@@ -586,7 +571,6 @@ class ExplorerPanel:
         return (f"{prefix}{slot['name']}", _sampling_distance_str(slot["genera"]), value_str)
 
     def _exobio_row_range(self, row:sqlite3.Row) -> tuple[int, int]:
-        """ Exact once sampled; else narrowed to surviving Scan-time species predictions, not the full genus range. """
         if row["species"]:
             value:int = row["confirmed_value"] or 0
             return (value, value)
@@ -622,10 +606,7 @@ class ExplorerPanel:
         return self._join_species_names(genus, [c["species"] for c in candidates])
 
     def _exobio_progress_row(self, row:sqlite3.Row, was_footfalled:bool) -> tuple[str, str, str, str]:
-        """ Genus placeholder becomes the species name (and value the confirmed value) once
-        sampled. Value shown is Full (bonus-included) -- the base value counting toward ED's own
-        progression is never shown in this compact panel, only in the history view. Progress
-        leads the line, and reads "-" rather than "0/N" so an untouched row stands out. """
+        """ Genus placeholder becomes the species name once sampled. """
         genus:str = row["genus"] or "biological"
         name:str = row["species"] or self._possible_species_label(row["body_id"], genus)
         progress:str = f"{row['samples_taken']}/{SAMPLES_REQUIRED}" if row["samples_taken"] else "-"

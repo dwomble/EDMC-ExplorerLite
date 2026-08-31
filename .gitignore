@@ -231,10 +231,18 @@ __marimo__/
 # Streamlit
 .streamlit/secrets.toml
 
+# pycov
+.coverage
+.pytest_cache/
+
+
+data/
 updates/
+tests/data/
+tests/edmc/EDMarketConnector
 tests/logs/
-tests/backups/
 tests/updates/
+tests/backups/
 tests/journal_folder/
 
 # Internal design notes -- not for the public repo

@@ -72,8 +72,7 @@ SAMPLE_COLOR:str = "#00aaff" # fallback for a real sample with no recognized var
 PLAYER_COLOR:str = "#ffffff"
 LABEL_COLOR:str = "#ffffff"
 
-# Odyssey exobiology variant color names (cross-checked against EDMC-BioScan's name list, not
-# its hex values/code) -- a codex tag draws as a hollow triangle in this color, see _draw_samples.
+# Odyssey exobiology variant color names
 CODEX_TAG_COLORS:dict[str, str] = {
     "Amethyst": "#9966cc", "Aquamarine": "#7fffd4", "Blue": "#3366ff", "Cobalt": "#3355aa",
     "Cyan": "#00e5e5", "Emerald": "#2ecc71", "Gold": "#ffd700", "Green": "#33aa33",
@@ -82,7 +81,7 @@ CODEX_TAG_COLORS:dict[str, str] = {
     "Orange": "#ff8822", "Peach": "#ffaa88", "Red": "#ee3333", "Sage": "#889977",
     "Teal": "#118877", "Turquoise": "#33cccc", "White": "#eeeeee", "Yellow": "#eedd22",
 }
-DEFAULT_TAG_COLOR:str = "#ff66aa" # an unrecognized color name -- still distinct from SAMPLE_COLOR
+DEFAULT_TAG_COLOR:str = "#ff66aa"
 
 def _tag_color(color_name:str|None) -> str:
     return CODEX_TAG_COLORS.get(color_name, DEFAULT_TAG_COLOR) if color_name else DEFAULT_TAG_COLOR
@@ -102,9 +101,7 @@ def _genus_label(genus:str) -> str:
     return exobiology_data.genus_code(genus)
 
 def _ring_dot_count(r:float) -> int:
-    """ Scales with circumference so dot spacing stays roughly constant across ring sizes
-    (~19-140px radius) -- a fixed count would overlap solid on the smallest ring or read
-    sparse on the largest. """
+    """ Scales with circumference """
     if r <= 0:
         return 0
     raw:int = round(2 * math.pi * r / RING_DOT_SPACING_PX)
@@ -119,8 +116,7 @@ def _ring_dot_positions(cx:float, cy:float, r:float) -> list[tuple[float, float]
     ]
 
 def _rotate_to_heading(east:float, north:float, heading:float) -> tuple[float, float]:
-    """ Rotate a world-space (east, north) offset into a heading-up screen frame, where the
-    player's current facing direction maps to "forward" (screen up) instead of true north. """
+    """ Rotate a world-space (east, north) offset into a heading-up screen frame """
     sin_h, cos_h = math.sin(heading), math.cos(heading)
     forward:float = east * sin_h + north * cos_h
     right:float = east * cos_h - north * sin_h
@@ -134,24 +130,19 @@ class RadarOverlay:
         self._last_skip_reason:str|None = None # dedupe diagnostic logging -- log only on change
 
     def _log_skip(self, reason:str|None) -> None:
-        """ Logs at INFO (no dev-mode needed) only when the reason changes, to avoid
-        spamming on every ~1/sec dashboard tick while on-foot. """
+        """ Avoid spamming duplicates """
         if reason != self._last_skip_reason:
             self._last_skip_reason = reason
             if reason:
                 Debug.logger.info(f"Radar overlay not drawing: {reason}")
 
     def _ensure_group(self) -> None:
-        """ Kwargs confirmed against EDMCModernOverlay's real overlay_api.py source. """
         if self._group_defined or not self.overlay.is_modern:
             return
         self._group_defined = self.overlay.define_group(plugin_name=PLUGIN_GROUP, plugin_matching_prefixes=[FRAME_PREFIX],
             plugin_group_name="ExplorerLite Radar", plugin_group_prefixes=[FRAME_PREFIX])
 
     def render(self, store:ExplorerStore, state:ExplorerState) -> None:
-        """ Shown as soon as a body is in view (SupercruiseExit onward, same as the panel's own
-        exobiology section) -- not gated behind landed/on-foot, so it's already up guiding you
-        in before you commit to landing, not just once you're already down. """
         if not self.overlay.available:
             self._log_skip("no overlay backend detected")
             return
@@ -231,10 +222,8 @@ class RadarOverlay:
             self.overlay.send_circle(frame_id, color, "none", CENTER_X, CENTER_Y, round(r), RING_THICKNESS_PX, ttl=TTL)
             return
         for i, (x, y) in enumerate(_ring_dot_positions(CENTER_X, CENTER_Y, r)):
-            self.overlay.send_text(
-                f"{frame_id}-{i}", DOT_GLYPH, color,
-                round(x) + DOT_GLYPH_OFFSET_X, round(y) + DOT_GLYPH_OFFSET_Y, ttl=TTL, size=DOT_GLYPH_SIZE,
-            )
+            self.overlay.send_text(f"{frame_id}-{i}", DOT_GLYPH, color,
+                                   round(x) + DOT_GLYPH_OFFSET_X, round(y) + DOT_GLYPH_OFFSET_Y, ttl=TTL, size=DOT_GLYPH_SIZE)
 
     def _pin_bounds(self, radius_px:int) -> None:
         """ Two invisible markers spanning the radar's full possible extent, sent every ticks or update, to prevent the whole radar from visibly drifting as that set changes. """
@@ -259,7 +248,8 @@ class RadarOverlay:
         if not min_dist or min_dist > DISPLAY_RANGE_M:
             return
         r:float = radius_px * _radius_frac(min_dist) * RING_AREA_FRAC
-        self.overlay.send_text(f"{FRAME_PREFIX}label-{genus}", _genus_label(genus), LABEL_COLOR, CENTER_X - 10, round(CENTER_Y - r - 14), ttl=TTL)
+        self.overlay.send_text(f"{FRAME_PREFIX}label-{genus}", _genus_label(genus), LABEL_COLOR, CENTER_X - 10,
+                               round(CENTER_Y - r - 14), ttl=TTL)
 
     def _draw_player(self) -> None:
         frame_id:str = f"{FRAME_PREFIX}player"

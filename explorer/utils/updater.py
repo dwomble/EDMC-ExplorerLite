@@ -2,6 +2,7 @@ import json
 import os
 import re
 import requests
+import shutil
 import zipfile
 import time
 from threading import Thread
@@ -93,10 +94,24 @@ class Updater():
                 f.write(chunk)
         self.zip_downloaded = zip_file
 
-    def install(self) -> None:
+    def install(self, preserve:list[str] = []) -> None:
         """ Download the latest zip file and install it """
         if self.install_update != True or self.zip_downloaded == "":
             return
+        try:
+            backup_dir:str = os.path.join(self.plugin_dir, "updates", "backup")
+            if os.path.exists(backup_dir):
+                shutil.rmtree(backup_dir)
+            os.makedirs(backup_dir)
+
+            for name in os.listdir(self.plugin_dir):
+                if name == "updates" or name in preserve:
+                    continue
+                shutil.move(os.path.join(self.plugin_dir, name), os.path.join(backup_dir, name))
+        except Exception as e:
+            Debug.logger.error("Failed to backup existing files, exception info:", exc_info=e)
+            return
+
         try:
             with zipfile.ZipFile(self.zip_downloaded, 'r') as zip_ref:
                 zip_ref.extractall(self.plugin_dir)

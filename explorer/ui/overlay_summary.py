@@ -53,7 +53,7 @@ class SystemSummaryOverlay:
         if self._group_defined or not self.overlay.is_modern:
             return
         self._group_defined = self.overlay.define_group(plugin_name=PLUGIN_GROUP, plugin_matching_prefixes=[FRAME_PREFIX],
-            plugin_group_name="ExplorerLite Summary", plugin_group_prefixes=[FRAME_PREFIX])
+                                                        plugin_group_name="ExplorerLite Summary", plugin_group_prefixes=[FRAME_PREFIX])
 
     def _clear_all(self) -> None:
         """ Clears every slot from the last render(). """
@@ -70,26 +70,31 @@ class SystemSummaryOverlay:
         self._last_had_overflow = False
         self._last_current_count = 0
 
-    def render(self, store:ExplorerStore, state:ExplorerState) -> None:
-        """ Shown for any known system, not gated to on-foot like the radar. """
+    def render_checks(self, state:ExplorerState) -> bool:
         if not self.overlay.available:
             self._log_skip("no overlay backend detected")
-            return
+            return False
 
         if not config.get_bool(CFG_PANEL_ENABLED, default=True):
             self._log_skip("panel hidden via the show/hide toggle")
             self._clear_all()
-            return
+            return False
 
         if not config.get_bool(CFG_OVERLAY_SUMMARY_ENABLED, default=True):
             self._log_skip("summary disabled in EDMC-ExplorerLite settings")
             self._clear_all()
-            return
+            return False
 
         if not state.overlay_relevant:
             self._log_skip("docked, on-foot in a station, or a UI panel has focus")
             self._clear_all()
-            return
+            return False
+
+        return True
+
+    def render(self, store:ExplorerStore, state:ExplorerState) -> None:
+        """ Shown for any known system, not gated to on-foot like the radar. """
+        if not self.render_checks(state): return
 
         if state.system_id is None:
             self._log_skip("no system known yet")

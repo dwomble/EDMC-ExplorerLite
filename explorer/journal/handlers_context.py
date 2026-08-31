@@ -11,8 +11,7 @@ def _persist(state:ExplorerState) -> None:
     session_persist.save(state.cmdr, state.system_address, state.system_name, state.body_id, state.body_name)
 
 def _restore_sample_positions(store:ExplorerStore, state:ExplorerState) -> None:
-    """ Reloads this visit's radar samples on restart,
-    colored the way a fresh sample is. """
+    """ Reloads this visit's radar samples on restart. """
     if state.cmdr_id is None or state.system_id is None or state.body_id is None:
         return
     body_pk:int = store.get_or_create_body(state.cmdr_id, state.system_id, state.body_id, state.body_name)
@@ -23,9 +22,6 @@ def _restore_sample_positions(store:ExplorerStore, state:ExplorerState) -> None:
         state.current_genus = row["genus"] # last row wins, insertion-ordered
 
 def restore_last_session(store:ExplorerStore, state:ExplorerState) -> None:
-    """ Called once at plugin startup, before any journal event arrives, so the panel doesn't
-    sit at "Explorer -- idle" until the next live event. enter_system()'s cold-start check
-    corrects anything actually different once a real Location/FSDJump arrives. """
     saved:dict|None = session_persist.load()
     if not saved:
         return
@@ -54,10 +50,7 @@ def on_continued(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict:
     return {}
 
 def enter_system(store:ExplorerStore, state:ExplorerState, edmc_state:dict) -> dict:
-    """ Called by dispatch() for Location/FSDJump/CarrierJump -- reads SystemAddress/SystemName
-    from EDMC's own state dict rather than re-parsing the journal entry. On a cold start (no
-    system_id yet, or restore_last_session() pre-populated one), resumes the last known body
-    if it's the same Cmdr/system rather than going blank until the next event. """
+    """ Called by dispatch() for Location/FSDJump/CarrierJump, on start resumes the last known body """
     system_address:int|None = edmc_state.get("SystemAddress")
     if system_address is None:
         return {}

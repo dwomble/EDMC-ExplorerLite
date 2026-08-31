@@ -128,10 +128,7 @@ def on_scan(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict:
     return {"panel": True, "overlay": "radar"}
 
 def _worthwhile_predictions(entry:dict, nearest_star_type:str|None, bypass_threshold:bool = False) -> list[tuple[str, str|None, float]]:
-    """ Predicted (genus, species, confidence) rows whose value clears the exobio threshold,
-    checked against the first-logged-bonus-inclusive value (WasFootfalled is already known at
-    Scan time, same as WasDiscovered/WasMapped) -- a body only worth it WITH the bonus is still
-    worth flagging. """
+    """ Predicted (genus, species, confidence) rows whose value clears the exobio threshold """
     threshold:int = _exobio_threshold()
     was_footfalled:bool = bool(entry.get("WasFootfalled"))
     worthwhile:list[tuple[str, str|None, float]] = []
