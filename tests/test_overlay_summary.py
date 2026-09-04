@@ -314,12 +314,14 @@ class TestSystemSummaryOverlay:
         import load
         assert load.store is not None and load.summary_overlay is not None
         assert load.explorer_state.cmdr_id is not None and load.explorer_state.system_id is not None
+        middle_pk:int|None = None
         for body_id in (1, 2, 3):
             body_pk:int = load.store.get_or_create_body(load.explorer_state.cmdr_id, load.explorer_state.system_id, body_id, f"QuietSpace A {body_id}")
             load.store.update_body(body_pk, has_biological_signals=1, biological_signal_count=1)
             if body_id == 2: # landed here -- this is the one with in-progress sampling
                 middle_pk = body_pk
 
+        assert middle_pk is not None
         progress_id:int = load.store.get_or_create_species_progress(middle_pk, "Bacterium")
         load.store.update_species_progress(progress_id, species="Bacterium Aurasus", samples_taken=2)
         load.explorer_state.body_id = 2
@@ -376,7 +378,7 @@ class TestSystemSummaryOverlay:
         plugin.play_sequence("honk_only", 0.02)
 
         import load
-        assert load.summary_overlay is not None
+        assert load.store is not None and load.summary_overlay is not None
         load.explorer_state.docked = True
         load.summary_overlay.render(load.store, load.explorer_state)
 
@@ -387,7 +389,7 @@ class TestSystemSummaryOverlay:
         plugin.play_sequence("honk_only", 0.02)
 
         import load
-        assert load.summary_overlay is not None
+        assert load.store is not None and load.summary_overlay is not None
         load.explorer_state.on_foot_in_station = True
         load.summary_overlay.render(load.store, load.explorer_state)
 
@@ -401,7 +403,7 @@ class TestSystemSummaryOverlay:
         plugin.play_sequence("honk_only", 0.02)
 
         import load
-        assert load.summary_overlay is not None
+        assert load.store is not None and load.summary_overlay is not None
         load.explorer_state.gui_focus = GuiFocusGalaxyMap
         load.summary_overlay.render(load.store, load.explorer_state)
 

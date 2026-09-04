@@ -156,11 +156,8 @@ class TestRadarOverlayModern:
         assert f"{FRAME_PREFIX}sample-Bacterium-1" in shapes
 
     @pytest.mark.overlay('Modern')
-    def test_pin_bounds_stay_fixed_regardless_of_sample_count(self, overlay_mode, store:ExplorerStore) -> None:
-        """ EDMCModernOverlay's fill-mode grouping recomputes the group's on-screen anchor from
-        the live bounding box of whatever's currently drawn -- these two invisible pin markers
-        must always sit at the same position so that bounding box (and thus the whole radar's
-        on-screen position) never drifts as the number of logged samples grows. """
+    def test_pin_bounds_stay_fixed(self, overlay_mode, store:ExplorerStore) -> None:
+        """ The pin markers stay at a fixed position regardless of sample count. """
         from explorer.constants import DEFAULT_OVERLAY_RADAR_SIZE
         r:int = DEFAULT_OVERLAY_RADAR_SIZE
 

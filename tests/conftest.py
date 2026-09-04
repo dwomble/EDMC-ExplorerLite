@@ -16,6 +16,17 @@ from typing import Callable, Generator
 
 from harness import TestHarness, reset_plugin_modules
 from explorer.db.store import ExplorerStore
+from explorer import session_persist
+
+@pytest.fixture(scope="session", autouse=True)
+def _no_real_session_persist(tmp_path_factory) -> Generator[None, None, None]:
+    """ Some tests call journal handlers directly, without the harness fixture below -- this
+    must apply regardless, or session_persist.save() writes into the repo tree. """
+    session_file:Path = tmp_path_factory.mktemp("session_persist") / "session_state.json"
+    patcher:pytest.MonkeyPatch = pytest.MonkeyPatch()
+    patcher.setattr(session_persist, "resolve_session_path", lambda: session_file)
+    yield
+    patcher.undo()
 
 @pytest.fixture(scope="session")
 def harness() -> Generator[TestHarness, None, None]:

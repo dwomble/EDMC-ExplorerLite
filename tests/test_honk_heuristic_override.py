@@ -75,10 +75,12 @@ class TestOnHonk:
         store.update_body(star_pk, star_type="M")
 
         handlers_discovery.on_honk(store, state, {"BodyCount": 5, "NonBodyCount": 0})
-        assert store.get_system(state.system_id)["honk_hint"] == "probably quiet"
+        system = store.get_system(state.system_id)
+        assert system is not None and system["honk_hint"] == "probably quiet"
 
         handlers_discovery.on_honk(store, state, {"BodyCount": 6, "NonBodyCount": 0})
-        assert store.get_system(state.system_id)["honk_hint"] == "worth a full scan"
+        system = store.get_system(state.system_id)
+        assert system is not None and system["honk_hint"] == "worth a full scan"
 
     def test_white_dwarf_needs_three_bodies(self, store:ExplorerStore) -> None:
         """ Not F/G/K/N/H and not M/L/T/Y -- falls to the "other" tier's 3-body threshold. """
@@ -89,10 +91,12 @@ class TestOnHonk:
         store.update_body(star_pk, star_type="DA")
 
         handlers_discovery.on_honk(store, state, {"BodyCount": 2, "NonBodyCount": 0})
-        assert store.get_system(state.system_id)["honk_hint"] == "probably quiet"
+        system = store.get_system(state.system_id)
+        assert system is not None and system["honk_hint"] == "probably quiet"
 
         handlers_discovery.on_honk(store, state, {"BodyCount": 3, "NonBodyCount": 0})
-        assert store.get_system(state.system_id)["honk_hint"] == "worth a full scan"
+        system = store.get_system(state.system_id)
+        assert system is not None and system["honk_hint"] == "worth a full scan"
 
     def test_no_star_scanned_yet_falls_back_to_the_other_tier(self, store:ExplorerStore) -> None:
         """ Honk arrives before any Scan at all (no body rows yet) -- no star type known, so

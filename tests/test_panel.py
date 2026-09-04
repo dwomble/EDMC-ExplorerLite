@@ -8,9 +8,10 @@ Run with:
 conftest.py -- see its docstring for why.
 """
 import tkinter as tk
+from tkinter import ttk
 import sqlite3
 import pytest
-from typing import Generator, cast
+from typing import Any, Generator, cast
 
 from harness import TestHarness, reset_plugin_modules
 import tests.edmc.requests as mock_requests
@@ -75,6 +76,7 @@ def _panel_lines(load) -> list[str]:
 def _find_label(widget:tk.Widget, text:str) -> tk.Widget|None:
     """ Depth-first search for the th.Label showing this text. """
     for child in widget.winfo_children():
+        if isinstance(child, tk.Toplevel): continue
         if "text" in child.keys() and child.cget("text") == text:
             return child
         found:tk.Widget|None = _find_label(child, text)
@@ -87,7 +89,7 @@ def _row_cell(label:tk.Widget, column:int) -> tk.Widget:
     row:int = int(label.grid_info()["row"])
     return next(
         c for c in label.master.winfo_children()
-        if int(c.grid_info()["row"]) == row and int(c.grid_info()["column"]) == column
+        if not isinstance(c, tk.Toplevel) and int(c.grid_info()["row"]) == row and int(c.grid_info()["column"]) == column
     )
 
 class TestCreditsRange:
@@ -101,6 +103,11 @@ class TestCreditsRange:
     def test_collapses_to_a_single_value_when_min_equals_max(self) -> None:
         assert _credits_range(1_000_000, 1_000_000) == "1M Cr"
 
+def _system(store:ExplorerStore, system_id:int) -> sqlite3.Row:
+    row:sqlite3.Row|None = store.get_system(system_id)
+    assert row is not None
+    return row
+
 class TestSystemStatusText:
     """ Honk -> FSS -> DSS/Sample/"DSS + Sample" -> Done. Needs a real store now (checking
     per-body DSS/sample status), not just a dict standing in for a sqlite3.Row. """
@@ -108,13 +115,13 @@ class TestSystemStatusText:
     def test_before_honking(self, store:ExplorerStore) -> None:
         cmdr_id = store.get_or_create_cmdr("Testy")
         system_id = store.get_or_create_system(cmdr_id, 1, "Deltius")
-        assert system_status_text(store, store.get_system(system_id)) == "Honk"
+        assert system_status_text(store, _system(store, system_id)) == "Honk"
 
     def test_quiet_system_is_done_even_mid_fss(self, store:ExplorerStore) -> None:
         cmdr_id = store.get_or_create_cmdr("Testy")
         system_id = store.get_or_create_system(cmdr_id, 1, "Deltius")
         store.update_system(system_id, honk_body_count=1, honk_hint="probably quiet", all_bodies_found=0)
-        assert system_status_text(store, store.get_system(system_id)) == "Done"
+        assert system_status_text(store, _system(store, system_id)) == "Done"
 
     def test_fss_shown_until_all_bodies_found(self, store:ExplorerStore) -> None:
         """ FSS stays shown for the whole pass, even once a body is already flagged -- FSS
@@ -124,7 +131,7 @@ class TestSystemStatusText:
         store.update_system(system_id, honk_body_count=7, honk_hint="worth a full scan", all_bodies_found=0)
         body_pk = store.get_or_create_body(cmdr_id, system_id, 1, "Deltius A 1", "Planet")
         store.update_body(body_pk, flagged_value=1, estimated_scan_value=1_000_000)
-        assert system_status_text(store, store.get_system(system_id)) == "FSS"
+        assert system_status_text(store, _system(store, system_id)) == "FSS"
 
     def test_dss_once_fss_completes_with_an_unmapped_flagged_body(self, store:ExplorerStore) -> None:
         cmdr_id = store.get_or_create_cmdr("Testy")
@@ -132,7 +139,7 @@ class TestSystemStatusText:
         store.update_system(system_id, honk_body_count=1, honk_hint="worth a full scan", all_bodies_found=1)
         body_pk = store.get_or_create_body(cmdr_id, system_id, 1, "Deltius A 1", "Planet")
         store.update_body(body_pk, flagged_value=1, estimated_scan_value=1_000_000)
-        assert system_status_text(store, store.get_system(system_id)) == "DSS"
+        assert system_status_text(store, _system(store, system_id)) == "DSS"
 
     def test_sample_once_mapped_with_active_species(self, store:ExplorerStore) -> None:
         cmdr_id = store.get_or_create_cmdr("Testy")
@@ -141,7 +148,7 @@ class TestSystemStatusText:
         body_pk = store.get_or_create_body(cmdr_id, system_id, 1, "Deltius A 1", "Planet")
         store.update_body(body_pk, has_biological_signals=1, mapped_at="2026-08-17T00:00:00Z")
         store.get_or_create_species_progress(body_pk, "Bacterium")
-        assert system_status_text(store, store.get_system(system_id)) == "Sample"
+        assert system_status_text(store, _system(store, system_id)) == "Sample"
 
     def test_dss_and_sample_combine(self, store:ExplorerStore) -> None:
         cmdr_id = store.get_or_create_cmdr("Testy")
@@ -152,7 +159,7 @@ class TestSystemStatusText:
         mapped_pk = store.get_or_create_body(cmdr_id, system_id, 2, "Deltius A 2", "Planet")
         store.update_body(mapped_pk, has_biological_signals=1, mapped_at="2026-08-17T00:00:00Z")
         store.get_or_create_species_progress(mapped_pk, "Bacterium")
-        assert system_status_text(store, store.get_system(system_id)) == "DSS + Sample"
+        assert system_status_text(store, _system(store, system_id)) == "DSS + Sample"
 
     def test_done_once_fully_sampled_and_mapped(self, store:ExplorerStore) -> None:
         cmdr_id = store.get_or_create_cmdr("Testy")
@@ -162,24 +169,24 @@ class TestSystemStatusText:
         store.update_body(body_pk, has_biological_signals=1, mapped_at="2026-08-17T00:00:00Z")
         progress_id = store.get_or_create_species_progress(body_pk, "Bacterium")
         store.update_species_progress(progress_id, completed_at="2026-08-17T00:00:00Z")
-        assert system_status_text(store, store.get_system(system_id)) == "Done"
+        assert system_status_text(store, _system(store, system_id)) == "Done"
 
     def test_header_line_prepends_the_system_name(self, store:ExplorerStore) -> None:
         cmdr_id = store.get_or_create_cmdr("Testy")
         system_id = store.get_or_create_system(cmdr_id, 1, "Deltius")
         store.update_system(system_id, honk_body_count=7, honk_hint="worth a full scan", all_bodies_found=0)
-        assert system_header_line(store, store.get_system(system_id)) == "Deltius — 7 bodies — FSS"
+        assert system_header_line(store, _system(store, system_id)) == "Deltius — 7 bodies — FSS"
 
     def test_body_count_text_is_the_known_count_not_fss_progress(self, store:ExplorerStore) -> None:
         cmdr_id = store.get_or_create_cmdr("Testy")
         system_id = store.get_or_create_system(cmdr_id, 1, "Deltius")
-        assert system_body_count_text(store.get_system(system_id)) == "" # not honked yet
+        assert system_body_count_text(_system(store, system_id)) == "" # not honked yet
 
         store.update_system(system_id, honk_body_count=1)
-        assert system_body_count_text(store.get_system(system_id)) == "1 body"
+        assert system_body_count_text(_system(store, system_id)) == "1 body"
 
         store.update_system(system_id, honk_body_count=7)
-        assert system_body_count_text(store.get_system(system_id)) == "7 bodies"
+        assert system_body_count_text(_system(store, system_id)) == "7 bodies"
 
 class TestPanelStates:
 
@@ -1382,9 +1389,10 @@ class TestPrefs:
         labels = {c.cget("text") for c in frame.winfo_children() if "text" in c.keys()}
         assert f"{PLUGIN_NAME} v1.2.3" in labels
 
-        links = [c for c in frame.winfo_children() if type(c).__name__ == "HyperlinkLabel"]
+        from ttkHyperlinkLabel import HyperlinkLabel # type: ignore
+        links = [c for c in frame.winfo_children() if isinstance(c, HyperlinkLabel)]
         assert len(links) == 1 and links[0].cget("text") == "GitHub"
-        assert links[0].url == prefs_ui.GH_URL
+        assert cast(Any, links[0]).url == prefs_ui.GH_URL
 
     def test_all_sections_are_present(self, plugin:TestHarness) -> None:
         from explorer.ui import prefs as prefs_ui
@@ -1422,7 +1430,7 @@ class TestPrefs:
         from explorer.ui import prefs as prefs_ui
 
         frame = prefs_ui.build_prefs(plugin.parent, "Testy", False)
-        btn = next(c for c in frame.winfo_children() if "text" in c.keys() and c.cget("text") == "Clear unsold data")
+        btn = next(c for c in frame.winfo_children() if isinstance(c, (tk.Button, ttk.Button)) and c.cget("text") == "Clear unsold data")
         assert btn.cget("command")
 
     def test_clear_unsold_data_button_is_flagged_as_dangerous(self, plugin:TestHarness) -> None:
@@ -1430,18 +1438,21 @@ class TestPrefs:
         from explorer.ui import prefs as prefs_ui
 
         frame = prefs_ui.build_prefs(plugin.parent, "Testy", False)
-        btn = next(c for c in frame.winfo_children() if "text" in c.keys() and c.cget("text") == "Clear unsold data")
+        btn = next(c for c in frame.winfo_children() if isinstance(c, (tk.Button, ttk.Button)) and c.cget("text") == "Clear unsold data")
         assert str(btn.cget("background")) == prefs_ui.DANGER_COLOR
 
     def test_clear_unsold_data_calls_through_only_after_confirming(self, plugin:TestHarness, monkeypatch) -> None:
         from explorer.ui import prefs as prefs_ui
 
         calls:list[str] = []
+        def _record(cmdr:str) -> str:
+            calls.append(cmdr)
+            return ""
         monkeypatch.setattr(prefs_ui.messagebox, "askyesno", lambda *a, **kw: False)
         monkeypatch.setattr(prefs_ui.messagebox, "showinfo", lambda *a, **kw: None)
 
-        frame = prefs_ui.build_prefs(plugin.parent, "Testy", False, clear_unsold_data=calls.append)
-        btn = next(c for c in frame.winfo_children() if "text" in c.keys() and c.cget("text") == "Clear unsold data")
+        frame = prefs_ui.build_prefs(plugin.parent, "Testy", False, clear_unsold_data=_record)
+        btn = next(c for c in frame.winfo_children() if isinstance(c, (tk.Button, ttk.Button)) and c.cget("text") == "Clear unsold data")
         btn.invoke()
 
         assert calls == [] # declined the confirmation -- must not have run
@@ -1459,7 +1470,7 @@ class TestPrefs:
         monkeypatch.setattr(prefs_ui.messagebox, "showinfo", lambda title, message, **kw: shown.append(message))
 
         frame = prefs_ui.build_prefs(plugin.parent, "Testy", False, clear_unsold_data=lambda cmdr: f"cleared for {cmdr}")
-        btn = next(c for c in frame.winfo_children() if "text" in c.keys() and c.cget("text") == "Clear unsold data")
+        btn = next(c for c in frame.winfo_children() if isinstance(c, (tk.Button, ttk.Button)) and c.cget("text") == "Clear unsold data")
         btn.invoke()
 
         assert shown == ["cleared for Testy"]
