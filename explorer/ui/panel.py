@@ -161,11 +161,11 @@ class ExplorerPanel:
         self.title_label:th.Label = th.Label(header, text=PLUGIN_NAME, font=self._title_font, anchor="w")
         self.title_label.grid(row=0, column=0, sticky=tk.W)
 
-        self.cart_value_label:th.Label = th.Label(header, text=format_pending_credits(0), anchor="w")
+        self.cart_value_label:th.Label = th.Label(header, text=format_pending_credits(0), anchor="w", width=10)
         self.cart_value_label.grid(row=0, column=1, sticky=tk.W)
         th.Tooltip(self.cart_value_label, "Pending cartography value")
 
-        self.exo_value_label:th.Label = th.Label(header, text=format_pending_credits(0), anchor="w")
+        self.exo_value_label:th.Label = th.Label(header, text=format_pending_credits(0), anchor="w", width=10)
         self.exo_value_label.grid(row=0, column=2, sticky=tk.W)
         th.Tooltip(self.exo_value_label, "Pending exobiology value")
 
@@ -195,7 +195,7 @@ class ExplorerPanel:
         if not self.notices or not self.notices.pending_notice or self.notice is not None:
             return
         notice:str = self.notices.pending_notice
-        width:int = max(len(line) for line in notice.split("\n"))
+        width:int = min(60, max(len(line) for line in notice.split("\n")))
         self.notice = th.RichText(self.frame, width=width, markdown=notice, cursor='hand2')
         self.notice.bind("<Button-1>", partial(self.dismiss_notice))
         self.notice.grid(row=1, column=0, sticky=tk.EW)
