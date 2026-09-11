@@ -16,9 +16,8 @@ from explorer.util import now_iso
 def on_sell_exploration_data(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict:
     if state.cmdr_id is None:
         return {}
-    total:int|None = entry.get("TotalEarnings")
-    if total is None:
-        total = entry.get("BaseValue", 0) + entry.get("Bonus", 0)
+    # TotalEarnings can be a real 0 despite a nonzero sale -- a confirmed Frontier journal quirk.
+    total:int = entry.get("TotalEarnings") or entry.get("BaseValue", 0) + entry.get("Bonus", 0)
     if not total:
         return {}
 
