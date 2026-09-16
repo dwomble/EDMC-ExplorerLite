@@ -7,6 +7,7 @@ Run with:
     .venv/bin/python -m pytest tests/test_bio_focus_body.py -v --tb=short
 """
 import pytest
+import sqlite3
 from typing import Generator
 
 from explorer.db.store import ExplorerStore
@@ -53,6 +54,27 @@ class TestOnSaaSignalsFoundSetsLastBioBody:
     def test_leaves_it_unset_when_no_genuses_are_found(self, store:ExplorerStore, state:ExplorerState) -> None:
         handlers_bodies.on_saa_signals_found(store, state, {"BodyID": 1, "BodyName": "Deltius 1", "Genuses": []})
         assert state.last_bio_body_id is None
+
+class TestOnSaaSignalsFoundSetsHasBiologicalSignals:
+    """ Regression: DSS is ground truth, but used to be the only signal source that never
+    wrote has_biological_signals -- FSSBodySignals doesn't fire at all for a zero-signal body,
+    so it stayed NULL forever and a stale pre-Scan genus guess kept showing (see panel.py). """
+
+    def test_empty_genuses_confirms_zero_even_if_never_set_before(self, store:ExplorerStore, state:ExplorerState) -> None:
+        assert state.cmdr_id is not None and state.system_id is not None
+        handlers_bodies.on_saa_signals_found(store, state, {"BodyID": 1, "BodyName": "Deltius 1", "Genuses": []})
+        body_pk:int = store.get_or_create_body(state.cmdr_id, state.system_id, 1, "Deltius 1")
+        body:sqlite3.Row|None = store.get_body(body_pk)
+        assert body is not None and body["has_biological_signals"] == 0
+
+    def test_nonempty_genuses_confirms_presence(self, store:ExplorerStore, state:ExplorerState) -> None:
+        assert state.cmdr_id is not None and state.system_id is not None
+        handlers_bodies.on_saa_signals_found(store, state, {
+            "BodyID": 1, "BodyName": "Deltius 1", "Genuses": [{"Genus_Localised": "Bacterium"}],
+        })
+        body_pk:int = store.get_or_create_body(state.cmdr_id, state.system_id, 1, "Deltius 1")
+        body:sqlite3.Row|None = store.get_body(body_pk)
+        assert body is not None and body["has_biological_signals"] == 1
 
 class TestEnterSystemClearsLastBioBody:
 

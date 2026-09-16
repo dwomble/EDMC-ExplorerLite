@@ -23,9 +23,8 @@ LINE_HEIGHT_PX:int = 20
 HEADER_LINE_HEIGHT_PX:int = 25 # "large" text needs more room than LINE_HEIGHT_PX
 CURRENT_BODY_INDENT_PX:int = 20 # matches panel's own indent treatment
 MAX_BODY_LINES:int = 6 # no scrolling on the overlay, unlike the panel
-MAX_CURRENT_BODY_LINES:int = 6
 
-TTL:int = 30 # longer than radar's TTL -- refreshes were too sparse
+TTL:int = 300
 OVERFLOW_COLOR:str = "#999999" # same grey as radar's rings, a subdued hint
 
 def _text_color() -> str:
@@ -54,7 +53,7 @@ class SystemSummaryOverlay:
         if self._group_defined or not self.overlay.is_modern:
             return
         self._group_defined = self.overlay.define_group(plugin_name=PLUGIN_GROUP, plugin_matching_prefixes=[FRAME_PREFIX],
-            plugin_group_name="ExplorerLite Summary", plugin_group_prefixes=[FRAME_PREFIX])
+                                                        plugin_group_name="ExplorerLite Summary", plugin_group_prefixes=[FRAME_PREFIX])
 
     def _clear_all(self) -> None:
         """ Clears every slot from the last render(). """
@@ -71,26 +70,31 @@ class SystemSummaryOverlay:
         self._last_had_overflow = False
         self._last_current_count = 0
 
-    def render(self, store:ExplorerStore, state:ExplorerState) -> None:
-        """ Shown for any known system, not gated to on-foot like the radar. """
+    def render_checks(self, state:ExplorerState) -> bool:
         if not self.overlay.available:
             self._log_skip("no overlay backend detected")
-            return
+            return False
 
         if not config.get_bool(CFG_PANEL_ENABLED, default=True):
             self._log_skip("panel hidden via the show/hide toggle")
             self._clear_all()
-            return
+            return False
 
         if not config.get_bool(CFG_OVERLAY_SUMMARY_ENABLED, default=True):
             self._log_skip("summary disabled in EDMC-ExplorerLite settings")
             self._clear_all()
-            return
+            return False
 
         if not state.overlay_relevant:
             self._log_skip("docked, on-foot in a station, or a UI panel has focus")
             self._clear_all()
-            return
+            return False
+
+        return True
+
+    def render(self, store:ExplorerStore, state:ExplorerState) -> None:
+        """ Shown for any known system, not gated to on-foot like the radar. """
+        if not self.render_checks(state): return
 
         if state.system_id is None:
             self._log_skip("no system known yet")
@@ -121,7 +125,7 @@ class SystemSummaryOverlay:
                 rows.append((body["body_id"], _format_body_line(row)))
 
         shown:list[tuple[int, str]] = rows[:MAX_BODY_LINES]
-        current_lines:list[str] = self._current_body_lines(store, state)[:MAX_CURRENT_BODY_LINES]
+        current_lines:list[str] = self._current_body_lines(store, state)
         current_shown:bool = False # nests under the focus body, matching the panel
         for i, (body_id, line) in enumerate(shown):
             self.overlay.send_text(f"{FRAME_PREFIX}body-{i}", line, color, ANCHOR_X, next_y, ttl=TTL)
@@ -192,8 +196,8 @@ def _format_body_line(row:tuple[str, str, str, str, str]) -> str:
 
 def _format_progress_line(row:tuple[str, str, str, str]) -> str:
     """ Formats an _exobio_progress_row() tuple. """
-    name, progress, distance, value_str = row
-    return f"{name}  {progress}  {distance}  {value_str}"
+    progress, name, distance, value_str = row
+    return f"{progress}  {name}  {distance}  {value_str}"
 
 def _format_predicted_line(row:tuple[str, str, str]) -> str:
     """ Formats a _predicted_genus_row() tuple. """

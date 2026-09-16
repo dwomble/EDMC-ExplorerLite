@@ -29,10 +29,7 @@ def _since_cutoff(range_label:str) -> str|None:
     days:int|None = TIME_RANGES.get(range_label)
     return (datetime.now(timezone.utc) - timedelta(days=days)).isoformat() if days is not None else None
 
-# (column, heading, anchor, width, stretch, sort_by) -- date sorts as plain text ("name"), not
-# TreeviewPlus's "datetime" helper, since _date_str's ISO YYYY-MM-DD format already sorts
-# chronologically as a string, and the helper's dateutil parse would crash on the blank dates
-# shown for rows with no recorded date.
+# (column, heading, anchor, width, stretch, sort_by)
 COLUMNS:tuple[tuple[str, str, Literal["w", "e"], int, bool, str|None], ...] = (
     ("status", "Status", "w", 80, False, None),
     ("date", "Date", "w", 90, False, "name"),
@@ -68,7 +65,7 @@ class HistoryView:
         if saved_geometry:
             self.window.geometry(saved_geometry)
 
-        content:tk.Frame = tk.Frame(self.window) # type: ignore[arg-type] -- a Toplevel is a valid Tk master even though th.Frame's hint says tk.Widget
+        content:tk.Frame = tk.Frame(self.window)
         content.pack(fill=tk.BOTH, expand=True)
 
         filter_row:tk.Frame = tk.Frame(content)

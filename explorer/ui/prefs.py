@@ -56,18 +56,15 @@ DANGER_COLOR:str = "#ee0000" # flags an irreversible action, e.g. Clear unsold d
 
 _pref_vars:dict[str, tk.Variable] = {}
 
-def _bold_font() -> tkfont.Font:
-    default:tkfont.Font = tkfont.nametofont("TkDefaultFont")
-    return tkfont.Font(family=default.actual("family"), size=default.actual("size"), weight="bold")
-
-def _pick_color(parent:tk.Widget, var:tk.StringVar, btn:tk.Button) -> None:
-    _, color = colorchooser.askcolor(var.get(), title="Overlay summary text colour", parent=parent)
-    if color:
-        var.set(color)
-        btn.configure(text="Foreground", foreground=color)
-
 def _place_pref(frame:nb.Frame, p:Pref, row:int, col:int, enabled:bool) -> None:
     """ col: 0 for the left half, 2 for the right half. """
+
+    def _pick_color(parent:tk.Widget, var:tk.StringVar, btn:tk.Button) -> None:
+        _, color = colorchooser.askcolor(var.get(), title="Overlay summary text colour", parent=parent)
+        if color:
+            var.set(color)
+            btn.configure(text="Foreground", foreground=color)
+
     state:str = tk.NORMAL if enabled else tk.DISABLED
     left_pad:int = GROUP_GAP_PX if col == 2 else 0
     pady:tuple[int, int] = (0, ROW_GAP_PX)
@@ -97,7 +94,7 @@ def _on_clear_unsold_data(parent:tk.Widget, cmdr:str, clear_unsold_data:Callable
         return
     confirmed:bool = messagebox.askyesno(
         "Clear unsold data",
-        "Mark all pending cartography and exobiology data as lost?\nThis can't be undone.",
+        "Mark all pending cartography and exobiology data as lost?\nThis cannot be undone.",
         parent=parent,
     )
     if not confirmed:
@@ -114,16 +111,15 @@ def _build_section(frame:nb.Frame, section_prefs:list[Pref], row:int, enabled:bo
 
     return row + 1 if col != 0 else row
 
-def build_prefs(
-    parent:tk.Widget, cmdr:str, is_beta:bool, overlay_available:bool = True, version:str = "0.0.0",
-    clear_unsold_data:Callable[[str], str]|None = None,
-) -> tk.Widget:
+def build_prefs(parent:tk.Widget, cmdr:str, is_beta:bool, overlay_available:bool = True, version:str = "0.0.0",
+                clear_unsold_data:Callable[[str], str]|None = None) -> tk.Widget:
     global _pref_vars
     _pref_vars = {}
 
     frame:nb.Frame = nb.Frame(parent)
     frame.columnconfigure(3, weight=1) # only the trailing column stretches -- keeps halves close
-    bold:tkfont.Font = _bold_font()
+    default:tkfont.Font = tkfont.nametofont("TkDefaultFont")
+    bold:tkfont.Font = tkfont.Font(family=default.actual("family"), size=default.actual("size"), weight="bold")
 
     row:int = 0; col:int = 0
     nb.Label(frame, text=f"{PLUGIN_NAME} v{version}", font=bold).grid(row=row, column=0, columnspan=3, sticky=tk.W)

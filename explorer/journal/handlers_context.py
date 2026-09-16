@@ -5,6 +5,7 @@ body/exobiology-specific handlers know what they're looking at.
 from explorer.db.store import ExplorerStore
 from explorer.state import ExplorerState
 from explorer import session_persist
+from explorer.util import split_localised_color
 
 def _persist(state:ExplorerState) -> None:
     session_persist.save(state.cmdr, state.system_address, state.system_name, state.body_id, state.body_name)
@@ -14,14 +15,13 @@ def _restore_sample_positions(store:ExplorerStore, state:ExplorerState) -> None:
     if state.cmdr_id is None or state.system_id is None or state.body_id is None:
         return
     body_pk:int = store.get_or_create_body(state.cmdr_id, state.system_id, state.body_id, state.body_name)
+    variants:dict[str, str] = {row["genus"]: row["variant"] or "" for row in store.get_species_progress_for_body(body_pk)}
     for row in store.get_sample_positions_for_body(body_pk):
-        state.sample_positions.setdefault(row["genus"], []).append((row["latitude"], row["longitude"], None))
+        _, color_name = split_localised_color(variants.get(row["genus"], ""))
+        state.sample_positions.setdefault(row["genus"], []).append((row["latitude"], row["longitude"], color_name, False))
         state.current_genus = row["genus"] # last row wins, insertion-ordered
 
 def restore_last_session(store:ExplorerStore, state:ExplorerState) -> None:
-    """ Called once at plugin startup, before any journal event arrives, so the panel doesn't
-    sit at "Explorer -- idle" until the next live event. enter_system()'s cold-start check
-    corrects anything actually different once a real Location/FSDJump arrives. """
     saved:dict|None = session_persist.load()
     if not saved:
         return
@@ -38,6 +38,7 @@ def restore_last_session(store:ExplorerStore, state:ExplorerState) -> None:
     state.body_id = saved.get("body_id")
     state.body_name = saved.get("body_name") or ""
     state.restored_at_startup = True
+    _restore_sample_positions(store, state) # else the radar starts blank until the next jump
 
 def on_load_game(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict:
     state.reset_body()
@@ -49,10 +50,7 @@ def on_continued(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict:
     return {}
 
 def enter_system(store:ExplorerStore, state:ExplorerState, edmc_state:dict) -> dict:
-    """ Called by dispatch() for Location/FSDJump/CarrierJump -- reads SystemAddress/SystemName
-    from EDMC's own state dict rather than re-parsing the journal entry. On a cold start (no
-    system_id yet, or restore_last_session() pre-populated one), resumes the last known body
-    if it's the same Cmdr/system rather than going blank until the next event. """
+    """ Called by dispatch() for Location/FSDJump/CarrierJump, on start resumes the last known body """
     system_address:int|None = edmc_state.get("SystemAddress")
     if system_address is None:
         return {}

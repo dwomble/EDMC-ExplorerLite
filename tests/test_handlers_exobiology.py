@@ -79,7 +79,7 @@ class TestOnScanOrganic:
         state.latitude = 10.0
         state.longitude = 20.0
         state.planet_radius = 500_000.0
-        state.sample_positions["Bacterium"] = [(10.0001, 20.0, "Lime")] # ~0.87m away -- well within 500m
+        state.sample_positions["Bacterium"] = [(10.0001, 20.0, "Lime", True)] # ~0.87m away -- well within 500m
 
         handlers_exobiology.on_scan_organic(store, state, {
             "event": "ScanOrganic", "ScanType": "Log", "Body": 1, "Genus_Localised": "Bacterium",
@@ -87,7 +87,7 @@ class TestOnScanOrganic:
 
         positions = state.sample_positions["Bacterium"]
         assert len(positions) == 1 # the tag is gone -- only the new real sample remains
-        assert positions[0] == (10.0, 20.0, None)
+        assert positions[0] == (10.0, 20.0, None, False)
 
     def test_persists_the_sample_position_to_the_db(self, store:ExplorerStore) -> None:
         """ Survives an EDMC restart, unlike state.py alone. """
@@ -193,7 +193,7 @@ class TestOnScanOrganic:
         state.latitude = 10.0
         state.longitude = 20.0
         state.planet_radius = 500_000.0
-        state.sample_positions["Bacterium"] = [(10.1, 20.0, "Lime")] # ~873m away -- past Bacterium's 500m
+        state.sample_positions["Bacterium"] = [(10.1, 20.0, "Lime", True)] # ~873m away -- past Bacterium's 500m
 
         handlers_exobiology.on_scan_organic(store, state, {
             "event": "ScanOrganic", "ScanType": "Log", "Body": 1, "Genus_Localised": "Bacterium",
@@ -201,7 +201,7 @@ class TestOnScanOrganic:
 
         positions = state.sample_positions["Bacterium"]
         assert len(positions) == 2 # both the tag and the new real sample remain
-        assert (10.1, 20.0, "Lime") in positions
+        assert (10.1, 20.0, "Lime", True) in positions
 
 class TestOnSellOrganicData:
 
@@ -280,7 +280,7 @@ class TestOnCodexEntry:
         state = self._state(store)
         handlers_exobiology.on_codex_entry(store, state, self._entry("Tussock Propagito - Lime"))
 
-        assert state.sample_positions["Tussock"] == [(-13.856755, -116.384651, "Lime")]
+        assert state.sample_positions["Tussock"] == [(-13.856755, -116.384651, "Lime", True)]
 
     def test_creates_a_species_progress_row_even_without_prior_saa_signals_found(self, store:ExplorerStore) -> None:
         """ A low-altitude composition scan can happen before (or instead of) a DSS pass, so the
@@ -319,7 +319,7 @@ class TestOnCodexEntry:
         handlers_exobiology.on_codex_entry(store, state, self._entry("Tussock Propagito - Lime", lat=1.0, lon=2.0))
         handlers_exobiology.on_codex_entry(store, state, self._entry("Tussock Propagito - Lime", lat=3.0, lon=4.0))
 
-        assert state.sample_positions["Tussock"] == [(1.0, 2.0, "Lime"), (3.0, 4.0, "Lime")]
+        assert state.sample_positions["Tussock"] == [(1.0, 2.0, "Lime", True), (3.0, 4.0, "Lime", True)]
 
     def test_confirms_the_exact_species_and_value(self, store:ExplorerStore) -> None:
         """ Name_Localised gives the exact species, not just genus -- CodexEntry should confirm
@@ -351,11 +351,11 @@ class TestOnCodexEntry:
         distance is 200m. Species/value confirmation still happens regardless. """
         state = self._state(store)
         state.planet_radius = 500_000.0
-        state.sample_positions["Tussock"] = [(-13.856755, -116.384651, None)] # a real sample already taken here
+        state.sample_positions["Tussock"] = [(-13.856755, -116.384651, None, False)] # a real sample already taken here
 
         handlers_exobiology.on_codex_entry(store, state, self._entry("Tussock Propagito - Lime", lat=-13.856655, lon=-116.384651)) # ~0.87m away
 
-        assert state.sample_positions["Tussock"] == [(-13.856755, -116.384651, None)] # no waypoint added
+        assert state.sample_positions["Tussock"] == [(-13.856755, -116.384651, None, False)] # no waypoint added
 
         assert state.cmdr_id is not None and state.system_id is not None
         body_pk:int = store.get_or_create_body(state.cmdr_id, state.system_id, 2, "")
@@ -367,9 +367,9 @@ class TestOnCodexEntry:
     def test_adds_the_waypoint_when_far_enough_from_an_existing_real_sample(self, store:ExplorerStore) -> None:
         state = self._state(store)
         state.planet_radius = 500_000.0
-        state.sample_positions["Tussock"] = [(-13.856755, -116.384651, None)] # a real sample already taken here
+        state.sample_positions["Tussock"] = [(-13.856755, -116.384651, None, False)] # a real sample already taken here
 
         handlers_exobiology.on_codex_entry(store, state, self._entry("Tussock Propagito - Lime", lat=-13.826755, lon=-116.384651)) # ~262m away
 
         assert len(state.sample_positions["Tussock"]) == 2
-        assert (-13.826755, -116.384651, "Lime") in state.sample_positions["Tussock"]
+        assert (-13.826755, -116.384651, "Lime", True) in state.sample_positions["Tussock"]

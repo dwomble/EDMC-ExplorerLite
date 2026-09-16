@@ -80,19 +80,27 @@ class ExplorerStore:
         return {row["event_type"]: row["total"] for row in rows}
 
     def get_pending_cartography_value(self, cmdr_id:int) -> int:
-        """ Scan + mapping value (each bonus-adjusted for known discovery/mapped eligibility) of
-        bodies whose system isn't sold/lost yet -- an approximation, distinct from
-        actual_cartography_credits (ground truth from real sales). """
+        """ Higher of scan/mapping value (each bonus-adjusted for known discovery/mapped
+        eligibility) of bodies whose system isn't sold/lost yet -- an approximation, distinct
+        from actual_cartography_credits (ground truth from real sales). Mapping value only
+        counts once mapped_at is set (we actually ran a DSS) -- estimated_mapping_value is a
+        "would be worth it" ceiling populated at Scan time regardless, and was_mapped means
+        someone (anyone) mapped it before us, not that we did -- same rule as the panel's own
+        per-body display (see _flagged_body_row). """
         rows:list[sqlite3.Row] = self.conn.execute(
-            """SELECT estimated_scan_value, estimated_mapping_value, was_discovered, was_mapped FROM bodies
+            """SELECT estimated_scan_value, estimated_mapping_value, was_discovered, was_mapped, mapped_at FROM bodies
                JOIN systems ON systems.id = bodies.system_id
                WHERE bodies.cmdr_id = ? AND systems.sold_at IS NULL AND systems.lost_at IS NULL""",
             (cmdr_id,),
         ).fetchall()
         total:int = 0
         for row in rows:
-            total += cartography.scan_value_with_bonus(row["estimated_scan_value"] or 0, bool(row["was_discovered"]))
-            total += cartography.mapping_value_for_eligibility(row["estimated_mapping_value"] or 0, bool(row["was_mapped"]))
+            scan_full:int = cartography.scan_value_with_bonus(row["estimated_scan_value"] or 0, bool(row["was_discovered"]))
+            if not row["mapped_at"]:
+                total += scan_full
+                continue
+            mapping_full:int = cartography.mapping_value_for_eligibility(row["estimated_mapping_value"] or 0, bool(row["was_mapped"]))
+            total += max(scan_full, mapping_full)
         return total
 
     def get_pending_exobiology_value(self, cmdr_id:int) -> int:

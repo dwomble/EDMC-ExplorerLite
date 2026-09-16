@@ -8,12 +8,13 @@ import tkinter.font as tkfont
 from theme import theme # type: ignore
 from config import config # type: ignore
 
+from ..tkrichtext import RichText as _RichText, RichScrolledText as _RichScrolledText
 from .autocompleter import Autocompleter
 from .placeholder import Placeholder, PlaceholderMixin
 from .tooltip import Tooltip
 
-__all__ = ["TopLevel", "Frame", "LabelFrame", "Label", "Button", "Radiobutton", "ComboBox", "Listbox", "Checkbutton", "Scale", "Spinbox",
-           "ScrollableFrame", "Tooltip", "Autocompleter", "Placeholder", "resolve"]
+__all__ = ["TopLevel", "Frame", "LabelFrame", "Label", "Text", "RichText", "RichScrolledText", "Button", "Radiobutton", "ComboBox",
+           "Listbox", "Checkbutton", "Scale", "Spinbox", "ScrollableFrame", "Tooltip", "Autocompleter", "Placeholder", "resolve"]
 
 DEBUG_FRAMES:bool = False # Turn this on to color each frame for debugging
 index:int = 0
@@ -21,6 +22,14 @@ index:int = 0
 def _strip_name(kw:dict) -> dict:
     """ Strip an explicit Tk 'name' from kwargs meant for a themed widget's second (alt) half. """
     return {k: v for k, v in kw.items() if k != 'name'}
+
+def _match_label_defaults(kw:dict) -> None:
+    """ Matches th.Label's own defaults, or register() sees a raw
+    tk.Text as pre-customized and blocks theme switches. """
+    kw.setdefault('foreground', tk.Label()['foreground'])
+    kw.setdefault('background', tk.Label()['background'])
+    kw.setdefault('font', tk.Label()['font'])
+    kw.setdefault('insertbackground', kw['foreground']) # caret stays visible against a dark background too
 
 def resolve(widget:Any) -> Any:
     """ Resolve the actual base object for a tk nametowidget() lookup. """
@@ -33,6 +42,7 @@ class Base:
         object.__setattr__(self, 'images', [])
         object.__setattr__(self, 'obj', obj)
         object.__setattr__(self, 'alt', alt)
+        object.__setattr__(self, '_last_gridopts', None)
 
         # Back-reference so th.resolve() can recover this wrapper from a nametowidget() lookup.
         setattr(obj, 'themed', self)
@@ -44,7 +54,15 @@ class Base:
             theme.register(alt)
 
     def grid(self, *args, **kw) -> Any:
-        """ theme.register_alternate() needs grid options, so we intercept grid() calls to register them. """
+        """ theme.register_alternate() needs grid options, so we intercept grid() calls to register them.
+
+        EDMC's theme.register_alternate() only ever appends -- it never dedupes or replaces an
+        existing entry for the same widget pair. Every repeated .grid() call with the same
+        options (e.g. a hide/show toggle re-gridding with unchanged row/column) would otherwise
+        leak another permanent duplicate into EDMC's own widgets_pair list, which its theme.apply()
+        re-processes (grid_remove() + re-grid()) on every future theme refresh -- unbounded,
+        wasteful churn on the same widgets for the rest of the session. Only register when the
+        options actually changed since last time. """
         if self.alt is None:
             return self.obj.grid(*args, **kw)
 
@@ -55,10 +73,16 @@ class Base:
         if len(kw) > 0:
             gridopts.update(kw)
 
-        if len(gridopts) > 0:
+        if len(gridopts) > 0 and gridopts != self._last_gridopts:
             theme.register_alternate((self.obj, self.alt, self.alt), gridopts)
+            object.__setattr__(self, '_last_gridopts', gridopts)
 
-        return self.alt.grid(*args, **kw) if config.get_bool('dark_mode') else self.obj.grid(*args, **kw)
+        # 'theme' (0=default, 1=dark, 2=transparent), not 'dark_mode' -- real EDMC's own
+        # theme.py has no 'dark_mode' config key at all, so that check always picked obj (light)
+        # here regardless of theme, until EDMC's own later theme.apply() pass corrected it via
+        # the widgets_pair registered above. A hide+reshow re-runs this before any apply() call
+        # follows, so the wrong (light) widget stuck around instead of getting corrected again.
+        return self.alt.grid(*args, **kw) if config.get_int('theme') != 0 else self.obj.grid(*args, **kw)
 
     def configure(self, cnf=None, **kw) -> None:
         """ Override configure to handle themed buttons. """
@@ -166,6 +190,48 @@ class Label(tk.Label):
         tk.Label.__init__(self, master, **kw)
         theme.update(self)
 
+class Text(tk.Text):
+    """ A themed text box that can switch between light and dark mode. """
+    def __init__(self, master:tk.Widget, **kw) -> None:
+        _match_label_defaults(kw)
+        tk.Text.__init__(self, master, **kw)
+        theme.update(self)
+
+class _RichBgSync:
+    """ Re-renders set_html() output on bg change -- tags bake in the old bg otherwise. """
+    _last_html:str|None = None
+
+    def set_html(self, html:str, strip:bool = True) -> None:
+        self._last_html = html
+        super().set_html(html, strip=strip) # type: ignore
+
+    def configure(self, cnf=None, **kw) -> Any:
+        result = super().configure(cnf, **kw) # type: ignore
+        changed_bg:bool = (isinstance(cnf, dict) and 'background' in cnf) or 'background' in kw
+        if changed_bg and self._last_html is not None:
+            self.set_html(self._last_html)
+        return result
+
+class RichScrolledText(_RichBgSync, _RichScrolledText):
+    """ A themed, scrollable HTML/markdown text box. """
+    def __init__(self, master:tk.Widget, **kw) -> None:
+        _match_label_defaults(kw)
+        _RichScrolledText.__init__(self, master, **kw)
+        # .frame is a bare tk.Frame; nothing else themes it, so
+        # it'd show through as an unthemed border around the Text.
+        self.frame.configure(background=kw['background'])
+        theme.register(self.frame)
+        theme.update(self)
+
+class RichText(_RichBgSync, _RichText):
+    """ RichScrolledText, minus its (always-hidden) scrollbar. """
+    def __init__(self, master:tk.Widget, **kw) -> None:
+        _match_label_defaults(kw)
+        _RichText.__init__(self, master, **kw)
+        self.frame.configure(background=kw['background'])
+        theme.register(self.frame)
+        theme.update(self)
+
 class Button(Base):
     """ A themed button that can switch between light and dark mode. """
     def __init__(self, master:tk.Widget, **kw) -> None:
@@ -195,19 +261,6 @@ class Button(Base):
             if isinstance(w, tk.Button):
                 px:int = tkfont.Font(font=w.cget('font')).measure('0' * self._char_width)
                 w.configure(width=px)
-
-    def grid(self, *args, **kw) -> Any:
-        """ Override grid to handle themed buttons. """
-        gridopts:dict = {}
-
-        if len(args) > 0 and isinstance(args[0], dict):
-            gridopts.update(args[0])
-        if len(kw) > 0:
-            gridopts.update(kw)
-
-        theme.register_alternate((self.obj, self.alt, self.alt), gridopts)
-
-        return self.alt.grid(*args, **kw) if config.get_bool('dark_mode') else self.obj.grid(*args, **kw)
 
 class Radiobutton(Base):
     """ A themed radiobutton that can switch between light and dark mode. """
@@ -277,10 +330,8 @@ class Listbox(Base):
     def __init__(self, master:tk.Widget, items:list, **kw) -> None:
         # @TODO: Switch the plain mode for a treeview?
         rows:int = min(len(items), 10)
-        if 'selectmode' not in kw:
-            kw['selectmode'] = tk.MULTIPLE
-        if 'exportselection' not in kw:
-            kw['exportselection'] = False
+        kw.setdefault('selectmode', tk.MULTIPLE)
+        kw.setdefault('exportselection', False)
 
         lb1:tk.Listbox = tk.Listbox(master, height=rows, **kw)
         lb1.configure(border=0, borderwidth=0, activestyle=tk.NONE, highlightthickness=0)

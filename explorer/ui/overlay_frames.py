@@ -21,9 +21,22 @@ PLUGIN_GROUP:str = "EDMC-ExplorerLite"
 
 CENTER_X:int = 640
 CENTER_Y:int = 480
-RING_SEGMENTS:int = 48 # higher = a rounder-looking circle -- the overlay draws straight segments, no arcs
+RING_THICKNESS_PX:int = 1 # legacy-canvas border width for a native circle ring/dot
+DOT_RADIUS_PX:int = 3 # native-circle player marker radius
+RING_DOT_SPACING_PX:float = 20.0 # fallback only: target on-screen gap between adjacent dots
+RING_DOT_MIN:int = 12
+RING_DOT_MAX:int = 40
+# A vect shape (any polygon) is outline-only -- the renderer never fills one. Text glyphs are
+# the one primitive that's genuinely filled, so a fallback dot is a bullet character.
+DOT_GLYPH:str = "•" # bullet
+DOT_GLYPH_SIZE:str = "normal" # one of small/normal/large/huge -- no arbitrary pixel size
+# send_text's x/y is the text block's top-left, not its center -- these nudge the glyph to
+# roughly center on its target point. Guessed, not measured -- tune visually in-game.
+DOT_GLYPH_OFFSET_X:int = -3
+DOT_GLYPH_OFFSET_Y:int = -6
 TTL:int = 8 # generous vs. the ~1/sec dashboard-tick refresh cadence, so a missed/delayed tick doesn't visibly blank the radar
 TAG_TRIANGLE_SIZE_PX:int = 5 # vertex-to-center radius for a codex-tagged waypoint's triangle marker
+INVISIBLE:str = "#00000000" # fully transparent ARGB -- see _pin_bounds
 
 # Disabled: ring/label for a tagged-but-unapproached genus (kept for possible future use).
 SHOW_TAGGED_GENUS:bool = False
@@ -55,24 +68,28 @@ def _radius() -> int:
 RING_COLOR:str = "#999999" # neutral grey -- distinct from every CODEX_TAG_COLORS entry below, so it never reads as a species color
 ACTIVE_RING_COLOR:str = "#ffaa00" # the current species being sampled this visit
 TAGGED_RING_COLOR:str = "#cc66ff" # a genus confirmed but not yet approached this visit -- see SHOW_TAGGED_GENUS
-SAMPLE_COLOR:str = "#00aaff" # a real ScanOrganic sample -- never reused below, so a codex-tagged dot is never mistaken for one
+SAMPLE_COLOR:str = "#00aaff" # fallback for a real sample with no recognized variant color
 PLAYER_COLOR:str = "#ffffff"
 LABEL_COLOR:str = "#ffffff"
 
-# Odyssey exobiology variant color names (cross-checked against EDMC-BioScan's name list, not
-# its hex values/code) -- a codex tag draws as a hollow triangle in this color, see _draw_samples.
+# Odyssey exobiology variant color names
 CODEX_TAG_COLORS:dict[str, str] = {
     "Amethyst": "#9966cc", "Aquamarine": "#7fffd4", "Blue": "#3366ff", "Cobalt": "#3355aa",
     "Cyan": "#00e5e5", "Emerald": "#2ecc71", "Gold": "#ffd700", "Green": "#33aa33",
-    "Grey": "#aaaaaa", "Indigo": "#6633cc", "Lime": "#bfff00", "Magenta": "#ff33ff",
+    "Grey": "#aaaaaa", "Indigo": "#8758e6", "Lime": "#bfff00", "Magenta": "#ff33ff",
     "Maroon": "#aa3344", "Mauve": "#aa77aa", "Mulberry": "#993366", "Ocher": "#bb9933",
     "Orange": "#ff8822", "Peach": "#ffaa88", "Red": "#ee3333", "Sage": "#889977",
     "Teal": "#118877", "Turquoise": "#33cccc", "White": "#eeeeee", "Yellow": "#eedd22",
 }
-DEFAULT_TAG_COLOR:str = "#ff66aa" # an unrecognized color name -- still distinct from SAMPLE_COLOR
+DEFAULT_TAG_COLOR:str = "#ff66aa"
 
 def _tag_color(color_name:str|None) -> str:
     return CODEX_TAG_COLORS.get(color_name, DEFAULT_TAG_COLOR) if color_name else DEFAULT_TAG_COLOR
+
+def _sample_color(color_name:str|None) -> str:
+    """ Same lookup as _tag_color(), but falls back to
+    SAMPLE_COLOR rather than DEFAULT_TAG_COLOR. """
+    return CODEX_TAG_COLORS.get(color_name, SAMPLE_COLOR) if color_name else SAMPLE_COLOR
 
 def _triangle_points(cx:float, cy:float, r:float) -> list[dict]:
     """ Equilateral triangle, point-up, vertices r px from center. """
@@ -83,15 +100,23 @@ def _triangle_points(cx:float, cy:float, r:float) -> list[dict]:
 def _genus_label(genus:str) -> str:
     return exobiology_data.genus_code(genus)
 
-def _circle_points(cx:float, cy:float, r:float) -> list[dict]:
+def _ring_dot_count(r:float) -> int:
+    """ Scales with circumference """
+    if r <= 0:
+        return 0
+    raw:int = round(2 * math.pi * r / RING_DOT_SPACING_PX)
+    return max(RING_DOT_MIN, min(RING_DOT_MAX, raw))
+
+def _ring_dot_positions(cx:float, cy:float, r:float) -> list[tuple[float, float]]:
+    """ Dot 0 sits at angle 0 (due "east" in screen space), matching the old polyline's start. """
+    count:int = _ring_dot_count(r)
     return [
-        {"x": round(cx + r * math.cos(2 * math.pi * i / RING_SEGMENTS)), "y": round(cy + r * math.sin(2 * math.pi * i / RING_SEGMENTS))}
-        for i in range(RING_SEGMENTS + 1)
+        (cx + r * math.cos(2 * math.pi * i / count), cy + r * math.sin(2 * math.pi * i / count))
+        for i in range(count)
     ]
 
 def _rotate_to_heading(east:float, north:float, heading:float) -> tuple[float, float]:
-    """ Rotate a world-space (east, north) offset into a heading-up screen frame, where the
-    player's current facing direction maps to "forward" (screen up) instead of true north. """
+    """ Rotate a world-space (east, north) offset into a heading-up screen frame """
     sin_h, cos_h = math.sin(heading), math.cos(heading)
     forward:float = east * sin_h + north * cos_h
     right:float = east * cos_h - north * sin_h
@@ -105,24 +130,19 @@ class RadarOverlay:
         self._last_skip_reason:str|None = None # dedupe diagnostic logging -- log only on change
 
     def _log_skip(self, reason:str|None) -> None:
-        """ Logs at INFO (no dev-mode needed) only when the reason changes, to avoid
-        spamming on every ~1/sec dashboard tick while on-foot. """
+        """ Avoid spamming duplicates """
         if reason != self._last_skip_reason:
             self._last_skip_reason = reason
             if reason:
                 Debug.logger.info(f"Radar overlay not drawing: {reason}")
 
     def _ensure_group(self) -> None:
-        """ Kwargs confirmed against EDMCModernOverlay's real overlay_api.py source. """
         if self._group_defined or not self.overlay.is_modern:
             return
         self._group_defined = self.overlay.define_group(plugin_name=PLUGIN_GROUP, plugin_matching_prefixes=[FRAME_PREFIX],
             plugin_group_name="ExplorerLite Radar", plugin_group_prefixes=[FRAME_PREFIX])
 
     def render(self, store:ExplorerStore, state:ExplorerState) -> None:
-        """ Shown as soon as a body is in view (SupercruiseExit onward, same as the panel's own
-        exobiology section) -- not gated behind landed/on-foot, so it's already up guiding you
-        in before you commit to landing, not just once you're already down. """
         if not self.overlay.available:
             self._log_skip("no overlay backend detected")
             return
@@ -166,6 +186,7 @@ class RadarOverlay:
 
         radius_px:int = _radius()
         heading_rad:float = math.radians(state.heading) if state.heading is not None else 0.0
+        self._pin_bounds(radius_px)
         self._draw_distance_rings(radius_px)
 
         for genus in genera:
@@ -192,17 +213,34 @@ class RadarOverlay:
         """ Best pre-DSS guess (highest confidence, already the query's own ordering). """
         return predictions[0]["genus"] if predictions else None
 
+    def _draw_ring(self, frame_id:str, r:float, color:str) -> None:
+        """ A native circle when the overlay supports it (one message, perfectly round
+        regardless of size) -- else the dot-glyph fallback (see module docstring). """
+        if r <= 0:
+            return
+        if self.overlay.supports_circle:
+            self.overlay.send_circle(frame_id, color, "none", CENTER_X, CENTER_Y, round(r), RING_THICKNESS_PX, ttl=TTL)
+            return
+        for i, (x, y) in enumerate(_ring_dot_positions(CENTER_X, CENTER_Y, r)):
+            self.overlay.send_text(f"{frame_id}-{i}", DOT_GLYPH, color,
+                                   round(x) + DOT_GLYPH_OFFSET_X, round(y) + DOT_GLYPH_OFFSET_Y, ttl=TTL, size=DOT_GLYPH_SIZE)
+
+    def _pin_bounds(self, radius_px:int) -> None:
+        """ Two invisible markers spanning the radar's full possible extent, sent every ticks or update, to prevent the whole radar from visibly drifting as that set changes. """
+        self.overlay.send_text(f"{FRAME_PREFIX}pin-nw", " ", INVISIBLE, CENTER_X - radius_px, CENTER_Y - radius_px, ttl=TTL)
+        self.overlay.send_text(f"{FRAME_PREFIX}pin-se", " ", INVISIBLE, CENTER_X + radius_px, CENTER_Y + radius_px, ttl=TTL)
+
     def _draw_distance_rings(self, radius_px:int) -> None:
         for distance_m in RING_DISTANCES_M:
             r:float = radius_px * _radius_frac(distance_m) * RING_AREA_FRAC
-            self.overlay.send_vect(f"{FRAME_PREFIX}ring-{distance_m}", _circle_points(CENTER_X, CENTER_Y, r), RING_COLOR, ttl=TTL)
+            self._draw_ring(f"{FRAME_PREFIX}ring-{distance_m}", r, RING_COLOR)
 
     def _draw_genus_ring(self, radius_px:int, genus:str, color:str) -> None:
         min_dist:int|None = exobiology_data.genus_min_distance(genus)
         if not min_dist or min_dist > DISPLAY_RANGE_M:
             return
         r:float = radius_px * _radius_frac(min_dist) * RING_AREA_FRAC
-        self.overlay.send_vect(f"{FRAME_PREFIX}ring-active-{genus}", _circle_points(CENTER_X, CENTER_Y, r), color, ttl=TTL)
+        self._draw_ring(f"{FRAME_PREFIX}ring-active-{genus}", r, color)
 
     def _draw_genus_label(self, radius_px:int, genus:str) -> None:
         """ Only called when SHOW_TAGGED_GENUS is on. """
@@ -210,19 +248,27 @@ class RadarOverlay:
         if not min_dist or min_dist > DISPLAY_RANGE_M:
             return
         r:float = radius_px * _radius_frac(min_dist) * RING_AREA_FRAC
-        self.overlay.send_text(f"{FRAME_PREFIX}label-{genus}", _genus_label(genus), LABEL_COLOR, CENTER_X - 10, round(CENTER_Y - r - 14), ttl=TTL)
+        self.overlay.send_text(f"{FRAME_PREFIX}label-{genus}", _genus_label(genus), LABEL_COLOR, CENTER_X - 10,
+                               round(CENTER_Y - r - 14), ttl=TTL)
 
     def _draw_player(self) -> None:
-        self.overlay.send_shape(f"{FRAME_PREFIX}player", "rect", PLAYER_COLOR, PLAYER_COLOR, CENTER_X - 3, CENTER_Y - 3, 6, 6, ttl=TTL)
+        frame_id:str = f"{FRAME_PREFIX}player"
+        if self.overlay.supports_circle:
+            self.overlay.send_circle(frame_id, PLAYER_COLOR, PLAYER_COLOR, CENTER_X, CENTER_Y, DOT_RADIUS_PX, RING_THICKNESS_PX, ttl=TTL)
+            return
+        self.overlay.send_text(
+            frame_id, DOT_GLYPH, PLAYER_COLOR,
+            CENTER_X + DOT_GLYPH_OFFSET_X, CENTER_Y + DOT_GLYPH_OFFSET_Y, ttl=TTL, size=DOT_GLYPH_SIZE,
+        )
 
     def _draw_samples(self, state:ExplorerState, genus:str, radius_px:int, heading:float) -> None:
         """ Bearing (unit direction) and pixel radius (non-linear) computed separately, then combined. """
 
-        positions:list[tuple[float, float, str|None]] = state.sample_positions.get(genus, [])
+        positions:list[tuple[float, float, str|None, bool]] = state.sample_positions.get(genus, [])
         if not positions or state.planet_radius is None or state.latitude is None or state.longitude is None:
             return
 
-        for i, (lat, lon, color_name) in enumerate(positions):
+        for i, (lat, lon, color_name, is_tag) in enumerate(positions):
             east, north = local_offset_m(state.latitude, state.longitude, lat, lon, state.planet_radius)
             dist:float = math.hypot(east, north)
             in_range:bool = dist <= DISPLAY_RANGE_M
@@ -234,10 +280,11 @@ class RadarOverlay:
             sy:float = CENTER_Y - forward * pixel_r
 
             frame_id:str = f"{FRAME_PREFIX}sample-{genus}-{i}"
-            if color_name is None:
-                # a real sample -- filled/hollow square in the fixed sample color
-                fill:str = SAMPLE_COLOR if in_range else "" # hollow once out of range -- position is only a bearing now, not exact
-                self.overlay.send_shape(frame_id, "rect", SAMPLE_COLOR, fill, round(sx) - 3, round(sy) - 3, 6, 6, ttl=TTL)
+            if not is_tag:
+                # a real sample -- square, its variant color
+                border:str = _sample_color(color_name)
+                fill:str = border if in_range else "" # hollow once out of range -- position is only a bearing now, not exact
+                self.overlay.send_shape(frame_id, "rect", border, fill, round(sx) - 3, round(sy) - 3, 6, 6, ttl=TTL)
                 continue
 
             # a codex-tagged waypoint -- always-hollow triangle, distinct shape from a real sample

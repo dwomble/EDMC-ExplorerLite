@@ -8,7 +8,7 @@ import sqlite3
 
 from explorer.db.store import ExplorerStore
 from explorer.state import ExplorerState
-from explorer.util import now_iso, surface_distance_m
+from explorer.util import now_iso, surface_distance_m, split_localised_color
 from explorer.valuation import exobiology, exobiology_data
 
 # Confirmed against real journal lines: Log -> Sample -> Sample -> Analyse. Only Log/Sample
@@ -18,10 +18,7 @@ SAMPLE_SCAN_TYPES = ("Log", "Sample")
 CODEX_ORGANIC_SUBCATEGORY = "$Codex_SubCategory_Organic_Structures;"
 
 def _discard_tags_within_min_distance(state:ExplorerState, genus:str, lat:float, lon:float) -> None:
-    """ A real sample invalidates any existing codex-tagged waypoint for the same genus that's
-    now within the genus's minimum sample distance -- ED requires same-genus samples to be
-    spaced at least that far apart, so a tag that close can no longer yield a valid additional
-    sample. Leaving it on the radar would send you somewhere pointless. """
+    """ A real sample invalidates any existing tagged waypoints """
     if state.planet_radius is None:
         return
     min_dist:int|None = exobiology_data.genus_min_distance(genus)
@@ -32,20 +29,18 @@ def _discard_tags_within_min_distance(state:ExplorerState, genus:str, lat:float,
         return
     state.sample_positions[genus] = [
         p for p in positions
-        if p[2] is None or surface_distance_m(lat, lon, p[0], p[1], state.planet_radius) >= min_dist
+        if not p[3] or surface_distance_m(lat, lon, p[0], p[1], state.planet_radius) >= min_dist
     ]
 
 def _too_close_to_existing_sample(state:ExplorerState, genus:str, lat:float, lon:float) -> bool:
-    """ Mirror check for a brand-new tag: don't add a waypoint that's already within the
-    genus's minimum sample distance of a real sample already taken -- it would be unusable
-    from the moment it appeared. """
+    """ Don't add a waypoint that's already within the genus's minimum sample distance of a real sample already taken """
     if state.planet_radius is None:
         return False
     min_dist:int|None = exobiology_data.genus_min_distance(genus)
     if min_dist is None:
         return False
     return any(
-        p[2] is None and surface_distance_m(lat, lon, p[0], p[1], state.planet_radius) < min_dist
+        not p[3] and surface_distance_m(lat, lon, p[0], p[1], state.planet_radius) < min_dist
         for p in state.sample_positions.get(genus, [])
     )
 
@@ -83,12 +78,11 @@ def on_scan_organic(store:ExplorerStore, state:ExplorerState, entry:dict) -> dic
         if not row or not row["first_sample_at"]:
             fields["first_sample_at"] = now
 
-        # ScanOrganic itself carries no position -- capture the dashboard's latest lat/long as
-        # this sample's position (for the overlay radar's per-sample markers, session-only,
-        # see state.py). Only for real samples, not the Analyse finalize step.
+        # ScanOrganic itself carries no position so capture the dashboard's latest lat/long
         state.current_genus = genus # the radar's one active ring belongs to whichever genus you're actually sampling
         if state.has_lat_long and state.latitude is not None and state.longitude is not None:
-            state.sample_positions.setdefault(genus, []).append((state.latitude, state.longitude, None)) # None -- a real sample, not a color-coded tag
+            _, color_name = split_localised_color(variant) # radar square matches the species' own variant color
+            state.sample_positions.setdefault(genus, []).append((state.latitude, state.longitude, color_name, False))
             store.add_sample_position(body_pk, genus, state.latitude, state.longitude) # survives an EDMC restart, unlike state.py alone
             _discard_tags_within_min_distance(state, genus, state.latitude, state.longitude)
     elif scan_type == "Analyse" and (not row or not row["completed_at"]):
@@ -102,10 +96,7 @@ def on_scan_organic(store:ExplorerStore, state:ExplorerState, entry:dict) -> dic
     return {"panel": True, "overlay": "radar"}
 
 def on_codex_entry(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict:
-    """ Tags a waypoint for a spotted-but-not-yet-sampled species -- exact Latitude/Longitude,
-    unlike SAASignalsFound's aggregate genus+count. Confirms species/value early, since
-    Name_Localised gives the exact species. Reuses sample_positions (radar-only, not
-    samples_taken/completion) so it's never mistaken for a real sample. """
+    """ Tags a waypoint for a spotted-but-not-yet-sampled species """
     if entry.get("SubCategory") != CODEX_ORGANIC_SUBCATEGORY:
         return {}
     if state.system_id is None or state.cmdr_id is None:
@@ -115,9 +106,7 @@ def on_codex_entry(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict
     longitude:float|None = entry.get("Longitude")
     if body_id is None or latitude is None or longitude is None:
         return {}
-    name_parts:list[str] = entry.get("Name_Localised", "").split(" - ", 1)
-    species:str = name_parts[0].strip()
-    color_name:str|None = name_parts[1].strip() if len(name_parts) > 1 else None
+    species, color_name = split_localised_color(entry.get("Name_Localised", ""))
     genus:str|None = exobiology_data.genus_from_species_name(species)
     if genus is None:
         return {}
@@ -133,14 +122,11 @@ def on_codex_entry(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict
     store.update_species_progress(progress_id, **fields)
 
     if not _too_close_to_existing_sample(state, genus, latitude, longitude):
-        state.sample_positions.setdefault(genus, []).append((latitude, longitude, color_name))
+        state.sample_positions.setdefault(genus, []).append((latitude, longitude, color_name, True))
     return {"panel": True, "overlay": "radar"}
 
 def on_sell_organic_data(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict:
-    """ BioData doesn't reliably itemize what actually got sold for how much (e.g. a "sell
-    all" at Vista Genomics) -- presume every completed-but-unsold sample was sold, at its own
-    confirmed value plus any first-logged bonus, rather than trying to match individual BioData
-    entries back to specific bodies. """
+    """ BioData doesn't reliably itemize what actually got sold for how much so presume every completed sample was sold"""
     if state.cmdr_id is None:
         return {}
     now:str = now_iso()

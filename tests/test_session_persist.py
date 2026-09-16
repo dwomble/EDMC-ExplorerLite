@@ -55,6 +55,27 @@ class TestRestoreLastSession:
         assert state.body_id == 5
         assert state.body_name == "Deltius 5"
 
+    def test_resumes_radar_samples_alongside_the_body(self, store:ExplorerStore) -> None:
+        """ Regression: EDMC-only restarts never get a
+        fresh Location/FSDJump -- enter_system()'s own
+        radar-samples fix never runs; this needs it too. """
+        cmdr_id:int = store.get_or_create_cmdr("Testy")
+        system_id:int = store.get_or_create_system(cmdr_id, 123, "Deltius")
+        body_pk:int = store.get_or_create_body(cmdr_id, system_id, 5, "Deltius 5")
+        progress_id:int = store.get_or_create_species_progress(body_pk, "Bacterium")
+        store.update_species_progress(progress_id, variant="Bacterium Aurasus - Green")
+        store.add_sample_position(body_pk, "Bacterium", 10.0, 20.0)
+        store.add_sample_position(body_pk, "Bacterium", 10.001, 20.0)
+        session_persist.save("Testy", 123, "Deltius", 5, "Deltius 5")
+
+        state = ExplorerState()
+        handlers_context.restore_last_session(store, state)
+
+        assert state.sample_positions["Bacterium"] == [
+            (10.0, 20.0, "Green", False), (10.001, 20.0, "Green", False),
+        ]
+        assert state.current_genus == "Bacterium"
+
     def test_is_a_noop_when_no_snapshot_exists_yet(self, store:ExplorerStore) -> None:
         state = ExplorerState()
         handlers_context.restore_last_session(store, state)
@@ -142,13 +163,17 @@ class TestEnterSystemResume:
         handlers_context.on_approach_body(store, prior, {"BodyID": 5, "Body": "Deltius 5"})
         assert prior.system_id is not None and prior.cmdr_id is not None
         body_pk:int = store.get_or_create_body(prior.cmdr_id, prior.system_id, 5, "Deltius 5")
+        progress_id:int = store.get_or_create_species_progress(body_pk, "Bacterium")
+        store.update_species_progress(progress_id, variant="Bacterium Aurasus - Green")
         store.add_sample_position(body_pk, "Bacterium", 10.0, 20.0)
         store.add_sample_position(body_pk, "Bacterium", 10.001, 20.0)
 
         resumed = self._cold_state(store)
         handlers_context.enter_system(store, resumed, {"SystemAddress": 123, "SystemName": "Deltius"})
 
-        assert resumed.sample_positions["Bacterium"] == [(10.0, 20.0, None), (10.001, 20.0, None)]
+        assert resumed.sample_positions["Bacterium"] == [
+            (10.0, 20.0, "Green", False), (10.001, 20.0, "Green", False),
+        ]
         assert resumed.current_genus == "Bacterium"
 
     def test_does_not_resume_radar_samples_on_a_normal_jump(self, store:ExplorerStore) -> None:

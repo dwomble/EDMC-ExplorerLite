@@ -68,7 +68,7 @@ STARTUP_ATTRS:dict = {
 def reset_plugin_modules() -> None:
     """Clear plugin modules so each test can import a fresh plugin runtime."""
     for module_name in list(sys.modules):
-        if module_name == 'load' or module_name.startswith('Router'):
+        if module_name == 'load':
             sys.modules.pop(module_name, None)
 
 

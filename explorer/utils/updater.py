@@ -1,6 +1,8 @@
 import json
 import os
+import re
 import requests
+import shutil
 import zipfile
 import time
 from threading import Thread
@@ -92,10 +94,24 @@ class Updater():
                 f.write(chunk)
         self.zip_downloaded = zip_file
 
-    def install(self) -> None:
+    def install(self, preserve:list[str] = []) -> None:
         """ Download the latest zip file and install it """
         if self.install_update != True or self.zip_downloaded == "":
             return
+        try:
+            backup_dir:str = os.path.join(self.plugin_dir, "updates", "backup")
+            if os.path.exists(backup_dir):
+                shutil.rmtree(backup_dir)
+            os.makedirs(backup_dir)
+
+            for name in os.listdir(self.plugin_dir):
+                if name == "updates" or name in preserve:
+                    continue
+                shutil.move(os.path.join(self.plugin_dir, name), os.path.join(backup_dir, name))
+        except Exception as e:
+            Debug.logger.error("Failed to backup existing files, exception info:", exc_info=e)
+            return
+
         try:
             with zipfile.ZipFile(self.zip_downloaded, 'r') as zip_ref:
                 zip_ref.extractall(self.plugin_dir)
@@ -171,3 +187,70 @@ class Updater():
 
         thread:Thread = Thread(target=self._check_update, args=[version], name=f"{self.gh_project} update checker")
         thread.start()
+
+_NOTICE_HEADING:re.Pattern = re.compile(r'^##\s+(\d+)\s*$', re.MULTILINE)
+
+class Notices():
+    """
+    Fetches NOTICES.md from the repo's default branch, tracking
+    which "## N" notice heading the user has dismissed.
+
+    Call check_for_notices() at startup -- async and throttled
+    like Updater.check_for_update(). pending_notice holds the
+    current one to show; call dismiss_notice() once seen. """
+    def __init__(self, gh_owner:str, gh_project:str, gh_branch:str = 'main') -> None:
+        self.gh_owner:str = gh_owner
+        self.gh_project:str = gh_project
+        self.gh_branch:str = gh_branch
+        self.notice_id:int = 0
+        self.notice:str = ""
+
+    def _notices_url(self) -> str:
+        return f'https://raw.githubusercontent.com/{self.gh_owner}/{self.gh_project}/{self.gh_branch}/NOTICES.md'
+
+    def _check_notices(self) -> None:
+        try:
+            session:requests.Session = new_session(timeout=TIMEOUT)
+            r:requests.Response = session.get(self._notices_url(), headers=_headers(self.gh_project), timeout=TIMEOUT)
+            r.raise_for_status()
+        except Exception as e:
+            Debug.logger.error("Failed to fetch notices, exception info:", exc_info=e)
+            return
+
+        notices:list[tuple[int, str]] = self._parse_notices(r.text)
+        if notices:
+            self.notice_id, self.notice = notices[0]
+
+    def check_for_notices(self, interval:int = UPDATE_CHECK_INTERVAL) -> None:
+        """ Start a notices-check thread, throttled like updates. """
+        last:int = config.get_int(f"{self.gh_project}_last_notice_check", 0)
+        if last >= int(time.time()) - interval:
+            return
+
+        config.set(f"{self.gh_project}_last_notice_check", int(time.time()))
+        thread:Thread = Thread(target=self._check_notices, args=[], name=f"{self.gh_project} notice checker")
+        thread.start()
+
+    @property
+    def pending_notice(self) -> str|None:
+        """ The current notice's body, or None if dismissed/none seen. """
+        if self.notice_id == 0:
+            return None
+        dismissed:int = config.get_int(f"{self.gh_project}_dismissed_notice", 0)
+        return self.notice if self.notice_id > dismissed else None
+
+    def dismiss_notice(self) -> None:
+        """ Never show this notice, or any older one, again. """
+        config.set(f"{self.gh_project}_dismissed_notice", self.notice_id)
+
+    @staticmethod
+    def _parse_notices(text:str) -> list[tuple[int, str]]:
+        """ (id, body) for every "## N" heading, highest id first. """
+        matches:list = list(_NOTICE_HEADING.finditer(text))
+        notices:list[tuple[int, str]] = []
+        for i, m in enumerate(matches):
+            start:int = m.end()
+            end:int = matches[i + 1].start() if i + 1 < len(matches) else len(text)
+            notices.append((int(m.group(1)), text[start:end].strip()))
+        notices.sort(key=lambda n: -n[0])
+        return notices

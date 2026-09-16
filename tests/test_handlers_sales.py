@@ -1,6 +1,7 @@
 """
-Unit tests for handlers_sales.on_died -- ship destroyed loses any held (unsold) cartography
-and completed exobiology data. Pure store + handler calls, no journal/Tk harness needed.
+Unit tests for handlers_sales: on_died (ship destroyed loses any held unsold cartography and
+completed exobiology data) and on_sell_exploration_data's TotalEarnings handling. Pure store +
+handler calls, no journal/Tk harness needed.
 
 Run with:
     .venv/bin/python -m pytest tests/test_handlers_sales.py -v --tb=short
@@ -64,6 +65,20 @@ class TestOnDied:
 
     def test_is_a_noop_without_a_cmdr(self, store:ExplorerStore) -> None:
         handlers_sales.on_died(store, ExplorerState(), {"event": "Died"}) # must not raise
+
+class TestOnSellExplorationData:
+
+    def test_zero_earnings_falls_back(self, store:ExplorerStore) -> None:
+        state = ExplorerState()
+        state.cmdr_id = store.get_or_create_cmdr("Testy")
+        entry = {"event": "MultiSellExplorationData", "Discovered": [], "BaseValue": 4948447, "Bonus": 0, "TotalEarnings": 0}
+
+        handlers_sales.on_sell_exploration_data(store, state, entry)
+
+        row:sqlite3.Row = store.conn.execute(
+            "SELECT total_value FROM sale_events WHERE cmdr_id = ?", (state.cmdr_id,),
+        ).fetchone()
+        assert row["total_value"] == 4948447
 
 class TestMarkEverythingUnsoldLost:
     """ Shared by on_died() and the manual-clear button -- one
