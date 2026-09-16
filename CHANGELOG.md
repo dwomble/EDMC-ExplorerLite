@@ -1,6 +1,6 @@
 # EDMC-ExplorerLite Changelog
 
-## v1.1.0 2026-??-??
+## v1.1.0 2026-09-15
 
 ### New Features
 
