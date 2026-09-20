@@ -67,7 +67,7 @@ class TestEolProuWalkthrough:
         assert body is not None
         assert body["has_biological_signals"] == 1 # real FSSBodySignals confirmed it pre-DSS
 
-        progress:list[sqlite3.Row] = load.store.get_species_progress_for_body(body_pk)
+        progress:list[sqlite3.Row] = load.store.get_species_progress(body_pk)
         by_species:dict[str, sqlite3.Row] = {row["species"]: row for row in progress}
         assert set(by_species) == {"Bacterium Aurasus", "Tubus Cavas", "Tussock Propagito"}
         assert all(row["completed_at"] is not None for row in by_species.values())
@@ -79,7 +79,7 @@ class TestEolProuWalkthrough:
 
         plugin.play_sequence("sell_organic_data", delay=0.0)
 
-        assert all(row["sold"] == 1 for row in load.store.get_species_progress_for_body(body_pk))
+        assert all(row["sold"] == 1 for row in load.store.get_species_progress(body_pk))
         assert load.store.get_pending_exobiology_value(state.cmdr_id) == 0 # all 3 sold, regardless of species named
 
         sale:sqlite3.Row = load.store.conn.execute(

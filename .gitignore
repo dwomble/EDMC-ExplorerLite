@@ -236,7 +236,6 @@ __marimo__/
 .pytest_cache/
 
 
-data/
 updates/
 tests/data/
 tests/edmc/EDMarketConnector

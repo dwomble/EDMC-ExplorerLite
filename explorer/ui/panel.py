@@ -59,8 +59,7 @@ def _credits_range(min_val:int, max_val:int) -> str:
 
 
 def _sampling_distance_str(genera:list[str]) -> str:
-    """ Minimum walking distance between samples -- a range when a merged slot spans genera
-    with different requirements, since which one it actually is isn't confirmed yet. """
+    """ Minimum walking distance between samples -- a range if a merged slot spans several genera. """
     distances:list[int] = [d for d in (exobiology_data.genus_min_distance(g) for g in genera) if d is not None]
     if not distances:
         return "?"
@@ -71,11 +70,11 @@ def _next_actions(store:ExplorerStore, system_id:int) -> tuple[bool, bool]:
     """ (needs_dss, needs_sample) for the system. """
     needs_dss:bool = False
     needs_sample:bool = False
-    for body in store.get_flagged_bodies_for_system(system_id):
+    for body in store.get_flagged_bodies(system_id):
         if not body["mapped_at"]:
             needs_dss = True
             continue
-        if any(not p["completed_at"] for p in store.get_species_progress_for_body(body["id"])):
+        if any(not p["completed_at"] for p in store.get_species_progress(body["id"])):
             needs_sample = True
     return needs_dss, needs_sample
 
@@ -126,8 +125,7 @@ def flagged_body_sort_key(body:sqlite3.Row) -> tuple[bool, float]:
     return not biological, distance
 
 def _body_designator(system_name:str, body_name:str) -> str:
-    """ The short local part of a body's name, e.g. "Deltius B 6 c" -> "B 6 c" -- system name
-    is implied by context, repeating it on every line just wastes width. """
+    """ The short local part of a body's name, e.g. "Deltius B 6 c" -> "B 6 c". """
     prefix:str = system_name + " "
     if body_name.startswith(prefix):
         designator:str = body_name[len(prefix):]
@@ -316,7 +314,7 @@ class ExplorerPanel:
         name:str = system["name"]
         # Current body's exobiology detail nests under its own row, not after the whole table
         anchors:tuple = ("w", "e", "e", "e", "w")
-        flagged:list[sqlite3.Row] = sorted(self.store.get_flagged_bodies_for_system(system["id"]), key=flagged_body_sort_key)
+        flagged:list[sqlite3.Row] = sorted(self.store.get_flagged_bodies(system["id"]), key=flagged_body_sort_key)
         focus_id:int|None = self.state.exobio_focus_body_id
         pending_rows:list = []
         current_row_shown:bool = False
@@ -341,9 +339,7 @@ class ExplorerPanel:
             self._render_exobio()
 
     def _flagged_body_row(self, system_name:str, body:sqlite3.Row) -> tuple[str, str, str, str, str]|None:
-        """ A body drops off this to-do list once nothing's left to do there. Shown value is
-        Full (bonus-included) -- what the body would actually pay out, not the base/progression
-        number (see _exobio_progress_row/history view for the Base/Full split). """
+        """ A body drops off this list once nothing is left to do; shown value is Full, not base. """
         species_desc:str = ""
         value_min:int = 0
         value_max:int = 0
@@ -356,7 +352,7 @@ class ExplorerPanel:
             value_min += cart_value
             value_max += cart_value
 
-        all_progress:list[sqlite3.Row] = self.store.get_species_progress_for_body(body["id"])
+        all_progress:list[sqlite3.Row] = self.store.get_species_progress(body["id"])
         active:list[sqlite3.Row] = [r for r in all_progress if not r["completed_at"]]
         fully_sampled:bool = bool(all_progress) and not active
         if active:
@@ -367,7 +363,7 @@ class ExplorerPanel:
                 value_min += exobiology.with_first_logged_bonus(r_min, was_footfalled)
                 value_max += exobiology.with_first_logged_bonus(r_max, was_footfalled)
 
-        predictions:list[dict] = self._best_predictions_for_body(body["id"]) if not active and not body["flagged_exobio"] else []
+        predictions:list[dict] = self._best_predictions(body["id"]) if not active and not body["flagged_exobio"] else []
 
         if predictions:
             # "?" only for a purely speculative guess -- a confirmed signal means a genus IS here
@@ -402,9 +398,9 @@ class ExplorerPanel:
         assert self.state.cmdr_id is not None and self.state.system_id is not None and focus_id is not None
         body_pk:int = self.store.get_or_create_body(self.state.cmdr_id, self.state.system_id, focus_id, self.state.exobio_focus_body_name)
 
-        all_progress:list[sqlite3.Row] = self.store.get_species_progress_for_body(body_pk)
+        all_progress:list[sqlite3.Row] = self.store.get_species_progress(body_pk)
         active:list[sqlite3.Row] = [row for row in all_progress if not row["completed_at"]]
-        predictions:list[dict] = [] if (active or all_progress) else self._best_predictions_for_body(body_pk)
+        predictions:list[dict] = [] if (active or all_progress) else self._best_predictions(body_pk)
 
         if not active and all_progress:
             return # every genus here is fully sampled -- nothing left to do, drop the section
@@ -434,8 +430,8 @@ class ExplorerPanel:
             return
 
 
-    def _best_predictions_for_body(self, body_pk:int) -> list[dict]:
-        all_predictions:list[sqlite3.Row] = self.store.get_genus_predictions_for_body(body_pk)
+    def _best_predictions(self, body_pk:int) -> list[dict]:
+        all_predictions:list[sqlite3.Row] = self.store.get_genus_predictions(body_pk)
         if not all_predictions:
             return []
 
@@ -577,7 +573,7 @@ class ExplorerPanel:
 
         genus:str = row["genus"] or ""
         candidates:list[sqlite3.Row] = [
-            p for p in self.store.get_genus_predictions_for_body(row["body_id"]) if p["genus"] == genus and p["species"]
+            p for p in self.store.get_genus_predictions(row["body_id"]) if p["genus"] == genus and p["species"]
         ]
 
         if candidates:
@@ -597,7 +593,7 @@ class ExplorerPanel:
     def _possible_species_label(self, body_pk:int, genus:str) -> str:
         """ Still-plausible species from the Scan-time prediction, confidence-sorted, or "genus sp." if none. """
         candidates:list[sqlite3.Row] = sorted(
-            (p for p in self.store.get_genus_predictions_for_body(body_pk) if p["genus"] == genus and p["species"]),
+            (p for p in self.store.get_genus_predictions(body_pk) if p["genus"] == genus and p["species"]),
             key=lambda p: -p["confidence"],
         )
         if not candidates:

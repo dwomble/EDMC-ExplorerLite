@@ -15,8 +15,8 @@ def _restore_sample_positions(store:ExplorerStore, state:ExplorerState) -> None:
     if state.cmdr_id is None or state.system_id is None or state.body_id is None:
         return
     body_pk:int = store.get_or_create_body(state.cmdr_id, state.system_id, state.body_id, state.body_name)
-    variants:dict[str, str] = {row["genus"]: row["variant"] or "" for row in store.get_species_progress_for_body(body_pk)}
-    for row in store.get_sample_positions_for_body(body_pk):
+    variants:dict[str, str] = {row["genus"]: row["variant"] or "" for row in store.get_species_progress(body_pk)}
+    for row in store.get_sample_positions(body_pk):
         _, color_name = split_localised_color(variants.get(row["genus"], ""))
         state.sample_positions.setdefault(row["genus"], []).append((row["latitude"], row["longitude"], color_name, False))
         state.current_genus = row["genus"] # last row wins, insertion-ordered
@@ -88,8 +88,7 @@ def on_approach_body(store:ExplorerStore, state:ExplorerState, entry:dict) -> di
     return {"panel": True, "overlay": "radar"}
 
 def on_supercruise_exit(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict:
-    """ Dropping out of supercruise near a body -- often the first real look at a body's
-    specifics, well before ApproachBody/Touchdown. Skip station drops (BodyType "Station"). """
+    """ Dropping out of supercruise near a body. """
     if entry.get("BodyType") == "Station":
         return {}
     body_id:int|None = entry.get("BodyID")

@@ -22,9 +22,8 @@ SIGNAL_COUNT_TIER_SPECIES:dict[int, dict[str, list[str]]] = {
 CHAIN_EXCEPTION_ATMOSPHERES:set[str] = {"Water", "Oxygen", "Nitrogen"}
 MAX_CHAIN_SIGNAL_COUNT:int = 5 # highest tier we have community data for -- not a cutoff where bias stops
 
-def expected_genera_for_signal_count(signal_count:int, atmosphere_type:str) -> set[str]|None:
-    """ Cumulative "usually present" genus set for a known signal count, or None if the chain
-    heuristic doesn't apply (no count yet, or an exception atmosphere). """
+def expected_genera(signal_count:int, atmosphere_type:str) -> set[str]|None:
+    """ Cumulative "usually present" genus set for a signal count, or None if the chain heuristic doesn't apply. """
     if atmosphere_type in CHAIN_EXCEPTION_ATMOSPHERES:
         return None
     if signal_count < 1:

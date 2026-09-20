@@ -151,8 +151,7 @@ def _ensure_columns(conn:sqlite3.Connection) -> None:
     conn.commit()
 
 def _migrate_genus_predictions_species_column(conn:sqlite3.Connection) -> None:
-    """ v3->v4: genus_predictions gains a `species` column. SQLite can't ALTER a UNIQUE constraint
-    in place, so drop the table -- it's fully derived/ephemeral, the DDL below recreates it fresh. """
+    """ v3->v4: genus_predictions gains a species column -- dropped and DDL-recreated since it's fully derived. """
     tables:set[str] = {row[0] for row in conn.execute("SELECT name FROM sqlite_master WHERE type = 'table'")}
     if "genus_predictions" not in tables:
         return

@@ -1,0 +1,3734 @@
+{
+  "Aleoida": [
+    {
+      "atmosphere": [
+        "CarbonDioxide"
+      ],
+      "body_types": [
+        "High metal content body",
+        "Rocky body"
+      ],
+      "min_gravity_g": 0.04,
+      "max_gravity_g": 0.276,
+      "min_temp_k": 175.0,
+      "max_temp_k": 180.0,
+      "min_pressure_atm": 0.0161,
+      "volcanism": "none"
+    },
+    {
+      "atmosphere": [
+        "CarbonDioxide"
+      ],
+      "body_types": [
+        "High metal content body",
+        "Rocky body"
+      ],
+      "min_gravity_g": 0.04,
+      "max_gravity_g": 0.276,
+      "min_temp_k": 180.0,
+      "max_temp_k": 190.0,
+      "min_pressure_atm": 0.025,
+      "volcanism": "none"
+    },
+    {
+      "atmosphere": [
+        "Ammonia"
+      ],
+      "body_types": [
+        "High metal content body",
+        "Rocky body"
+      ],
+      "min_gravity_g": 0.04,
+      "max_gravity_g": 0.276,
+      "min_temp_k": 170.0,
+      "max_temp_k": 177.0,
+      "max_pressure_atm": 0.0135,
+      "unmodeled": "regions"
+    },
+    {
+      "atmosphere": [
+        "Ammonia"
+      ],
+      "body_types": [
+        "High metal content body",
+        "Rocky body"
+      ],
+      "min_gravity_g": 0.04,
+      "max_gravity_g": 0.276,
+      "min_temp_k": 152.0,
+      "max_temp_k": 177.0,
+      "max_pressure_atm": 0.0135,
+      "unmodeled": "regions"
+    },
+    {
+      "atmosphere": [
+        "CarbonDioxide"
+      ],
+      "body_types": [
+        "High metal content body",
+        "Rocky body"
+      ],
+      "min_gravity_g": 0.04,
+      "max_gravity_g": 0.276,
+      "min_temp_k": 190.0,
+      "max_temp_k": 197.0,
+      "min_pressure_atm": 0.054,
+      "volcanism": "none"
+    }
+  ],
+  "Amphora Plant": [
+    {
+      "atmosphere": [
+        "None"
+      ],
+      "body_types": [
+        "Metal rich body"
+      ],
+      "star_types": [
+        "A"
+      ],
+      "min_temp_k": 1000.0,
+      "max_temp_k": 1750.0,
+      "volcanism": [
+        "metallic",
+        "rocky",
+        "silicate"
+      ],
+      "unmodeled": "bodies, regions"
+    }
+  ],
+  "Anemone": [
+    {
+      "body_types": [
+        "Rocky body"
+      ],
+      "star_types": [
+        "B"
+      ],
+      "min_gravity_g": 0.044,
+      "max_gravity_g": 1.28,
+      "min_temp_k": 200.0,
+      "max_temp_k": 440.0,
+      "volcanism": [
+        "metallic",
+        "rocky",
+        "silicate",
+        "water"
+      ],
+      "unmodeled": "regions"
+    },
+    {
+      "body_types": [
+        "Rocky body"
+      ],
+      "star_types": [
+        "A",
+        "B"
+      ],
+      "min_gravity_g": 0.047,
+      "max_gravity_g": 0.37,
+      "min_temp_k": 200.0,
+      "max_temp_k": 440.0,
+      "volcanism": [
+        "metallic",
+        "rocky",
+        "silicate"
+      ],
+      "unmodeled": "regions"
+    },
+    {
+      "body_types": [
+        "Icy body",
+        "Rocky ice body"
+      ],
+      "star_types": [
+        "O"
+      ],
+      "min_gravity_g": 0.17,
+      "max_gravity_g": 2.52,
+      "min_temp_k": 65.0,
+      "max_temp_k": 800.0,
+      "volcanism": "none",
+      "unmodeled": "regions"
+    },
+    {
+      "body_types": [
+        "Icy body",
+        "Rocky ice body"
+      ],
+      "star_types": [
+        "O"
+      ],
+      "min_gravity_g": 0.17,
+      "max_gravity_g": 2.52,
+      "min_temp_k": 65.0,
+      "max_temp_k": 800.0,
+      "volcanism": [
+        "carbon dioxide geysers"
+      ],
+      "unmodeled": "regions"
+    },
+    {
+      "body_types": [
+        "Rocky body"
+      ],
+      "star_types": [
+        "B"
+      ],
+      "min_gravity_g": 0.045,
+      "max_gravity_g": 0.37,
+      "min_temp_k": 200.0,
+      "max_temp_k": 440.0,
+      "volcanism": [
+        "metallic",
+        "rocky",
+        "silicate"
+      ],
+      "unmodeled": "regions"
+    },
+    {
+      "body_types": [
+        "High metal content body",
+        "Metal rich body"
+      ],
+      "star_types": [
+        "A",
+        "B",
+        "N"
+      ],
+      "min_gravity_g": 0.036,
+      "max_gravity_g": 4.61,
+      "min_temp_k": 160.0,
+      "max_temp_k": 1800.0,
+      "volcanism": "any"
+    },
+    {
+      "body_types": [
+        "High metal content body",
+        "Metal rich body",
+        "Rocky body"
+      ],
+      "star_types": [
+        "O"
+      ],
+      "min_gravity_g": 0.036,
+      "min_temp_k": 110.0,
+      "max_temp_k": 3050.0
+    },
+    {
+      "body_types": [
+        "High metal content body",
+        "Metal rich body"
+      ],
+      "star_types": [
+        "B"
+      ],
+      "min_gravity_g": 0.036,
+      "max_gravity_g": 4.61,
+      "min_temp_k": 400.0,
+      "volcanism": "any"
+    },
+    {
+      "body_types": [
+        "High metal content body",
+        "Metal rich body"
+      ],
+      "star_types": [
+        "B"
+      ],
+      "min_temp_k": 220.0,
+      "volcanism": "any",
+      "unmodeled": "regions"
+    }
+  ],
+  "Bacterium": [
+    {
+      "atmosphere": [
+        "CarbonDioxide"
+      ],
+      "body_types": [
+        "High metal content body",
+        "Rocky body",
+        "Rocky ice body"
+      ],
+      "min_gravity_g": 0.039,
+      "max_gravity_g": 0.608,
+      "min_temp_k": 145.0,
+      "max_temp_k": 400.0
+    },
+    {
+      "atmosphere": [
+        "Helium"
+      ],
+      "body_types": [
+        "Icy body"
+      ],
+      "min_gravity_g": 0.4,
+      "max_gravity_g": 0.55,
+      "min_temp_k": 20.0,
+      "max_temp_k": 21.0,
+      "min_pressure_atm": 0.067
+    },
+    {
+      "atmosphere": [
+        "Helium"
+      ],
+      "body_types": [
+        "Rocky ice body"
+      ],
+      "min_gravity_g": 0.4,
+      "max_gravity_g": 0.7,
+      "min_temp_k": 20.0,
+      "max_temp_k": 21.0,
+      "min_pressure_atm": 0.067
+    },
+    {
+      "atmosphere": [
+        "Argon"
+      ],
+      "body_types": [
+        "Icy body",
+        "Rocky ice body"
+      ],
+      "min_gravity_g": 0.15,
+      "max_gravity_g": 0.26,
+      "min_temp_k": 56,
+      "max_temp_k": 150,
+      "volcanism": [
+        "carbon dioxide",
+        "methane"
+      ]
+    },
+    {
+      "atmosphere": [
+        "Helium"
+      ],
+      "body_types": [
+        "Icy body"
+      ],
+      "min_gravity_g": 0.48,
+      "max_gravity_g": 0.51,
+      "min_temp_k": 20,
+      "max_temp_k": 21,
+      "min_pressure_atm": 0.075,
+      "volcanism": [
+        "methane"
+      ]
+    },
+    {
+      "atmosphere": [
+        "Methane"
+      ],
+      "body_types": [
+        "Icy body"
+      ],
+      "min_gravity_g": 0.025,
+      "max_gravity_g": 0.047,
+      "min_temp_k": 84,
+      "max_temp_k": 110,
+      "min_pressure_atm": 0.03,
+      "volcanism": [
+        "methane"
+      ]
+    },
+    {
+      "atmosphere": [
+        "Neon"
+      ],
+      "body_types": [
+        "Icy body",
+        "Rocky ice body"
+      ],
+      "min_gravity_g": 0.025,
+      "max_gravity_g": 0.61,
+      "min_temp_k": 20,
+      "max_temp_k": 65,
+      "max_pressure_atm": 0.008,
+      "volcanism": [
+        "carbon dioxide",
+        "methane"
+      ]
+    },
+    {
+      "atmosphere": [
+        "NeonRich"
+      ],
+      "body_types": [
+        "Icy body",
+        "Rocky ice body"
+      ],
+      "min_gravity_g": 0.025,
+      "max_gravity_g": 0.61,
+      "min_temp_k": 20,
+      "max_temp_k": 65,
+      "min_pressure_atm": 0.005,
+      "volcanism": [
+        "carbon dioxide",
+        "methane"
+      ]
+    },
+    {
+      "atmosphere": [
+        "Nitrogen"
+      ],
+      "body_types": [
+        "Icy body",
+        "Rocky ice body"
+      ],
+      "min_gravity_g": 0.2,
+      "max_gravity_g": 0.3,
+      "min_temp_k": 60,
+      "max_temp_k": 70,
+      "volcanism": [
+        "carbon dioxide",
+        "methane"
+      ]
+    },
+    {
+      "atmosphere": [
+        "Oxygen"
+      ],
+      "body_types": [
+        "Icy body",
+        "Rocky ice body"
+      ],
+      "min_gravity_g": 0.27,
+      "max_gravity_g": 0.4,
+      "min_temp_k": 150,
+      "max_temp_k": 220,
+      "min_pressure_atm": 0.01,
+      "volcanism": [
+        "carbon dioxide",
+        "methane"
+      ]
+    },
+    {
+      "atmosphere": [
+        "Neon"
+      ],
+      "body_types": [
+        "Icy body",
+        "Rocky ice body"
+      ],
+      "min_gravity_g": 0.255,
+      "max_gravity_g": 0.61,
+      "min_temp_k": 20.0,
+      "max_temp_k": 61.0,
+      "max_pressure_atm": 0.01
+    },
+    {
+      "atmosphere": [
+        "Argon"
+      ],
+      "min_gravity_g": 0.027,
+      "max_gravity_g": 0.51,
+      "min_temp_k": 50.0,
+      "max_temp_k": 245.0
+    },
+    {
+      "atmosphere": [
+        "Ammonia"
+      ],
+      "body_types": [
+        "High metal content body",
+        "Rocky body",
+        "Rocky ice body"
+      ],
+      "min_gravity_g": 0.04,
+      "max_gravity_g": 0.376,
+      "min_temp_k": 152.0,
+      "max_temp_k": 177.0,
+      "max_pressure_atm": 0.0135
+    },
+    {
+      "atmosphere": [
+        "Argon"
+      ],
+      "body_types": [
+        "High metal content body",
+        "Icy body",
+        "Rocky ice body"
+      ],
+      "min_gravity_g": 0.045,
+      "max_gravity_g": 0.45,
+      "min_temp_k": 50.0,
+      "volcanism": "any"
+    },
+    {
+      "atmosphere": [
+        "ArgonRich"
+      ],
+      "min_gravity_g": 0.24,
+      "max_gravity_g": 0.45,
+      "min_temp_k": 50.0,
+      "max_temp_k": 150.0,
+      "max_pressure_atm": 0.05,
+      "volcanism": "any"
+    },
+    {
+      "atmosphere": [
+        "Ammonia"
+      ],
+      "min_gravity_g": 0.025,
+      "max_gravity_g": 0.23,
+      "min_temp_k": 165.0,
+      "max_temp_k": 177.0,
+      "min_pressure_atm": 0.0025,
+      "max_pressure_atm": 0.02,
+      "volcanism": "any"
+    },
+    {
+      "atmosphere": [
+        "CarbonDioxide"
+      ],
+      "min_gravity_g": 0.45,
+      "max_gravity_g": 0.61,
+      "min_temp_k": 300.0,
+      "min_pressure_atm": 0.006,
+      "volcanism": "none"
+    },
+    {
+      "atmosphere": [
+        "CarbonDioxide",
+        "CarbonDioxideRich"
+      ],
+      "min_gravity_g": 0.025,
+      "max_gravity_g": 0.61,
+      "min_temp_k": 167.0,
+      "min_pressure_atm": 0.006,
+      "volcanism": "any"
+    },
+    {
+      "atmosphere": [
+        "Helium"
+      ],
+      "body_types": [
+        "Icy body"
+      ],
+      "min_gravity_g": 0.025,
+      "max_gravity_g": 0.61,
+      "min_temp_k": 20.0,
+      "max_temp_k": 21.0,
+      "min_pressure_atm": 0.067,
+      "volcanism": "any"
+    },
+    {
+      "atmosphere": [
+        "Methane"
+      ],
+      "body_types": [
+        "High metal content body",
+        "Icy body",
+        "Rocky body"
+      ],
+      "min_gravity_g": 0.026,
+      "max_gravity_g": 0.126,
+      "min_temp_k": 80.0,
+      "max_temp_k": 109.0,
+      "min_pressure_atm": 0.012,
+      "volcanism": "any"
+    },
+    {
+      "atmosphere": [
+        "Neon"
+      ],
+      "body_types": [
+        "Icy body",
+        "Rocky ice body"
+      ],
+      "min_gravity_g": 0.27,
+      "max_gravity_g": 0.61,
+      "min_temp_k": 20.0,
+      "max_temp_k": 95.0,
+      "max_pressure_atm": 0.008,
+      "volcanism": "any"
+    },
+    {
+      "atmosphere": [
+        "NeonRich"
+      ],
+      "body_types": [
+        "Icy body",
+        "Rocky ice body"
+      ],
+      "min_gravity_g": 0.27,
+      "max_gravity_g": 0.61,
+      "min_temp_k": 20.0,
+      "max_temp_k": 95.0,
+      "min_pressure_atm": 0.003,
+      "volcanism": "any"
+    },
+    {
+      "atmosphere": [
+        "Nitrogen"
+      ],
+      "min_gravity_g": 0.21,
+      "max_gravity_g": 0.35,
+      "min_temp_k": 55.0,
+      "max_temp_k": 80.0,
+      "volcanism": "any"
+    },
+    {
+      "atmosphere": [
+        "Oxygen"
+      ],
+      "min_gravity_g": 0.23,
+      "max_gravity_g": 0.5,
+      "min_temp_k": 150.0,
+      "max_temp_k": 240.0,
+      "min_pressure_atm": 0.01,
+      "volcanism": "any"
+    },
+    {
+      "atmosphere": [
+        "SulphurDioxide"
+      ],
+      "min_gravity_g": 0.18,
+      "max_gravity_g": 0.61,
+      "min_temp_k": 148.0,
+      "max_temp_k": 550.0,
+      "volcanism": "any"
+    },
+    {
+      "atmosphere": [
+        "SulphurDioxide"
+      ],
+      "min_gravity_g": 0.18,
+      "max_gravity_g": 0.61,
+      "min_temp_k": 300.0,
+      "max_temp_k": 550.0,
+      "volcanism": "none"
+    },
+    {
+      "atmosphere": [
+        "SulphurDioxide"
+      ],
+      "body_types": [
+        "High metal content body",
+        "Rocky body"
+      ],
+      "min_gravity_g": 0.5,
+      "max_gravity_g": 0.55,
+      "min_temp_k": 500.0,
+      "max_temp_k": 650.0,
+      "volcanism": "any"
+    },
+    {
+      "atmosphere": [
+        "Water"
+      ],
+      "body_types": [
+        "High metal content body",
+        "Rocky body"
+      ],
+      "min_gravity_g": 0.04,
+      "max_gravity_g": 0.063,
+      "volcanism": "none"
+    },
+    {
+      "atmosphere": [
+        "WaterRich"
+      ],
+      "body_types": [
+        "Icy body",
+        "Rocky ice body"
+      ],
+      "min_gravity_g": 0.315,
+      "max_gravity_g": 0.44,
+      "min_temp_k": 190.0,
+      "max_temp_k": 330.0,
+      "min_pressure_atm": 0.01,
+      "volcanism": "any"
+    },
+    {
+      "atmosphere": [
+        "Nitrogen"
+      ],
+      "body_types": [
+        "High metal content body",
+        "Rocky body",
+        "Rocky ice body"
+      ],
+      "min_gravity_g": 0.05,
+      "max_gravity_g": 0.6,
+      "min_temp_k": 42.5,
+      "max_temp_k": 151.0,
+      "volcanism": "none"
+    },
+    {
+      "atmosphere": [
+        "Nitrogen"
+      ],
+      "body_types": [
+        "Icy body"
+      ],
+      "min_gravity_g": 0.17,
+      "max_gravity_g": 0.63,
+      "min_temp_k": 50.0,
+      "max_temp_k": 90.0
+    },
+    {
+      "atmosphere": [
+        "Oxygen"
+      ],
+      "min_gravity_g": 0.239,
+      "max_gravity_g": 0.61,
+      "min_temp_k": 143.5,
+      "max_temp_k": 246.0,
+      "min_pressure_atm": 0.013
+    },
+    {
+      "atmosphere": [
+        "Methane"
+      ],
+      "min_gravity_g": 0.0245,
+      "max_gravity_g": 0.35,
+      "min_temp_k": 67.0,
+      "max_temp_k": 109.0
+    },
+    {
+      "atmosphere": [
+        "MethaneRich"
+      ],
+      "body_types": [
+        "High metal content body",
+        "Rocky body"
+      ],
+      "min_gravity_g": 0.44,
+      "max_gravity_g": 0.6,
+      "min_temp_k": 74.0,
+      "max_temp_k": 141.0,
+      "min_pressure_atm": 0.01,
+      "max_pressure_atm": 0.05,
+      "volcanism": "none"
+    },
+    {
+      "atmosphere": [
+        "Argon"
+      ],
+      "body_types": [
+        "Icy body"
+      ],
+      "min_gravity_g": 0.045,
+      "max_gravity_g": 0.45,
+      "min_temp_k": 50.0,
+      "volcanism": [
+        "ammonia",
+        "nitrogen"
+      ]
+    },
+    {
+      "atmosphere": [
+        "ArgonRich"
+      ],
+      "body_types": [
+        "Icy body"
+      ],
+      "min_gravity_g": 0.23,
+      "max_gravity_g": 0.45,
+      "min_temp_k": 80.0,
+      "max_temp_k": 90.0,
+      "min_pressure_atm": 0.01,
+      "volcanism": [
+        "ammonia",
+        "nitrogen"
+      ]
+    },
+    {
+      "atmosphere": [
+        "Helium"
+      ],
+      "body_types": [
+        "Icy body"
+      ],
+      "min_gravity_g": 0.4,
+      "max_gravity_g": 0.51,
+      "min_temp_k": 20.0,
+      "max_temp_k": 21.0,
+      "min_pressure_atm": 0.065,
+      "volcanism": [
+        "ammonia",
+        "nitrogen"
+      ]
+    },
+    {
+      "atmosphere": [
+        "Methane"
+      ],
+      "body_types": [
+        "Icy body"
+      ],
+      "min_gravity_g": 0.0265,
+      "max_gravity_g": 0.0455,
+      "min_temp_k": 84.0,
+      "max_temp_k": 108.0,
+      "min_pressure_atm": 0.035,
+      "volcanism": [
+        "ammonia",
+        "nitrogen"
+      ]
+    },
+    {
+      "atmosphere": [
+        "Neon"
+      ],
+      "body_types": [
+        "Icy body"
+      ],
+      "min_gravity_g": 0.31,
+      "max_gravity_g": 0.6,
+      "min_temp_k": 20.0,
+      "max_temp_k": 61.0,
+      "max_pressure_atm": 0.0065,
+      "volcanism": [
+        "ammonia",
+        "nitrogen"
+      ]
+    },
+    {
+      "atmosphere": [
+        "NeonRich"
+      ],
+      "body_types": [
+        "Icy body"
+      ],
+      "min_gravity_g": 0.27,
+      "max_gravity_g": 0.61,
+      "min_temp_k": 20.0,
+      "max_temp_k": 93.0,
+      "min_pressure_atm": 0.0027,
+      "volcanism": [
+        "ammonia",
+        "nitrogen"
+      ]
+    },
+    {
+      "atmosphere": [
+        "Nitrogen"
+      ],
+      "body_types": [
+        "Icy body"
+      ],
+      "min_gravity_g": 0.2,
+      "max_gravity_g": 0.26,
+      "min_temp_k": 60.0,
+      "max_temp_k": 80.0,
+      "volcanism": [
+        "ammonia",
+        "nitrogen"
+      ]
+    },
+    {
+      "atmosphere": [
+        "WaterRich"
+      ],
+      "body_types": [
+        "Icy body"
+      ],
+      "min_gravity_g": 0.38,
+      "max_gravity_g": 0.45,
+      "min_temp_k": 190.0,
+      "max_temp_k": 330.0,
+      "min_pressure_atm": 0.07,
+      "volcanism": [
+        "ammonia",
+        "nitrogen"
+      ]
+    },
+    {
+      "atmosphere": [
+        "SulphurDioxide"
+      ],
+      "body_types": [
+        "High metal content body",
+        "Rocky body",
+        "Rocky ice body"
+      ],
+      "min_gravity_g": 0.042,
+      "max_gravity_g": 0.605,
+      "min_temp_k": 132.0,
+      "max_temp_k": 500.0
+    },
+    {
+      "atmosphere": [
+        "Water"
+      ],
+      "body_types": [
+        "High metal content body",
+        "Rocky body"
+      ],
+      "min_gravity_g": 0.04,
+      "max_gravity_g": 0.064,
+      "volcanism": "none"
+    },
+    {
+      "atmosphere": [
+        "Water"
+      ],
+      "body_types": [
+        "High metal content body",
+        "Rocky body"
+      ],
+      "min_gravity_g": 0.04,
+      "max_gravity_g": 0.064,
+      "volcanism": [
+        "water"
+      ]
+    },
+    {
+      "atmosphere": [
+        "WaterRich"
+      ],
+      "body_types": [
+        "Rocky ice body"
+      ],
+      "min_gravity_g": 0.4,
+      "max_gravity_g": 0.5,
+      "min_temp_k": 190.0,
+      "max_temp_k": 330.0,
+      "volcanism": "none"
+    },
+    {
+      "atmosphere": [
+        "Ammonia"
+      ],
+      "body_types": [
+        "Icy body",
+        "Rocky body",
+        "Rocky ice body"
+      ],
+      "min_gravity_g": 0.03,
+      "max_gravity_g": 0.09,
+      "min_temp_k": 160.0,
+      "max_temp_k": 180.0,
+      "max_pressure_atm": 0.0135,
+      "volcanism": [
+        "water"
+      ]
+    },
+    {
+      "atmosphere": [
+        "Argon"
+      ],
+      "body_types": [
+        "Icy body",
+        "Rocky ice body"
+      ],
+      "min_gravity_g": 0.165,
+      "max_gravity_g": 0.33,
+      "min_temp_k": 57.5,
+      "max_temp_k": 145.0,
+      "volcanism": [
+        "water"
+      ]
+    },
+    {
+      "atmosphere": [
+        "ArgonRich"
+      ],
+      "body_types": [
+        "Icy body"
+      ],
+      "min_gravity_g": 0.04,
+      "max_gravity_g": 0.08,
+      "min_temp_k": 80.0,
+      "max_temp_k": 90.0,
+      "max_pressure_atm": 0.01,
+      "volcanism": [
+        "water"
+      ]
+    },
+    {
+      "atmosphere": [
+        "CarbonDioxide",
+        "CarbonDioxideRich"
+      ],
+      "body_types": [
+        "Icy body",
+        "Rocky ice body"
+      ],
+      "min_gravity_g": 0.25,
+      "max_gravity_g": 0.32,
+      "min_temp_k": 167.0,
+      "max_temp_k": 240.0,
+      "volcanism": [
+        "water"
+      ]
+    },
+    {
+      "atmosphere": [
+        "Helium"
+      ],
+      "body_types": [
+        "Icy body"
+      ],
+      "min_gravity_g": 0.49,
+      "max_gravity_g": 0.53,
+      "min_temp_k": 20.0,
+      "max_temp_k": 21.0,
+      "min_pressure_atm": 0.065,
+      "volcanism": [
+        "water"
+      ]
+    },
+    {
+      "atmosphere": [
+        "Neon"
+      ],
+      "body_types": [
+        "Icy body",
+        "Rocky ice body"
+      ],
+      "min_gravity_g": 0.29,
+      "max_gravity_g": 0.61,
+      "min_temp_k": 20.0,
+      "max_temp_k": 51.0,
+      "max_pressure_atm": 0.075,
+      "volcanism": [
+        "water"
+      ]
+    },
+    {
+      "atmosphere": [
+        "NeonRich"
+      ],
+      "body_types": [
+        "Icy body",
+        "Rocky ice body"
+      ],
+      "min_gravity_g": 0.43,
+      "max_gravity_g": 0.61,
+      "min_temp_k": 20.0,
+      "max_temp_k": 65.0,
+      "min_pressure_atm": 0.005,
+      "volcanism": [
+        "water"
+      ]
+    },
+    {
+      "atmosphere": [
+        "Nitrogen"
+      ],
+      "body_types": [
+        "Icy body"
+      ],
+      "min_gravity_g": 0.205,
+      "max_gravity_g": 0.241,
+      "min_temp_k": 60.0,
+      "max_temp_k": 80.0,
+      "volcanism": [
+        "water"
+      ]
+    },
+    {
+      "atmosphere": [
+        "Oxygen"
+      ],
+      "body_types": [
+        "Icy body",
+        "Rocky ice body"
+      ],
+      "min_gravity_g": 0.24,
+      "max_gravity_g": 0.35,
+      "min_temp_k": 154.0,
+      "max_temp_k": 220.0,
+      "min_pressure_atm": 0.01,
+      "volcanism": [
+        "water"
+      ]
+    },
+    {
+      "atmosphere": [
+        "Water"
+      ],
+      "body_types": [
+        "Rocky body"
+      ],
+      "min_gravity_g": 0.04,
+      "max_gravity_g": 0.054,
+      "volcanism": [
+        "water"
+      ]
+    }
+  ],
+  "Bark Mound": [
+    {
+      "volcanism": "any",
+      "unmodeled": "nebula, regions"
+    }
+  ],
+  "Brain Tree": [
+    {
+      "min_temp_k": 200.0,
+      "max_temp_k": 500.0,
+      "volcanism": "any",
+      "unmodeled": "guardian, region"
+    },
+    {
+      "body_types": [
+        "Rocky body"
+      ],
+      "max_gravity_g": 0.42,
+      "min_temp_k": 200.0,
+      "max_temp_k": 400.0,
+      "volcanism": [
+        "metallic",
+        "rocky",
+        "silicate",
+        "water"
+      ],
+      "unmodeled": "bodies, guardian, region"
+    },
+    {
+      "body_types": [
+        "High metal content body",
+        "Metal rich body",
+        "Rocky body"
+      ],
+      "volcanism": [
+        "metallic",
+        "rocky",
+        "silicate"
+      ],
+      "unmodeled": "guardian, region"
+    },
+    {
+      "body_types": [
+        "Rocky ice body"
+      ],
+      "max_gravity_g": 0.4,
+      "min_temp_k": 100.0,
+      "max_temp_k": 270.0,
+      "volcanism": "any",
+      "unmodeled": "bodies, guardian, region"
+    },
+    {
+      "body_types": [
+        "High metal content body",
+        "Metal rich body"
+      ],
+      "max_gravity_g": 2.9,
+      "min_temp_k": 300.0,
+      "max_temp_k": 500.0,
+      "volcanism": [
+        "metallic",
+        "rocky",
+        "silicate"
+      ],
+      "unmodeled": "guardian, region"
+    },
+    {
+      "body_types": [
+        "High metal content body",
+        "Metal rich body"
+      ],
+      "volcanism": "any",
+      "unmodeled": "bodies, guardian, region"
+    },
+    {
+      "body_types": [
+        "High metal content body",
+        "Rocky body"
+      ],
+      "max_gravity_g": 2.7,
+      "min_temp_k": 300.0,
+      "max_temp_k": 500.0,
+      "volcanism": [
+        "metallic",
+        "rocky",
+        "silicate"
+      ],
+      "unmodeled": "bodies, guardian, region"
+    },
+    {
+      "body_types": [
+        "Rocky body"
+      ],
+      "max_gravity_g": 0.5,
+      "min_temp_k": 300.0,
+      "max_temp_k": 500.0,
+      "volcanism": [
+        "metallic",
+        "rocky",
+        "silicate",
+        "water"
+      ],
+      "unmodeled": "guardian, region"
+    }
+  ],
+  "Cactoida": [
+    {
+      "atmosphere": [
+        "CarbonDioxide"
+      ],
+      "body_types": [
+        "High metal content body",
+        "Rocky body"
+      ],
+      "min_gravity_g": 0.04,
+      "max_gravity_g": 0.276,
+      "min_temp_k": 180.0,
+      "max_temp_k": 197.0,
+      "min_pressure_atm": 0.025,
+      "volcanism": "none",
+      "unmodeled": "regions"
+    },
+    {
+      "atmosphere": [
+        "Ammonia"
+      ],
+      "body_types": [
+        "High metal content body",
+        "Rocky body"
+      ],
+      "min_gravity_g": 0.04,
+      "max_gravity_g": 0.276,
+      "min_temp_k": 160.0,
+      "max_temp_k": 177.0,
+      "max_pressure_atm": 0.0135,
+      "unmodeled": "regions"
+    },
+    {
+      "atmosphere": [
+        "SulphurDioxide"
+      ],
+      "body_types": [
+        "Rocky body"
+      ],
+      "min_gravity_g": 0.265,
+      "max_gravity_g": 0.276,
+      "min_temp_k": 160.0,
+      "max_temp_k": 210.0,
+      "max_pressure_atm": 0.005,
+      "volcanism": "none"
+    },
+    {
+      "atmosphere": [
+        "Water"
+      ],
+      "body_types": [
+        "High metal content body",
+        "Rocky body"
+      ],
+      "min_gravity_g": 0.04,
+      "max_gravity_g": 0.276,
+      "volcanism": "none"
+    },
+    {
+      "atmosphere": [
+        "Water"
+      ],
+      "body_types": [
+        "High metal content body",
+        "Rocky body"
+      ],
+      "min_gravity_g": 0.04,
+      "max_gravity_g": 0.276,
+      "volcanism": [
+        "water"
+      ]
+    },
+    {
+      "atmosphere": [
+        "CarbonDioxide"
+      ],
+      "body_types": [
+        "High metal content body",
+        "Rocky body"
+      ],
+      "min_gravity_g": 0.04,
+      "max_gravity_g": 0.276,
+      "min_temp_k": 180.0,
+      "max_temp_k": 197.0,
+      "min_pressure_atm": 0.025,
+      "volcanism": "none",
+      "unmodeled": "regions"
+    },
+    {
+      "atmosphere": [
+        "Ammonia"
+      ],
+      "body_types": [
+        "High metal content body",
+        "Rocky body"
+      ],
+      "min_gravity_g": 0.04,
+      "max_gravity_g": 0.276,
+      "min_temp_k": 160.0,
+      "max_temp_k": 177.0,
+      "max_pressure_atm": 0.0135,
+      "unmodeled": "regions"
+    }
+  ],
+  "Clypeus": [
+    {
+      "atmosphere": [
+        "CarbonDioxide"
+      ],
+      "body_types": [
+        "Rocky body"
+      ],
+      "min_gravity_g": 0.04,
+      "max_gravity_g": 0.276,
+      "min_temp_k": 190.0,
+      "min_pressure_atm": 0.054,
+      "volcanism": "none"
+    },
+    {
+      "atmosphere": [
+        "Water"
+      ],
+      "body_types": [
+        "Rocky body"
+      ],
+      "min_gravity_g": 0.04,
+      "max_gravity_g": 0.276,
+      "volcanism": "none"
+    },
+    {
+      "atmosphere": [
+        "Water"
+      ],
+      "body_types": [
+        "Rocky body"
+      ],
+      "min_gravity_g": 0.04,
+      "max_gravity_g": 0.276,
+      "volcanism": [
+        "water"
+      ]
+    },
+    {
+      "atmosphere": [
+        "CarbonDioxide"
+      ],
+      "body_types": [
+        "High metal content body"
+      ],
+      "min_gravity_g": 0.04,
+      "max_gravity_g": 0.276,
+      "min_temp_k": 190.0,
+      "max_temp_k": 197.0,
+      "min_pressure_atm": 0.054,
+      "volcanism": "none"
+    },
+    {
+      "atmosphere": [
+        "Water"
+      ],
+      "body_types": [
+        "High metal content body"
+      ],
+      "min_gravity_g": 0.04,
+      "max_gravity_g": 0.276,
+      "volcanism": "none"
+    },
+    {
+      "atmosphere": [
+        "CarbonDioxide"
+      ],
+      "body_types": [
+        "Rocky body"
+      ],
+      "min_gravity_g": 0.04,
+      "max_gravity_g": 0.276,
+      "min_temp_k": 190.0,
+      "max_temp_k": 197.0,
+      "min_pressure_atm": 0.055,
+      "volcanism": "none",
+      "unmodeled": "distance"
+    },
+    {
+      "atmosphere": [
+        "Water"
+      ],
+      "body_types": [
+        "Rocky body"
+      ],
+      "min_gravity_g": 0.04,
+      "max_gravity_g": 0.276,
+      "volcanism": "none",
+      "unmodeled": "distance"
+    },
+    {
+      "atmosphere": [
+        "Water"
+      ],
+      "body_types": [
+        "Rocky body"
+      ],
+      "min_gravity_g": 0.04,
+      "max_gravity_g": 0.276,
+      "volcanism": [
+        "water"
+      ],
+      "unmodeled": "distance"
+    }
+  ],
+  "Concha": [
+    {
+      "atmosphere": [
+        "Ammonia"
+      ],
+      "body_types": [
+        "High metal content body",
+        "Rocky body"
+      ],
+      "min_gravity_g": 0.04,
+      "max_gravity_g": 0.045,
+      "min_temp_k": 176.0,
+      "max_temp_k": 177.0,
+      "volcanism": [
+        "metallic",
+        "silicate"
+      ]
+    },
+    {
+      "atmosphere": [
+        "CarbonDioxide"
+      ],
+      "body_types": [
+        "High metal content body",
+        "Rocky body"
+      ],
+      "min_gravity_g": 0.04,
+      "max_gravity_g": 0.276,
+      "min_temp_k": 180.0,
+      "min_pressure_atm": 0.025,
+      "volcanism": "none"
+    },
+    {
+      "atmosphere": [
+        "Methane"
+      ],
+      "body_types": [
+        "High metal content body",
+        "Rocky body"
+      ],
+      "min_gravity_g": 0.04,
+      "max_gravity_g": 0.15,
+      "min_temp_k": 78.0,
+      "max_temp_k": 100.0,
+      "min_pressure_atm": 0.01,
+      "volcanism": [
+        "metallic",
+        "silicate"
+      ]
+    },
+    {
+      "atmosphere": [
+        "Water"
+      ],
+      "body_types": [
+        "High metal content body",
+        "Rocky body"
+      ],
+      "min_gravity_g": 0.04,
+      "max_gravity_g": 0.65,
+      "volcanism": "none"
+    },
+    {
+      "atmosphere": [
+        "Water"
+      ],
+      "body_types": [
+        "High metal content body",
+        "Rocky body"
+      ],
+      "min_gravity_g": 0.04,
+      "max_gravity_g": 0.65,
+      "volcanism": [
+        "water"
+      ]
+    },
+    {
+      "atmosphere": [
+        "Ammonia"
+      ],
+      "body_types": [
+        "High metal content body",
+        "Rocky body"
+      ],
+      "min_gravity_g": 0.04,
+      "max_gravity_g": 0.276,
+      "min_temp_k": 152.0,
+      "max_temp_k": 177.0,
+      "max_pressure_atm": 0.0135
+    },
+    {
+      "atmosphere": [
+        "CarbonDioxide"
+      ],
+      "body_types": [
+        "High metal content body",
+        "Rocky body"
+      ],
+      "min_gravity_g": 0.04,
+      "max_gravity_g": 0.276,
+      "min_temp_k": 150.0,
+      "max_temp_k": 200.0,
+      "min_pressure_atm": 0.002,
+      "volcanism": "none"
+    },
+    {
+      "atmosphere": [
+        "Nitrogen"
+      ],
+      "body_types": [
+        "High metal content body",
+        "Rocky body"
+      ],
+      "min_gravity_g": 0.053,
+      "max_gravity_g": 0.275,
+      "min_temp_k": 42.0,
+      "max_temp_k": 52.0,
+      "max_pressure_atm": 0.0047,
+      "volcanism": "none"
+    }
+  ],
+  "Crystalline Shard": [
+    {
+      "atmosphere": [
+        "Argon",
+        "ArgonRich",
+        "CarbonDioxide",
+        "CarbonDioxideRich",
+        "Helium",
+        "Methane",
+        "Neon",
+        "NeonRich",
+        "None"
+      ],
+      "star_types": [
+        "A",
+        "F",
+        "G",
+        "K",
+        "MS",
+        "S"
+      ],
+      "max_gravity_g": 2.0,
+      "max_temp_k": 273.0,
+      "unmodeled": "bodies, distance, regions"
+    }
+  ],
+  "Electricae": [
+    {
+      "atmosphere": [
+        "Argon",
+        "ArgonRich"
+      ],
+      "body_types": [
+        "Icy body"
+      ],
+      "star_types": [
+        "A",
+        "AeBe",
+        "D",
+        "H",
+        "N"
+      ],
+      "min_gravity_g": 0.025,
+      "max_gravity_g": 0.276,
+      "min_temp_k": 50.0,
+      "max_temp_k": 150.0
+    },
+    {
+      "atmosphere": [
+        "Neon",
+        "NeonRich"
+      ],
+      "body_types": [
+        "Icy body"
+      ],
+      "star_types": [
+        "A",
+        "AeBe",
+        "D",
+        "H",
+        "N"
+      ],
+      "min_gravity_g": 0.26,
+      "max_gravity_g": 0.276,
+      "min_temp_k": 20.0,
+      "max_temp_k": 70.0,
+      "max_pressure_atm": 0.005
+    },
+    {
+      "atmosphere": [
+        "Argon",
+        "ArgonRich"
+      ],
+      "body_types": [
+        "Icy body"
+      ],
+      "min_gravity_g": 0.025,
+      "max_gravity_g": 0.276,
+      "min_temp_k": 50.0,
+      "max_temp_k": 150.0,
+      "unmodeled": "nebula"
+    },
+    {
+      "atmosphere": [
+        "Neon",
+        "NeonRich"
+      ],
+      "body_types": [
+        "Icy body"
+      ],
+      "min_gravity_g": 0.026,
+      "max_gravity_g": 0.276,
+      "min_temp_k": 20.0,
+      "max_temp_k": 70.0,
+      "max_pressure_atm": 0.005,
+      "unmodeled": "nebula"
+    }
+  ],
+  "Fonticulua": [
+    {
+      "atmosphere": [
+        "Neon",
+        "NeonRich"
+      ],
+      "body_types": [
+        "Icy body"
+      ],
+      "min_gravity_g": 0.25,
+      "max_gravity_g": 0.276,
+      "min_temp_k": 50.0,
+      "max_temp_k": 75.0,
+      "max_pressure_atm": 0.006,
+      "volcanism": "none"
+    },
+    {
+      "atmosphere": [
+        "Argon"
+      ],
+      "body_types": [
+        "Icy body",
+        "Rocky ice body"
+      ],
+      "min_gravity_g": 0.027,
+      "max_gravity_g": 0.276,
+      "min_temp_k": 50.0,
+      "max_temp_k": 150.0
+    },
+    {
+      "atmosphere": [
+        "ArgonRich"
+      ],
+      "body_types": [
+        "Icy body",
+        "Rocky ice body"
+      ],
+      "min_gravity_g": 0.209,
+      "max_gravity_g": 0.276,
+      "min_temp_k": 61.0,
+      "max_temp_k": 125.0,
+      "min_pressure_atm": 0.0175
+    },
+    {
+      "atmosphere": [
+        "Nitrogen"
+      ],
+      "body_types": [
+        "Icy body",
+        "Rocky ice body"
+      ],
+      "min_gravity_g": 0.19,
+      "max_gravity_g": 0.276,
+      "min_temp_k": 50.0,
+      "max_temp_k": 81.0
+    },
+    {
+      "atmosphere": [
+        "Oxygen"
+      ],
+      "body_types": [
+        "Icy body"
+      ],
+      "min_gravity_g": 0.235,
+      "max_gravity_g": 0.276,
+      "min_temp_k": 143.0,
+      "max_temp_k": 200.0,
+      "min_pressure_atm": 0.012
+    },
+    {
+      "atmosphere": [
+        "Methane"
+      ],
+      "body_types": [
+        "Icy body",
+        "Rocky ice body"
+      ],
+      "min_gravity_g": 0.025,
+      "max_gravity_g": 0.07,
+      "min_temp_k": 83.0,
+      "max_temp_k": 109.0,
+      "min_pressure_atm": 0.03
+    }
+  ],
+  "Frutexa": [
+    {
+      "atmosphere": [
+        "Ammonia"
+      ],
+      "body_types": [
+        "Rocky body"
+      ],
+      "min_gravity_g": 0.04,
+      "max_gravity_g": 0.276,
+      "min_temp_k": 152.0,
+      "max_temp_k": 177.0,
+      "max_pressure_atm": 0.0135,
+      "unmodeled": "regions"
+    },
+    {
+      "atmosphere": [
+        "CarbonDioxide"
+      ],
+      "body_types": [
+        "Rocky body"
+      ],
+      "min_gravity_g": 0.04,
+      "max_gravity_g": 0.237,
+      "min_temp_k": 146.0,
+      "max_temp_k": 197.0,
+      "min_pressure_atm": 0.0029,
+      "volcanism": "none",
+      "unmodeled": "regions"
+    },
+    {
+      "atmosphere": [
+        "Ammonia"
+      ],
+      "body_types": [
+        "High metal content body"
+      ],
+      "min_gravity_g": 0.04,
+      "max_gravity_g": 0.276,
+      "min_temp_k": 152.0,
+      "max_temp_k": 176.0,
+      "max_pressure_atm": 0.01,
+      "volcanism": "none"
+    },
+    {
+      "atmosphere": [
+        "CarbonDioxide"
+      ],
+      "body_types": [
+        "High metal content body"
+      ],
+      "min_gravity_g": 0.04,
+      "max_gravity_g": 0.276,
+      "min_temp_k": 146.0,
+      "max_temp_k": 197.0,
+      "min_pressure_atm": 0.002,
+      "volcanism": "none"
+    },
+    {
+      "atmosphere": [
+        "Methane"
+      ],
+      "body_types": [
+        "High metal content body"
+      ],
+      "min_gravity_g": 0.05,
+      "max_gravity_g": 0.1,
+      "min_temp_k": 100.0,
+      "max_temp_k": 300.0
+    },
+    {
+      "atmosphere": [
+        "Water"
+      ],
+      "body_types": [
+        "High metal content body"
+      ],
+      "min_gravity_g": 0.04,
+      "max_gravity_g": 0.07,
+      "max_temp_k": 400.0,
+      "max_pressure_atm": 0.07,
+      "volcanism": "none"
+    },
+    {
+      "atmosphere": [
+        "Ammonia"
+      ],
+      "body_types": [
+        "Rocky body"
+      ],
+      "min_gravity_g": 0.04,
+      "max_gravity_g": 0.276,
+      "min_temp_k": 152.0,
+      "max_temp_k": 177.0,
+      "max_pressure_atm": 0.0135,
+      "unmodeled": "regions"
+    },
+    {
+      "atmosphere": [
+        "CarbonDioxide"
+      ],
+      "body_types": [
+        "Rocky body"
+      ],
+      "min_gravity_g": 0.04,
+      "max_gravity_g": 0.276,
+      "min_temp_k": 146.0,
+      "max_temp_k": 197.0,
+      "min_pressure_atm": 0.003,
+      "volcanism": "none",
+      "unmodeled": "regions"
+    },
+    {
+      "atmosphere": [
+        "Water"
+      ],
+      "body_types": [
+        "Rocky body"
+      ],
+      "min_gravity_g": 0.04,
+      "max_gravity_g": 0.056,
+      "volcanism": "none"
+    },
+    {
+      "atmosphere": [
+        "Water"
+      ],
+      "body_types": [
+        "Rocky body"
+      ],
+      "min_gravity_g": 0.04,
+      "max_gravity_g": 0.056,
+      "volcanism": [
+        "water"
+      ]
+    },
+    {
+      "atmosphere": [
+        "SulphurDioxide"
+      ],
+      "body_types": [
+        "Rocky body"
+      ],
+      "min_gravity_g": 0.04,
+      "max_gravity_g": 0.276,
+      "min_temp_k": 132.0,
+      "max_temp_k": 215.0,
+      "max_pressure_atm": 0.004
+    },
+    {
+      "atmosphere": [
+        "SulphurDioxide"
+      ],
+      "body_types": [
+        "High metal content body"
+      ],
+      "min_gravity_g": 0.265,
+      "max_gravity_g": 0.276,
+      "min_temp_k": 132.0,
+      "max_temp_k": 135.0,
+      "max_pressure_atm": 0.004,
+      "volcanism": "none"
+    }
+  ],
+  "Fumerola": [
+    {
+      "atmosphere": [
+        "Argon"
+      ],
+      "body_types": [
+        "Icy body",
+        "Rocky ice body"
+      ],
+      "min_gravity_g": 0.168,
+      "max_gravity_g": 0.276,
+      "min_temp_k": 57.0,
+      "max_temp_k": 150.0,
+      "volcanism": [
+        "carbon",
+        "methane"
+      ]
+    },
+    {
+      "atmosphere": [
+        "Methane"
+      ],
+      "body_types": [
+        "Icy body"
+      ],
+      "min_gravity_g": 0.025,
+      "max_gravity_g": 0.047,
+      "min_temp_k": 84.0,
+      "max_temp_k": 110.0,
+      "min_pressure_atm": 0.03,
+      "volcanism": [
+        "methane magma"
+      ]
+    },
+    {
+      "atmosphere": [
+        "Neon"
+      ],
+      "body_types": [
+        "Icy body"
+      ],
+      "min_gravity_g": 0.26,
+      "max_gravity_g": 0.276,
+      "min_temp_k": 40.0,
+      "max_temp_k": 60.0,
+      "volcanism": [
+        "carbon",
+        "methane"
+      ]
+    },
+    {
+      "atmosphere": [
+        "Nitrogen"
+      ],
+      "body_types": [
+        "Icy body"
+      ],
+      "min_gravity_g": 0.2,
+      "max_gravity_g": 0.276,
+      "min_temp_k": 57.0,
+      "max_temp_k": 70.0,
+      "volcanism": [
+        "carbon",
+        "methane"
+      ]
+    },
+    {
+      "atmosphere": [
+        "Oxygen"
+      ],
+      "body_types": [
+        "Icy body"
+      ],
+      "min_gravity_g": 0.26,
+      "max_gravity_g": 0.276,
+      "min_temp_k": 160.0,
+      "max_temp_k": 180.0,
+      "volcanism": [
+        "carbon"
+      ]
+    },
+    {
+      "atmosphere": [
+        "SulphurDioxide"
+      ],
+      "body_types": [
+        "Icy body",
+        "Rocky ice body"
+      ],
+      "min_gravity_g": 0.185,
+      "max_gravity_g": 0.276,
+      "min_temp_k": 149.0,
+      "max_temp_k": 272.0,
+      "volcanism": [
+        "carbon",
+        "methane"
+      ]
+    },
+    {
+      "atmosphere": [
+        "Ammonia",
+        "ArgonRich",
+        "CarbonDioxideRich"
+      ],
+      "body_types": [
+        "Icy body"
+      ],
+      "max_gravity_g": 0.276,
+      "volcanism": [
+        "carbon"
+      ]
+    },
+    {
+      "atmosphere": [
+        "Ammonia"
+      ],
+      "body_types": [
+        "High metal content body",
+        "Rocky body",
+        "Rocky ice body"
+      ],
+      "min_gravity_g": 0.04,
+      "max_gravity_g": 0.09,
+      "min_temp_k": 161.0,
+      "max_temp_k": 177.0,
+      "max_pressure_atm": 0.0135,
+      "volcanism": [
+        "metallic",
+        "rocky",
+        "silicate"
+      ]
+    },
+    {
+      "atmosphere": [
+        "Argon"
+      ],
+      "body_types": [
+        "High metal content body",
+        "Rocky body",
+        "Rocky ice body"
+      ],
+      "min_gravity_g": 0.07,
+      "max_gravity_g": 0.276,
+      "min_temp_k": 50.0,
+      "max_temp_k": 121.0,
+      "volcanism": [
+        "metallic",
+        "rocky",
+        "silicate"
+      ]
+    },
+    {
+      "atmosphere": [
+        "Methane"
+      ],
+      "body_types": [
+        "High metal content body",
+        "Rocky body",
+        "Rocky ice body"
+      ],
+      "min_gravity_g": 0.025,
+      "max_gravity_g": 0.127,
+      "min_temp_k": 77.0,
+      "max_temp_k": 109.0,
+      "min_pressure_atm": 0.01,
+      "volcanism": [
+        "metallic",
+        "rocky",
+        "silicate"
+      ]
+    },
+    {
+      "atmosphere": [
+        "SulphurDioxide"
+      ],
+      "body_types": [
+        "Rocky body",
+        "Rocky ice body"
+      ],
+      "min_gravity_g": 0.07,
+      "max_gravity_g": 0.276,
+      "min_temp_k": 54.0,
+      "max_temp_k": 210.0,
+      "volcanism": [
+        "metallic",
+        "rocky",
+        "silicate"
+      ]
+    },
+    {
+      "atmosphere": [
+        "CarbonDioxide"
+      ],
+      "body_types": [
+        "High metal content body"
+      ],
+      "min_gravity_g": 0.05,
+      "max_gravity_g": 0.276,
+      "min_temp_k": 500.0,
+      "volcanism": [
+        "metallic",
+        "rocky",
+        "silicate"
+      ]
+    },
+    {
+      "atmosphere": [
+        "Neon"
+      ],
+      "body_types": [
+        "Icy body"
+      ],
+      "min_gravity_g": 0.04,
+      "max_gravity_g": 0.276,
+      "min_temp_k": 30.0,
+      "max_temp_k": 129.0,
+      "volcanism": [
+        "ammonia",
+        "nitrogen"
+      ]
+    },
+    {
+      "atmosphere": [
+        "Argon",
+        "ArgonRich",
+        "NeonRich"
+      ],
+      "body_types": [
+        "Icy body"
+      ],
+      "min_gravity_g": 0.044,
+      "max_gravity_g": 0.276,
+      "min_temp_k": 50.0,
+      "max_temp_k": 141.0,
+      "volcanism": [
+        "ammonia",
+        "nitrogen"
+      ]
+    },
+    {
+      "atmosphere": [
+        "Methane"
+      ],
+      "body_types": [
+        "Icy body"
+      ],
+      "min_gravity_g": 0.025,
+      "max_gravity_g": 0.1,
+      "min_temp_k": 83.0,
+      "max_temp_k": 109.0,
+      "volcanism": [
+        "nitrogen"
+      ]
+    },
+    {
+      "atmosphere": [
+        "Nitrogen"
+      ],
+      "body_types": [
+        "Icy body"
+      ],
+      "min_gravity_g": 0.21,
+      "max_gravity_g": 0.276,
+      "min_temp_k": 60.0,
+      "max_temp_k": 81.0,
+      "volcanism": [
+        "ammonia",
+        "nitrogen"
+      ]
+    },
+    {
+      "atmosphere": [
+        "Oxygen"
+      ],
+      "body_types": [
+        "Icy body"
+      ],
+      "max_gravity_g": 0.276,
+      "min_temp_k": 150.0,
+      "volcanism": [
+        "ammonia",
+        "nitrogen"
+      ]
+    },
+    {
+      "atmosphere": [
+        "SulphurDioxide"
+      ],
+      "body_types": [
+        "Icy body"
+      ],
+      "min_gravity_g": 0.21,
+      "max_gravity_g": 0.276,
+      "min_temp_k": 160.0,
+      "max_temp_k": 250.0,
+      "volcanism": [
+        "ammonia",
+        "nitrogen"
+      ]
+    },
+    {
+      "atmosphere": [
+        "Ammonia"
+      ],
+      "body_types": [
+        "Icy body",
+        "Rocky body",
+        "Rocky ice body"
+      ],
+      "min_gravity_g": 0.028,
+      "max_gravity_g": 0.276,
+      "min_temp_k": 161.0,
+      "max_temp_k": 177.0,
+      "min_pressure_atm": 0.002,
+      "max_pressure_atm": 0.02,
+      "volcanism": [
+        "water"
+      ]
+    },
+    {
+      "atmosphere": [
+        "Argon",
+        "ArgonRich"
+      ],
+      "body_types": [
+        "Icy body",
+        "Rocky ice body"
+      ],
+      "min_gravity_g": 0.166,
+      "max_gravity_g": 0.276,
+      "min_temp_k": 57.0,
+      "max_temp_k": 150.0,
+      "volcanism": [
+        "water"
+      ]
+    },
+    {
+      "atmosphere": [
+        "CarbonDioxide"
+      ],
+      "body_types": [
+        "Icy body"
+      ],
+      "min_gravity_g": 0.25,
+      "max_gravity_g": 0.276,
+      "min_temp_k": 160.0,
+      "max_temp_k": 180.0,
+      "min_pressure_atm": 0.01,
+      "max_pressure_atm": 0.03,
+      "volcanism": [
+        "water"
+      ]
+    },
+    {
+      "atmosphere": [
+        "Methane"
+      ],
+      "body_types": [
+        "Rocky body"
+      ],
+      "min_gravity_g": 0.04,
+      "max_gravity_g": 0.276,
+      "min_temp_k": 80.0,
+      "max_temp_k": 100.0,
+      "min_pressure_atm": 0.01,
+      "volcanism": [
+        "water"
+      ]
+    },
+    {
+      "atmosphere": [
+        "Neon"
+      ],
+      "body_types": [
+        "Icy body"
+      ],
+      "min_gravity_g": 0.26,
+      "max_gravity_g": 0.276,
+      "min_temp_k": 20.0,
+      "max_temp_k": 60.0,
+      "volcanism": [
+        "water"
+      ]
+    },
+    {
+      "atmosphere": [
+        "Nitrogen"
+      ],
+      "body_types": [
+        "Icy body"
+      ],
+      "min_gravity_g": 0.195,
+      "max_gravity_g": 0.245,
+      "min_temp_k": 56.0,
+      "max_temp_k": 80.0,
+      "volcanism": [
+        "water"
+      ]
+    },
+    {
+      "atmosphere": [
+        "Oxygen"
+      ],
+      "body_types": [
+        "Icy body"
+      ],
+      "min_gravity_g": 0.23,
+      "max_gravity_g": 0.276,
+      "min_temp_k": 153.0,
+      "max_temp_k": 190.0,
+      "min_pressure_atm": 0.01,
+      "volcanism": [
+        "water"
+      ]
+    },
+    {
+      "atmosphere": [
+        "SulphurDioxide"
+      ],
+      "body_types": [
+        "Icy body",
+        "Rocky body",
+        "Rocky ice body"
+      ],
+      "min_gravity_g": 0.18,
+      "max_gravity_g": 0.276,
+      "min_temp_k": 150.0,
+      "max_temp_k": 270.0,
+      "volcanism": [
+        "water"
+      ]
+    },
+    {
+      "atmosphere": [
+        "Water"
+      ],
+      "body_types": [
+        "Rocky body"
+      ],
+      "min_gravity_g": 0.04,
+      "max_gravity_g": 0.06,
+      "volcanism": [
+        "water"
+      ]
+    }
+  ],
+  "Fungoida": [
+    {
+      "atmosphere": [
+        "Ammonia"
+      ],
+      "body_types": [
+        "High metal content body",
+        "Rocky body",
+        "Rocky ice body"
+      ],
+      "min_gravity_g": 0.04,
+      "max_gravity_g": 0.276,
+      "min_temp_k": 152.0,
+      "max_temp_k": 177.0,
+      "max_pressure_atm": 0.0135
+    },
+    {
+      "atmosphere": [
+        "Methane"
+      ],
+      "body_types": [
+        "Rocky ice body"
+      ],
+      "min_gravity_g": 0.033,
+      "max_gravity_g": 0.276,
+      "min_temp_k": 68.0,
+      "max_temp_k": 109.0,
+      "volcanism": "none"
+    },
+    {
+      "atmosphere": [
+        "Methane"
+      ],
+      "body_types": [
+        "High metal content body",
+        "Rocky body"
+      ],
+      "min_gravity_g": 0.033,
+      "max_gravity_g": 0.276,
+      "min_temp_k": 67.0,
+      "max_temp_k": 109.0
+    },
+    {
+      "atmosphere": [
+        "Ammonia"
+      ],
+      "body_types": [
+        "Rocky body",
+        "Rocky ice body"
+      ],
+      "min_gravity_g": 0.04,
+      "max_gravity_g": 0.045,
+      "min_temp_k": 172.0,
+      "max_temp_k": 177.0,
+      "volcanism": [
+        "silicate"
+      ],
+      "unmodeled": "regions"
+    },
+    {
+      "atmosphere": [
+        "Argon"
+      ],
+      "body_types": [
+        "Rocky ice body"
+      ],
+      "min_gravity_g": 0.2,
+      "max_gravity_g": 0.23,
+      "min_temp_k": 60.0,
+      "max_temp_k": 90.0,
+      "volcanism": [
+        "rocky",
+        "silicate"
+      ],
+      "unmodeled": "regions"
+    },
+    {
+      "atmosphere": [
+        "ArgonRich"
+      ],
+      "body_types": [
+        "Icy body"
+      ],
+      "min_gravity_g": 0.3,
+      "max_gravity_g": 0.5,
+      "min_temp_k": 60.0,
+      "max_temp_k": 90.0,
+      "unmodeled": "regions"
+    },
+    {
+      "atmosphere": [
+        "CarbonDioxide"
+      ],
+      "body_types": [
+        "High metal content body",
+        "Rocky body"
+      ],
+      "min_gravity_g": 0.0405,
+      "max_gravity_g": 0.27,
+      "min_temp_k": 180.0,
+      "min_pressure_atm": 0.025,
+      "volcanism": "none",
+      "unmodeled": "regions"
+    },
+    {
+      "atmosphere": [
+        "Methane"
+      ],
+      "body_types": [
+        "Rocky body"
+      ],
+      "min_gravity_g": 0.043,
+      "max_gravity_g": 0.126,
+      "min_temp_k": 78.5,
+      "max_temp_k": 109.0,
+      "min_pressure_atm": 0.012,
+      "volcanism": [
+        "major silicate"
+      ],
+      "unmodeled": "regions"
+    },
+    {
+      "atmosphere": [
+        "Water"
+      ],
+      "body_types": [
+        "High metal content body",
+        "Rocky body"
+      ],
+      "min_gravity_g": 0.039,
+      "max_gravity_g": 0.064,
+      "volcanism": "none",
+      "unmodeled": "regions"
+    },
+    {
+      "atmosphere": [
+        "Argon"
+      ],
+      "body_types": [
+        "High metal content body",
+        "Rocky body",
+        "Rocky ice body"
+      ],
+      "min_gravity_g": 0.058,
+      "max_gravity_g": 0.276,
+      "min_temp_k": 50.0,
+      "max_temp_k": 129.0,
+      "volcanism": "none"
+    },
+    {
+      "atmosphere": [
+        "Nitrogen"
+      ],
+      "body_types": [
+        "High metal content body",
+        "Rocky body",
+        "Rocky ice body"
+      ],
+      "min_gravity_g": 0.155,
+      "max_gravity_g": 0.276,
+      "min_temp_k": 50.0,
+      "max_temp_k": 70.0,
+      "volcanism": "none"
+    },
+    {
+      "atmosphere": [
+        "Argon"
+      ],
+      "body_types": [
+        "Rocky body",
+        "Rocky ice body"
+      ],
+      "min_gravity_g": 0.041,
+      "max_gravity_g": 0.276,
+      "min_temp_k": 160.0,
+      "max_temp_k": 180.0,
+      "max_pressure_atm": 0.0135,
+      "volcanism": [
+        "major silicate"
+      ],
+      "unmodeled": "regions"
+    },
+    {
+      "atmosphere": [
+        "Ammonia"
+      ],
+      "body_types": [
+        "Rocky body",
+        "Rocky ice body"
+      ],
+      "min_gravity_g": 0.042,
+      "max_gravity_g": 0.071,
+      "min_temp_k": 160.0,
+      "max_temp_k": 180.0,
+      "max_pressure_atm": 0.0135,
+      "volcanism": [
+        "major silicate"
+      ],
+      "unmodeled": "regions"
+    },
+    {
+      "atmosphere": [
+        "Ammonia"
+      ],
+      "body_types": [
+        "High metal content body"
+      ],
+      "min_gravity_g": 0.042,
+      "max_gravity_g": 0.071,
+      "min_temp_k": 160.0,
+      "max_temp_k": 180.0,
+      "max_pressure_atm": 0.0135,
+      "volcanism": [
+        "major rocky"
+      ],
+      "unmodeled": "regions"
+    },
+    {
+      "atmosphere": [
+        "CarbonDioxide"
+      ],
+      "body_types": [
+        "High metal content body",
+        "Rocky body"
+      ],
+      "min_gravity_g": 0.041,
+      "max_gravity_g": 0.276,
+      "min_temp_k": 180.0,
+      "min_pressure_atm": 0.025,
+      "volcanism": "none",
+      "unmodeled": "regions"
+    },
+    {
+      "atmosphere": [
+        "Methane"
+      ],
+      "body_types": [
+        "High metal content body",
+        "Rocky body"
+      ],
+      "min_gravity_g": 0.044,
+      "max_gravity_g": 0.125,
+      "min_temp_k": 80.0,
+      "max_temp_k": 110.0,
+      "min_pressure_atm": 0.01,
+      "volcanism": [
+        "major metallic",
+        "major silicate"
+      ],
+      "unmodeled": "regions"
+    },
+    {
+      "atmosphere": [
+        "Water"
+      ],
+      "body_types": [
+        "High metal content body",
+        "Rocky body"
+      ],
+      "min_gravity_g": 0.039,
+      "max_gravity_g": 0.063,
+      "volcanism": "none",
+      "unmodeled": "regions"
+    }
+  ],
+  "Osseus": [
+    {
+      "atmosphere": [
+        "CarbonDioxide"
+      ],
+      "body_types": [
+        "High metal content body",
+        "Rocky body"
+      ],
+      "min_gravity_g": 0.04,
+      "max_gravity_g": 0.276,
+      "min_temp_k": 180.0,
+      "min_pressure_atm": 0.025,
+      "volcanism": "none",
+      "unmodeled": "regions"
+    },
+    {
+      "atmosphere": [
+        "Ammonia"
+      ],
+      "body_types": [
+        "High metal content body",
+        "Rocky body",
+        "Rocky ice body"
+      ],
+      "min_gravity_g": 0.04,
+      "max_gravity_g": 0.088,
+      "min_temp_k": 161.0,
+      "max_temp_k": 177.0,
+      "max_pressure_atm": 0.0135,
+      "volcanism": "any"
+    },
+    {
+      "atmosphere": [
+        "Argon"
+      ],
+      "body_types": [
+        "Rocky ice body"
+      ],
+      "min_gravity_g": 0.2,
+      "max_gravity_g": 0.276,
+      "min_temp_k": 65.0,
+      "max_temp_k": 120.0,
+      "volcanism": "any"
+    },
+    {
+      "atmosphere": [
+        "CarbonDioxide"
+      ],
+      "body_types": [
+        "High metal content body"
+      ],
+      "min_gravity_g": 0.026,
+      "max_gravity_g": 0.276,
+      "min_temp_k": 500.0,
+      "volcanism": "any"
+    },
+    {
+      "atmosphere": [
+        "Methane"
+      ],
+      "body_types": [
+        "Rocky body"
+      ],
+      "min_gravity_g": 0.04,
+      "max_gravity_g": 0.127,
+      "min_temp_k": 80.0,
+      "max_temp_k": 110.0,
+      "min_pressure_atm": 0.012,
+      "volcanism": "any"
+    },
+    {
+      "atmosphere": [
+        "Water"
+      ],
+      "body_types": [
+        "High metal content body",
+        "Rocky body"
+      ],
+      "min_gravity_g": 0.04,
+      "max_gravity_g": 0.055
+    },
+    {
+      "atmosphere": [
+        "Ammonia"
+      ],
+      "body_types": [
+        "High metal content body",
+        "Rocky body",
+        "Rocky ice body"
+      ],
+      "min_gravity_g": 0.04,
+      "max_gravity_g": 0.276,
+      "min_temp_k": 160.0,
+      "max_temp_k": 177.0,
+      "max_pressure_atm": 0.0135
+    },
+    {
+      "atmosphere": [
+        "Argon"
+      ],
+      "body_types": [
+        "High metal content body",
+        "Rocky body",
+        "Rocky ice body"
+      ],
+      "min_gravity_g": 0.059,
+      "max_gravity_g": 0.276,
+      "min_temp_k": 50.0,
+      "max_temp_k": 135.0,
+      "volcanism": "none"
+    },
+    {
+      "atmosphere": [
+        "Argon"
+      ],
+      "body_types": [
+        "Rocky ice body"
+      ],
+      "min_gravity_g": 0.059,
+      "max_gravity_g": 0.276,
+      "min_temp_k": 50.0,
+      "max_temp_k": 135.0,
+      "volcanism": [
+        "geysers",
+        "water"
+      ]
+    },
+    {
+      "atmosphere": [
+        "ArgonRich"
+      ],
+      "body_types": [
+        "Rocky ice body"
+      ],
+      "min_gravity_g": 0.035,
+      "max_gravity_g": 0.276,
+      "min_temp_k": 60.0,
+      "max_temp_k": 80.5,
+      "min_pressure_atm": 0.03,
+      "volcanism": "none"
+    },
+    {
+      "atmosphere": [
+        "Methane"
+      ],
+      "body_types": [
+        "High metal content body",
+        "Rocky body",
+        "Rocky ice body"
+      ],
+      "min_gravity_g": 0.033,
+      "max_gravity_g": 0.276,
+      "min_temp_k": 67.0,
+      "max_temp_k": 109.0
+    },
+    {
+      "atmosphere": [
+        "Nitrogen"
+      ],
+      "body_types": [
+        "High metal content body",
+        "Rocky body",
+        "Rocky ice body"
+      ],
+      "min_gravity_g": 0.05,
+      "max_gravity_g": 0.276,
+      "min_temp_k": 42.0,
+      "max_temp_k": 70.1,
+      "volcanism": "none"
+    },
+    {
+      "atmosphere": [
+        "CarbonDioxide"
+      ],
+      "body_types": [
+        "High metal content body",
+        "Rocky body"
+      ],
+      "min_gravity_g": 0.0405,
+      "max_gravity_g": 0.276,
+      "min_temp_k": 180.0,
+      "min_pressure_atm": 0.025,
+      "volcanism": "none",
+      "unmodeled": "regions"
+    },
+    {
+      "atmosphere": [
+        "CarbonDioxide"
+      ],
+      "body_types": [
+        "High metal content body",
+        "Rocky body"
+      ],
+      "min_gravity_g": 0.0405,
+      "max_gravity_g": 0.276,
+      "min_temp_k": 191.0,
+      "min_pressure_atm": 0.057,
+      "volcanism": "none",
+      "unmodeled": "regions"
+    }
+  ],
+  "Recepta": [
+    {
+      "atmosphere": [
+        "CarbonDioxide"
+      ],
+      "min_gravity_g": 0.04,
+      "max_gravity_g": 0.276,
+      "min_temp_k": 151.0,
+      "max_temp_k": 200.0,
+      "unmodeled": "atmosphere_component"
+    },
+    {
+      "atmosphere": [
+        "Oxygen"
+      ],
+      "body_types": [
+        "Icy body"
+      ],
+      "min_gravity_g": 0.23,
+      "max_gravity_g": 0.276,
+      "min_temp_k": 154.0,
+      "max_temp_k": 175.0,
+      "min_pressure_atm": 0.01,
+      "volcanism": "none",
+      "unmodeled": "atmosphere_component"
+    },
+    {
+      "atmosphere": [
+        "Oxygen"
+      ],
+      "body_types": [
+        "Icy body"
+      ],
+      "min_gravity_g": 0.23,
+      "max_gravity_g": 0.276,
+      "min_temp_k": 154.0,
+      "max_temp_k": 175.0,
+      "min_pressure_atm": 0.01,
+      "volcanism": [
+        "water"
+      ],
+      "unmodeled": "atmosphere_component"
+    },
+    {
+      "atmosphere": [
+        "SulphurDioxide"
+      ],
+      "min_gravity_g": 0.04,
+      "max_gravity_g": 0.276,
+      "min_temp_k": 132.0,
+      "max_temp_k": 273.0,
+      "unmodeled": "atmosphere_component"
+    },
+    {
+      "atmosphere": [
+        "CarbonDioxide"
+      ],
+      "min_gravity_g": 0.04,
+      "max_gravity_g": 0.276,
+      "min_temp_k": 150.0,
+      "max_temp_k": 195.0,
+      "volcanism": "none",
+      "unmodeled": "atmosphere_component"
+    },
+    {
+      "atmosphere": [
+        "CarbonDioxide"
+      ],
+      "body_types": [
+        "Icy body",
+        "Rocky ice body"
+      ],
+      "min_gravity_g": 0.04,
+      "max_gravity_g": 0.276,
+      "min_temp_k": 150.0,
+      "max_temp_k": 195.0,
+      "volcanism": [
+        "water"
+      ],
+      "unmodeled": "atmosphere_component"
+    },
+    {
+      "atmosphere": [
+        "SulphurDioxide"
+      ],
+      "min_gravity_g": 0.04,
+      "max_gravity_g": 0.276,
+      "min_temp_k": 132.0,
+      "max_temp_k": 272.0,
+      "unmodeled": "atmosphere_component"
+    },
+    {
+      "atmosphere": [
+        "CarbonDioxide",
+        "CarbonDioxideRich"
+      ],
+      "body_types": [
+        "High metal content body",
+        "Icy body",
+        "Rocky body"
+      ],
+      "min_gravity_g": 0.04,
+      "max_gravity_g": 0.276,
+      "min_temp_k": 150.0,
+      "max_temp_k": 195.0,
+      "volcanism": "none",
+      "unmodeled": "atmosphere_component"
+    },
+    {
+      "atmosphere": [
+        "Oxygen"
+      ],
+      "body_types": [
+        "Icy body"
+      ],
+      "min_gravity_g": 0.23,
+      "max_gravity_g": 0.276,
+      "min_temp_k": 154.0,
+      "max_temp_k": 175.0,
+      "min_pressure_atm": 0.01,
+      "volcanism": "none",
+      "unmodeled": "atmosphere_component"
+    },
+    {
+      "atmosphere": [
+        "Oxygen"
+      ],
+      "body_types": [
+        "Icy body"
+      ],
+      "min_gravity_g": 0.23,
+      "max_gravity_g": 0.276,
+      "min_temp_k": 154.0,
+      "max_temp_k": 175.0,
+      "min_pressure_atm": 0.01,
+      "volcanism": [
+        "water"
+      ],
+      "unmodeled": "atmosphere_component"
+    },
+    {
+      "atmosphere": [
+        "SulphurDioxide"
+      ],
+      "min_gravity_g": 0.04,
+      "max_gravity_g": 0.276,
+      "min_temp_k": 132.0,
+      "max_temp_k": 275.0,
+      "unmodeled": "atmosphere_component"
+    }
+  ],
+  "Sinuous Tuber": [
+    {
+      "body_types": [
+        "High metal content body"
+      ],
+      "min_temp_k": 200.0,
+      "max_temp_k": 500.0,
+      "volcanism": [
+        "rocky magma"
+      ],
+      "unmodeled": "tuber"
+    },
+    {
+      "body_types": [
+        "High metal content body",
+        "Metal rich body",
+        "Rocky body"
+      ],
+      "min_temp_k": 200.0,
+      "max_temp_k": 500.0,
+      "volcanism": "any",
+      "unmodeled": "tuber"
+    },
+    {
+      "body_types": [
+        "High metal content body",
+        "Metal rich body"
+      ],
+      "min_temp_k": 200.0,
+      "max_temp_k": 500.0,
+      "volcanism": [
+        "major rocky magma",
+        "major silicate vapour"
+      ],
+      "unmodeled": "tuber"
+    },
+    {
+      "body_types": [
+        "High metal content body",
+        "Metal rich body"
+      ],
+      "min_temp_k": 200.0,
+      "max_temp_k": 500.0,
+      "volcanism": [
+        "major rocky magma",
+        "major silicate vapour"
+      ],
+      "unmodeled": "regions"
+    },
+    {
+      "body_types": [
+        "Rocky body"
+      ],
+      "min_temp_k": 200.0,
+      "max_temp_k": 500.0,
+      "volcanism": [
+        "major metallic magma",
+        "major silicate vapour"
+      ],
+      "unmodeled": "max_orbital_period, tuber"
+    },
+    {
+      "body_types": [
+        "Rocky body"
+      ],
+      "min_temp_k": 200.0,
+      "max_temp_k": 500.0,
+      "volcanism": [
+        "major silicate vapour"
+      ],
+      "unmodeled": "max_orbital_period, tuber"
+    },
+    {
+      "body_types": [
+        "Rocky body"
+      ],
+      "min_temp_k": 200.0,
+      "max_temp_k": 500.0,
+      "volcanism": [
+        "major silicate vapour"
+      ],
+      "unmodeled": "regions"
+    },
+    {
+      "body_types": [
+        "Rocky body"
+      ],
+      "min_temp_k": 200.0,
+      "max_temp_k": 500.0,
+      "volcanism": [
+        "major silicate vapour"
+      ],
+      "unmodeled": "max_orbital_period, tuber"
+    },
+    {
+      "body_types": [
+        "High metal content body",
+        "Metal rich body"
+      ],
+      "min_temp_k": 200.0,
+      "max_temp_k": 500.0,
+      "volcanism": [
+        "major rocky magma",
+        "major silicate vapour"
+      ],
+      "unmodeled": "tuber"
+    },
+    {
+      "body_types": [
+        "High metal content body"
+      ],
+      "min_temp_k": 200.0,
+      "max_temp_k": 500.0,
+      "volcanism": [
+        "major rocky magma",
+        "major silicate vapour"
+      ],
+      "unmodeled": "tuber"
+    },
+    {
+      "body_types": [
+        "Rocky body"
+      ],
+      "min_temp_k": 200.0,
+      "max_temp_k": 500.0,
+      "volcanism": [
+        "major rocky magma",
+        "major silicate vapour"
+      ],
+      "unmodeled": "max_orbital_period, tuber"
+    },
+    {
+      "body_types": [
+        "High metal content body",
+        "Metal rich body"
+      ],
+      "min_temp_k": 200.0,
+      "max_temp_k": 500.0,
+      "volcanism": [
+        "=metallic magma volcanism",
+        "=rocky magma volcanism",
+        "major silicate vapour"
+      ],
+      "unmodeled": "tuber"
+    }
+  ],
+  "Stratum": [
+    {
+      "atmosphere": [
+        "CarbonDioxide"
+      ],
+      "body_types": [
+        "Rocky body"
+      ],
+      "min_gravity_g": 0.04,
+      "max_gravity_g": 0.48,
+      "min_temp_k": 165.0,
+      "max_temp_k": 190.0,
+      "min_pressure_atm": 0.0035,
+      "volcanism": "none",
+      "unmodeled": "regions"
+    },
+    {
+      "atmosphere": [
+        "SulphurDioxide"
+      ],
+      "body_types": [
+        "Rocky body"
+      ],
+      "min_gravity_g": 0.27,
+      "max_gravity_g": 0.4,
+      "min_temp_k": 165.0,
+      "max_temp_k": 190.0,
+      "unmodeled": "regions"
+    },
+    {
+      "atmosphere": [
+        "Ammonia"
+      ],
+      "body_types": [
+        "Rocky body"
+      ],
+      "min_gravity_g": 0.04,
+      "max_gravity_g": 0.35,
+      "min_temp_k": 165.0,
+      "max_temp_k": 177.0,
+      "max_pressure_atm": 0.0135
+    },
+    {
+      "atmosphere": [
+        "CarbonDioxide"
+      ],
+      "body_types": [
+        "Rocky body"
+      ],
+      "min_gravity_g": 0.04,
+      "max_gravity_g": 0.585,
+      "min_temp_k": 165.0,
+      "max_temp_k": 395.0,
+      "volcanism": "none"
+    },
+    {
+      "atmosphere": [
+        "CarbonDioxideRich"
+      ],
+      "body_types": [
+        "Rocky body"
+      ],
+      "min_gravity_g": 0.43,
+      "max_gravity_g": 0.585,
+      "min_temp_k": 185.0,
+      "max_temp_k": 260.0,
+      "min_pressure_atm": 0.015,
+      "volcanism": "none"
+    },
+    {
+      "atmosphere": [
+        "Water"
+      ],
+      "body_types": [
+        "Rocky body"
+      ],
+      "min_gravity_g": 0.04,
+      "max_gravity_g": 0.056,
+      "volcanism": "none"
+    },
+    {
+      "atmosphere": [
+        "Water"
+      ],
+      "body_types": [
+        "Rocky body"
+      ],
+      "min_gravity_g": 0.04,
+      "max_gravity_g": 0.056,
+      "min_pressure_atm": 0.065,
+      "volcanism": [
+        "water"
+      ]
+    },
+    {
+      "atmosphere": [
+        "Oxygen"
+      ],
+      "body_types": [
+        "Rocky body"
+      ],
+      "min_gravity_g": 0.39,
+      "max_gravity_g": 0.59,
+      "min_temp_k": 165.0,
+      "max_temp_k": 250.0,
+      "min_pressure_atm": 0.022
+    },
+    {
+      "atmosphere": [
+        "Ammonia"
+      ],
+      "body_types": [
+        "Rocky body"
+      ],
+      "min_gravity_g": 0.04,
+      "max_gravity_g": 0.34,
+      "min_temp_k": 165.0,
+      "max_temp_k": 177.0,
+      "max_pressure_atm": 0.0135,
+      "unmodeled": "regions"
+    },
+    {
+      "atmosphere": [
+        "SulphurDioxide"
+      ],
+      "body_types": [
+        "Rocky body"
+      ],
+      "min_gravity_g": 0.26,
+      "max_gravity_g": 0.57,
+      "min_temp_k": 165.0,
+      "max_temp_k": 373.0
+    },
+    {
+      "atmosphere": [
+        "CarbonDioxide"
+      ],
+      "body_types": [
+        "Rocky body"
+      ],
+      "min_gravity_g": 0.03,
+      "max_gravity_g": 0.4,
+      "min_temp_k": 165.0,
+      "max_temp_k": 190.0,
+      "min_pressure_atm": 0.05,
+      "volcanism": "none",
+      "unmodeled": "regions"
+    },
+    {
+      "atmosphere": [
+        "SulphurDioxide"
+      ],
+      "body_types": [
+        "Rocky body"
+      ],
+      "min_gravity_g": 0.27,
+      "max_gravity_g": 0.4,
+      "min_temp_k": 165.0,
+      "max_temp_k": 190.0,
+      "unmodeled": "regions"
+    },
+    {
+      "atmosphere": [
+        "CarbonDioxide"
+      ],
+      "body_types": [
+        "Rocky body"
+      ],
+      "min_gravity_g": 0.04,
+      "max_gravity_g": 0.6,
+      "min_temp_k": 191.0,
+      "max_temp_k": 371.0,
+      "volcanism": "none",
+      "unmodeled": "regions"
+    },
+    {
+      "atmosphere": [
+        "CarbonDioxideRich"
+      ],
+      "body_types": [
+        "Rocky body"
+      ],
+      "min_gravity_g": 0.44,
+      "max_gravity_g": 0.56,
+      "min_temp_k": 210.0,
+      "max_temp_k": 246.0,
+      "min_pressure_atm": 0.01,
+      "volcanism": "none",
+      "unmodeled": "regions"
+    },
+    {
+      "atmosphere": [
+        "Oxygen"
+      ],
+      "body_types": [
+        "Rocky body"
+      ],
+      "min_gravity_g": 0.4,
+      "max_gravity_g": 0.6,
+      "min_temp_k": 200.0,
+      "max_temp_k": 250.0,
+      "min_pressure_atm": 0.01,
+      "unmodeled": "regions"
+    },
+    {
+      "atmosphere": [
+        "SulphurDioxide"
+      ],
+      "body_types": [
+        "Rocky body"
+      ],
+      "min_gravity_g": 0.26,
+      "max_gravity_g": 0.55,
+      "min_temp_k": 191.0,
+      "max_temp_k": 373.0,
+      "unmodeled": "regions"
+    },
+    {
+      "atmosphere": [
+        "Ammonia"
+      ],
+      "body_types": [
+        "High metal content body"
+      ],
+      "min_gravity_g": 0.045,
+      "max_gravity_g": 0.38,
+      "min_temp_k": 165.0,
+      "max_temp_k": 177.0
+    },
+    {
+      "atmosphere": [
+        "Argon",
+        "ArgonRich"
+      ],
+      "body_types": [
+        "High metal content body"
+      ],
+      "min_gravity_g": 0.485,
+      "max_gravity_g": 0.54,
+      "min_temp_k": 167.0,
+      "max_temp_k": 199.0,
+      "volcanism": "none"
+    },
+    {
+      "atmosphere": [
+        "CarbonDioxide"
+      ],
+      "body_types": [
+        "High metal content body"
+      ],
+      "min_gravity_g": 0.045,
+      "max_gravity_g": 0.61,
+      "min_temp_k": 165.0,
+      "max_temp_k": 430.0
+    },
+    {
+      "atmosphere": [
+        "CarbonDioxideRich"
+      ],
+      "body_types": [
+        "High metal content body"
+      ],
+      "min_gravity_g": 0.035,
+      "max_gravity_g": 0.61,
+      "min_temp_k": 165.0,
+      "max_temp_k": 260.0
+    },
+    {
+      "atmosphere": [
+        "Oxygen"
+      ],
+      "body_types": [
+        "High metal content body"
+      ],
+      "min_gravity_g": 0.4,
+      "max_gravity_g": 0.52,
+      "min_temp_k": 165.0,
+      "max_temp_k": 246.0
+    },
+    {
+      "atmosphere": [
+        "SulphurDioxide"
+      ],
+      "body_types": [
+        "High metal content body"
+      ],
+      "min_gravity_g": 0.29,
+      "max_gravity_g": 0.62,
+      "min_temp_k": 165.0,
+      "max_temp_k": 450.0
+    },
+    {
+      "atmosphere": [
+        "Water"
+      ],
+      "body_types": [
+        "High metal content body"
+      ],
+      "min_gravity_g": 0.045,
+      "max_gravity_g": 0.063,
+      "volcanism": "none"
+    },
+    {
+      "atmosphere": [
+        "CarbonDioxide"
+      ],
+      "body_types": [
+        "Rocky body"
+      ],
+      "min_gravity_g": 0.043,
+      "max_gravity_g": 0.54,
+      "min_temp_k": 191.0,
+      "max_temp_k": 365.0,
+      "min_pressure_atm": 0.001,
+      "volcanism": "none",
+      "unmodeled": "regions"
+    },
+    {
+      "atmosphere": [
+        "CarbonDioxideRich"
+      ],
+      "body_types": [
+        "Rocky body"
+      ],
+      "min_gravity_g": 0.45,
+      "max_gravity_g": 0.56,
+      "min_temp_k": 200.0,
+      "max_temp_k": 250.0,
+      "min_pressure_atm": 0.01,
+      "volcanism": "none",
+      "unmodeled": "regions"
+    },
+    {
+      "atmosphere": [
+        "SulphurDioxide"
+      ],
+      "body_types": [
+        "Rocky body"
+      ],
+      "min_gravity_g": 0.29,
+      "max_gravity_g": 0.52,
+      "min_temp_k": 191.0,
+      "max_temp_k": 369.0,
+      "unmodeled": "regions"
+    }
+  ],
+  "Tubus": [
+    {
+      "atmosphere": [
+        "CarbonDioxide"
+      ],
+      "body_types": [
+        "Rocky body"
+      ],
+      "min_gravity_g": 0.041,
+      "max_gravity_g": 0.153,
+      "min_temp_k": 160.0,
+      "max_temp_k": 197.0,
+      "min_pressure_atm": 0.003,
+      "volcanism": "none",
+      "unmodeled": "regions"
+    },
+    {
+      "atmosphere": [
+        "Ammonia"
+      ],
+      "body_types": [
+        "High metal content body"
+      ],
+      "min_gravity_g": 0.045,
+      "max_gravity_g": 0.152,
+      "min_temp_k": 160.0,
+      "max_temp_k": 177.0,
+      "max_pressure_atm": 0.0135
+    },
+    {
+      "atmosphere": [
+        "CarbonDioxide"
+      ],
+      "body_types": [
+        "High metal content body"
+      ],
+      "min_gravity_g": 0.045,
+      "max_gravity_g": 0.152,
+      "min_temp_k": 160.0,
+      "max_temp_k": 195.0,
+      "volcanism": "none"
+    },
+    {
+      "atmosphere": [
+        "CarbonDioxide"
+      ],
+      "body_types": [
+        "Rocky body"
+      ],
+      "min_gravity_g": 0.04,
+      "max_gravity_g": 0.152,
+      "min_temp_k": 160.0,
+      "max_temp_k": 197.0,
+      "min_pressure_atm": 0.003,
+      "volcanism": "none",
+      "unmodeled": "regions"
+    },
+    {
+      "atmosphere": [
+        "Ammonia"
+      ],
+      "body_types": [
+        "Rocky body"
+      ],
+      "min_gravity_g": 0.04,
+      "max_gravity_g": 0.153,
+      "min_temp_k": 160.0,
+      "max_temp_k": 177.0,
+      "max_pressure_atm": 0.0135
+    },
+    {
+      "atmosphere": [
+        "CarbonDioxide"
+      ],
+      "body_types": [
+        "Rocky body"
+      ],
+      "min_gravity_g": 0.04,
+      "max_gravity_g": 0.153,
+      "min_temp_k": 160.0,
+      "max_temp_k": 197.0,
+      "min_pressure_atm": 0.003,
+      "volcanism": "none",
+      "unmodeled": "regions"
+    }
+  ],
+  "Tussock": [
+    {
+      "atmosphere": [
+        "CarbonDioxide"
+      ],
+      "body_types": [
+        "High metal content body",
+        "Rocky body"
+      ],
+      "min_gravity_g": 0.04,
+      "max_gravity_g": 0.09,
+      "min_temp_k": 146.0,
+      "max_temp_k": 154.0,
+      "min_pressure_atm": 0.00289,
+      "volcanism": "none",
+      "unmodeled": "regions"
+    },
+    {
+      "atmosphere": [
+        "CarbonDioxide"
+      ],
+      "body_types": [
+        "High metal content body",
+        "Rocky body"
+      ],
+      "min_gravity_g": 0.04,
+      "max_gravity_g": 0.13,
+      "min_temp_k": 155.0,
+      "max_temp_k": 160.0,
+      "min_pressure_atm": 0.00289,
+      "volcanism": "none",
+      "unmodeled": "regions"
+    },
+    {
+      "atmosphere": [
+        "CarbonDioxide"
+      ],
+      "body_types": [
+        "High metal content body",
+        "Rocky body"
+      ],
+      "min_gravity_g": 0.04,
+      "max_gravity_g": 0.2,
+      "min_temp_k": 161.0,
+      "max_temp_k": 170.0,
+      "min_pressure_atm": 0.00289,
+      "volcanism": "none",
+      "unmodeled": "regions"
+    },
+    {
+      "atmosphere": [
+        "Ammonia"
+      ],
+      "body_types": [
+        "High metal content body",
+        "Rocky body"
+      ],
+      "min_gravity_g": 0.04,
+      "max_gravity_g": 0.276,
+      "min_temp_k": 152.0,
+      "max_temp_k": 177.0,
+      "max_pressure_atm": 0.0135,
+      "unmodeled": "regions"
+    },
+    {
+      "atmosphere": [
+        "Ammonia"
+      ],
+      "body_types": [
+        "High metal content body",
+        "Rocky body"
+      ],
+      "min_gravity_g": 0.04,
+      "max_gravity_g": 0.276,
+      "min_temp_k": 152.0,
+      "max_temp_k": 177.0,
+      "max_pressure_atm": 0.0135,
+      "unmodeled": "regions"
+    },
+    {
+      "atmosphere": [
+        "CarbonDioxide"
+      ],
+      "body_types": [
+        "High metal content body",
+        "Rocky body"
+      ],
+      "min_gravity_g": 0.04,
+      "max_gravity_g": 0.276,
+      "min_temp_k": 147.0,
+      "max_temp_k": 197.0,
+      "min_pressure_atm": 0.00289,
+      "volcanism": "none",
+      "unmodeled": "regions"
+    },
+    {
+      "atmosphere": [
+        "CarbonDioxide"
+      ],
+      "body_types": [
+        "High metal content body",
+        "Rocky body"
+      ],
+      "min_gravity_g": 0.042,
+      "max_gravity_g": 0.23,
+      "min_temp_k": 171.0,
+      "max_temp_k": 174.0,
+      "min_pressure_atm": 0.01,
+      "max_pressure_atm": 0.071,
+      "volcanism": "none",
+      "unmodeled": "regions"
+    },
+    {
+      "atmosphere": [
+        "CarbonDioxide"
+      ],
+      "body_types": [
+        "High metal content body",
+        "Rocky body"
+      ],
+      "min_gravity_g": 0.042,
+      "max_gravity_g": 0.276,
+      "min_temp_k": 175.0,
+      "max_temp_k": 180.0,
+      "min_pressure_atm": 0.016,
+      "volcanism": "none",
+      "unmodeled": "regions"
+    },
+    {
+      "atmosphere": [
+        "CarbonDioxide"
+      ],
+      "body_types": [
+        "High metal content body",
+        "Rocky body"
+      ],
+      "min_gravity_g": 0.04,
+      "max_gravity_g": 0.276,
+      "min_temp_k": 145.0,
+      "max_temp_k": 197.0,
+      "min_pressure_atm": 0.00289,
+      "volcanism": "none",
+      "unmodeled": "regions"
+    },
+    {
+      "atmosphere": [
+        "Ammonia"
+      ],
+      "body_types": [
+        "High metal content body",
+        "Rocky body"
+      ],
+      "min_gravity_g": 0.042,
+      "max_gravity_g": 0.276,
+      "min_temp_k": 152.0,
+      "max_temp_k": 177.0,
+      "max_pressure_atm": 0.0135,
+      "unmodeled": "regions"
+    },
+    {
+      "atmosphere": [
+        "CarbonDioxide"
+      ],
+      "body_types": [
+        "High metal content body",
+        "Rocky body"
+      ],
+      "min_gravity_g": 0.041,
+      "max_gravity_g": 0.27,
+      "min_temp_k": 181.0,
+      "max_temp_k": 190.0,
+      "min_pressure_atm": 0.0275,
+      "volcanism": "none",
+      "unmodeled": "regions"
+    },
+    {
+      "atmosphere": [
+        "CarbonDioxide"
+      ],
+      "body_types": [
+        "High metal content body",
+        "Rocky body"
+      ],
+      "min_gravity_g": 0.04,
+      "max_gravity_g": 0.276,
+      "min_temp_k": 191.0,
+      "max_temp_k": 197.0,
+      "min_pressure_atm": 0.058,
+      "volcanism": "none",
+      "unmodeled": "regions"
+    },
+    {
+      "atmosphere": [
+        "SulphurDioxide"
+      ],
+      "body_types": [
+        "High metal content body",
+        "Rocky body"
+      ],
+      "min_gravity_g": 0.04,
+      "max_gravity_g": 0.276,
+      "min_temp_k": 132.0,
+      "max_temp_k": 180.0,
+      "max_pressure_atm": 0.01
+    },
+    {
+      "atmosphere": [
+        "Water"
+      ],
+      "body_types": [
+        "High metal content body",
+        "Rocky body"
+      ],
+      "min_gravity_g": 0.04,
+      "max_gravity_g": 0.065,
+      "volcanism": "none"
+    },
+    {
+      "atmosphere": [
+        "Water"
+      ],
+      "body_types": [
+        "High metal content body",
+        "Rocky body"
+      ],
+      "min_gravity_g": 0.04,
+      "max_gravity_g": 0.065,
+      "volcanism": [
+        "water"
+      ]
+    },
+    {
+      "atmosphere": [
+        "Argon"
+      ],
+      "body_types": [
+        "Rocky ice body"
+      ],
+      "min_gravity_g": 0.22,
+      "max_gravity_g": 0.276,
+      "min_temp_k": 80.0,
+      "max_temp_k": 129.0
+    },
+    {
+      "atmosphere": [
+        "Methane"
+      ],
+      "body_types": [
+        "Rocky body",
+        "Rocky ice body"
+      ],
+      "min_gravity_g": 0.033,
+      "max_gravity_g": 0.276,
+      "min_temp_k": 80.0,
+      "max_temp_k": 110.0
+    }
+  ]
+}

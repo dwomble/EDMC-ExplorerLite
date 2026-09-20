@@ -32,8 +32,8 @@ def _discard_tags_within_min_distance(state:ExplorerState, genus:str, lat:float,
         if not p[3] or surface_distance_m(lat, lon, p[0], p[1], state.planet_radius) >= min_dist
     ]
 
-def _too_close_to_existing_sample(state:ExplorerState, genus:str, lat:float, lon:float) -> bool:
-    """ Don't add a waypoint that's already within the genus's minimum sample distance of a real sample already taken """
+def _too_close(state:ExplorerState, genus:str, lat:float, lon:float) -> bool:
+    """ True if within the genus's minimum sample distance of a real sample already taken """
     if state.planet_radius is None:
         return False
     min_dist:int|None = exobiology_data.genus_min_distance(genus)
@@ -121,12 +121,12 @@ def on_codex_entry(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict
         fields["confirmed_value"] = confirmed_value
     store.update_species_progress(progress_id, **fields)
 
-    if not _too_close_to_existing_sample(state, genus, latitude, longitude):
+    if not _too_close(state, genus, latitude, longitude):
         state.sample_positions.setdefault(genus, []).append((latitude, longitude, color_name, True))
     return {"panel": True, "overlay": "radar"}
 
 def on_sell_organic_data(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict:
-    """ BioData doesn't reliably itemize what actually got sold for how much so presume every completed sample was sold"""
+    """ BioData doesn't reliably itemize sales, so presume every completed sample was sold """
     if state.cmdr_id is None:
         return {}
     now:str = now_iso()
@@ -135,7 +135,7 @@ def on_sell_organic_data(store:ExplorerStore, state:ExplorerState, entry:dict) -
     if total > 0:
         store.record_sale(state.cmdr_id, "exobiology", now, state.system_name or None, total, json.dumps(entry))
 
-    completed:list[sqlite3.Row] = store.get_completed_unsold_species_for_cmdr(state.cmdr_id)
+    completed:list[sqlite3.Row] = store.get_unsold_species(state.cmdr_id)
     sold_values:list[tuple[int, int]] = [
         (row["id"], exobiology.with_first_logged_bonus(row["confirmed_value"] or 0, bool(row["was_footfalled"])))
         for row in completed
