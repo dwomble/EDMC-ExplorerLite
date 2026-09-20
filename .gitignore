@@ -207,6 +207,10 @@ cython_debug/
 # Temporary file for partial code execution
 tempCodeRunnerFile.py
 
+DESIGN.md
+REQUIREMENTS.md
+CLAUDE.md
+
 # Ruff stuff:
 .ruff_cache/
 
