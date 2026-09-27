@@ -74,10 +74,10 @@ LABEL_COLOR:str = "#ffffff"
 
 # Odyssey exobiology variant color names
 CODEX_TAG_COLORS:dict[str, str] = {
-    "Amethyst": "#9966cc", "Aquamarine": "#7fffd4", "Blue": "#3366ff", "Cobalt": "#3355aa",
+    "Amethyst": "#b67fed", "Aquamarine": "#7fffd4", "Blue": "#658cff", "Cobalt": "#3354a7",
     "Cyan": "#00e5e5", "Emerald": "#2ecc71", "Gold": "#ffd700", "Green": "#14ac14",
-    "Grey": "#aaaaaa", "Indigo": "#783bf4", "Lime": "#bfff00", "Magenta": "#ff33ff",
-    "Maroon": "#aa3344", "Mauve": "#aa77aa", "Mulberry": "#993366", "Ocher": "#bb9933",
+    "Grey": "#aaaaaa", "Indigo": "#793cf4", "Lime": "#bfff00", "Magenta": "#ff33ff",
+    "Maroon": "#aa3344", "Mauve": "#be53be", "Mulberry": "#B93175", "Ocher": "#cfa528",
     "Orange": "#ff8822", "Peach": "#ffaa88", "Red": "#ee3333", "Sage": "#889977",
     "Teal": "#0C9D87", "Turquoise": "#33cccc", "White": "#eeeeee", "Yellow": "#eedd22",
 }
