@@ -74,7 +74,7 @@ class TestFullWalkthrough:
         assert system["fss_body_count"] == 3
         assert system["sold_at"] is not None # MultiSellExplorationData named this system
 
-        flagged = load.store.get_flagged_bodies_for_system(system_id)
+        flagged = load.store.get_flagged_bodies(system_id)
         flagged_body_ids = {b["body_id"] for b in flagged}
         assert 1 in flagged_body_ids # Deltius A 1, metal rich -- should clear the (lowered) threshold
 
@@ -87,7 +87,7 @@ class TestFullWalkthrough:
         assert body2_row is not None
         assert body2_row["flagged_exobio"] == 1 # Bacterium's range tops out at 9.1M, above the 5M default threshold
 
-        progress = load.store.get_species_progress_for_body(body2)
+        progress = load.store.get_species_progress(body2)
         assert len(progress) == 1
         assert progress[0]["genus"] == "Bacterium"
         assert progress[0]["species"] == "Bacterium Aurasus"

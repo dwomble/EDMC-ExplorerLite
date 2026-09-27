@@ -13,7 +13,7 @@ def on_honk(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict:
 
     # star's AutoScan usually fires before the honk
     star_types:list[str] = [
-        body["star_type"] or "" for body in store.get_bodies_for_system(state.system_id) if body["body_type"] == "Star"
+        body["star_type"] or "" for body in store.get_bodies(state.system_id) if body["body_type"] == "Star"
     ]
     verdict:str = honk_heuristic.assess(body_count, star_types)
 

@@ -510,7 +510,7 @@ class TestPanelStates:
         body_pk:int = load.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 1, "QuietSpace A 1")
         load.store.replace_genus_predictions(body_pk, [("Anemone", None, 0.9)])
 
-        best:list[dict] = load.panel._best_predictions_for_body(body_pk)
+        best:list[dict] = load.panel._best_predictions(body_pk)
         assert len(best) == 1, best
         assert best[0]["value_min"] < best[0]["value_max"], "test premise: Anemone should have a real min-max spread"
 
@@ -534,7 +534,7 @@ class TestPanelStates:
         body_pk:int = load.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 1, "QuietSpace A 1")
         load.store.replace_genus_predictions(body_pk, [("Bacterium", "Bacterium Alcyoneum", 1.0)])
 
-        best:list[dict] = load.panel._best_predictions_for_body(body_pk)
+        best:list[dict] = load.panel._best_predictions(body_pk)
         assert len(best) == 1, best
         assert best[0]["value_min"] == best[0]["value_max"], "test premise: a single candidate is already exact"
 
@@ -577,6 +577,8 @@ class TestPanelStates:
         generic genus guess. Checked at the store level (not the panel's capped top-3 display)
         since a body can plausibly match several genera/species at once and we only care that
         this one specific species is *among* what got stored, not that it's the only one.
+        Fixture includes an FSSBodySignals confirming biology first -- Tussock's rulesets are
+        all `unmodeled`, so they need that before contributing a prediction at all.
         """
         from explorer.state import state as explorer_state
 
@@ -587,9 +589,9 @@ class TestPanelStates:
         import load
         assert load.store is not None and load.panel is not None
         assert explorer_state.system_id is not None
-        flagged = load.store.get_flagged_bodies_for_system(explorer_state.system_id)
+        flagged = load.store.get_flagged_bodies(explorer_state.system_id)
         body = next(b for b in flagged if b["body_name"] == "Speciesia A 1")
-        predictions = load.store.get_genus_predictions_for_body(body["id"])
+        predictions = load.store.get_genus_predictions(body["id"])
         assert any(
             p["genus"] == "Tussock" and p["species"] == "Tussock Ignis" and p["confidence"] >= 0.99
             for p in predictions
@@ -632,15 +634,15 @@ class TestPanelStates:
         import load
         assert load.store is not None and load.panel is not None
         assert explorer_state.system_id is not None
-        flagged = load.store.get_flagged_bodies_for_system(explorer_state.system_id)
+        flagged = load.store.get_flagged_bodies(explorer_state.system_id)
         body = next(b for b in flagged if b["body_name"] == "Speciesia A 1")
-        best = load.panel._best_predictions_for_body(body["id"])
+        best = load.panel._best_predictions(body["id"])
         assert len(best) == 1, best # only 1 real signal -- everything tied collapses to 1 slot
         assert best[0]["name"] == "8 possibilities", best
 
     def test_predicted_value_does_not_double_count_same_genus_species_guesses(self, plugin:TestHarness) -> None:
         """
-        Regression test for _best_predictions_for_body(): a body can have several candidate
+        Regression test for _best_predictions(): a body can have several candidate
         SPECIES stored within the SAME genus (alternative guesses at one real signal, not
         separate ones -- see genus_prediction.predict_species()). The flagged-list/on-body total
         must count that genus once, via its best-confidence candidate, not every guess -- and
@@ -663,7 +665,7 @@ class TestPanelStates:
             ("Bacterium", "Bacterium Aurasus", 0.90),
         ])
 
-        best = load.panel._best_predictions_for_body(body_pk)
+        best = load.panel._best_predictions(body_pk)
         assert len(best) == 2, best # capped to the body's known biological_signal_count
         names = [slot["name"] for slot in best]
         assert "Tussock Ignis" in names, best # kept the higher-confidence Tussock candidate
@@ -692,7 +694,7 @@ class TestPanelStates:
             ("Frutexa", "Frutexa Flammasis", 1.0),
         ])
 
-        best = load.panel._best_predictions_for_body(body_pk)
+        best = load.panel._best_predictions(body_pk)
         assert len(best) == 1, best
         assert best[0]["value_max"] >= 10_000_000, best # must reflect Flammasis, not just the shown Flabellum
 
@@ -722,7 +724,7 @@ class TestPanelStates:
             ["Aleoida", "Bacterium", "Cactoida", "Concha", "Frutexa", "Fungoida", "Osseus", "Stratum", "Tussock"]
         ])
 
-        best = load.panel._best_predictions_for_body(body_pk)
+        best = load.panel._best_predictions(body_pk)
         assert len(best) == 7, best # capped to the real signal count
         names = [slot["name"] for slot in best]
         for chain_genus in ("Bacterium X", "Stratum X", "Tussock X", "Osseus X"):
@@ -806,7 +808,7 @@ class TestPanelStates:
         load.store.update_body(body_pk, has_biological_signals=0, biological_signal_count=0)
         load.store.replace_genus_predictions(body_pk, [("Bacterium", "Bacterium X", 1.0)])
 
-        assert load.panel._best_predictions_for_body(body_pk) == []
+        assert load.panel._best_predictions(body_pk) == []
 
     def test_signal_count_bias_prefers_chain_expected_genus_over_raw_confidence(self, plugin:TestHarness) -> None:
         """
@@ -830,7 +832,7 @@ class TestPanelStates:
             ("Bacterium", "Bacterium Aurasus", 0.50),
         ])
 
-        best = load.panel._best_predictions_for_body(body_pk)
+        best = load.panel._best_predictions(body_pk)
         assert len(best) == 1, best
         assert best[0]["name"] == "Bacterium Aurasus", best
 
@@ -852,7 +854,7 @@ class TestPanelStates:
             ("Bacterium", "Bacterium Aurasus", 0.50),
         ])
 
-        best = load.panel._best_predictions_for_body(body_pk)
+        best = load.panel._best_predictions(body_pk)
         assert len(best) == 1, best
         assert best[0]["name"] == "Frutexa Acus", best # highest confidence wins -- no chain bias here
 
@@ -879,7 +881,7 @@ class TestPanelStates:
             ("Stratum", "Stratum Tectonicas", 1.0),
         ])
 
-        best = load.panel._best_predictions_for_body(body_pk)
+        best = load.panel._best_predictions(body_pk)
         assert len(best) == 1, best # still exactly one real signal
         assert "Bac. Cerbrus" in best[0]["name"], best # abbreviated -- both tied names, neither dropped
         assert "Str. Tectonicas" in best[0]["name"], best
@@ -909,7 +911,7 @@ class TestPanelStates:
             ("Tubus", "Tubus Cavas", 0.29),
         ])
 
-        best = load.panel._best_predictions_for_body(body_pk)
+        best = load.panel._best_predictions(body_pk)
         assert len(best) == 2, best # two real signals -- Frutexa and Recepta each get their own slot
         names = [slot["name"] for slot in best]
         assert names == ["Frutexa Acus", "Recepta Conditivus"], best # not merged, Tubus dropped (lower confidence)

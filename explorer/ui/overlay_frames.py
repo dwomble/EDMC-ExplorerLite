@@ -87,8 +87,7 @@ def _tag_color(color_name:str|None) -> str:
     return CODEX_TAG_COLORS.get(color_name, DEFAULT_TAG_COLOR) if color_name else DEFAULT_TAG_COLOR
 
 def _sample_color(color_name:str|None) -> str:
-    """ Same lookup as _tag_color(), but falls back to
-    SAMPLE_COLOR rather than DEFAULT_TAG_COLOR. """
+    """ Same lookup as _tag_color(), but falls back to SAMPLE_COLOR rather than DEFAULT_TAG_COLOR. """
     return CODEX_TAG_COLORS.get(color_name, SAMPLE_COLOR) if color_name else SAMPLE_COLOR
 
 def _triangle_points(cx:float, cy:float, r:float) -> list[dict]:
@@ -169,11 +168,11 @@ class RadarOverlay:
 
         # Predicted genus only as a fallback when NOTHING is confirmed yet (matches panel.py).
         body_pk:int = store.get_or_create_body(state.cmdr_id, state.system_id, state.body_id, state.body_name)
-        all_progress:list[sqlite3.Row] = store.get_species_progress_for_body(body_pk)
+        all_progress:list[sqlite3.Row] = store.get_species_progress(body_pk)
         genera:list[str] = self._active_genera(all_progress)
 
         if not genera and not all_progress:
-            predicted:str|None = self._predicted_genus(store.get_genus_predictions_for_body(body_pk))
+            predicted:str|None = self._predicted_genus(store.get_genus_predictions(body_pk))
             genera = [predicted] if predicted else []
 
         if not genera:
@@ -214,8 +213,7 @@ class RadarOverlay:
         return predictions[0]["genus"] if predictions else None
 
     def _draw_ring(self, frame_id:str, r:float, color:str) -> None:
-        """ A native circle when the overlay supports it (one message, perfectly round
-        regardless of size) -- else the dot-glyph fallback (see module docstring). """
+        """ A native circle when the overlay supports it, else the dot-glyph fallback (see module docstring). """
         if r <= 0:
             return
         if self.overlay.supports_circle:
@@ -226,7 +224,7 @@ class RadarOverlay:
                                    round(x) + DOT_GLYPH_OFFSET_X, round(y) + DOT_GLYPH_OFFSET_Y, ttl=TTL, size=DOT_GLYPH_SIZE)
 
     def _pin_bounds(self, radius_px:int) -> None:
-        """ Two invisible markers spanning the radar's full possible extent, sent every ticks or update, to prevent the whole radar from visibly drifting as that set changes. """
+        """ Two invisible markers spanning the radar's full extent, stopping it drifting as visible markers change. """
         self.overlay.send_text(f"{FRAME_PREFIX}pin-nw", " ", INVISIBLE, CENTER_X - radius_px, CENTER_Y - radius_px, ttl=TTL)
         self.overlay.send_text(f"{FRAME_PREFIX}pin-se", " ", INVISIBLE, CENTER_X + radius_px, CENTER_Y + radius_px, ttl=TTL)
 

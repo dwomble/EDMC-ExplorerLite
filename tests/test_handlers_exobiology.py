@@ -105,7 +105,7 @@ class TestOnScanOrganic:
         })
 
         body_pk:int = store.get_or_create_body(state.cmdr_id, state.system_id, 1, "Deltius 1")
-        rows = store.get_sample_positions_for_body(body_pk)
+        rows = store.get_sample_positions(body_pk)
         assert len(rows) == 1
         assert rows[0]["genus"] == "Bacterium"
         assert rows[0]["latitude"] == 10.0 and rows[0]["longitude"] == 20.0

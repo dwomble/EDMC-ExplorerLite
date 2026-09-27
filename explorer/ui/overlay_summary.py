@@ -117,7 +117,7 @@ class SystemSummaryOverlay:
         self._last_had_header = True
         next_y:int = ANCHOR_Y + HEADER_LINE_HEIGHT_PX
 
-        flagged:list[sqlite3.Row] = sorted(store.get_flagged_bodies_for_system(system["id"]), key=flagged_body_sort_key)
+        flagged:list[sqlite3.Row] = sorted(store.get_flagged_bodies(system["id"]), key=flagged_body_sort_key)
         rows:list[tuple[int, str]] = []
         for body in flagged:
             row = self.panel._flagged_body_row(system["name"], body)
@@ -164,9 +164,9 @@ class SystemSummaryOverlay:
             return []
 
         body_pk:int = store.get_or_create_body(state.cmdr_id, state.system_id, focus_id, state.exobio_focus_body_name)
-        all_progress:list[sqlite3.Row] = store.get_species_progress_for_body(body_pk)
+        all_progress:list[sqlite3.Row] = store.get_species_progress(body_pk)
         active:list[sqlite3.Row] = [row for row in all_progress if not row["completed_at"]]
-        predictions:list[dict] = [] if (active or all_progress) else self.panel._best_predictions_for_body(body_pk)
+        predictions:list[dict] = [] if (active or all_progress) else self.panel._best_predictions(body_pk)
 
         if not active and all_progress:
             return [] # fully sampled, nothing left to do

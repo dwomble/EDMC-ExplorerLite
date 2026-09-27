@@ -120,32 +120,32 @@ def on_scan(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict:
     if not is_star and entry.get("Landable"):
         # FSSBodySignals often arrives before Scan (Detailed)
         existing:sqlite3.Row|None = store.get_body(body_pk)
-        confirmed_biology:bool = bool(existing and existing["has_biological_signals"] == 1)
+        has_bio:int|None = existing["has_biological_signals"] if existing else None
         store.replace_genus_predictions(
-            body_pk, _worthwhile_predictions(entry, state.nearest_star_type, bypass_threshold=confirmed_biology)
+            body_pk, _worthwhile_predictions(entry, state.nearest_star_type, bypass_threshold=has_bio == 1, has_bio=has_bio)
         )
 
     return {"panel": True, "overlay": "radar"}
 
-def _worthwhile_predictions(entry:dict, nearest_star_type:str|None, bypass_threshold:bool = False) -> list[tuple[str, str|None, float]]:
+def _worthwhile_predictions(entry:dict, nearest_star_type:str|None, bypass_threshold:bool = False, has_bio:int|None = None) -> list:
     """ Predicted (genus, species, confidence) rows whose value clears the exobio threshold """
     threshold:int = _exobio_threshold()
     was_footfalled:bool = bool(entry.get("WasFootfalled"))
     worthwhile:list[tuple[str, str|None, float]] = []
-    for genus, genus_confidence in genus_prediction.predict_genera(entry, nearest_star_type):
-        species_candidates:list[tuple[str, float]] = genus_prediction.predict_species(genus, entry, nearest_star_type)
-        if not species_candidates:
-            value_range:tuple[int, int]|None = exobiology.estimate_genus_range(genus)
-            value_max:int|None = exobiology.with_first_logged_bonus(value_range[1], was_footfalled) if value_range else None
-            if bypass_threshold or exobiology.exceeds_threshold(value_max, threshold):
-                worthwhile.append((genus, None, genus_confidence))
+    for genus, confidence in genus_prediction.predict_genera(entry, nearest_star_type, has_bio):
+        candidates:list[tuple[str, float]] = genus_prediction.predict_species(genus, entry, nearest_star_type, has_bio)
+        if not candidates:
+            range:tuple[int, int]|None = exobiology.estimate_genus_range(genus)
+            max:int|None = exobiology.with_first_logged_bonus(range[1], was_footfalled) if range else None
+            if bypass_threshold or exobiology.exceeds_threshold(max, threshold):
+                worthwhile.append((genus, None, confidence))
             continue
 
-        for species, species_confidence in species_candidates:
+        for species, confidence in candidates:
             base_value:int|None = exobiology.estimate_confirmed_value(genus, species)
             value:int|None = exobiology.with_first_logged_bonus(base_value, was_footfalled) if base_value is not None else None
             if bypass_threshold or exobiology.exceeds_threshold(value, threshold):
-                worthwhile.append((genus, species, species_confidence))
+                worthwhile.append((genus, species, confidence))
 
     return worthwhile
 
@@ -158,8 +158,8 @@ def on_saa_scan_complete(store:ExplorerStore, state:ExplorerState, entry:dict) -
     body_pk:int = store.get_or_create_body(state.cmdr_id, state.system_id, body_id, entry.get("BodyName", ""))
 
     probes_used:int = entry.get("ProbesUsed", 0)
-    efficiency_target:int = entry.get("EfficiencyTarget", 0)
-    efficient:bool = probes_used <= efficiency_target
+    target:int = entry.get("EfficiencyTarget", 0)
+    efficient:bool = probes_used <= target
 
     body:sqlite3.Row|None = store.get_body(body_pk)
     scan_value:int = body["estimated_scan_value"] if body and body["estimated_scan_value"] is not None else 0

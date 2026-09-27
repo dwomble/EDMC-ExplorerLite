@@ -12,8 +12,7 @@ GRAVITY_MS2_PER_G:float = 9.797759 # matches the reference source's own constant
 PRESSURE_PA_PER_ATM:float = 101231.656250 # ditto, for SurfacePressure -> the reference's pressure unit
 
 def _range_confidence(value:float, low:float|None, high:float|None, buffer_frac:float = RANGE_BUFFER_FRAC) -> float:
-    """ 1.0 inside [low, high] (either bound optional/unconstrained); tapers linearly to 0.0
-    over a margin beyond whichever edge is exceeded. """
+    """ 1.0 inside [low, high], tapering linearly to 0.0 past whichever edge is exceeded. """
     if low is not None and value < low:
         span:float = (high - low) if (high is not None) else max(abs(low), 1.0)
         overshoot:float = low - value
@@ -55,9 +54,7 @@ def _ruleset_confidence(rs:Ruleset, temp_k:float|None, gravity_g:float|None, pre
     return min(confidences) if confidences else 1.0
 
 def _parse_entry_conditions(entry:dict) -> tuple[str, str, str, float|None, float|None, float|None]:
-    """ (planet_class, atmosphere_type, volcanism, temp_k, gravity_g, pressure_atm) from a raw
-    Scan (Detailed) journal entry -- shared by predict_genera() and predict_species() so both
-    read the same fields the same way. """
+    """ (planet_class, atmosphere_type, volcanism, temp_k, gravity_g, pressure_atm) from a raw Scan entry. """
     planet_class:str = entry.get("PlanetClass", "")
     atmosphere_type:str = entry.get("AtmosphereType", "None")
     volcanism:str = entry.get("Volcanism") or ""
@@ -76,11 +73,14 @@ def _parse_entry_conditions(entry:dict) -> tuple[str, str, str, float|None, floa
 
 def _best_ruleset_score(
     rulesets:list[Ruleset], star_type:str|None, planet_class:str, atmosphere_type:str, volcanism:str,
-    temp_k:float|None, gravity_g:float|None, pressure_atm:float|None,
+    temp_k:float|None, gravity_g:float|None, pressure_atm:float|None, has_biological_signals:int|None,
 ) -> float|None:
     """ Best (max) confidence across `rulesets` that pass their hard gates, or None if none do. """
     best:float|None = None
     for rs in rulesets:
+        # unmodeled rulesets are too loose alone without at least some real signal evidence
+        if rs.unmodeled and has_biological_signals is None:
+            continue
         if not _hard_gates_pass(rs, star_type, planet_class, atmosphere_type, volcanism):
             continue
         score:float = _ruleset_confidence(rs, temp_k, gravity_g, pressure_atm)
@@ -88,15 +88,14 @@ def _best_ruleset_score(
             best = score
     return best
 
-def predict_genera(entry:dict, nearest_star_type:str|None) -> list[tuple[str, float]]:
-    """ (genus, confidence 0.0-1.0) for every genus with at least one matching ruleset, sorted
-    by confidence desc. """
+def predict_genera(entry:dict, nearest_star_type:str|None, has_biological_signals:int|None = None) -> list[tuple[str, float]]:
+    """ (genus, confidence 0.0-1.0) for every genus with at least one matching ruleset, sorted by confidence desc. """
     planet_class, atmosphere_type, volcanism, temp_k, gravity_g, pressure_atm = _parse_entry_conditions(entry)
 
     results:list[tuple[str, float]] = []
     for genus, rulesets in GENUS_RULESETS.items():
         best:float|None = _best_ruleset_score(
-            rulesets, nearest_star_type, planet_class, atmosphere_type, volcanism, temp_k, gravity_g, pressure_atm
+            rulesets, nearest_star_type, planet_class, atmosphere_type, volcanism, temp_k, gravity_g, pressure_atm, has_biological_signals
         )
         if best is not None:
             results.append((genus, best))
@@ -104,11 +103,8 @@ def predict_genera(entry:dict, nearest_star_type:str|None) -> list[tuple[str, fl
     results.sort(key=lambda pair: pair[1], reverse=True)
     return results
 
-def predict_species(genus:str, entry:dict, nearest_star_type:str|None) -> list[tuple[str, float]]:
-    """ (species, confidence 0.0-1.0) for every species of `genus` with at least one matching
-    ruleset in SPECIES_RULESETS, sorted by confidence desc. Empty if `genus` isn't covered by
-    SPECIES_RULESETS at all -- callers should fall back to predict_genera()'s genus-only guess
-    in that case, not treat an empty list as "no biology possible". """
+def predict_species(genus:str, entry:dict, nearest_star_type:str|None, has_biological_signals:int|None = None) -> list[tuple[str, float]]:
+    """ (species, confidence) for every matching species of `genus`; [] if outside SPECIES_RULESETS. """
     rulesets_by_species:dict[str, list[Ruleset]]|None = SPECIES_RULESETS.get(genus)
     if not rulesets_by_species:
         return []
@@ -118,7 +114,7 @@ def predict_species(genus:str, entry:dict, nearest_star_type:str|None) -> list[t
     results:list[tuple[str, float]] = []
     for species, rulesets in rulesets_by_species.items():
         best:float|None = _best_ruleset_score(
-            rulesets, nearest_star_type, planet_class, atmosphere_type, volcanism, temp_k, gravity_g, pressure_atm
+            rulesets, nearest_star_type, planet_class, atmosphere_type, volcanism, temp_k, gravity_g, pressure_atm, has_biological_signals
         )
         if best is not None:
             results.append((species, best))
