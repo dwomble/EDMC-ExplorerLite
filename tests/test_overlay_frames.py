@@ -18,6 +18,9 @@ from explorer.db.store import ExplorerStore
 from explorer.utils.overlay import Overlay
 from explorer.state import ExplorerState
 from explorer.ui.overlay_frames import RadarOverlay, FRAME_PREFIX, CENTER_X, CENTER_Y, SAMPLE_COLOR
+from explorer.ui.overlay_frames import _radius_frac, _ring_dot_count, RING_DOT_MIN, RING_DOT_MAX, DOT_GLYPH, DOT_GLYPH_SIZE, RING_THICKNESS_PX, DOT_RADIUS_PX, PLAYER_COLOR, CODEX_TAG_COLORS, RING_AREA_FRAC, DOT_GLYPH_OFFSET_X
+from explorer.constants import DEFAULT_OVERLAY_RADAR_SIZE, CFG_OVERLAY_RADAR_SIZE, CFG_OVERLAY_RADAR_ENABLED, CFG_PANEL_ENABLED
+import explorer.ui.overlay_frames as overlay_frames
 
 @pytest.fixture
 def overlay_mode(request, harness:TestHarness) -> Generator[None, None, None]:
@@ -42,7 +45,6 @@ class TestRadiusFrac:
     """
 
     def test_zero_and_ring_boundaries_land_on_exact_thirds(self) -> None:
-        from explorer.ui.overlay_frames import _radius_frac
         assert _radius_frac(0) == 0.0
         assert _radius_frac(200) == pytest.approx(1 / 3)
         assert _radius_frac(600) == pytest.approx(2 / 3)
@@ -51,18 +53,15 @@ class TestRadiusFrac:
     def test_smallest_known_genus_min_distance_is_clearly_visible(self) -> None:
         """ 100m (Amphora Plant/Anemone/etc's minimum) used to collapse to a degenerate,
         zero-radius point under a log scale anchored so 200m sat at 25%. """
-        from explorer.ui.overlay_frames import _radius_frac
         frac = _radius_frac(100)
         assert frac > 0.1 # comfortably non-zero, not a degenerate point
 
     def test_largest_known_genus_min_distance_stays_within_the_outer_ring(self) -> None:
         """ Electricae's 1000m -- the largest across all known genera -- must land inside the
         outermost (1400m) ring, not clamped to its edge. """
-        from explorer.ui.overlay_frames import _radius_frac
         assert 0.0 < _radius_frac(1000) < 1.0
 
     def test_beyond_the_outer_ring_clamps_to_one(self) -> None:
-        from explorer.ui.overlay_frames import _radius_frac
         assert _radius_frac(2000) == 1.0
 
 class TestRingDotCount:
@@ -71,19 +70,15 @@ class TestRingDotCount:
     with circumference so spacing stays roughly constant from the smallest to largest ring. """
 
     def test_zero_radius_has_no_dots(self) -> None:
-        from explorer.ui.overlay_frames import _ring_dot_count
         assert _ring_dot_count(0) == 0
 
     def test_tiny_ring_clamps_to_the_minimum(self) -> None:
-        from explorer.ui.overlay_frames import _ring_dot_count, RING_DOT_MIN
         assert _ring_dot_count(5) == RING_DOT_MIN
 
     def test_huge_ring_clamps_to_the_maximum(self) -> None:
-        from explorer.ui.overlay_frames import _ring_dot_count, RING_DOT_MAX
         assert _ring_dot_count(10_000) == RING_DOT_MAX
 
     def test_mid_sized_ring_scales_with_circumference(self) -> None:
-        from explorer.ui.overlay_frames import _ring_dot_count, RING_DOT_MIN, RING_DOT_MAX
         count:int = _ring_dot_count(60)
         assert RING_DOT_MIN < count < RING_DOT_MAX
 
@@ -158,7 +153,6 @@ class TestRadarOverlayModern:
     @pytest.mark.overlay('Modern')
     def test_pin_bounds_stay_fixed(self, overlay_mode, store:ExplorerStore) -> None:
         """ The pin markers stay at a fixed position regardless of sample count. """
-        from explorer.constants import DEFAULT_OVERLAY_RADAR_SIZE
         r:int = DEFAULT_OVERLAY_RADAR_SIZE
 
         radar = RadarOverlay(Overlay())
@@ -181,7 +175,6 @@ class TestRadarOverlayModern:
         its own small text-glyph message -- not one big connected polyline (see
         RING_DOT_MIN/_ring_dot_count's module docstring for why). A vect shape is outline-only,
         so a filled dot has to be a real glyph instead (see DOT_GLYPH). """
-        from explorer.ui.overlay_frames import RING_DOT_MIN, DOT_GLYPH, DOT_GLYPH_SIZE
 
         radar = RadarOverlay(Overlay())
         radar.render(store, _landed_state(store, samples=0))
@@ -198,7 +191,6 @@ class TestRadarOverlayModern:
     def test_ring_draws_as_one_native_circle_when_the_backend_supports_it(self, overlay_mode, store:ExplorerStore) -> None:
         """ Pre-release EDMCModernOverlay send_shape("circle", ...) support, detected via
         Overlay.supports_circle -- one real circle, not the multi-dot fallback above. """
-        from explorer.ui.overlay_frames import RING_THICKNESS_PX
 
         radar = RadarOverlay(Overlay())
         radar.overlay.supports_circle = True
@@ -214,7 +206,6 @@ class TestRadarOverlayModern:
 
     @pytest.mark.overlay('Modern')
     def test_player_draws_as_a_filled_native_circle_when_the_backend_supports_it(self, overlay_mode, store:ExplorerStore) -> None:
-        from explorer.ui.overlay_frames import DOT_RADIUS_PX, PLAYER_COLOR
 
         radar = RadarOverlay(Overlay())
         radar.overlay.supports_circle = True
@@ -235,7 +226,6 @@ class TestRadarOverlayModern:
         own reported variant color (state.py's sample_positions third element) instead --
         shape, not just color, is what keeps it from ever being mistaken for a real sample.
         """
-        from explorer.ui.overlay_frames import CODEX_TAG_COLORS
 
         radar = RadarOverlay(Overlay())
         state = _landed_state(store, genus="Bacterium", samples=1) # a real sample -- (lat, lon, None, False)
@@ -338,7 +328,6 @@ class TestRadarOverlayModern:
         SHOW_TAGGED_GENUS is off by default (see its docstring), but the code path is kept, not
         deleted, in case this presentation is wanted again -- verify it still actually works.
         """
-        import explorer.ui.overlay_frames as overlay_frames
         monkeypatch.setattr(overlay_frames, "SHOW_TAGGED_GENUS", True)
 
         radar = RadarOverlay(Overlay())
@@ -364,7 +353,6 @@ class TestRadarOverlayModern:
         never past the configured radar size either -- and render hollow (border only, no fill)
         to signal "direction only, not an exact fix".
         """
-        from explorer.ui.overlay_frames import RING_AREA_FRAC
 
         radar = RadarOverlay(Overlay())
         state = _landed_state(store, genus="Bacterium", samples=0)
@@ -494,8 +482,6 @@ class TestRadarOverlayModern:
 
     @pytest.mark.overlay('Modern')
     def test_render_respects_configured_radar_size(self, overlay_mode, harness:TestHarness, store:ExplorerStore) -> None:
-        from explorer.constants import CFG_OVERLAY_RADAR_SIZE
-        from explorer.ui.overlay_frames import RING_AREA_FRAC, DOT_GLYPH_OFFSET_X
         harness.config.set(CFG_OVERLAY_RADAR_SIZE, 300)
         try:
             radar = RadarOverlay(Overlay())
@@ -512,7 +498,6 @@ class TestRadarOverlayModern:
 
     @pytest.mark.overlay('Modern')
     def test_render_respects_radar_disabled_config(self, overlay_mode, harness:TestHarness, store:ExplorerStore) -> None:
-        from explorer.constants import CFG_OVERLAY_RADAR_ENABLED
         harness.config.set(CFG_OVERLAY_RADAR_ENABLED, False)
         try:
             radar = RadarOverlay(Overlay())
@@ -523,7 +508,6 @@ class TestRadarOverlayModern:
 
     @pytest.mark.overlay('Modern')
     def test_render_respects_panel_hidden_via_show_hide_toggle(self, overlay_mode, harness:TestHarness, store:ExplorerStore) -> None:
-        from explorer.constants import CFG_PANEL_ENABLED
         harness.config.set(CFG_PANEL_ENABLED, False)
         try:
             radar = RadarOverlay(Overlay())

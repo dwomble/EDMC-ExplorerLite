@@ -67,6 +67,8 @@ STARTUP_ATTRS:dict = {
 
 def reset_plugin_modules() -> None:
     """Clear plugin modules so each test can import a fresh plugin runtime."""
+    from explorer.context import Context
+    Context.reset()
     for module_name in list(sys.modules):
         if module_name == 'load':
             sys.modules.pop(module_name, None)

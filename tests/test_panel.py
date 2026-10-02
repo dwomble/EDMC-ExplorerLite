@@ -16,7 +16,15 @@ from typing import Any, Generator, cast
 from harness import TestHarness, reset_plugin_modules
 import tests.edmc.requests as mock_requests
 from explorer.db.store import ExplorerStore
-from explorer.ui.panel import _credits_range, system_status_text, system_header_line, system_body_count_text
+from explorer.ui.panel import _credits_range, system_status_text, system_header_line, system_body_count_text, MAX_SPECIES_LABEL_CHARS, ExplorerPanel, LINE_HEIGHT_PX
+from explorer.state import state as explorer_state, ExplorerState
+from explorer.journal import handlers_context
+from explorer.util import now_iso
+from explorer.constants import PLUGIN_NAME, CFG_PANEL_ENABLED, CFG_SCAN_VALUE_THRESHOLD, CFG_OVERLAY_RADAR_ENABLED, CFG_EXOBIO_VALUE_THRESHOLD, DEFAULT_EXOBIO_VALUE_THRESHOLD
+from explorer.ui import prefs as prefs_ui
+import explorer.db.store as store_module
+import explorer.session_persist as session_persist_module
+from explorer.context import Context
 
 @pytest.fixture
 def store(tmp_path) -> Generator[ExplorerStore, None, None]:
@@ -26,13 +34,10 @@ def store(tmp_path) -> Generator[ExplorerStore, None, None]:
 
 @pytest.fixture
 def plugin(harness:TestHarness, tmp_path, monkeypatch) -> Generator[TestHarness, None, None]:
-    from explorer.state import state as explorer_state
     explorer_state.reset_all()
 
-    import explorer.db.store as store_module
     monkeypatch.setattr(store_module, "resolve_db_path", lambda: tmp_path / "explorer.sqlite")
 
-    import explorer.session_persist as session_persist_module
     monkeypatch.setattr(session_persist_module, "resolve_session_path", lambda: tmp_path / "session_state.json")
 
     reset_plugin_modules()
@@ -48,17 +53,18 @@ def plugin(harness:TestHarness, tmp_path, monkeypatch) -> Generator[TestHarness,
     plugin_stop()
     harness.assert_no_unhandled_exceptions()
 
-def _panel_lines(load) -> list[str]:
+def _panel_lines() -> list[str]:
     """
     Flatten the panel's children into one string per visual "line", for substring assertions.
     Plain rows are a single th.Label with a "text" option; a gridded table (see panel.py's
     _render_table) is a Frame whose grid children get grouped by row and space-joined back into
     an equivalent line, so callers don't need to know whether a given row is columnar or not.
     """
+    assert Context.panel is not None
     lines:list[str] = []
     # sorted by grid row, not creation order -- a widget rebuilt out of sync with its siblings
     # (e.g. the header changing while a body row stays put) otherwise lands at the wrong index
-    children:list[tk.Widget] = sorted(load.panel.scroll.interior.winfo_children(), key=lambda c: int(c.grid_info()["row"]))
+    children:list[tk.Widget] = sorted(cast(list[tk.Widget], Context.panel.scroll.interior.winfo_children()), key=lambda c: int(c.grid_info()["row"]))
     for child in children:
         if isinstance(child, tk.Frame):
             rows:dict[int, dict[int, str]] = {}
@@ -191,9 +197,8 @@ class TestSystemStatusText:
 class TestPanelStates:
 
     def test_idle_state_is_a_single_line(self, plugin:TestHarness) -> None:
-        import load
-        assert load.store is not None and load.panel is not None
-        lines = _panel_lines(load)
+        assert Context.store is not None and Context.panel is not None
+        lines = _panel_lines()
         assert lines == ["Explorer — idle"]
 
     def test_refresh_does_not_rebuild_widgets_when_content_is_unchanged(self, plugin:TestHarness) -> None:
@@ -207,14 +212,13 @@ class TestPanelStates:
         plugin.load_events("explorer_events.json")
         plugin.play_sequence("honk_only", 0.02)
 
-        import load
-        assert load.panel is not None
-        before = list(load.panel.scroll.interior.winfo_children())
+        assert Context.panel is not None
+        before = list(Context.panel.scroll.interior.winfo_children())
         assert before # sanity check: something is actually showing
 
-        load.panel.refresh() # same state, nothing changed
+        Context.panel.refresh() # same state, nothing changed
 
-        after = list(load.panel.scroll.interior.winfo_children())
+        after = list(Context.panel.scroll.interior.winfo_children())
         assert before == after # same widget objects, not just equal text -- never destroyed
 
     def test_refresh_only_rebuilds_the_row_that_changed(self, plugin:TestHarness) -> None:
@@ -223,23 +227,21 @@ class TestPanelStates:
         sample on one body, or a new flagged body appearing, shouldn't flicker the system
         summary line above it.
         """
-        from explorer.state import state as explorer_state
 
         plugin.load_events("explorer_events.json")
         plugin.play_sequence("honk_only", 0.02)
 
-        import load
-        assert load.store is not None and load.panel is not None
+        assert Context.store is not None and Context.panel is not None
         assert explorer_state.cmdr_id is not None and explorer_state.system_id is not None
-        summary_row_before = load.panel.scroll.interior.winfo_children()[0]
+        summary_row_before = Context.panel.scroll.interior.winfo_children()[0]
 
         # Add a flagged body -- a new row should appear, but the summary line's own widget
         # (row 0, unrelated to this body) must not be touched.
-        body_pk:int = load.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 1, "QuietSpace A 1")
-        load.store.update_body(body_pk, flagged_value=1, estimated_scan_value=1_000_000)
-        load.panel.refresh()
+        body_pk:int = Context.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 1, "QuietSpace A 1")
+        Context.store.update_body(body_pk, flagged_value=1, estimated_scan_value=1_000_000)
+        Context.panel.refresh()
 
-        rows_after = load.panel.scroll.interior.winfo_children()
+        rows_after = Context.panel.scroll.interior.winfo_children()
         assert len(rows_after) == 2, rows_after
         assert rows_after[0] is summary_row_before # untouched -- same object
 
@@ -247,9 +249,8 @@ class TestPanelStates:
         plugin.load_events("explorer_events.json")
         plugin.play_sequence("honk_only", 0.02)
 
-        import load
-        assert load.store is not None and load.panel is not None
-        lines = _panel_lines(load)
+        assert Context.store is not None and Context.panel is not None
+        lines = _panel_lines()
         assert lines[0] == "QuietSpace — 1 body — Done"
 
     def test_full_walkthrough_shows_flagged_bodies_section(self, plugin:TestHarness) -> None:
@@ -257,9 +258,8 @@ class TestPanelStates:
         plugin.load_events("explorer_events.json")
         plugin.play_sequence("full_walkthrough", 0.02)
 
-        import load
-        assert load.store is not None and load.panel is not None
-        lines = _panel_lines(load)
+        assert Context.store is not None and Context.panel is not None
+        lines = _panel_lines()
         assert lines[0].startswith("Deltius —")
         assert any(line.startswith("A 1 ") for line in lines)
 
@@ -273,9 +273,8 @@ class TestPanelStates:
         plugin.load_events("explorer_events.json")
         plugin.play_sequence("partial_scan_no_full_fss", 0.02)
 
-        import load
-        assert load.store is not None and load.panel is not None
-        lines = _panel_lines(load)
+        assert Context.store is not None and Context.panel is not None
+        lines = _panel_lines()
         assert any(line.endswith("FSS") for line in lines)
         assert any(line.startswith("A 1 ") for line in lines)
 
@@ -289,17 +288,16 @@ class TestPanelStates:
         plugin.load_events("explorer_events.json")
         plugin.play_sequence("honk_only", 0.02)
 
-        import load
-        assert load.store is not None and load.panel is not None
-        assert load.explorer_state.cmdr_id is not None and load.explorer_state.system_id is not None
+        assert Context.store is not None and Context.panel is not None
+        assert explorer_state.cmdr_id is not None and explorer_state.system_id is not None
 
-        cart_pk:int = load.store.get_or_create_body(load.explorer_state.cmdr_id, load.explorer_state.system_id, 1, "QuietSpace 1")
-        load.store.update_body(cart_pk, flagged_value=1, estimated_scan_value=1_000_000, was_discovered=1, was_mapped=1)
-        bio_pk:int = load.store.get_or_create_body(load.explorer_state.cmdr_id, load.explorer_state.system_id, 2, "QuietSpace Bio")
-        load.store.update_body(bio_pk, has_biological_signals=1, biological_signal_count=3)
+        cart_pk:int = Context.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 1, "QuietSpace 1")
+        Context.store.update_body(cart_pk, flagged_value=1, estimated_scan_value=1_000_000, was_discovered=1, was_mapped=1)
+        bio_pk:int = Context.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 2, "QuietSpace Bio")
+        Context.store.update_body(bio_pk, has_biological_signals=1, biological_signal_count=3)
 
-        load.panel.refresh()
-        lines = _panel_lines(load)
+        Context.panel.refresh()
+        lines = _panel_lines()
         bio_index:int = next(i for i, line in enumerate(lines) if "Bio" in line)
         cart_index:int = next(i for i, line in enumerate(lines) if line.startswith("1 "))
         assert bio_index < cart_index, lines
@@ -309,17 +307,16 @@ class TestPanelStates:
         plugin.load_events("explorer_events.json")
         plugin.play_sequence("honk_only", 0.02)
 
-        import load
-        assert load.store is not None and load.panel is not None
-        assert load.explorer_state.cmdr_id is not None and load.explorer_state.system_id is not None
+        assert Context.store is not None and Context.panel is not None
+        assert explorer_state.cmdr_id is not None and explorer_state.system_id is not None
 
-        far_pk:int = load.store.get_or_create_body(load.explorer_state.cmdr_id, load.explorer_state.system_id, 1, "QuietSpace 1")
-        load.store.update_body(far_pk, flagged_value=1, estimated_scan_value=1_000_000, was_discovered=1, was_mapped=1, distance_ls=500)
-        near_pk:int = load.store.get_or_create_body(load.explorer_state.cmdr_id, load.explorer_state.system_id, 2, "QuietSpace 2")
-        load.store.update_body(near_pk, flagged_value=1, estimated_scan_value=1_000_000, was_discovered=1, was_mapped=1, distance_ls=50)
+        far_pk:int = Context.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 1, "QuietSpace 1")
+        Context.store.update_body(far_pk, flagged_value=1, estimated_scan_value=1_000_000, was_discovered=1, was_mapped=1, distance_ls=500)
+        near_pk:int = Context.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 2, "QuietSpace 2")
+        Context.store.update_body(near_pk, flagged_value=1, estimated_scan_value=1_000_000, was_discovered=1, was_mapped=1, distance_ls=50)
 
-        load.panel.refresh()
-        lines = _panel_lines(load)
+        Context.panel.refresh()
+        lines = _panel_lines()
         near_index:int = next(i for i, line in enumerate(lines) if line.startswith("2 "))
         far_index:int = next(i for i, line in enumerate(lines) if line.startswith("1 "))
         assert near_index < far_index, lines
@@ -330,9 +327,8 @@ class TestPanelStates:
         plugin.load_events("explorer_events.json")
         plugin.play_sequence("binary_star_only_system", 0.02)
 
-        import load
-        assert load.store is not None and load.panel is not None
-        lines = _panel_lines(load)
+        assert Context.store is not None and Context.panel is not None
+        lines = _panel_lines()
         assert lines == ["Starrock — 2 bodies — Done"], lines
 
     def test_exobio_line_shows_progress_then_drops_once_done(self, plugin:TestHarness) -> None:
@@ -359,9 +355,8 @@ class TestPanelStates:
         for event in events[:cutoff]:
             plugin.fire_event(event)
 
-        import load
-        assert load.store is not None and load.panel is not None
-        lines = _panel_lines(load)
+        assert Context.store is not None and Context.panel is not None
+        lines = _panel_lines()
         # 5M Cr, not 1M -- this fixture's body has no WasFootfalled (unset defaults to "nobody
         # has yet"), so the shown value is Full (base 1M x5 first-logged bonus), not Base.
         assert any("2/3 Bacterium Aurasus 500m 5M Cr" in line for line in lines)
@@ -369,7 +364,7 @@ class TestPanelStates:
         for event in events[cutoff:]:
             plugin.fire_event(event)
 
-        lines = _panel_lines(load)
+        lines = _panel_lines()
         # Both the flagged-list line and the on-body detail table should vanish once the
         # genus is fully sampled -- not just one or the other.
         assert not any("Bacterium" in line for line in lines)
@@ -381,21 +376,19 @@ class TestPanelStates:
         prediction (still sitting in genus_predictions) narrowing which species it's likely
         to be. Should list those instead, genus once + species epithets joined by "/".
         """
-        from explorer.state import state as explorer_state
 
         plugin.load_events("explorer_events.json")
         plugin.play_sequence("honk_only", 0.02)
 
-        import load
-        assert load.store is not None and load.panel is not None
+        assert Context.store is not None and Context.panel is not None
         assert explorer_state.cmdr_id is not None and explorer_state.system_id is not None
-        body_pk:int = load.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 1, "QuietSpace A 1")
-        load.store.replace_genus_predictions(body_pk, [
+        body_pk:int = Context.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 1, "QuietSpace A 1")
+        Context.store.replace_genus_predictions(body_pk, [
             ("Bacterium", "Bacterium Acies", 0.9),
             ("Bacterium", "Bacterium Aurasus", 0.8),
         ])
 
-        assert load.panel._possible_species_label(body_pk, "Bacterium") == "Bacterium Acies/Aurasus"
+        assert Context.panel._possible_species_label(body_pk, "Bacterium") == "Bacterium Acies/Aurasus"
 
     def test_confirmed_genus_value_narrows_not_widens(self, plugin:TestHarness) -> None:
         """
@@ -406,51 +399,44 @@ class TestPanelStates:
         conditions only ever matched "Concha Aureolas" (~7.77M exact) -- confirming the genus
         should keep that narrowed range, not fall back to the wider one.
         """
-        from explorer.state import state as explorer_state
 
         plugin.load_events("explorer_events.json")
         plugin.play_sequence("honk_only", 0.02)
 
-        import load
-        assert load.store is not None and load.panel is not None
+        assert Context.store is not None and Context.panel is not None
         assert explorer_state.cmdr_id is not None and explorer_state.system_id is not None
-        body_pk:int = load.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 1, "QuietSpace A 1")
-        load.store.replace_genus_predictions(body_pk, [("Concha", "Concha Aureolas", 1.0)])
-        progress_id:int = load.store.get_or_create_species_progress(body_pk, "Concha") # SAASignalsFound: genus confirmed
+        body_pk:int = Context.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 1, "QuietSpace A 1")
+        Context.store.replace_genus_predictions(body_pk, [("Concha", "Concha Aureolas", 1.0)])
+        progress_id:int = Context.store.get_or_create_species_progress(body_pk, "Concha") # SAASignalsFound: genus confirmed
 
-        row = load.store.get_species_progress_row(progress_id)
+        row = Context.store.get_species_progress_row(progress_id)
         assert row is not None
-        value_min, value_max = load.panel._exobio_row_range(row)
+        value_min, value_max = Context.panel._exobio_row_range(row)
         assert (value_min, value_max) == (7_774_700, 7_774_700), (value_min, value_max)
 
     def test_possible_species_label_falls_back_without_any_prediction(self, plugin:TestHarness) -> None:
         """ A genus with no species-level prediction data (or none matching this body) falls
         back to the old generic placeholder rather than an empty label. """
-        from explorer.state import state as explorer_state
 
         plugin.load_events("explorer_events.json")
         plugin.play_sequence("honk_only", 0.02)
 
-        import load
-        assert load.store is not None and load.panel is not None
+        assert Context.store is not None and Context.panel is not None
         assert explorer_state.cmdr_id is not None and explorer_state.system_id is not None
-        body_pk:int = load.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 1, "QuietSpace A 1")
+        body_pk:int = Context.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 1, "QuietSpace A 1")
 
-        assert load.panel._possible_species_label(body_pk, "Anemone") == "Anemone sp."
+        assert Context.panel._possible_species_label(body_pk, "Anemone") == "Anemone sp."
 
     def test_possible_species_label_truncates_when_too_long(self, plugin:TestHarness) -> None:
         """ Many tied candidates should truncate rather than run the row on indefinitely. """
-        from explorer.state import state as explorer_state
-        from explorer.ui.panel import MAX_SPECIES_LABEL_CHARS
 
         plugin.load_events("explorer_events.json")
         plugin.play_sequence("honk_only", 0.02)
 
-        import load
-        assert load.store is not None and load.panel is not None
+        assert Context.store is not None and Context.panel is not None
         assert explorer_state.cmdr_id is not None and explorer_state.system_id is not None
-        body_pk:int = load.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 1, "QuietSpace A 1")
-        load.store.replace_genus_predictions(body_pk, [
+        body_pk:int = Context.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 1, "QuietSpace A 1")
+        Context.store.replace_genus_predictions(body_pk, [
             ("Bacterium", "Bacterium Acies", 0.99),
             ("Bacterium", "Bacterium Alcyoneum", 0.98),
             ("Bacterium", "Bacterium Aurasus", 0.97),
@@ -458,7 +444,7 @@ class TestPanelStates:
             ("Bacterium", "Bacterium Cerbrus", 0.95),
         ])
 
-        label:str = load.panel._possible_species_label(body_pk, "Bacterium")
+        label:str = Context.panel._possible_species_label(body_pk, "Bacterium")
         assert len(label) <= MAX_SPECIES_LABEL_CHARS
         assert label.startswith("Bacterium Acies"), label # best-confidence candidate survives truncation
 
@@ -478,9 +464,8 @@ class TestPanelStates:
         for event in events[:confirm_index]:
             plugin.fire_event(event)
 
-        import load
-        assert load.store is not None and load.panel is not None
-        lines = _panel_lines(load)
+        assert Context.store is not None and Context.panel is not None
+        lines = _panel_lines()
         assert any(line.startswith("A 1 ") and "?" in line for line in lines), lines
         # Regression: a predicted-only (unconfirmed) body used to still count as "nothing
         # flagged", printing that line right above the predicted body below it.
@@ -488,7 +473,7 @@ class TestPanelStates:
 
         plugin.fire_event(events[confirm_index])
 
-        lines = _panel_lines(load)
+        lines = _panel_lines()
         assert any(line.startswith("A 1 ") and "0 of 1 scanned" in line for line in lines), lines
 
     def test_unconfirmed_genus_guess_shows_a_value_range_not_a_single_number(self, plugin:TestHarness) -> None:
@@ -499,22 +484,20 @@ class TestPanelStates:
         it really is -- the actual species present could be worth far less. Should show the
         full min-max range instead.
         """
-        from explorer.state import state as explorer_state
 
         plugin.load_events("explorer_events.json")
         plugin.play_sequence("honk_only", 0.02)
 
-        import load
-        assert load.store is not None and load.panel is not None
+        assert Context.store is not None and Context.panel is not None
         assert explorer_state.cmdr_id is not None and explorer_state.system_id is not None
-        body_pk:int = load.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 1, "QuietSpace A 1")
-        load.store.replace_genus_predictions(body_pk, [("Anemone", None, 0.9)])
+        body_pk:int = Context.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 1, "QuietSpace A 1")
+        Context.store.replace_genus_predictions(body_pk, [("Anemone", None, 0.9)])
 
-        best:list[dict] = load.panel._best_predictions(body_pk)
+        best:list[dict] = Context.panel._best_predictions(body_pk)
         assert len(best) == 1, best
         assert best[0]["value_min"] < best[0]["value_max"], "test premise: Anemone should have a real min-max spread"
 
-        rendered:tuple[str, str, str] = load.panel._predicted_genus_row(best[0], confirmed_signal=False, was_footfalled=True)
+        rendered:tuple[str, str, str] = Context.panel._predicted_genus_row(best[0], confirmed_signal=False, was_footfalled=True)
         assert "-" in rendered[2], rendered # e.g. "1.5-3.4M Cr", not a single number
 
     def test_predicted_row_has_no_uncertainty_marker_once_narrowed_to_one_species(self, plugin:TestHarness) -> None:
@@ -523,51 +506,47 @@ class TestPanelStates:
         even once Scan-time narrowing had already collapsed the candidates to a single species
         -- species values are fixed, so that number is already exact, not an estimate.
         """
-        from explorer.state import state as explorer_state
 
         plugin.load_events("explorer_events.json")
         plugin.play_sequence("honk_only", 0.02)
 
-        import load
-        assert load.store is not None and load.panel is not None
+        assert Context.store is not None and Context.panel is not None
         assert explorer_state.cmdr_id is not None and explorer_state.system_id is not None
-        body_pk:int = load.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 1, "QuietSpace A 1")
-        load.store.replace_genus_predictions(body_pk, [("Bacterium", "Bacterium Alcyoneum", 1.0)])
+        body_pk:int = Context.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 1, "QuietSpace A 1")
+        Context.store.replace_genus_predictions(body_pk, [("Bacterium", "Bacterium Alcyoneum", 1.0)])
 
-        best:list[dict] = load.panel._best_predictions(body_pk)
+        best:list[dict] = Context.panel._best_predictions(body_pk)
         assert len(best) == 1, best
         assert best[0]["value_min"] == best[0]["value_max"], "test premise: a single candidate is already exact"
 
-        rendered:tuple[str, str, str] = load.panel._predicted_genus_row(best[0], confirmed_signal=False, was_footfalled=True)
+        rendered:tuple[str, str, str] = Context.panel._predicted_genus_row(best[0], confirmed_signal=False, was_footfalled=True)
         assert not rendered[2].startswith("~"), rendered
 
     def test_confirmed_genus_row_has_no_uncertainty_marker_once_narrowed_to_one_species(self, plugin:TestHarness) -> None:
         """ Same fix, on the on-body detail row (_exobio_progress_row): a genus confirmed via
         SAASignalsFound but not yet sampled, narrowed to one surviving candidate species, is
         already an exact value -- not an estimate. """
-        from explorer.state import state as explorer_state
 
         plugin.load_events("explorer_events.json")
         plugin.play_sequence("honk_only", 0.02)
 
-        import load
-        assert load.store is not None and load.panel is not None
+        assert Context.store is not None and Context.panel is not None
         assert explorer_state.cmdr_id is not None and explorer_state.system_id is not None
-        body_pk:int = load.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 1, "QuietSpace A 1")
-        load.store.replace_genus_predictions(body_pk, [("Bacterium", "Bacterium Alcyoneum", 1.0)])
-        progress_id:int = load.store.get_or_create_species_progress(body_pk, "Bacterium")
+        body_pk:int = Context.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 1, "QuietSpace A 1")
+        Context.store.replace_genus_predictions(body_pk, [("Bacterium", "Bacterium Alcyoneum", 1.0)])
+        progress_id:int = Context.store.get_or_create_species_progress(body_pk, "Bacterium")
 
-        row:sqlite3.Row|None = load.store.get_species_progress_row(progress_id)
+        row:sqlite3.Row|None = Context.store.get_species_progress_row(progress_id)
         assert row is not None
-        rendered:tuple[str, str, str, str] = load.panel._exobio_progress_row(row, was_footfalled=True)
+        rendered:tuple[str, str, str, str] = Context.panel._exobio_progress_row(row, was_footfalled=True)
         assert not rendered[3].startswith("~"), rendered
 
         # Contrast: still-tied candidates with DIFFERENT values keep the marker.
-        load.store.replace_genus_predictions(body_pk, [
+        Context.store.replace_genus_predictions(body_pk, [
             ("Bacterium", "Bacterium Cerbrus", 1.0),
             ("Bacterium", "Bacterium Tela", 1.0),
         ])
-        rendered = load.panel._exobio_progress_row(row, was_footfalled=True)
+        rendered = Context.panel._exobio_progress_row(row, was_footfalled=True)
 
     def test_scan_narrows_prediction_to_species_when_data_available(self, plugin:TestHarness) -> None:
         """
@@ -580,18 +559,16 @@ class TestPanelStates:
         Fixture includes an FSSBodySignals confirming biology first -- Tussock's rulesets are
         all `unmodeled`, so they need that before contributing a prediction at all.
         """
-        from explorer.state import state as explorer_state
 
         plugin.config.set("EDMCExplorerLite_ExobioValueThreshold", 500_000) # Tussock Ignis is 1.85M Cr, below the 5M default
         plugin.load_events("explorer_events.json")
         plugin.play_sequence("species_level_prediction", 0.02)
 
-        import load
-        assert load.store is not None and load.panel is not None
+        assert Context.store is not None and Context.panel is not None
         assert explorer_state.system_id is not None
-        flagged = load.store.get_flagged_bodies(explorer_state.system_id)
+        flagged = Context.store.get_flagged_bodies(explorer_state.system_id)
         body = next(b for b in flagged if b["body_name"] == "Speciesia A 1")
-        predictions = load.store.get_genus_predictions(body["id"])
+        predictions = Context.store.get_genus_predictions(body["id"])
         assert any(
             p["genus"] == "Tussock" and p["species"] == "Tussock Ignis" and p["confidence"] >= 0.99
             for p in predictions
@@ -611,9 +588,8 @@ class TestPanelStates:
         plugin.load_events("explorer_events.json")
         plugin.play_sequence("confirmed_biology_below_threshold", 0.02)
 
-        import load
-        assert load.store is not None and load.panel is not None
-        lines = _panel_lines(load)
+        assert Context.store is not None and Context.panel is not None
+        lines = _panel_lines()
         assert any(line.startswith("A 1 ") and "possibilities" in line for line in lines), lines
         assert not any("biological signal" in line for line in lines), lines
 
@@ -625,18 +601,16 @@ class TestPanelStates:
         Collapsing to a short count keeps the row readable; the individual names are still
         knowable on-body once SAASignalsFound narrows it down.
         """
-        from explorer.state import state as explorer_state
 
         plugin.config.set("EDMCExplorerLite_ScanValueThreshold", 50000)
         plugin.load_events("explorer_events.json")
         plugin.play_sequence("confirmed_biology_below_threshold", 0.02)
 
-        import load
-        assert load.store is not None and load.panel is not None
+        assert Context.store is not None and Context.panel is not None
         assert explorer_state.system_id is not None
-        flagged = load.store.get_flagged_bodies(explorer_state.system_id)
+        flagged = Context.store.get_flagged_bodies(explorer_state.system_id)
         body = next(b for b in flagged if b["body_name"] == "Speciesia A 1")
-        best = load.panel._best_predictions(body["id"])
+        best = Context.panel._best_predictions(body["id"])
         assert len(best) == 1, best # only 1 real signal -- everything tied collapses to 1 slot
         assert best[0]["name"] == "8 possibilities", best
 
@@ -649,23 +623,21 @@ class TestPanelStates:
         the overall list should cap to the body's real biological_signal_count once known,
         rather than an arbitrary top-3.
         """
-        from explorer.state import state as explorer_state
 
         plugin.load_events("explorer_events.json")
         plugin.play_sequence("honk_only", 0.02)
 
-        import load
-        assert load.store is not None and load.panel is not None
+        assert Context.store is not None and Context.panel is not None
         assert explorer_state.cmdr_id is not None and explorer_state.system_id is not None
-        body_pk:int = load.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 1, "QuietSpace A 1")
-        load.store.update_body(body_pk, biological_signal_count=2, has_biological_signals=1)
-        load.store.replace_genus_predictions(body_pk, [
+        body_pk:int = Context.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 1, "QuietSpace A 1")
+        Context.store.update_body(body_pk, biological_signal_count=2, has_biological_signals=1)
+        Context.store.replace_genus_predictions(body_pk, [
             ("Tussock", "Tussock Ignis", 0.95),
             ("Tussock", "Tussock Pennata", 0.80),
             ("Bacterium", "Bacterium Aurasus", 0.90),
         ])
 
-        best = load.panel._best_predictions(body_pk)
+        best = Context.panel._best_predictions(body_pk)
         assert len(best) == 2, best # capped to the body's known biological_signal_count
         names = [slot["name"] for slot in best]
         assert "Tussock Ignis" in names, best # kept the higher-confidence Tussock candidate
@@ -680,21 +652,19 @@ class TestPanelStates:
         understated the true range -- both tied alternates must widen value_min/value_max,
         even though only one name is shown.
         """
-        from explorer.state import state as explorer_state
 
         plugin.load_events("explorer_events.json")
         plugin.play_sequence("honk_only", 0.02)
 
-        import load
-        assert load.store is not None and load.panel is not None
+        assert Context.store is not None and Context.panel is not None
         assert explorer_state.cmdr_id is not None and explorer_state.system_id is not None
-        body_pk:int = load.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 1, "QuietSpace A 1")
-        load.store.replace_genus_predictions(body_pk, [
+        body_pk:int = Context.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 1, "QuietSpace A 1")
+        Context.store.replace_genus_predictions(body_pk, [
             ("Frutexa", "Frutexa Flabellum", 1.0),
             ("Frutexa", "Frutexa Flammasis", 1.0),
         ])
 
-        best = load.panel._best_predictions(body_pk)
+        best = Context.panel._best_predictions(body_pk)
         assert len(best) == 1, best
         assert best[0]["value_max"] >= 10_000_000, best # must reflect Flammasis, not just the shown Flabellum
 
@@ -709,22 +679,20 @@ class TestPanelStates:
         individual slot; only the genuine excess (non-chain genera beyond the slot budget)
         collapses into one merged slot.
         """
-        from explorer.state import state as explorer_state
 
         plugin.load_events("explorer_events.json")
         plugin.play_sequence("honk_only", 0.02)
 
-        import load
-        assert load.store is not None and load.panel is not None
+        assert Context.store is not None and Context.panel is not None
         assert explorer_state.cmdr_id is not None and explorer_state.system_id is not None
-        body_pk:int = load.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 1, "QuietSpace A 1")
-        load.store.update_body(body_pk, biological_signal_count=7, atmosphere_type="Ammonia", planet_class="Rocky body")
-        load.store.replace_genus_predictions(body_pk, [
+        body_pk:int = Context.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 1, "QuietSpace A 1")
+        Context.store.update_body(body_pk, biological_signal_count=7, atmosphere_type="Ammonia", planet_class="Rocky body")
+        Context.store.replace_genus_predictions(body_pk, [
             (genus, f"{genus} X", 1.0) for genus in
             ["Aleoida", "Bacterium", "Cactoida", "Concha", "Frutexa", "Fungoida", "Osseus", "Stratum", "Tussock"]
         ])
 
-        best = load.panel._best_predictions(body_pk)
+        best = Context.panel._best_predictions(body_pk)
         assert len(best) == 7, best # capped to the real signal count
         names = [slot["name"] for slot in best]
         for chain_genus in ("Bacterium X", "Stratum X", "Tussock X", "Osseus X"):
@@ -741,50 +709,46 @@ class TestPanelStates:
         still only adds up 8 slots (one per real signal); the two numbers describe different
         things and aren't meant to match.
         """
-        from explorer.state import state as explorer_state
 
         plugin.load_events("explorer_events.json")
         plugin.play_sequence("honk_only", 0.02)
 
-        import load
-        assert load.store is not None and load.panel is not None
+        assert Context.store is not None and Context.panel is not None
         assert explorer_state.cmdr_id is not None and explorer_state.system_id is not None
-        body_pk:int = load.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 1, "QuietSpace A 1")
-        load.store.update_body(
+        body_pk:int = Context.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 1, "QuietSpace A 1")
+        Context.store.update_body(
             body_pk, has_biological_signals=1, biological_signal_count=8, atmosphere_type="Ammonia", planet_class="Rocky body"
         )
-        load.store.replace_genus_predictions(body_pk, [
+        Context.store.replace_genus_predictions(body_pk, [
             (genus, f"{genus} X", 1.0) for genus in
             ["Aleoida", "Bacterium", "Cactoida", "Concha", "Frutexa", "Fungoida", "Osseus", "Tubus", "Stratum", "Tussock"]
         ])
 
-        body:sqlite3.Row|None = load.store.get_body(body_pk)
+        body:sqlite3.Row|None = Context.store.get_body(body_pk)
         assert body is not None
-        row = load.panel._flagged_body_row("QuietSpace", body)
+        row = Context.panel._flagged_body_row("QuietSpace", body)
         assert row is not None
         assert row[4] == "8 of 10 possibilities", row
 
     def test_flagged_row_joins_distinct_slots_with_plus_not_slash(self, plugin:TestHarness) -> None:
         """ Regression: separate concurrent signals read as an
         either/or with "/" -- "+" makes clear it's both, not one. """
-        from explorer.state import state as explorer_state
 
         plugin.load_events("explorer_events.json")
         plugin.play_sequence("honk_only", 0.02)
 
-        import load
-        assert load.store is not None and load.panel is not None
+        assert Context.store is not None and Context.panel is not None
         assert explorer_state.cmdr_id is not None and explorer_state.system_id is not None
-        body_pk:int = load.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 1, "QuietSpace A 1")
-        load.store.update_body(body_pk, has_biological_signals=1, biological_signal_count=2)
-        load.store.replace_genus_predictions(body_pk, [
+        body_pk:int = Context.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 1, "QuietSpace A 1")
+        Context.store.update_body(body_pk, has_biological_signals=1, biological_signal_count=2)
+        Context.store.replace_genus_predictions(body_pk, [
             ("Bacterium", "Bacterium Cerbrus", 1.0),
             ("Stratum", "Stratum Tectonicas", 0.9),
         ])
 
-        body:sqlite3.Row|None = load.store.get_body(body_pk)
+        body:sqlite3.Row|None = Context.store.get_body(body_pk)
         assert body is not None
-        row = load.panel._flagged_body_row("QuietSpace", body)
+        row = Context.panel._flagged_body_row("QuietSpace", body)
         assert row is not None
         assert row[4] == "2 – Bac. Cerbrus+Str. Tectonicas", row
 
@@ -796,19 +760,17 @@ class TestPanelStates:
         FSSBodySignals later confirms (or already confirmed) -- a stale guess must never
         override a confirmed zero.
         """
-        from explorer.state import state as explorer_state
 
         plugin.load_events("explorer_events.json")
         plugin.play_sequence("honk_only", 0.02)
 
-        import load
-        assert load.store is not None and load.panel is not None
+        assert Context.store is not None and Context.panel is not None
         assert explorer_state.cmdr_id is not None and explorer_state.system_id is not None
-        body_pk:int = load.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 1, "QuietSpace A 1")
-        load.store.update_body(body_pk, has_biological_signals=0, biological_signal_count=0)
-        load.store.replace_genus_predictions(body_pk, [("Bacterium", "Bacterium X", 1.0)])
+        body_pk:int = Context.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 1, "QuietSpace A 1")
+        Context.store.update_body(body_pk, has_biological_signals=0, biological_signal_count=0)
+        Context.store.replace_genus_predictions(body_pk, [("Bacterium", "Bacterium X", 1.0)])
 
-        assert load.panel._best_predictions(body_pk) == []
+        assert Context.panel._best_predictions(body_pk) == []
 
     def test_signal_count_bias_prefers_chain_expected_genus_over_raw_confidence(self, plugin:TestHarness) -> None:
         """
@@ -817,44 +779,40 @@ class TestPanelStates:
         unrelated genus scored higher confidence from Scan conditions alone -- the chain is a
         tiebreak among already-eligible candidates, so it should still win that one slot.
         """
-        from explorer.state import state as explorer_state
 
         plugin.load_events("explorer_events.json")
         plugin.play_sequence("honk_only", 0.02)
 
-        import load
-        assert load.store is not None and load.panel is not None
+        assert Context.store is not None and Context.panel is not None
         assert explorer_state.cmdr_id is not None and explorer_state.system_id is not None
-        body_pk:int = load.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 1, "QuietSpace A 1")
-        load.store.update_body(body_pk, biological_signal_count=1, atmosphere_type="CarbonDioxide", planet_class="Rocky body")
-        load.store.replace_genus_predictions(body_pk, [
+        body_pk:int = Context.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 1, "QuietSpace A 1")
+        Context.store.update_body(body_pk, biological_signal_count=1, atmosphere_type="CarbonDioxide", planet_class="Rocky body")
+        Context.store.replace_genus_predictions(body_pk, [
             ("Frutexa", "Frutexa Acus", 0.99), # highest raw confidence, but not the tier-1 expected genus
             ("Bacterium", "Bacterium Aurasus", 0.50),
         ])
 
-        best = load.panel._best_predictions(body_pk)
+        best = Context.panel._best_predictions(body_pk)
         assert len(best) == 1, best
         assert best[0]["name"] == "Bacterium Aurasus", best
 
     def test_signal_count_bias_disabled_on_exception_atmospheres(self, plugin:TestHarness) -> None:
         """ Thin Water/Oxygen/Nitrogen bodies don't follow the chain at all (direct field
         report) -- selection should fall back to plain confidence ordering there. """
-        from explorer.state import state as explorer_state
 
         plugin.load_events("explorer_events.json")
         plugin.play_sequence("honk_only", 0.02)
 
-        import load
-        assert load.store is not None and load.panel is not None
+        assert Context.store is not None and Context.panel is not None
         assert explorer_state.cmdr_id is not None and explorer_state.system_id is not None
-        body_pk:int = load.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 1, "QuietSpace A 1")
-        load.store.update_body(body_pk, biological_signal_count=1, atmosphere_type="Water", planet_class="Rocky body")
-        load.store.replace_genus_predictions(body_pk, [
+        body_pk:int = Context.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 1, "QuietSpace A 1")
+        Context.store.update_body(body_pk, biological_signal_count=1, atmosphere_type="Water", planet_class="Rocky body")
+        Context.store.replace_genus_predictions(body_pk, [
             ("Frutexa", "Frutexa Acus", 0.99),
             ("Bacterium", "Bacterium Aurasus", 0.50),
         ])
 
-        best = load.panel._best_predictions(body_pk)
+        best = Context.panel._best_predictions(body_pk)
         assert len(best) == 1, best
         assert best[0]["name"] == "Frutexa Acus", best # highest confidence wins -- no chain bias here
 
@@ -866,22 +824,20 @@ class TestPanelStates:
         (~1.7M Cr) -- genuinely tied candidates must merge into one slot spanning both
         possibilities, not let the chain silently choose between them.
         """
-        from explorer.state import state as explorer_state
 
         plugin.load_events("explorer_events.json")
         plugin.play_sequence("honk_only", 0.02)
 
-        import load
-        assert load.store is not None and load.panel is not None
+        assert Context.store is not None and Context.panel is not None
         assert explorer_state.cmdr_id is not None and explorer_state.system_id is not None
-        body_pk:int = load.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 1, "QuietSpace A 1")
-        load.store.update_body(body_pk, biological_signal_count=1, atmosphere_type="SulphurDioxide", planet_class="High metal content body")
-        load.store.replace_genus_predictions(body_pk, [
+        body_pk:int = Context.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 1, "QuietSpace A 1")
+        Context.store.update_body(body_pk, biological_signal_count=1, atmosphere_type="SulphurDioxide", planet_class="High metal content body")
+        Context.store.replace_genus_predictions(body_pk, [
             ("Bacterium", "Bacterium Cerbrus", 1.0),
             ("Stratum", "Stratum Tectonicas", 1.0),
         ])
 
-        best = load.panel._best_predictions(body_pk)
+        best = Context.panel._best_predictions(body_pk)
         assert len(best) == 1, best # still exactly one real signal
         assert "Bac. Cerbrus" in best[0]["name"], best # abbreviated -- both tied names, neither dropped
         assert "Str. Tectonicas" in best[0]["name"], best
@@ -895,23 +851,21 @@ class TestPanelStates:
         this 2-signal body down to a single displayed "Frutexa or Recepta" guess. A tie should
         only merge when it doesn't fit in the remaining slots -- here there's room for both.
         """
-        from explorer.state import state as explorer_state
 
         plugin.load_events("explorer_events.json")
         plugin.play_sequence("honk_only", 0.02)
 
-        import load
-        assert load.store is not None and load.panel is not None
+        assert Context.store is not None and Context.panel is not None
         assert explorer_state.cmdr_id is not None and explorer_state.system_id is not None
-        body_pk:int = load.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 1, "QuietSpace A 1")
-        load.store.update_body(body_pk, biological_signal_count=2, atmosphere_type="CarbonDioxide", planet_class="Rocky body")
-        load.store.replace_genus_predictions(body_pk, [
+        body_pk:int = Context.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 1, "QuietSpace A 1")
+        Context.store.update_body(body_pk, biological_signal_count=2, atmosphere_type="CarbonDioxide", planet_class="Rocky body")
+        Context.store.replace_genus_predictions(body_pk, [
             ("Frutexa", "Frutexa Acus", 1.0),
             ("Recepta", "Recepta Conditivus", 1.0),
             ("Tubus", "Tubus Cavas", 0.29),
         ])
 
-        best = load.panel._best_predictions(body_pk)
+        best = Context.panel._best_predictions(body_pk)
         assert len(best) == 2, best # two real signals -- Frutexa and Recepta each get their own slot
         names = [slot["name"] for slot in best]
         assert names == ["Frutexa Acus", "Recepta Conditivus"], best # not merged, Tubus dropped (lower confidence)
@@ -927,9 +881,8 @@ class TestPanelStates:
         plugin.load_events("explorer_events.json")
         plugin.play_sequence("known_bio_signals_before_dss", 0.02)
 
-        import load
-        assert load.store is not None and load.panel is not None
-        lines = _panel_lines(load)
+        assert Context.store is not None and Context.panel is not None
+        lines = _panel_lines()
         assert any(line.startswith("A 1 ") and "biological signals" in line and "? Cr" in line for line in lines), lines
         assert any(line.startswith("A 3 ") and "biological signals" in line and "? Cr" in line for line in lines), lines
 
@@ -943,9 +896,8 @@ class TestPanelStates:
         plugin.load_events("explorer_events.json")
         plugin.play_sequence("mapped_body_drops_off_list", 0.02)
 
-        import load
-        assert load.store is not None and load.panel is not None
-        lines = _panel_lines(load)
+        assert Context.store is not None and Context.panel is not None
+        lines = _panel_lines()
         assert not any(line.startswith("A 1 ") for line in lines), lines
 
     def test_type_label_shown_on_flagged_body_line(self, plugin:TestHarness) -> None:
@@ -956,46 +908,41 @@ class TestPanelStates:
         for event in events[:scan_index + 1]:
             plugin.fire_event(event)
 
-        import load
-        assert load.store is not None and load.panel is not None
-        lines = _panel_lines(load)
+        assert Context.store is not None and Context.panel is not None
+        lines = _panel_lines()
         assert any(line.startswith("A 1 (MR) ") for line in lines), lines
 
     def test_flagged_row_shows_gravity(self, plugin:TestHarness) -> None:
         """ Gravity is stored raw (m/s^2, matching the journal) and shown converted to G. """
-        from explorer.state import state as explorer_state
 
         plugin.load_events("explorer_events.json")
         plugin.play_sequence("honk_only", 0.02)
 
-        import load
-        assert load.store is not None and load.panel is not None
+        assert Context.store is not None and Context.panel is not None
         assert explorer_state.cmdr_id is not None and explorer_state.system_id is not None
-        body_pk:int = load.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 1, "QuietSpace A 1")
-        load.store.update_body(body_pk, flagged_value=1, estimated_scan_value=1_000_000, surface_gravity=9.797759 * 1.5)
+        body_pk:int = Context.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 1, "QuietSpace A 1")
+        Context.store.update_body(body_pk, flagged_value=1, estimated_scan_value=1_000_000, surface_gravity=9.797759 * 1.5)
 
-        body:sqlite3.Row|None = load.store.get_body(body_pk)
+        body:sqlite3.Row|None = Context.store.get_body(body_pk)
         assert body is not None
-        row = load.panel._flagged_body_row("QuietSpace", body)
+        row = Context.panel._flagged_body_row("QuietSpace", body)
         assert row is not None
         assert row[2] == "1.50g", row
 
     def test_flagged_row_shows_unknown_gravity(self, plugin:TestHarness) -> None:
         """ No Scan (Detailed) yet -- gravity is unknown, not a bogus zero. """
-        from explorer.state import state as explorer_state
 
         plugin.load_events("explorer_events.json")
         plugin.play_sequence("honk_only", 0.02)
 
-        import load
-        assert load.store is not None and load.panel is not None
+        assert Context.store is not None and Context.panel is not None
         assert explorer_state.cmdr_id is not None and explorer_state.system_id is not None
-        body_pk:int = load.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 1, "QuietSpace A 1")
-        load.store.update_body(body_pk, has_biological_signals=1, biological_signal_count=1)
+        body_pk:int = Context.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 1, "QuietSpace A 1")
+        Context.store.update_body(body_pk, has_biological_signals=1, biological_signal_count=1)
 
-        body:sqlite3.Row|None = load.store.get_body(body_pk)
+        body:sqlite3.Row|None = Context.store.get_body(body_pk)
         assert body is not None
-        row = load.panel._flagged_body_row("QuietSpace", body)
+        row = Context.panel._flagged_body_row("QuietSpace", body)
         assert row is not None
         assert row[2] == "?g", row
 
@@ -1007,24 +954,22 @@ class TestPanelStates:
         were confirmed on the same body at once. The species-level guess itself still shows in
         full on-body (_exobio_progress_row/_possible_species_label), just not in this summary.
         """
-        from explorer.state import state as explorer_state
 
         plugin.load_events("explorer_events.json")
         plugin.play_sequence("honk_only", 0.02)
 
-        import load
-        assert load.store is not None and load.panel is not None
+        assert Context.store is not None and Context.panel is not None
         assert explorer_state.cmdr_id is not None and explorer_state.system_id is not None
-        body_pk:int = load.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 1, "QuietSpace A 1")
-        load.store.replace_genus_predictions(body_pk, [
+        body_pk:int = Context.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 1, "QuietSpace A 1")
+        Context.store.replace_genus_predictions(body_pk, [
             ("Bacterium", "Bacterium Cerbrus", 1.0),
             ("Bacterium", "Bacterium Tela", 1.0),
         ])
-        load.store.get_or_create_species_progress(body_pk, "Bacterium") # SAASignalsFound: genus confirmed, not yet sampled
+        Context.store.get_or_create_species_progress(body_pk, "Bacterium") # SAASignalsFound: genus confirmed, not yet sampled
 
-        body:sqlite3.Row|None = load.store.get_body(body_pk)
+        body:sqlite3.Row|None = Context.store.get_body(body_pk)
         assert body is not None
-        row = load.panel._flagged_body_row("QuietSpace", body)
+        row = Context.panel._flagged_body_row("QuietSpace", body)
         assert row is not None
         assert row[4] == "0 of 1 scanned", row
 
@@ -1037,22 +982,20 @@ class TestPanelStates:
         only checked `not predictions`, but predictions is also [] whenever sampling is already
         active, so it clobbered the progress text that had just been set moments earlier.
         """
-        from explorer.state import state as explorer_state
 
         plugin.load_events("explorer_events.json")
         plugin.play_sequence("honk_only", 0.02)
 
-        import load
-        assert load.store is not None and load.panel is not None
+        assert Context.store is not None and Context.panel is not None
         assert explorer_state.cmdr_id is not None and explorer_state.system_id is not None
-        body_pk:int = load.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 1, "QuietSpace A 1")
-        load.store.update_body(body_pk, has_biological_signals=1, biological_signal_count=7, flagged_exobio=1)
-        progress_id:int = load.store.get_or_create_species_progress(body_pk, "Bacterium")
-        load.store.update_species_progress(progress_id, species="Bacterium Aurasus", samples_taken=2)
+        body_pk:int = Context.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 1, "QuietSpace A 1")
+        Context.store.update_body(body_pk, has_biological_signals=1, biological_signal_count=7, flagged_exobio=1)
+        progress_id:int = Context.store.get_or_create_species_progress(body_pk, "Bacterium")
+        Context.store.update_species_progress(progress_id, species="Bacterium Aurasus", samples_taken=2)
 
-        body:sqlite3.Row|None = load.store.get_body(body_pk)
+        body:sqlite3.Row|None = Context.store.get_body(body_pk)
         assert body is not None
-        row = load.panel._flagged_body_row("QuietSpace", body)
+        row = Context.panel._flagged_body_row("QuietSpace", body)
         assert row is not None
         assert row[4] == "0 of 1 scanned", row
         assert "biological signal" not in row[4], row
@@ -1063,56 +1006,51 @@ class TestPanelStates:
         on-body section entirely, since it was keyed strictly to state.body_id. It should
         keep showing the last body DSSed with confirmed biology until another becomes current.
         """
-        from explorer.state import state as explorer_state
-        from explorer.journal import handlers_context
 
         plugin.load_events("explorer_events.json")
         plugin.play_sequence("honk_only", 0.02)
 
-        import load
-        assert load.store is not None and load.panel is not None
+        assert Context.store is not None and Context.panel is not None
         assert explorer_state.cmdr_id is not None and explorer_state.system_id is not None
-        body_pk:int = load.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 1, "QuietSpace A 1")
-        progress_id:int = load.store.get_or_create_species_progress(body_pk, "Bacterium")
-        load.store.update_species_progress(progress_id, species="Bacterium Aurasus", samples_taken=1)
+        body_pk:int = Context.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 1, "QuietSpace A 1")
+        progress_id:int = Context.store.get_or_create_species_progress(body_pk, "Bacterium")
+        Context.store.update_species_progress(progress_id, species="Bacterium Aurasus", samples_taken=1)
 
         explorer_state.body_id = 1
         explorer_state.body_name = "QuietSpace A 1"
         explorer_state.last_bio_body_id = 1
         explorer_state.last_bio_body_name = "QuietSpace A 1"
 
-        handlers_context.on_leave_body(load.store, explorer_state, {"event": "LeaveBody"})
+        handlers_context.on_leave_body(Context.store, explorer_state, {"event": "LeaveBody"})
         assert explorer_state.body_id is None
         assert explorer_state.exobio_focus_body_id == 1
 
-        load.panel.refresh()
-        lines = _panel_lines(load)
+        Context.panel.refresh()
+        lines = _panel_lines()
         assert any("Bacterium Aurasus" in line for line in lines), lines
 
     def test_active_species_line_styling(self, plugin:TestHarness) -> None:
         """ The whole line reads steelblue in both themes; the progress
         cell also bolds once sampling has actually started. """
         import tkinter.font as tkfont
-        from explorer.state import state as explorer_state
 
         plugin.load_events("explorer_events.json")
         plugin.play_sequence("honk_only", 0.02)
 
-        import load
-        assert load.store is not None and load.panel is not None
+        assert Context.store is not None and Context.panel is not None
         assert explorer_state.cmdr_id is not None and explorer_state.system_id is not None
-        body_pk:int = load.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 1, "QuietSpace A 1")
-        started_id:int = load.store.get_or_create_species_progress(body_pk, "Bacterium")
-        load.store.update_species_progress(started_id, species="Bacterium Aurasus", samples_taken=1)
-        unstarted_id:int = load.store.get_or_create_species_progress(body_pk, "Tussock")
-        load.store.update_species_progress(unstarted_id, species="Tussock Stigmasis")
+        body_pk:int = Context.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 1, "QuietSpace A 1")
+        started_id:int = Context.store.get_or_create_species_progress(body_pk, "Bacterium")
+        Context.store.update_species_progress(started_id, species="Bacterium Aurasus", samples_taken=1)
+        unstarted_id:int = Context.store.get_or_create_species_progress(body_pk, "Tussock")
+        Context.store.update_species_progress(unstarted_id, species="Tussock Stigmasis")
 
         explorer_state.body_id = 1
         explorer_state.body_name = "QuietSpace A 1"
-        load.panel.refresh()
+        Context.panel.refresh()
 
-        started_name = _find_label(load.panel.scroll.interior, "Bacterium Aurasus")
-        unstarted_name = _find_label(load.panel.scroll.interior, "Tussock Stigmasis")
+        started_name = _find_label(Context.panel.scroll.interior, "Bacterium Aurasus")
+        unstarted_name = _find_label(Context.panel.scroll.interior, "Tussock Stigmasis")
         assert started_name is not None and unstarted_name is not None
 
         # Every cell in the row, not just the name, reads steelblue
@@ -1135,23 +1073,20 @@ class TestPanelStates:
         instead of dropping off -- has_biological_signals stays 1 forever, and that fallback
         didn't check whether the confirmed genus(es) were already done.
         """
-        from explorer.state import state as explorer_state
-        from explorer.util import now_iso
 
         plugin.load_events("explorer_events.json")
         plugin.play_sequence("honk_only", 0.02)
 
-        import load
-        assert load.store is not None and load.panel is not None
+        assert Context.store is not None and Context.panel is not None
         assert explorer_state.cmdr_id is not None and explorer_state.system_id is not None
-        body_pk:int = load.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 1, "QuietSpace A 1")
-        load.store.update_body(body_pk, has_biological_signals=1, biological_signal_count=8, flagged_exobio=1)
-        progress_id:int = load.store.get_or_create_species_progress(body_pk, "Bacterium")
-        load.store.update_species_progress(progress_id, species="Bacterium Aurasus", completed_at=now_iso())
+        body_pk:int = Context.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 1, "QuietSpace A 1")
+        Context.store.update_body(body_pk, has_biological_signals=1, biological_signal_count=8, flagged_exobio=1)
+        progress_id:int = Context.store.get_or_create_species_progress(body_pk, "Bacterium")
+        Context.store.update_species_progress(progress_id, species="Bacterium Aurasus", completed_at=now_iso())
 
-        body:sqlite3.Row|None = load.store.get_body(body_pk)
+        body:sqlite3.Row|None = Context.store.get_body(body_pk)
         assert body is not None
-        assert load.panel._flagged_body_row("QuietSpace", body) is None
+        assert Context.panel._flagged_body_row("QuietSpace", body) is None
 
     def test_current_body_detail_nests_under_its_own_row_not_the_last_flagged_row(self, plugin:TestHarness) -> None:
         """
@@ -1160,29 +1095,27 @@ class TestPanelStates:
         species list visually read as belonging to whichever body happened to sort last. It
         must nest directly under its own row instead, regardless of table order.
         """
-        from explorer.state import state as explorer_state
 
         plugin.load_events("explorer_events.json")
         plugin.play_sequence("honk_only", 0.02)
 
-        import load
-        assert load.store is not None and load.panel is not None
+        assert Context.store is not None and Context.panel is not None
         assert explorer_state.cmdr_id is not None and explorer_state.system_id is not None
 
-        body1_pk:int = load.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 1, "QuietSpace A 1")
-        body2_pk:int = load.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 2, "QuietSpace A 2")
-        load.store.update_body(body1_pk, has_biological_signals=1, biological_signal_count=1)
-        load.store.update_body(body2_pk, has_biological_signals=1, biological_signal_count=1)
-        load.store.replace_genus_predictions(body2_pk, [("Bacterium", None, 0.8)]) # body 2's own flagged guess
+        body1_pk:int = Context.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 1, "QuietSpace A 1")
+        body2_pk:int = Context.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 2, "QuietSpace A 2")
+        Context.store.update_body(body1_pk, has_biological_signals=1, biological_signal_count=1)
+        Context.store.update_body(body2_pk, has_biological_signals=1, biological_signal_count=1)
+        Context.store.replace_genus_predictions(body2_pk, [("Bacterium", None, 0.8)]) # body 2's own flagged guess
 
-        progress_id:int = load.store.get_or_create_species_progress(body1_pk, "Tussock")
-        load.store.update_species_progress(progress_id, species="Tussock Ignis", samples_taken=1)
+        progress_id:int = Context.store.get_or_create_species_progress(body1_pk, "Tussock")
+        Context.store.update_species_progress(progress_id, species="Tussock Ignis", samples_taken=1)
 
         explorer_state.body_id = 1
         explorer_state.body_name = "QuietSpace A 1"
-        load.panel.refresh()
+        Context.panel.refresh()
 
-        lines = _panel_lines(load)
+        lines = _panel_lines()
         row1_index:int = next(i for i, line in enumerate(lines) if line.startswith("A 1 "))
         row2_index:int = next(i for i, line in enumerate(lines) if line.startswith("A 2 "))
         detail_index:int = next(i for i, line in enumerate(lines) if "Tussock Ignis" in line and "1/3" in line)
@@ -1191,26 +1124,24 @@ class TestPanelStates:
 
     def test_confirmed_signal_drops_prefix(self, plugin:TestHarness) -> None:
         """ The "?" marks a purely speculative guess; it shouldn't apply once a real signal is confirmed. """
-        from explorer.state import state as explorer_state
 
         plugin.load_events("explorer_events.json")
         plugin.play_sequence("honk_only", 0.02)
 
-        import load
-        assert load.store is not None and load.panel is not None
+        assert Context.store is not None and Context.panel is not None
         assert explorer_state.cmdr_id is not None and explorer_state.system_id is not None
-        body_pk:int = load.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 1, "QuietSpace A 1")
-        load.store.replace_genus_predictions(body_pk, [("Anemone", None, 0.9)])
+        body_pk:int = Context.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 1, "QuietSpace A 1")
+        Context.store.replace_genus_predictions(body_pk, [("Anemone", None, 0.9)])
 
-        unconfirmed:sqlite3.Row|None = load.store.get_body(body_pk)
+        unconfirmed:sqlite3.Row|None = Context.store.get_body(body_pk)
         assert unconfirmed is not None
-        row = load.panel._flagged_body_row("QuietSpace", unconfirmed)
+        row = Context.panel._flagged_body_row("QuietSpace", unconfirmed)
         assert row is not None and row[4].startswith("?"), row
 
-        load.store.update_body(body_pk, has_biological_signals=1, biological_signal_count=1)
-        confirmed:sqlite3.Row|None = load.store.get_body(body_pk)
+        Context.store.update_body(body_pk, has_biological_signals=1, biological_signal_count=1)
+        confirmed:sqlite3.Row|None = Context.store.get_body(body_pk)
         assert confirmed is not None
-        row = load.panel._flagged_body_row("QuietSpace", confirmed)
+        row = Context.panel._flagged_body_row("QuietSpace", confirmed)
         assert row is not None and not row[4].startswith("?"), row
 
     def test_supercruise_exit_shows_exobiology_before_landing(self, plugin:TestHarness) -> None:
@@ -1222,9 +1153,8 @@ class TestPanelStates:
         plugin.load_events("explorer_events.json")
         plugin.play_sequence("supercruise_exit_shows_bio_before_landing", 0.02)
 
-        import load
-        assert load.store is not None and load.panel is not None
-        lines = _panel_lines(load)
+        assert Context.store is not None and Context.panel is not None
+        lines = _panel_lines()
         # The on-body detail table (not just the flagged-list guess line) should be showing,
         # nested directly under the flagged row -- no separate header repeating the body name.
         flagged_index:int = next(i for i, line in enumerate(lines) if line.startswith("A 1 (Icy) "))
@@ -1237,110 +1167,98 @@ class TestNoDuplicateWidgets:
     proxy, which calls pack() on BOTH widgets, rendering the "History" button twice.
     """
 
-    def test_history_button_is_gridded_not_packed(self, plugin:TestHarness) -> None:
-        import load
-        assert load.store is not None and load.panel is not None
-        managers = {load.panel.history_button.obj.winfo_manager(), load.panel.history_button.alt.winfo_manager()}
+    def test_history_button_gridded(self, plugin:TestHarness) -> None:
+        assert Context.store is not None and Context.panel is not None
+        managers = {Context.panel.history_button.obj.winfo_manager(), Context.panel.history_button.alt.winfo_manager()}
         assert managers == {"grid", ""} # exactly one of the light/dark pair is actually placed
 
-    def test_toggle_button_is_gridded_not_packed(self, plugin:TestHarness) -> None:
-        import load
-        assert load.store is not None and load.panel is not None
-        managers = {load.panel.toggle_button.obj.winfo_manager(), load.panel.toggle_button.alt.winfo_manager()}
-        assert managers == {"grid", ""}
+    def test_toggle_buttons_gridded(self, plugin:TestHarness) -> None:
+        assert Context.store is not None and Context.panel is not None
+        for button in (Context.panel.hide_button, Context.panel.show_button):
+            assert {button.obj.winfo_manager(), button.alt.winfo_manager()} == {"grid", ""}
 
 class TestPanelHeaderToggle:
     """ The always-visible header (name + credit totals + History/toggle buttons) and the
     show/hide toggle for everything below it -- collection continues regardless of state. """
 
-    def test_header_shows_plugin_name(self, plugin:TestHarness) -> None:
-        from explorer.constants import PLUGIN_NAME
+    def test_header_shows_name(self, plugin:TestHarness) -> None:
 
-        import load
-        assert load.panel is not None
-        assert load.panel.title_label.cget("text") == PLUGIN_NAME
-        assert load.panel._title_font.actual("weight") == "bold"
+        assert Context.panel is not None
+        assert Context.panel.title_label.cget("text") == PLUGIN_NAME
+        assert Context.panel._title_font.actual("weight") == "bold"
 
-    def test_header_credit_totals_show_zero_not_a_question_mark(self, plugin:TestHarness) -> None:
+    def test_header_credit_totals_show_zero(self, plugin:TestHarness) -> None:
         """ _credits() shows "?" for 0 (unknown-vs-empty ambiguity elsewhere) -- but here 0
         pending is a real, known state, so the header should say "0 Cr", not "?". """
-        import load
-        assert load.panel is not None
-        load.panel.refresh()
-        assert load.panel.cart_value_label.cget("text") == "0 Cr"
-        assert load.panel.exo_value_label.cget("text") == "0 Cr"
+        assert Context.panel is not None
+        Context.panel.refresh()
+        assert Context.panel.cart_value_label.cget("text") == "0 Cr"
+        assert Context.panel.exo_value_label.cget("text") == "0 Cr"
 
-    def test_system_header_state_renders_bold(self, plugin:TestHarness) -> None:
+    def test_system_header_is_bold(self, plugin:TestHarness) -> None:
         """ "SystemName — N bodies —" stays normal weight; only the state word is bold. """
         import tkinter.font as tkfont
 
         plugin.load_events("explorer_events.json")
         plugin.play_sequence("honk_only", 0.02)
 
-        import load
-        assert load.panel is not None
-        header_row = load.panel.scroll.interior.winfo_children()[0]
+        assert Context.panel is not None
+        header_row = Context.panel.scroll.interior.winfo_children()[0]
         prefix_cell, state_cell = header_row.winfo_children()
         assert tkfont.Font(font=prefix_cell.cget("font")).actual("weight") == "normal"
         assert tkfont.Font(font=state_cell.cget("font")).actual("weight") == "bold"
         assert state_cell.cget("text") == "Done"
 
-    def test_toggle_hides_and_shows_the_scrollable_content(self, plugin:TestHarness) -> None:
-        from explorer.ui.panel import PANEL_SHOWN_GLYPH, PANEL_HIDDEN_GLYPH
+    def test_toggle_swaps_views(self, plugin:TestHarness) -> None:
+        assert Context.panel is not None
+        view = Context.panel.view
+        assert (view.expanded.winfo_manager(), view.collapsed.winfo_manager()) == ("grid", "")
 
-        import load
-        assert load.panel is not None
-        assert load.panel.scroll.winfo_manager() == "grid"
-        assert load.panel.toggle_button.cget("text") == PANEL_SHOWN_GLYPH
+        view.toggle()
+        assert (view.expanded.winfo_manager(), view.collapsed.winfo_manager()) == ("", "grid")
 
-        load.panel._toggle_panel()
-        assert load.panel.scroll.winfo_manager() == ""
-        assert load.panel.toggle_button.cget("text") == PANEL_HIDDEN_GLYPH
+        view.toggle()
+        assert (view.expanded.winfo_manager(), view.collapsed.winfo_manager()) == ("grid", "")
 
-        load.panel._toggle_panel()
-        assert load.panel.scroll.winfo_manager() == "grid"
-        assert load.panel.toggle_button.cget("text") == PANEL_SHOWN_GLYPH
+    def test_collapsed_view_shows_live_totals(self, plugin:TestHarness) -> None:
+        assert Context.panel is not None
+        Context.panel.refresh()
+        assert Context.panel._cart_collapsed.cget("text") == Context.panel.cart_value_label.cget("text")
+        assert Context.panel._exo_collapsed.cget("text") == Context.panel.exo_value_label.cget("text")
 
-    def test_toggle_persists_across_the_config(self, plugin:TestHarness) -> None:
-        from explorer.constants import CFG_PANEL_ENABLED
+    def test_toggle_persists(self, plugin:TestHarness) -> None:
 
-        import load
-        assert load.panel is not None
-        load.panel._toggle_panel()
+        assert Context.panel is not None
+        Context.panel.view.toggle()
         try:
             assert plugin.config.get_bool(CFG_PANEL_ENABLED) is False
         finally:
-            load.panel._toggle_panel() # broad-impact flag -- must not leak to other tests
+            Context.panel.view.toggle() # broad-impact flag -- must not leak to other tests
 
-    def test_refresh_is_a_noop_while_hidden_and_catches_up_when_shown(self, plugin:TestHarness) -> None:
+    def test_refresh(self, plugin:TestHarness) -> None:
         plugin.load_events("explorer_events.json")
         plugin.play_sequence("honk_only", 0.02)
 
-        import load
-        assert load.store is not None and load.panel is not None
-        before:list[str] = _panel_lines(load)
+        assert Context.store is not None and Context.panel is not None
+        before:list[str] = _panel_lines()
 
-        load.panel._toggle_panel() # hide
-        assert load.explorer_state.system_id is not None
-        load.store.update_system(load.explorer_state.system_id, honk_hint="worth a full scan")
-        load.panel.refresh() # e.g. a journal-driven refresh() while hidden -- must not touch the UI
-        assert _panel_lines(load) == before
+        Context.panel.view.toggle() # hide
+        assert explorer_state.system_id is not None
+        Context.store.update_system(explorer_state.system_id, honk_hint="worth a full scan")
+        Context.panel.refresh() # e.g. a journal-driven refresh() while hidden -- must not touch the UI
+        assert _panel_lines() == before
 
-        load.panel._toggle_panel() # show again -- must reflect the change made while hidden
-        assert _panel_lines(load) != before
+        Context.panel.view.toggle() # show again -- must reflect the change made while hidden
+        assert _panel_lines() != before
 
-    def test_panel_starts_hidden_when_config_says_so(self, harness:TestHarness, tmp_path) -> None:
-        from explorer.constants import CFG_PANEL_ENABLED
-        from explorer.ui.panel import ExplorerPanel, PANEL_HIDDEN_GLYPH
-        from explorer.db.store import ExplorerStore
-        from explorer.state import ExplorerState
+    def test_panel_starts_hidden(self, harness:TestHarness, tmp_path) -> None:
 
         harness.config.set(CFG_PANEL_ENABLED, False)
         store = ExplorerStore(tmp_path / "explorer_standalone.sqlite")
         try:
             panel = ExplorerPanel(harness.parent, store, ExplorerState())
-            assert panel.scroll.winfo_manager() == ""
-            assert panel.toggle_button.cget("text") == PANEL_HIDDEN_GLYPH
+            assert panel.view.hidden is True
+            assert (panel.view.expanded.winfo_manager(), panel.view.collapsed.winfo_manager()) == ("", "grid")
         finally:
             store.close()
             harness.config.set(CFG_PANEL_ENABLED, True)
@@ -1349,19 +1267,15 @@ class TestVisibleLinesConfig:
 
     def test_refresh_applies_configured_visible_lines(self, plugin:TestHarness) -> None:
         """ CFG_VISIBLE_LINES drives the scrollable frame's height live -- no restart needed. """
-        from explorer.ui.panel import LINE_HEIGHT_PX
 
-        import load
-        assert load.panel is not None
+        assert Context.panel is not None
         plugin.config.set("EDMCExplorerLite_VisibleLines", 8)
-        load.panel.refresh()
-        assert load.panel.scroll.cget('maxheight') == 8 * LINE_HEIGHT_PX
+        Context.panel.refresh()
+        assert Context.panel.scroll.cget('maxheight') == 8 * LINE_HEIGHT_PX
 
 class TestPrefs:
 
     def test_build_and_save_roundtrip(self, plugin:TestHarness) -> None:
-        from explorer.ui import prefs as prefs_ui
-        from explorer.constants import CFG_SCAN_VALUE_THRESHOLD, CFG_OVERLAY_RADAR_ENABLED
 
         frame = prefs_ui.build_prefs(plugin.parent, "Testy", False)
         assert frame is not None
@@ -1374,8 +1288,6 @@ class TestPrefs:
         assert plugin.config.get_bool(CFG_OVERLAY_RADAR_ENABLED) is False
 
     def test_invalid_threshold_falls_back_to_default(self, plugin:TestHarness) -> None:
-        from explorer.ui import prefs as prefs_ui
-        from explorer.constants import CFG_EXOBIO_VALUE_THRESHOLD, DEFAULT_EXOBIO_VALUE_THRESHOLD
 
         prefs_ui.build_prefs(plugin.parent, "Testy", False)
         prefs_ui._pref_vars[CFG_EXOBIO_VALUE_THRESHOLD].set("not-a-number")
@@ -1384,8 +1296,6 @@ class TestPrefs:
         assert plugin.config.get_int(CFG_EXOBIO_VALUE_THRESHOLD) == DEFAULT_EXOBIO_VALUE_THRESHOLD
 
     def test_header_shows_name_version_and_github_link(self, plugin:TestHarness) -> None:
-        from explorer.ui import prefs as prefs_ui
-        from explorer.constants import PLUGIN_NAME
 
         frame = prefs_ui.build_prefs(plugin.parent, "Testy", False, version="1.2.3")
         labels = {c.cget("text") for c in frame.winfo_children() if "text" in c.keys()}
@@ -1397,7 +1307,6 @@ class TestPrefs:
         assert cast(Any, links[0]).url == prefs_ui.GH_URL
 
     def test_all_sections_are_present(self, plugin:TestHarness) -> None:
-        from explorer.ui import prefs as prefs_ui
 
         frame = prefs_ui.build_prefs(plugin.parent, "Testy", False)
         labels = {c.cget("text") for c in frame.winfo_children() if "text" in c.keys()}
@@ -1406,13 +1315,11 @@ class TestPrefs:
     def test_every_pref_still_has_a_live_widget(self, plugin:TestHarness) -> None:
         """ Regression guard for the two-up layout: every Pref must still end up with a
         variable in _pref_vars, however it's split across the left/right columns. """
-        from explorer.ui import prefs as prefs_ui
 
         prefs_ui.build_prefs(plugin.parent, "Testy", False)
         assert set(prefs_ui._pref_vars.keys()) == {p.key for p in prefs_ui.PREFS}
 
     def test_overlays_section_disabled_without_an_overlay_backend(self, plugin:TestHarness) -> None:
-        from explorer.ui import prefs as prefs_ui
 
         frame = prefs_ui.build_prefs(plugin.parent, "Testy", False, overlay_available=False)
         radar_cb = next(c for c in frame.winfo_children() if "text" in c.keys() and c.cget("text") == "Show radar on overlay")
@@ -1422,14 +1329,12 @@ class TestPrefs:
         assert str(threshold_entry.cget("state")) == "normal" # Thresholds section is unaffected
 
     def test_overlays_section_enabled_with_an_overlay_backend(self, plugin:TestHarness) -> None:
-        from explorer.ui import prefs as prefs_ui
 
         frame = prefs_ui.build_prefs(plugin.parent, "Testy", False, overlay_available=True)
         radar_cb = next(c for c in frame.winfo_children() if "text" in c.keys() and c.cget("text") == "Show radar on overlay")
         assert str(radar_cb.cget("state")) == "normal"
 
     def test_clear_unsold_data_button_is_present(self, plugin:TestHarness) -> None:
-        from explorer.ui import prefs as prefs_ui
 
         frame = prefs_ui.build_prefs(plugin.parent, "Testy", False)
         btn = next(c for c in frame.winfo_children() if isinstance(c, (tk.Button, ttk.Button)) and c.cget("text") == "Clear unsold data")
@@ -1437,14 +1342,12 @@ class TestPrefs:
 
     def test_clear_unsold_data_button_is_flagged_as_dangerous(self, plugin:TestHarness) -> None:
         """ Irreversible -- red sets it apart from other prefs. """
-        from explorer.ui import prefs as prefs_ui
 
         frame = prefs_ui.build_prefs(plugin.parent, "Testy", False)
         btn = next(c for c in frame.winfo_children() if isinstance(c, (tk.Button, ttk.Button)) and c.cget("text") == "Clear unsold data")
         assert str(btn.cget("background")) == prefs_ui.DANGER_COLOR
 
     def test_clear_unsold_data_calls_through_only_after_confirming(self, plugin:TestHarness, monkeypatch) -> None:
-        from explorer.ui import prefs as prefs_ui
 
         calls:list[str] = []
         def _record(cmdr:str) -> str:
@@ -1465,7 +1368,6 @@ class TestPrefs:
         assert calls == ["Testy"]
 
     def test_clear_unsold_data_shows_the_callbacks_summary(self, plugin:TestHarness, monkeypatch) -> None:
-        from explorer.ui import prefs as prefs_ui
 
         shown:list[str] = []
         monkeypatch.setattr(prefs_ui.messagebox, "askyesno", lambda *a, **kw: True)
@@ -1482,31 +1384,31 @@ class TestClearUnsoldData:
 
     def test_marks_pending_data_lost_and_reports_it(self, plugin:TestHarness) -> None:
         import load
-        assert load.store is not None
-        cmdr_id = load.store.get_or_create_cmdr("Testy")
-        system_id = load.store.get_or_create_system(cmdr_id, 1, "Deltius")
-        body_pk = load.store.get_or_create_body(cmdr_id, system_id, 1, "Deltius 1")
-        load.store.update_body(body_pk, estimated_scan_value=1_000_000, was_discovered=1)
+        assert Context.store is not None
+        cmdr_id = Context.store.get_or_create_cmdr("Testy")
+        system_id = Context.store.get_or_create_system(cmdr_id, 1, "Deltius")
+        body_pk = Context.store.get_or_create_body(cmdr_id, system_id, 1, "Deltius 1")
+        Context.store.update_body(body_pk, estimated_scan_value=1_000_000, was_discovered=1)
 
         message = load._clear_unsold_data("Testy")
 
-        assert load.store.get_pending_cartography_value(cmdr_id) == 0
+        assert Context.store.get_pending_cartography_value(cmdr_id) == 0
         assert "cartography" in message and "exobiology" in message
 
     def test_refreshes_the_panel_header_immediately(self, plugin:TestHarness) -> None:
         import load
-        assert load.store is not None and load.panel is not None
-        cmdr_id = load.store.get_or_create_cmdr("Testy")
-        system_id = load.store.get_or_create_system(cmdr_id, 1, "Deltius")
-        body_pk = load.store.get_or_create_body(cmdr_id, system_id, 1, "Deltius 1")
-        load.store.update_body(body_pk, estimated_scan_value=1_000_000, was_discovered=1)
-        load.explorer_state.cmdr_id = cmdr_id
-        load.panel.refresh()
-        assert load.panel.cart_value_label.cget("text") != "0 Cr"
+        assert Context.store is not None and Context.panel is not None
+        cmdr_id = Context.store.get_or_create_cmdr("Testy")
+        system_id = Context.store.get_or_create_system(cmdr_id, 1, "Deltius")
+        body_pk = Context.store.get_or_create_body(cmdr_id, system_id, 1, "Deltius 1")
+        Context.store.update_body(body_pk, estimated_scan_value=1_000_000, was_discovered=1)
+        explorer_state.cmdr_id = cmdr_id
+        Context.panel.refresh()
+        assert Context.panel.cart_value_label.cget("text") != "0 Cr"
 
         load._clear_unsold_data("Testy")
 
-        assert load.panel.cart_value_label.cget("text") == "0 Cr"
+        assert Context.panel.cart_value_label.cget("text") == "0 Cr"
 
 class TestNoticeDisplay:
     """ Ties the real fetch/parse path (Notices, tested in
@@ -1514,22 +1416,21 @@ class TestNoticeDisplay:
     dismiss_notice() UI code. """
 
     def test_a_fetched_notice_is_displayed_and_dismissible(self, plugin:TestHarness) -> None:
-        import load
-        assert load.notices is not None and load.panel is not None
+        assert Context.notices is not None and Context.panel is not None
 
         mock_requests.queue_response("get", mock_requests.MockResponse(
             status_code=200, content="## 9\nA freshly fetched notice."))
-        load.notices._check_notices()
+        Context.notices._check_notices()
 
-        load.panel.show_notice()
+        Context.panel.show_notice()
 
-        assert load.panel.notice is not None
-        assert "A freshly fetched notice." in load.panel.notice.get("1.0", tk.END)
+        assert Context.panel.notice is not None
+        assert "A freshly fetched notice." in Context.panel.notice.get("1.0", tk.END)
 
-        load.panel.dismiss_notice()
+        Context.panel.dismiss_notice()
 
-        assert load.panel.notice is None
-        assert load.notices.pending_notice is None
+        assert Context.panel.notice is None
+        assert Context.notices.pending_notice is None
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v', '--tb=short'])

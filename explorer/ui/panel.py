@@ -22,8 +22,6 @@ from explorer.valuation import cartography, exobiology, exobiology_data, signal_
 from explorer.constants import CFG_VISIBLE_LINES, DEFAULT_VISIBLE_LINES, CFG_PANEL_ENABLED, PLUGIN_NAME
 
 HISTORY_GLYPH:str = "\U0001F553" # clock face
-PANEL_SHOWN_GLYPH:str = "\U0001F648" # see-no-evil monkey -- "pause" analog while visible
-PANEL_HIDDEN_GLYPH:str = "\U0001F441" # eye -- "play" analog while hidden
 
 WIDTH_CHARS:int = 60
 LINE_HEIGHT_PX:int = 18
@@ -143,43 +141,22 @@ class ExplorerPanel:
         self.notice:th.RichText|None = None
         self.on_history_open:Callable[[], None]|None = None # wired up externally by load.py
 
-        self._panel_enabled:bool = config.get_bool(CFG_PANEL_ENABLED, default=True)
-
         self.frame:th.Frame = th.Frame(parent)
         self.frame.columnconfigure(0, weight=1)
 
-        # grid, not pack -- th.Base's pack() renders light/dark widget pairs twice
-        header:th.Frame = th.Frame(self.frame) # always shown -- only self.scroll below hides
-        header.grid(row=0, column=0, sticky=tk.EW)
-        header.columnconfigure(0, weight=1) # title/cart/exo share slack, spreading them out
-        header.columnconfigure(1, weight=1)
-        header.columnconfigure(2, weight=1)
+        self.view:th.Collapsible = th.Collapsible(self.frame, hidden=not config.get_bool(CFG_PANEL_ENABLED, default=True),
+                                                  on_toggle=self._on_toggle)
+        self.view.expanded.columnconfigure(0, weight=1)
+        self.view.collapsed.columnconfigure(0, weight=1)
 
         self._title_font:tkfont.Font = _bold_font()
-        self.title_label:th.Label = th.Label(header, text=PLUGIN_NAME, font=self._title_font, anchor="w")
-        self.title_label.grid(row=0, column=0, sticky=tk.W)
+        self.title_label, self.cart_value_label, self.exo_value_label, self.history_button, self.hide_button = \
+            self._build_header(self.view.expanded, True)
+        _, self._cart_collapsed, self._exo_collapsed, _, self.show_button = self._build_header(self.view.collapsed, False)
 
-        self.cart_value_label:th.Label = th.Label(header, text=format_pending_credits(0), anchor="w", width=10)
-        self.cart_value_label.grid(row=0, column=1, sticky=tk.W)
-        th.Tooltip(self.cart_value_label, "Pending cartography value")
-
-        self.exo_value_label:th.Label = th.Label(header, text=format_pending_credits(0), anchor="w", width=10)
-        self.exo_value_label.grid(row=0, column=2, sticky=tk.W)
-        th.Tooltip(self.exo_value_label, "Pending exobiology value")
-
-        self.history_button:th.Button = th.Button(header, text=HISTORY_GLYPH, width=3, command=self._open_history)
-        self.history_button.grid(row=0, column=3, sticky=tk.E)
-        th.Tooltip(self.history_button, "Open history")
-
-        self.toggle_button:th.Button = th.Button(header, text=self._toggle_glyph(), width=3, command=self._toggle_panel)
-        self.toggle_button.grid(row=0, column=4, sticky=tk.E)
-        self._toggle_tooltip:th.Tooltip = th.Tooltip(self.toggle_button, self._toggle_tooltip_text())
-
-        self.scroll:th.ScrollableFrame = th.ScrollableFrame(self.frame, maxheight=_visible_lines_px())
+        self.scroll:th.ScrollableFrame = th.ScrollableFrame(self.view.expanded, maxheight=_visible_lines_px())
         self.scroll.grid(row=2, column=0, sticky=tk.EW) # row 1 is the notice bar, shown/hidden lazily
         self.scroll.interior.columnconfigure(0, weight=1) # each row below is gridded, not packed -- see refresh()
-        if not self._panel_enabled:
-            self.scroll.grid_forget()
 
         self._pending:list[tuple] = [] # lines/tables queued by _line()/_render_table() during the current refresh()
         self._last_rendered:list[tuple] = [] # what's actually on screen right now, one entry per row widget
@@ -194,7 +171,7 @@ class ExplorerPanel:
             return
         notice:str = self.notices.pending_notice
         width:int = min(60, max(len(line) for line in notice.split("\n")))
-        self.notice = th.RichText(self.frame, width=width, markdown=notice, cursor='hand2')
+        self.notice = th.RichText(self.view.expanded, width=width, markdown=notice, cursor='hand2')
         self.notice.bind("<Button-1>", partial(self.dismiss_notice))
         self.notice.grid(row=1, column=0, sticky=tk.EW)
 
@@ -210,24 +187,37 @@ class ExplorerPanel:
         if self.on_history_open:
             self.on_history_open()
 
-    def _toggle_glyph(self) -> str:
-        return PANEL_SHOWN_GLYPH if self._panel_enabled else PANEL_HIDDEN_GLYPH
+    def _build_header(self, master:th.Frame, expanded:bool) -> tuple[th.Label, th.Label, th.Label, th.Button, th.Button]:
+        """ One header row; grid, not pack -- th.Base's pack() renders light/dark widget pairs twice """
+        header:th.Frame = th.Frame(master)
+        header.grid(row=0, column=0, sticky=tk.EW)
+        header.columnconfigure(0, weight=1) # title/cart/exo share slack, spreading them out
+        header.columnconfigure(1, weight=1)
+        header.columnconfigure(2, weight=1)
 
-    def _toggle_tooltip_text(self) -> str:
-        return "Hide panel" if self._panel_enabled else "Show panel"
+        title:th.Label = th.Label(header, text=PLUGIN_NAME, font=self._title_font, anchor="w")
+        title.grid(row=0, column=0, sticky=tk.W)
 
-    def _toggle_panel(self) -> None:
-        """ Shows/hides content; collection keeps going. """
-        self._panel_enabled = not self._panel_enabled
-        config.set(CFG_PANEL_ENABLED, self._panel_enabled)
-        self.toggle_button.configure(text=self._toggle_glyph())
-        self._toggle_tooltip.set_text(self._toggle_tooltip_text())
-        if not self._panel_enabled:
-            self.scroll.grid_forget()
-            return
+        cart:th.Label = th.Label(header, text=format_pending_credits(0), anchor="w", width=10)
+        cart.grid(row=0, column=1, sticky=tk.W)
+        th.Tooltip(cart, "Pending cartography value")
 
-        self.scroll.grid(row=1, column=0, sticky=tk.EW)
-        self.refresh()
+        exo:th.Label = th.Label(header, text=format_pending_credits(0), anchor="w", width=10)
+        exo.grid(row=0, column=2, sticky=tk.W)
+        th.Tooltip(exo, "Pending exobiology value")
+
+        history:th.Button = th.Button(header, text=HISTORY_GLYPH, width=3, command=self._open_history)
+        history.grid(row=0, column=3, sticky=tk.E)
+        th.Tooltip(history, "Open history")
+
+        toggle:th.Button = self.view.hide_button(header, "Hide panel") if expanded else self.view.show_button(header, "Show panel")
+        toggle.grid(row=0, column=4, sticky=tk.E)
+        return title, cart, exo, history, toggle
+
+    def _on_toggle(self, hidden:bool) -> None:
+        """ Persist the state; catch up on whatever changed while hidden """
+        config.set(CFG_PANEL_ENABLED, not hidden)
+        if not hidden: self.refresh()
 
     def _update_header_totals(self) -> None:
         cmdr_id:int|None = self.state.cmdr_id
@@ -235,6 +225,8 @@ class ExplorerPanel:
         exo:int = self.store.get_pending_exobiology_value(cmdr_id) if cmdr_id is not None else 0
         self.cart_value_label.configure(text=format_pending_credits(cart))
         self.exo_value_label.configure(text=format_pending_credits(exo))
+        self._cart_collapsed.configure(text=format_pending_credits(cart))
+        self._exo_collapsed.configure(text=format_pending_credits(exo))
 
     def _line(self, text:str) -> None:
         self._pending.append(("line", str_truncate(text, WIDTH_CHARS)))
@@ -280,8 +272,8 @@ class ExplorerPanel:
         """ Diffs _pending against _last_rendered row by row -- only rebuilds rows that changed. """
         self._update_header_totals() # header stays live even while the rest is hidden
 
-        if not self._panel_enabled:
-            return # hidden -- _toggle_panel() rebuilds fully once shown again
+        if self.view.hidden:
+            return # hidden -- _on_toggle() rebuilds fully once shown again
 
         self.scroll.configure(maxheight=_visible_lines_px()) # live prefs change -- no restart needed
 

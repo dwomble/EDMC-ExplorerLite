@@ -9,7 +9,7 @@ Directly regression-tests the two cartography bugs found and fixed from this exa
 - get_pending_cartography_value() must drop to 0 once every held system is marked sold.
 
 Run with:
-    .venv/bin/python -m pytest tests/test_real_cartography_sale.py -v --tb=short
+    .venv/bin/python -m pytest tests/test_real_sale.py -v --tb=short
 """
 import json
 import sqlite3
@@ -23,12 +23,12 @@ from explorer.journal import handlers_sales
 
 @pytest.fixture
 def sale_event() -> dict:
-    with open(Path(__file__).parent / "journal_config" / "real_cartography_sale.json") as f:
+    with open(Path(__file__).parent / "journal_config" / "real_sale.json") as f:
         return json.load(f)["sale"][0]
 
 class TestRealCartographySale:
 
-    def test_records_total_earnings_not_base_plus_bonus(
+    def test_records_total_earnings(
         self, store_from_snapshot:Callable[[str], ExplorerStore], sale_event:dict,
     ) -> None:
         store:ExplorerStore = store_from_snapshot("cartography_pre_sale")
@@ -57,7 +57,7 @@ class TestRealCartographySale:
         ).fetchone()
         assert row["sold_at"] is not None
 
-    def test_pending_cartography_value_drops_to_zero_once_everything_is_sold(
+    def test_pending_zero_after_sale(
         self, store_from_snapshot:Callable[[str], ExplorerStore], sale_event:dict,
     ) -> None:
         """ Regression: this real system's 5 real (unmapped) bodies are worth 207,989 Cr
