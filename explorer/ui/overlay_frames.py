@@ -1,5 +1,5 @@
 """ Overlay radar: distance rings, a ring at the current species' minimum sample distance (or, with a
-circle-capable overlay, a translucent circle of that distance around each of its markers), and a
+circle-capable overlay, a translucent circle of that distance around its samples and every waypoint), and a
 marker per logged position (real samples vs. codex-tagged waypoints). """
 import math
 import sqlite3
@@ -44,25 +44,15 @@ CIRCLE_BORDER_ALPHA:int = 0xB3 # ~70% opaque
 # Disabled: ring/label for a tagged-but-unapproached genus (kept for possible future use).
 SHOW_TAGGED_GENUS:bool = False
 
-RING_DISTANCES_M:tuple[int, ...] = (200, 600, 1400) # each double the real-world width of the last
+RING_DISTANCES_M:tuple[int, ...] = (500, 1000, 1500, 2000) # the radar scale is linear, so evenly spaced
 DISPLAY_RANGE_M:float = float(max(RING_DISTANCES_M)) # the "in range" boundary
-_RADIUS_FRAC_BOUNDARIES:tuple[float, ...] = (0.0,) + RING_DISTANCES_M
 
-EDGE_DISPLAY_M:float = 1500.0 # radar's true edge -- a bit past the outer ring, margin for out-of-range dots
+EDGE_DISPLAY_M:float = 2150.0 # radar's true edge -- a bit past the outer ring, margin for out-of-range dots
 RING_AREA_FRAC:float = DISPLAY_RANGE_M / EDGE_DISPLAY_M
 
 def _radius_frac(distance_m:float) -> float:
-    """ Piecewise-linear 0.0 (0m) to 1.0 (DISPLAY_RANGE_M); each ring segment double the last. """
-    if distance_m <= 0:
-        return 0.0
-
-    segment_count:int = len(RING_DISTANCES_M)
-    for i in range(segment_count):
-        lo, hi = _RADIUS_FRAC_BOUNDARIES[i], _RADIUS_FRAC_BOUNDARIES[i + 1]
-        if distance_m <= hi:
-            return (i + (distance_m - lo) / (hi - lo)) / segment_count
-
-    return 1.0 # beyond the outermost ring -- caller clamps/handles out-of-range separately
+    """ Linear 0.0 (0m) to 1.0 (DISPLAY_RANGE_M), so a circle of a real distance is a true circle on screen. """
+    return min(max(distance_m, 0.0) / DISPLAY_RANGE_M, 1.0)
 
 def _radius() -> int:
     """ Radar's radius in pixels, configurable. """
@@ -199,12 +189,12 @@ class RadarOverlay:
         for genus in genera:
             in_progress:bool = bool(state.sample_positions.get(genus))
             if in_progress:
-                # Only the genus actually being sampled gets a ring or circles -- with several genera's
-                # samples on screen at once, a ring per genus became illegible.
+                # Several rings at once were illegible, so only the genus being sampled gets the ring or sample circles.
+                # Waypoints get circles for every genus.
                 current:bool = genus == state.current_genus
                 if current and not circles:
                     self._draw_genus_ring(radius_px, genus, ACTIVE_RING_COLOR)
-                self._draw_samples(state, genus, radius_px, heading_rad, current and circles)
+                self._draw_samples(state, genus, radius_px, heading_rad, circles, current)
                 continue
 
             if SHOW_TAGGED_GENUS:
@@ -268,7 +258,7 @@ class RadarOverlay:
             CENTER_X + DOT_GLYPH_OFFSET_X, CENTER_Y + DOT_GLYPH_OFFSET_Y, ttl=TTL, size=DOT_GLYPH_SIZE,
         )
 
-    def _draw_samples(self, state:ExplorerState, genus:str, radius_px:int, heading:float, circles:bool = False) -> None:
+    def _draw_samples(self, state:ExplorerState, genus:str, radius_px:int, heading:float, circles:bool = False, current:bool = False) -> None:
         """ Bearing (unit direction) and pixel radius (non-linear) computed separately, then combined. """
 
         positions:list[tuple[float, float, str|None, bool]] = state.sample_positions.get(genus, [])
@@ -276,6 +266,7 @@ class RadarOverlay:
             return
 
         min_dist:int = (exobiology_data.genus_min_distance(genus) or 0) if circles else 0
+        px_per_m:float = radius_px * RING_AREA_FRAC / DISPLAY_RANGE_M
         for i, (lat, lon, color_name, is_tag) in enumerate(positions):
             east, north = local_offset_m(state.latitude, state.longitude, lat, lon, state.planet_radius)
             dist:float = math.hypot(east, north)
@@ -287,12 +278,10 @@ class RadarOverlay:
             sx:float = CENTER_X + right * pixel_r
             sy:float = CENTER_Y - forward * pixel_r
 
-            if min_dist and in_range:
-                # The radar is non-linear, so use its scale around this point: tangential, or its limit at the center
-                scale:float = pixel_r / dist if dist > 0 else radius_px * RING_AREA_FRAC / (len(RING_DISTANCES_M) * RING_DISTANCES_M[0])
+            if min_dist and in_range and (is_tag or current):
                 color:str = _tag_color(color_name) if is_tag else _sample_color(color_name)
                 self.overlay.send_circle(f"{FRAME_PREFIX}circle-{genus}-{i}", _with_alpha(color, CIRCLE_BORDER_ALPHA), _with_alpha(color, CIRCLE_FILL_ALPHA),
-                                         round(sx), round(sy), round(min_dist * scale), RING_THICKNESS_PX, ttl=TTL)
+                                         round(sx), round(sy), round(min_dist * px_per_m), RING_THICKNESS_PX, ttl=TTL)
 
             frame_id:str = f"{FRAME_PREFIX}sample-{genus}-{i}"
             if not is_tag:
