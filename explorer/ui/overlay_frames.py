@@ -1,4 +1,5 @@
-""" Overlay radar: distance rings, a ring at the current species' minimum sample distance, and a
+""" Overlay radar: distance rings, a ring at the current species' minimum sample distance (or, with a
+circle-capable overlay, a translucent circle of that distance around each of its markers), and a
 marker per logged position (real samples vs. codex-tagged waypoints). """
 import math
 import sqlite3
@@ -13,7 +14,7 @@ from explorer.state import ExplorerState
 from explorer.util import local_offset_m
 from explorer.valuation import exobiology_data
 from explorer.constants import (
-    CFG_PANEL_ENABLED, CFG_OVERLAY_RADAR_ENABLED, CFG_OVERLAY_RADAR_SIZE, DEFAULT_OVERLAY_RADAR_SIZE,
+    CFG_PANEL_ENABLED, CFG_OVERLAY_RADAR_ENABLED, CFG_OVERLAY_RADAR_SIZE, DEFAULT_OVERLAY_RADAR_SIZE, CFG_OVERLAY_RADAR_CIRCLES,
 )
 
 FRAME_PREFIX:str = "explorerlite-radar-"
@@ -37,6 +38,8 @@ DOT_GLYPH_OFFSET_Y:int = -6
 TTL:int = 8 # generous vs. the ~1/sec dashboard-tick refresh cadence, so a missed/delayed tick doesn't visibly blank the radar
 TAG_TRIANGLE_SIZE_PX:int = 5 # vertex-to-center radius for a codex-tagged waypoint's triangle marker
 INVISIBLE:str = "#00000000" # fully transparent ARGB -- see _pin_bounds
+CIRCLE_FILL_ALPHA:int = 0x40 # ~25% opaque
+CIRCLE_BORDER_ALPHA:int = 0xB3 # ~70% opaque
 
 # Disabled: ring/label for a tagged-but-unapproached genus (kept for possible future use).
 SHOW_TAGGED_GENUS:bool = False
@@ -85,6 +88,10 @@ DEFAULT_TAG_COLOR:str = "#ff66aa"
 
 def _tag_color(color_name:str|None) -> str:
     return CODEX_TAG_COLORS.get(color_name, DEFAULT_TAG_COLOR) if color_name else DEFAULT_TAG_COLOR
+
+def _with_alpha(color:str, alpha:int) -> str:
+    """ "#rrggbb" to "#aarrggbb" """
+    return f"#{alpha:02x}{color[1:]}"
 
 def _sample_color(color_name:str|None) -> str:
     """ Same lookup as _tag_color(), but falls back to SAMPLE_COLOR rather than DEFAULT_TAG_COLOR. """
@@ -183,6 +190,7 @@ class RadarOverlay:
         self._log_skip(None) # clear -- we're drawing
         self._ensure_group()
 
+        circles:bool = self.overlay.supports_circle and config.get_bool(CFG_OVERLAY_RADAR_CIRCLES, default=True)
         radius_px:int = _radius()
         heading_rad:float = math.radians(state.heading) if state.heading is not None else 0.0
         self._pin_bounds(radius_px)
@@ -191,11 +199,12 @@ class RadarOverlay:
         for genus in genera:
             in_progress:bool = bool(state.sample_positions.get(genus))
             if in_progress:
-                # Only the genus actually being sampled gets a ring -- with several genera's
+                # Only the genus actually being sampled gets a ring or circles -- with several genera's
                 # samples on screen at once, a ring per genus became illegible.
-                if genus == state.current_genus:
+                current:bool = genus == state.current_genus
+                if current and not circles:
                     self._draw_genus_ring(radius_px, genus, ACTIVE_RING_COLOR)
-                self._draw_samples(state, genus, radius_px, heading_rad)
+                self._draw_samples(state, genus, radius_px, heading_rad, current and circles)
                 continue
 
             if SHOW_TAGGED_GENUS:
@@ -259,13 +268,14 @@ class RadarOverlay:
             CENTER_X + DOT_GLYPH_OFFSET_X, CENTER_Y + DOT_GLYPH_OFFSET_Y, ttl=TTL, size=DOT_GLYPH_SIZE,
         )
 
-    def _draw_samples(self, state:ExplorerState, genus:str, radius_px:int, heading:float) -> None:
+    def _draw_samples(self, state:ExplorerState, genus:str, radius_px:int, heading:float, circles:bool = False) -> None:
         """ Bearing (unit direction) and pixel radius (non-linear) computed separately, then combined. """
 
         positions:list[tuple[float, float, str|None, bool]] = state.sample_positions.get(genus, [])
         if not positions or state.planet_radius is None or state.latitude is None or state.longitude is None:
             return
 
+        min_dist:int = (exobiology_data.genus_min_distance(genus) or 0) if circles else 0
         for i, (lat, lon, color_name, is_tag) in enumerate(positions):
             east, north = local_offset_m(state.latitude, state.longitude, lat, lon, state.planet_radius)
             dist:float = math.hypot(east, north)
@@ -276,6 +286,13 @@ class RadarOverlay:
             pixel_r:float = radius_px * _radius_frac(dist) * RING_AREA_FRAC if in_range else radius_px * (RING_AREA_FRAC + 1.0) / 2
             sx:float = CENTER_X + right * pixel_r
             sy:float = CENTER_Y - forward * pixel_r
+
+            if min_dist and in_range:
+                # The radar is non-linear, so use its scale around this point: tangential, or its limit at the center
+                scale:float = pixel_r / dist if dist > 0 else radius_px * RING_AREA_FRAC / (len(RING_DISTANCES_M) * RING_DISTANCES_M[0])
+                color:str = _tag_color(color_name) if is_tag else _sample_color(color_name)
+                self.overlay.send_circle(f"{FRAME_PREFIX}circle-{genus}-{i}", _with_alpha(color, CIRCLE_BORDER_ALPHA), _with_alpha(color, CIRCLE_FILL_ALPHA),
+                                         round(sx), round(sy), round(min_dist * scale), RING_THICKNESS_PX, ttl=TTL)
 
             frame_id:str = f"{FRAME_PREFIX}sample-{genus}-{i}"
             if not is_tag:

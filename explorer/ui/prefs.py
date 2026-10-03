@@ -15,7 +15,7 @@ from explorer.constants import (
     CFG_EXOBIO_VALUE_THRESHOLD, DEFAULT_EXOBIO_VALUE_THRESHOLD,
     CFG_OVERLAY_RADAR_ENABLED, CFG_OVERLAY_SUMMARY_ENABLED, CFG_DEV_MODE,
     CFG_VISIBLE_LINES, DEFAULT_VISIBLE_LINES,
-    CFG_OVERLAY_RADAR_SIZE, DEFAULT_OVERLAY_RADAR_SIZE,
+    CFG_OVERLAY_RADAR_SIZE, DEFAULT_OVERLAY_RADAR_SIZE, CFG_OVERLAY_RADAR_CIRCLES,
     CFG_OVERLAY_SUMMARY_TEXT_COLOR, DEFAULT_OVERLAY_SUMMARY_TEXT_COLOR,
 )
 
@@ -41,6 +41,7 @@ SECTIONS:list[tuple[str, list[Pref]]] = [
         Pref('bool', CFG_OVERLAY_RADAR_ENABLED, "Show radar on overlay", True),
         Pref('bool', CFG_OVERLAY_SUMMARY_ENABLED, "Show system summary on overlay", True),
         Pref('threshold', CFG_OVERLAY_RADAR_SIZE, "Radar size (px):", DEFAULT_OVERLAY_RADAR_SIZE),
+        Pref('bool', CFG_OVERLAY_RADAR_CIRCLES, "Sample distance circles (needs circle-capable overlay)", True),
         Pref('color', CFG_OVERLAY_SUMMARY_TEXT_COLOR, "Overlay summary text colour:", DEFAULT_OVERLAY_SUMMARY_TEXT_COLOR),
     ]),
     ("Debug", [
