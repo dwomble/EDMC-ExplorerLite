@@ -20,7 +20,7 @@ from explorer.state import ExplorerState
 from explorer.ui.overlay_frames import RadarOverlay, FRAME_PREFIX, CENTER_X, CENTER_Y, SAMPLE_COLOR
 from explorer.ui.overlay_frames import _radius_frac, _ring_dot_count, RING_DOT_MIN, RING_DOT_MAX, DOT_GLYPH, DOT_GLYPH_SIZE, RING_THICKNESS_PX, DOT_RADIUS_PX, PLAYER_COLOR, CODEX_TAG_COLORS, RING_AREA_FRAC, DOT_GLYPH_OFFSET_X, RING_DISTANCES_M, DISPLAY_RANGE_M
 from explorer.constants import DEFAULT_OVERLAY_RADAR_SIZE, CFG_OVERLAY_RADAR_SIZE, CFG_OVERLAY_RADAR_ENABLED, CFG_PANEL_ENABLED, CFG_OVERLAY_RADAR_CIRCLES
-from explorer.ui.overlay_frames import CIRCLE_FILL_ALPHA, CIRCLE_BORDER_ALPHA, OTHER_FILL_ALPHA, OTHER_BORDER_ALPHA, CURRENT_CIRCLE_COLOR, RING_COLOR
+from explorer.ui.overlay_frames import CIRCLE_FILL_ALPHA, CIRCLE_BORDER_ALPHA, ACTIVE_FILL_ALPHA, ACTIVE_BORDER_ALPHA, RING_COLOR
 from explorer.util import local_offset_m
 from explorer.valuation import exobiology_data
 import explorer.ui.overlay_frames as overlay_frames
@@ -141,10 +141,10 @@ class TestRadarSampleCircles:
         assert f"{FRAME_PREFIX}ring-active-Bacterium" not in shapes
         _, shape, sample = shapes[f"{FRAME_PREFIX}circle-Bacterium-0"]
         assert shape == "circle"
-        assert sample["color"] == f"#{CIRCLE_BORDER_ALPHA:02x}{CURRENT_CIRCLE_COLOR[1:]}"
-        assert sample["fill"] == f"#{CIRCLE_FILL_ALPHA:02x}{CURRENT_CIRCLE_COLOR[1:]}"
-        _, _, tag = shapes[f"{FRAME_PREFIX}circle-Bacterium-1"] # the current genus's waypoint is white too
-        assert tag["color"] == sample["color"]
+        assert sample["color"] == f"#{ACTIVE_BORDER_ALPHA:02x}{SAMPLE_COLOR[1:]}" # the current genus is drawn strongest
+        assert sample["fill"] == f"#{ACTIVE_FILL_ALPHA:02x}{SAMPLE_COLOR[1:]}"
+        _, _, tag = shapes[f"{FRAME_PREFIX}circle-Bacterium-1"]
+        assert tag["color"] == f"#{ACTIVE_BORDER_ALPHA:02x}{CODEX_TAG_COLORS['Lime'][1:]}"
 
     @pytest.mark.overlay('Modern')
     def test_radius_is_to_scale_at_any_distance(self, overlay_mode, store:ExplorerStore) -> None:
@@ -168,6 +168,18 @@ class TestRadarSampleCircles:
 
         assert f"{FRAME_PREFIX}circle-Bacterium-0" not in shapes
         assert f"{FRAME_PREFIX}sample-Bacterium-0" in shapes
+
+    @pytest.mark.overlay('Modern')
+    def test_circle_strengthens_at_first_sample(self, overlay_mode, store:ExplorerStore) -> None:
+        state = _landed_state(store, samples=0)
+        state.sample_positions["Bacterium"] = [(10.0003, 20.0, "Lime", True)] # a waypoint, nothing sampled yet
+
+        before:str = self._render(store, state)[f"{FRAME_PREFIX}circle-Bacterium-0"][2]["fill"]
+        state.current_genus = "Bacterium" # the first real sample sets this
+        after:str = self._render(store, state)[f"{FRAME_PREFIX}circle-Bacterium-0"][2]["fill"]
+
+        assert before == f"#{CIRCLE_FILL_ALPHA:02x}{CODEX_TAG_COLORS['Lime'][1:]}"
+        assert after == f"#{ACTIVE_FILL_ALPHA:02x}{CODEX_TAG_COLORS['Lime'][1:]}"
 
     @pytest.mark.overlay('Modern')
     def test_other_genus_samples_get_no_circle(self, overlay_mode, store:ExplorerStore) -> None:
@@ -196,8 +208,8 @@ class TestRadarSampleCircles:
         _, _, kwargs = shapes[f"{FRAME_PREFIX}circle-Fungoida-0"]
         fungoida:int = exobiology_data.genus_min_distance("Fungoida") or 0
         assert kwargs["radius"] == round(fungoida * DEFAULT_OVERLAY_RADAR_SIZE * RING_AREA_FRAC / DISPLAY_RANGE_M)
-        assert kwargs["color"] == f"#{OTHER_BORDER_ALPHA:02x}{CODEX_TAG_COLORS['Lime'][1:]}" # species color, more transparent
-        assert kwargs["fill"] == f"#{OTHER_FILL_ALPHA:02x}{CODEX_TAG_COLORS['Lime'][1:]}"
+        assert kwargs["color"] == f"#{CIRCLE_BORDER_ALPHA:02x}{CODEX_TAG_COLORS['Lime'][1:]}" # its own species color, not yet sampled so not strengthened
+        assert kwargs["fill"] == f"#{CIRCLE_FILL_ALPHA:02x}{CODEX_TAG_COLORS['Lime'][1:]}"
 
     @pytest.mark.overlay('Modern')
     def test_pref_off_keeps_central_ring(self, overlay_mode, harness:TestHarness, store:ExplorerStore) -> None:

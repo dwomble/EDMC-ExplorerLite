@@ -40,9 +40,8 @@ TAG_TRIANGLE_SIZE_PX:int = 5 # vertex-to-center radius for a codex-tagged waypoi
 INVISIBLE:str = "#00000000" # fully transparent ARGB -- see _pin_bounds
 CIRCLE_FILL_ALPHA:int = 0x40 # ~25% opaque
 CIRCLE_BORDER_ALPHA:int = 0xB3 # ~70% opaque
-OTHER_FILL_ALPHA:int = 0x20 # other genera's waypoints, more transparent
-OTHER_BORDER_ALPHA:int = 0x70
-CURRENT_CIRCLE_COLOR:str = "#ffffff" # the genus being sampled, to stand out from the species colors
+ACTIVE_FILL_ALPHA:int = 0x70 # the genus being sampled, stronger than the others to stand out
+ACTIVE_BORDER_ALPHA:int = 0xFF
 
 # Disabled: ring/label for a tagged-but-unapproached genus (kept for possible future use).
 SHOW_TAGGED_GENUS:bool = False
@@ -61,7 +60,7 @@ def _radius() -> int:
     """ Radar's radius in pixels, configurable. """
     return config.get_int(CFG_OVERLAY_RADAR_SIZE, default=DEFAULT_OVERLAY_RADAR_SIZE)
 
-RING_COLOR:str = "#cccccc" # light grey distance rings
+RING_COLOR:str = "#b2b2b2" # mid grey distance rings
 ACTIVE_RING_COLOR:str = "#ffaa00" # the current species being sampled this visit
 TAGGED_RING_COLOR:str = "#cc66ff" # a genus confirmed but not yet approached this visit -- see SHOW_TAGGED_GENUS
 SAMPLE_COLOR:str = "#00aaff" # fallback for a real sample with no recognized variant color
@@ -282,9 +281,9 @@ class RadarOverlay:
             sy:float = CENTER_Y - forward * pixel_r
 
             if min_dist and in_range and (is_tag or current):
-                color:str = CURRENT_CIRCLE_COLOR if current else _tag_color(color_name)
-                border_alpha:int = CIRCLE_BORDER_ALPHA if current else OTHER_BORDER_ALPHA
-                fill_alpha:int = CIRCLE_FILL_ALPHA if current else OTHER_FILL_ALPHA
+                color:str = _tag_color(color_name) if is_tag else _sample_color(color_name)
+                border_alpha:int = ACTIVE_BORDER_ALPHA if current else CIRCLE_BORDER_ALPHA
+                fill_alpha:int = ACTIVE_FILL_ALPHA if current else CIRCLE_FILL_ALPHA
                 self.overlay.send_circle(f"{FRAME_PREFIX}circle-{genus}-{i}", _with_alpha(color, border_alpha), _with_alpha(color, fill_alpha),
                                          round(sx), round(sy), round(min_dist * px_per_m), RING_THICKNESS_PX, ttl=TTL)
 
