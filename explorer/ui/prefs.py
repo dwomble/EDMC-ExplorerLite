@@ -9,6 +9,8 @@ import myNotebook as nb # type: ignore
 from ttkHyperlinkLabel import HyperlinkLabel # type: ignore
 from config import config # type: ignore
 
+import explorer.utils.th as th
+
 from explorer.constants import (
     PLUGIN_NAME, GH_OWNER, GH_PROJECT,
     CFG_SCAN_VALUE_THRESHOLD, DEFAULT_SCAN_VALUE_THRESHOLD,
@@ -30,19 +32,20 @@ class Pref:
     key:str
     desc:str
     default:int|bool|str
+    tooltip:str|None = None
 
 SECTIONS:list[tuple[str, list[Pref]]] = [
     ("Thresholds", [
-        Pref('threshold', CFG_SCAN_VALUE_THRESHOLD, "Flag scan/mapping value above (Cr):", DEFAULT_SCAN_VALUE_THRESHOLD),
-        Pref('threshold', CFG_EXOBIO_VALUE_THRESHOLD, "Flag exobiology potential above (Cr):", DEFAULT_EXOBIO_VALUE_THRESHOLD),
-        Pref('threshold', CFG_VISIBLE_LINES, "Visible lines before scrolling:", DEFAULT_VISIBLE_LINES),
+        Pref('threshold', CFG_SCAN_VALUE_THRESHOLD, "Minimum DSS value", DEFAULT_SCAN_VALUE_THRESHOLD, "Minimum value of a body scan to be shown. Bodies below this value will be ignored."),
+        Pref('threshold', CFG_EXOBIO_VALUE_THRESHOLD, "Minimum exobiology value", DEFAULT_EXOBIO_VALUE_THRESHOLD, "Minimum value of exobiology scans to be shown. Bodies below this value will be ignored."),
+        Pref('threshold', CFG_VISIBLE_LINES, "Maximum visible lines", DEFAULT_VISIBLE_LINES, "Number of lines to display before enabling scrolling."),
     ]),
     (OVERLAYS_SECTION, [
-        Pref('bool', CFG_OVERLAY_RADAR_ENABLED, "Show radar on overlay", True),
-        Pref('bool', CFG_OVERLAY_SUMMARY_ENABLED, "Show system summary on overlay", True),
-        Pref('threshold', CFG_OVERLAY_RADAR_SIZE, "Radar size (px):", DEFAULT_OVERLAY_RADAR_SIZE),
-        Pref('bool', CFG_OVERLAY_RADAR_CIRCLES, "Sample distance circles (needs circle-capable overlay)", True),
-        Pref('color', CFG_OVERLAY_SUMMARY_TEXT_COLOR, "Overlay summary text colour:", DEFAULT_OVERLAY_SUMMARY_TEXT_COLOR),
+        Pref('bool', CFG_OVERLAY_RADAR_ENABLED, "Show radar overlay", True, "When near a body with cartography potential, show a radar overlay of scans and waypoints."),
+        Pref('bool', CFG_OVERLAY_SUMMARY_ENABLED, "Show summary overlay", True, "Display a summary of cartography and exobiology data."),
+        Pref('threshold', CFG_OVERLAY_RADAR_SIZE, "Radar size", DEFAULT_OVERLAY_RADAR_SIZE, "Pixel radius of the radar overlay."),
+        Pref('bool', CFG_OVERLAY_RADAR_CIRCLES, "Sample-centric radar", True, "Show scan distance as circle around each scan or waypoint rather than\nthe default single minimum distance from current location (requires circle-capable overlay)."),
+        Pref('color', CFG_OVERLAY_SUMMARY_TEXT_COLOR, "Summary overlay text colour", DEFAULT_OVERLAY_SUMMARY_TEXT_COLOR, "Colour of the text displayed in the summary overlay."),
     ]),
     ("Debug", [
         Pref('bool', CFG_DEV_MODE, "Developer/debug logging", False),
@@ -72,23 +75,33 @@ def _place_pref(frame:nb.Frame, p:Pref, row:int, col:int, enabled:bool) -> None:
     match p.kind:
         case 'threshold':
             _pref_vars[p.key] = tk.StringVar(value=str(config.get_int(p.key, default=p.default)))
-            nb.Label(frame, text=p.desc).grid(row=row, column=col, sticky=tk.W, padx=(left_pad, LABEL_GAP_PX), pady=pady)
-            nb.EntryMenu(frame, textvariable=_pref_vars[p.key], width=10, state=state).grid(row=row, column=col + 1, sticky=tk.W, pady=pady)
+            lbl:nb.Label = nb.Label(frame, text=p.desc)
+            lbl.grid(row=row, column=col, sticky=tk.W, padx=(left_pad, LABEL_GAP_PX), pady=pady)
+            mnu:nb.EntryMenu = nb.EntryMenu(frame, textvariable=_pref_vars[p.key], width=10, state=state)
+            mnu.grid(row=row, column=col + 1, sticky=tk.W, pady=pady)
+            if p.tooltip:
+                th.Tooltip(lbl, p.tooltip)
+                th.Tooltip(mnu, p.tooltip)
 
         case 'bool':
             _pref_vars[p.key] = tk.BooleanVar(value=config.get_bool(p.key, default=p.default))
-            nb.Checkbutton(frame, text=p.desc, variable=_pref_vars[p.key], state=state).grid(
-                row=row, column=col, columnspan=2, sticky=tk.W, padx=(left_pad, 0), pady=pady)
+            cb:nb.Checkbutton = nb.Checkbutton(frame, text=p.desc, variable=_pref_vars[p.key], state=state)
+            cb.grid(row=row, column=col, columnspan=2, sticky=tk.W, padx=(left_pad, 0), pady=pady)
+            if p.tooltip:
+                th.Tooltip(cb, p.tooltip)
 
         case 'color':
             color:str = config.get_str(p.key, default=p.default)
             color_var:tk.StringVar = tk.StringVar(value=color)
             _pref_vars[p.key] = color_var
-            nb.Label(frame, text=p.desc).grid(row=row, column=col, sticky=tk.W, padx=(left_pad, LABEL_GAP_PX), pady=pady)
-
+            lbl:nb.Label = nb.Label(frame, text=p.desc)
+            lbl.grid(row=row, column=col, sticky=tk.W, padx=(left_pad, LABEL_GAP_PX), pady=pady)
             btn:tk.Button = tk.Button(frame, text="Foreground", foreground=color, background="#555555", state=state)
             btn.configure(command=partial(_pick_color, frame, color_var, btn))
             btn.grid(row=row, column=col + 1, sticky=tk.W, pady=pady)
+            if p.tooltip:
+                th.Tooltip(lbl, p.tooltip)
+                th.Tooltip(btn, p.tooltip)
 
 def _on_clear_unsold_data(parent:tk.Widget, cmdr:str, clear_unsold_data:Callable[[str], str]|None) -> None:
     if clear_unsold_data is None:
@@ -137,11 +150,15 @@ def build_prefs(parent:tk.Widget, cmdr:str, is_beta:bool, overlay_available:bool
 
     nb.Label(frame, text=DATA_SECTION_TITLE, font=bold).grid(row=row, column=col, columnspan=4, sticky=tk.W, pady=(4, 2))
     row += 1; col = 0
-    nb.Label(frame, text="Danger! This is an irreversible action:").grid(row=row, column=0, sticky=tk.W, pady=(0, ROW_GAP_PX))
+    lbl:nb.Label = nb.Label(frame, text="Clear unsold data")
+    lbl.grid(row=row, column=0, sticky=tk.W, pady=(0, ROW_GAP_PX))
+    th.Tooltip(lbl, "Danger! This is an irreversible action! It will mark all pending cartography and exobiology data as lost,\nas if the commander died without EDMC running. Use only if you are sure you want to do this.")
     col += 1
-    tk.Button(frame, text="Clear unsold data", background=DANGER_COLOR, foreground="white", activebackground=DANGER_COLOR,
-                command=partial(_on_clear_unsold_data, frame, cmdr, clear_unsold_data),
-    ).grid(row=row, column=col, rowspan=3, sticky=tk.W, pady=(0, ROW_GAP_PX))
+    btn:tk.Button = tk.Button(frame, text="Delete", background=DANGER_COLOR, foreground="white",
+                               activebackground=DANGER_COLOR, command=partial(_on_clear_unsold_data, frame, cmdr, clear_unsold_data),
+    )
+    btn.grid(row=row, column=col, rowspan=3, sticky=tk.W, pady=(0, ROW_GAP_PX))
+    th.Tooltip(btn, "Danger! This is an irreversible action! It will mark all pending cartography and exobiology data as lost,\nas if the commander died without EDMC running. Use only if you are sure you want to do this.")
 
     return frame
 
