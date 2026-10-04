@@ -20,7 +20,7 @@ from explorer.ui.panel import _credits_range, system_status_text, system_header_
 from explorer.state import state as explorer_state, ExplorerState
 from explorer.journal import handlers_context
 from explorer.util import now_iso
-from explorer.constants import PLUGIN_NAME, CFG_PANEL_ENABLED, CFG_SCAN_VALUE_THRESHOLD, CFG_OVERLAY_RADAR_ENABLED, CFG_EXOBIO_VALUE_THRESHOLD, DEFAULT_EXOBIO_VALUE_THRESHOLD
+from explorer.constants import PLUGIN_NAME, CFG_PANEL_ENABLED, CFG_SCAN_VALUE_THRESHOLD, CFG_OVERLAY_RADAR_ENABLED, CFG_EXOBIO_VALUE_THRESHOLD, DEFAULT_EXOBIO_VALUE_THRESHOLD, CFG_BODY_SORT, DEFAULT_BODY_SORT
 from explorer.ui import prefs as prefs_ui
 import explorer.db.store as store_module
 import explorer.session_persist as session_persist_module
@@ -278,48 +278,35 @@ class TestPanelStates:
         assert any(line.endswith("FSS") for line in lines)
         assert any(line.startswith("A 1 ") for line in lines)
 
-    def test_flagged_body_order_matches_the_overlay(self, plugin:TestHarness) -> None:
-        """
-        Real-world report: the panel and overlay listed a system's flagged bodies in different
-        orders. The panel used plain body_id order; the overlay already sorted biological
-        bodies first (see test_overlay_summary.py's own version of this regression). Both now
-        share flagged_body_sort_key(), so a biological body always leads regardless of body_id.
-        """
+    def test_sort_pref_orders_the_bodies(self, plugin:TestHarness) -> None:
         plugin.load_events("explorer_events.json")
         plugin.play_sequence("honk_only", 0.02)
 
         assert Context.store is not None and Context.panel is not None
         assert explorer_state.cmdr_id is not None and explorer_state.system_id is not None
 
-        cart_pk:int = Context.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 1, "QuietSpace 1")
-        Context.store.update_body(cart_pk, flagged_value=1, estimated_scan_value=1_000_000, was_discovered=1, was_mapped=1)
-        bio_pk:int = Context.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 2, "QuietSpace Bio")
-        Context.store.update_body(bio_pk, has_biological_signals=1, biological_signal_count=3)
+        for body_id, num, value in ((1, 9, 1_000_000), (2, 10, 3_000_000), (3, 2, 2_000_000)):
+            pk:int = Context.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, body_id, f"QuietSpace {num}")
+            Context.store.update_body(pk, flagged_value=1, estimated_scan_value=value, was_discovered=1, was_mapped=1)
 
-        Context.panel.refresh()
-        lines = _panel_lines()
-        bio_index:int = next(i for i, line in enumerate(lines) if "Bio" in line)
-        cart_index:int = next(i for i, line in enumerate(lines) if line.startswith("1 "))
-        assert bio_index < cart_index, lines
+        for mode, expected in (("Name", [2, 9, 10]), ("Value", [10, 2, 9])): # name order is numeric-aware
+            plugin.config.set(CFG_BODY_SORT, mode)
+            Context.panel.refresh()
+            lines = _panel_lines()
+            pos:dict[int, int] = {n: next(i for i, line in enumerate(lines) if line.startswith(f"{n} ")) for n in (2, 9, 10)}
+            assert sorted(pos, key=lambda n: pos[n]) == expected, (mode, lines)
 
-    def test_flagged_bodies_within_a_group_are_ordered_by_distance(self, plugin:TestHarness) -> None:
-        """ Distance, not body_id, breaks ties in each group. """
-        plugin.load_events("explorer_events.json")
-        plugin.play_sequence("honk_only", 0.02)
+        plugin.config.set(CFG_BODY_SORT, DEFAULT_BODY_SORT) # shared config would leak into later tests
 
-        assert Context.store is not None and Context.panel is not None
-        assert explorer_state.cmdr_id is not None and explorer_state.system_id is not None
+    def test_long_names_fall_back_to_genus_codes(self, plugin:TestHarness) -> None:
+        """ Same two genera must not read "2 possibilities" just because a tied species made the names too long. """
+        assert Context.panel is not None
+        items:list[dict] = [
+            {"name": "Bacterium Cerbrus/Tela", "genera": ["Bacterium"]},
+            {"name": "Stratum Tectonicas", "genera": ["Stratum"]},
+        ]
 
-        far_pk:int = Context.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 1, "QuietSpace 1")
-        Context.store.update_body(far_pk, flagged_value=1, estimated_scan_value=1_000_000, was_discovered=1, was_mapped=1, distance_ls=500)
-        near_pk:int = Context.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 2, "QuietSpace 2")
-        Context.store.update_body(near_pk, flagged_value=1, estimated_scan_value=1_000_000, was_discovered=1, was_mapped=1, distance_ls=50)
-
-        Context.panel.refresh()
-        lines = _panel_lines()
-        near_index:int = next(i for i, line in enumerate(lines) if line.startswith("2 "))
-        far_index:int = next(i for i, line in enumerate(lines) if line.startswith("1 "))
-        assert near_index < far_index, lines
+        assert Context.panel._collapse_prediction_names(items, joiner="+") == "Bac.+Str."
 
     def test_binary_star_system_is_quiet(self, plugin:TestHarness) -> None:
         """ A system with no planets at all (e.g. a bare binary) has nothing to flag -- just the
@@ -1282,8 +1269,12 @@ class TestPrefs:
 
         prefs_ui._pref_vars[CFG_SCAN_VALUE_THRESHOLD].set("123456")
         prefs_ui._pref_vars[CFG_OVERLAY_RADAR_ENABLED].set(False)
+        prefs_ui._pref_vars[CFG_BODY_SORT].set("Value")
         prefs_ui.save_prefs("Testy", False)
 
+        sort = plugin.config.get_str(CFG_BODY_SORT)
+        plugin.config.set(CFG_BODY_SORT, DEFAULT_BODY_SORT) # shared config would leak into later tests
+        assert sort == "Value"
         assert plugin.config.get_int(CFG_SCAN_VALUE_THRESHOLD) == 123456
         assert plugin.config.get_bool(CFG_OVERLAY_RADAR_ENABLED) is False
 
@@ -1322,7 +1313,7 @@ class TestPrefs:
     def test_overlays_section_disabled_without_an_overlay_backend(self, plugin:TestHarness) -> None:
 
         frame = prefs_ui.build_prefs(plugin.parent, "Testy", False, overlay_available=False)
-        radar_cb = next(c for c in frame.winfo_children() if "text" in c.keys() and c.cget("text") == "Show radar on overlay")
+        radar_cb = next(c for c in frame.winfo_children() if "text" in c.keys() and c.cget("text") == "Show radar overlay")
         assert str(radar_cb.cget("state")) == "disabled"
 
         threshold_entry = next(c for c in frame.winfo_children() if type(c).__name__ == "EntryMenu")
@@ -1331,20 +1322,20 @@ class TestPrefs:
     def test_overlays_section_enabled_with_an_overlay_backend(self, plugin:TestHarness) -> None:
 
         frame = prefs_ui.build_prefs(plugin.parent, "Testy", False, overlay_available=True)
-        radar_cb = next(c for c in frame.winfo_children() if "text" in c.keys() and c.cget("text") == "Show radar on overlay")
+        radar_cb = next(c for c in frame.winfo_children() if "text" in c.keys() and c.cget("text") == "Show radar overlay")
         assert str(radar_cb.cget("state")) == "normal"
 
     def test_clear_unsold_data_button_is_present(self, plugin:TestHarness) -> None:
 
         frame = prefs_ui.build_prefs(plugin.parent, "Testy", False)
-        btn = next(c for c in frame.winfo_children() if isinstance(c, (tk.Button, ttk.Button)) and c.cget("text") == "Clear unsold data")
+        btn = next(c for c in frame.winfo_children() if isinstance(c, (tk.Button, ttk.Button)) and c.cget("text") == "Delete")
         assert btn.cget("command")
 
     def test_clear_unsold_data_button_is_flagged_as_dangerous(self, plugin:TestHarness) -> None:
         """ Irreversible -- red sets it apart from other prefs. """
 
         frame = prefs_ui.build_prefs(plugin.parent, "Testy", False)
-        btn = next(c for c in frame.winfo_children() if isinstance(c, (tk.Button, ttk.Button)) and c.cget("text") == "Clear unsold data")
+        btn = next(c for c in frame.winfo_children() if isinstance(c, (tk.Button, ttk.Button)) and c.cget("text") == "Delete")
         assert str(btn.cget("background")) == prefs_ui.DANGER_COLOR
 
     def test_clear_unsold_data_calls_through_only_after_confirming(self, plugin:TestHarness, monkeypatch) -> None:
@@ -1357,7 +1348,7 @@ class TestPrefs:
         monkeypatch.setattr(prefs_ui.messagebox, "showinfo", lambda *a, **kw: None)
 
         frame = prefs_ui.build_prefs(plugin.parent, "Testy", False, clear_unsold_data=_record)
-        btn = next(c for c in frame.winfo_children() if isinstance(c, (tk.Button, ttk.Button)) and c.cget("text") == "Clear unsold data")
+        btn = next(c for c in frame.winfo_children() if isinstance(c, (tk.Button, ttk.Button)) and c.cget("text") == "Delete")
         btn.invoke()
 
         assert calls == [] # declined the confirmation -- must not have run
@@ -1374,7 +1365,7 @@ class TestPrefs:
         monkeypatch.setattr(prefs_ui.messagebox, "showinfo", lambda title, message, **kw: shown.append(message))
 
         frame = prefs_ui.build_prefs(plugin.parent, "Testy", False, clear_unsold_data=lambda cmdr: f"cleared for {cmdr}")
-        btn = next(c for c in frame.winfo_children() if isinstance(c, (tk.Button, ttk.Button)) and c.cget("text") == "Clear unsold data")
+        btn = next(c for c in frame.winfo_children() if isinstance(c, (tk.Button, ttk.Button)) and c.cget("text") == "Delete")
         btn.invoke()
 
         assert shown == ["cleared for Testy"]

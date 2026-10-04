@@ -53,24 +53,19 @@ def on_scan_organic(store:ExplorerStore, state:ExplorerState, entry:dict) -> dic
     body_name:str = state.body_name if state.body_id == body_id else ""
     body_pk:int = store.get_or_create_body(state.cmdr_id, state.system_id, body_id, body_name)
 
-    genus:str = entry.get("Genus_Localised") or entry.get("Genus", "")
-    species:str = entry.get("Species_Localised") or entry.get("Species", "")
+    genus:str = exobiology_data.canon_genus(entry.get("Genus_Localised") or entry.get("Genus", ""))
+    species:str = exobiology_data.canon_species(entry.get("Species_Localised") or entry.get("Species", ""))
     variant:str = entry.get("Variant_Localised") or entry.get("Variant", "")
     scan_type:str = entry.get("ScanType", "")
 
     if scan_type == "Log":
-        store.abandon_other_species_progress(body_pk, genus)
+        store.abandon_other_species_progress(body_pk, genus, species or None)
 
-    progress_id:int = store.get_or_create_species_progress(body_pk, genus)
+    progress_id:int = store.get_or_create_species_progress(body_pk, genus, species or None)
     row:sqlite3.Row|None = store.get_species_progress_row(progress_id)
     now:str = now_iso()
 
-    # A same-genus species switch mid-sequence is discarded too.
-    if scan_type == "Log" and row and row["samples_taken"] and not row["completed_at"] \
-       and species and row["species"] and row["species"] != species:
-        row = None # treat as fresh, not a continuation of the abandoned count
-
-    fields:dict = dict(species=species, variant=variant, last_stage=scan_type)
+    fields:dict = dict(variant=variant, last_stage=scan_type)
 
     if scan_type in SAMPLE_SCAN_TYPES:
         fields["samples_taken"] = (row["samples_taken"] if row else 0) + 1
@@ -107,15 +102,16 @@ def on_codex_entry(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict
     if body_id is None or latitude is None or longitude is None:
         return {}
     species, color_name = split_localised_color(entry.get("Name_Localised", ""))
+    species = exobiology_data.canon_species(species)
     genus:str|None = exobiology_data.genus_from_species_name(species)
     if genus is None:
         return {}
 
     body_name:str = state.body_name if state.body_id == body_id else ""
     body_pk:int = store.get_or_create_body(state.cmdr_id, state.system_id, body_id, body_name)
-    progress_id:int = store.get_or_create_species_progress(body_pk, genus) # ensures it shows even before/without SAASignalsFound
+    progress_id:int = store.get_or_create_species_progress(body_pk, genus, species) # ensures it shows even before/without SAASignalsFound
 
-    fields:dict = dict(species=species)
+    fields:dict = {}
     confirmed_value:int|None = exobiology.estimate_confirmed_value(genus, species)
     if confirmed_value is not None:
         fields["confirmed_value"] = confirmed_value

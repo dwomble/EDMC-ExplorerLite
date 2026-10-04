@@ -1,5 +1,16 @@
 # EDMC-ExplorerLite Changelog
 
+## v1.5.0 2026-??-??
+
+### New Features
+
+* A second radar overlay option to show minimum scan distance as a circle around the location of the biological for each scan or waypoint.
+* Added body sort order options for name or value sorting.
+
+### Bug Fixes
+
+* An error where braintrees weren't being properly recorded
+
 ## v1.1.0 2026-09-15
 
 ### New Features

@@ -85,52 +85,6 @@ class TestSystemSummaryOverlay:
         assert f"{FRAME_PREFIX}body-{MAX_BODY_LINES}" not in messages
         assert messages[f"{FRAME_PREFIX}overflow"][1] == "+2 more"
 
-    def test_biologically_interesting_bodies_are_never_pushed_into_overflow(self, plugin:TestHarness) -> None:
-        """
-        Real-world report: a biological signal went missing from the overlay in a system with
-        several cartography-flagged bodies. MAX_BODY_LINES is a hard cap with no scrolling, and
-        the list used to be plain body_id order -- a body with confirmed biology but a higher
-        body_id than several cartography-only bodies could get silently bumped into the
-        anonymous "+N more" count. Biological interest must always sort first.
-        """
-        plugin.load_events("explorer_events.json")
-        plugin.play_sequence("honk_only", 0.02)
-
-        assert Context.store is not None and Context.summary_overlay is not None
-        assert explorer_state.cmdr_id is not None and explorer_state.system_id is not None
-
-        for body_id in range(1, MAX_BODY_LINES + 1): # low body_id, cartography-only -- would fill every slot
-            body_pk:int = Context.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, body_id, f"QuietSpace {body_id}")
-            Context.store.update_body(body_pk, flagged_value=1, estimated_scan_value=1_000_000, was_discovered=1, was_mapped=1)
-
-        bio_body_id:int = MAX_BODY_LINES + 5 # high body_id -- last in plain body_id order
-        bio_pk:int = Context.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, bio_body_id, "QuietSpace Bio")
-        Context.store.update_body(bio_pk, has_biological_signals=1, biological_signal_count=3)
-
-        Context.summary_overlay.render(Context.store, explorer_state)
-
-        messages = Context.summary_overlay.overlay._overlay.messages
-        shown_lines = [messages[f"{FRAME_PREFIX}body-{i}"][1] for i in range(MAX_BODY_LINES)]
-        assert any("Bio" in line for line in shown_lines), shown_lines
-
-    def test_flagged_bodies_within_a_group_are_ordered_by_distance(self, plugin:TestHarness) -> None:
-        """ Distance, not body_id, breaks ties in each group. """
-        plugin.load_events("explorer_events.json")
-        plugin.play_sequence("honk_only", 0.02)
-
-        assert Context.store is not None and Context.summary_overlay is not None
-        assert explorer_state.cmdr_id is not None and explorer_state.system_id is not None
-
-        far_pk:int = Context.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 1, "QuietSpace 1")
-        Context.store.update_body(far_pk, flagged_value=1, estimated_scan_value=1_000_000, was_discovered=1, was_mapped=1, distance_ls=500)
-        near_pk:int = Context.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 2, "QuietSpace 2")
-        Context.store.update_body(near_pk, flagged_value=1, estimated_scan_value=1_000_000, was_discovered=1, was_mapped=1, distance_ls=50)
-
-        Context.summary_overlay.render(Context.store, explorer_state)
-
-        messages = Context.summary_overlay.overlay._overlay.messages
-        assert messages[f"{FRAME_PREFIX}body-0"][1].startswith("2 ") # nearer body (50ls) leads
-
     def test_render_shows_current_body_species_progress(self, plugin:TestHarness) -> None:
         """
         Real feature gap: the overlay only ever mirrored the top-level flagged-body list, never

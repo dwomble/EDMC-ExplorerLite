@@ -18,9 +18,14 @@ from explorer.db.store import ExplorerStore
 from explorer.utils.overlay import Overlay
 from explorer.state import ExplorerState
 from explorer.ui.overlay_frames import RadarOverlay, FRAME_PREFIX, CENTER_X, CENTER_Y, SAMPLE_COLOR
-from explorer.ui.overlay_frames import _radius_frac, _ring_dot_count, RING_DOT_MIN, RING_DOT_MAX, DOT_GLYPH, DOT_GLYPH_SIZE, RING_THICKNESS_PX, DOT_RADIUS_PX, PLAYER_COLOR, CODEX_TAG_COLORS, RING_AREA_FRAC, DOT_GLYPH_OFFSET_X
-from explorer.constants import DEFAULT_OVERLAY_RADAR_SIZE, CFG_OVERLAY_RADAR_SIZE, CFG_OVERLAY_RADAR_ENABLED, CFG_PANEL_ENABLED
+from explorer.ui.overlay_frames import _radius_frac, _ring_dot_count, RING_DOT_MIN, RING_DOT_MAX, DOT_GLYPH, DOT_GLYPH_SIZE, RING_THICKNESS_PX, DOT_RADIUS_PX, PLAYER_COLOR, CODEX_TAG_COLORS, RING_AREA_FRAC, DOT_GLYPH_OFFSET_X, RING_DISTANCES_M, DISPLAY_RANGE_M
+from explorer.constants import DEFAULT_OVERLAY_RADAR_SIZE, CFG_OVERLAY_RADAR_SIZE, CFG_OVERLAY_RADAR_ENABLED, CFG_PANEL_ENABLED, CFG_OVERLAY_RADAR_CIRCLES
+from explorer.ui.overlay_frames import CIRCLE_FILL_ALPHA, CIRCLE_BORDER_ALPHA, ACTIVE_FILL_ALPHA, ACTIVE_BORDER_ALPHA, RING_COLOR
+from explorer.util import local_offset_m
+from explorer.valuation import exobiology_data
 import explorer.ui.overlay_frames as overlay_frames
+
+OUTER:int = RING_DISTANCES_M[-1] # the outermost distance ring, in meters
 
 @pytest.fixture
 def overlay_mode(request, harness:TestHarness) -> Generator[None, None, None]:
@@ -36,33 +41,31 @@ def store(tmp_path) -> Generator[ExplorerStore, None, None]:
     s.close()
 
 class TestRadiusFrac:
-    """
-    Unit tests for the radar's piecewise-linear distance scale (_radius_frac): 3 rings
-    (200/600/1400m) evenly spaced in pixel-thirds, each segment covering double the real-world
-    width of the one before it. Unlike a true log scale, it starts at a genuine 0m at dead
-    center -- no arbitrary floor needed -- so even the smallest known genus minimum distance
-    (100m) still lands at a clearly visible, non-degenerate fraction.
-    """
+    """ The radar's distance scale (_radius_frac) is linear from 0m at dead center to DISPLAY_RANGE_M
+    at the outermost ring, so a circle of a real distance is a true circle on screen. """
 
-    def test_zero_and_ring_boundaries_land_on_exact_thirds(self) -> None:
+    def test_zero_and_the_outer_ring_land_on_the_ends(self) -> None:
         assert _radius_frac(0) == 0.0
-        assert _radius_frac(200) == pytest.approx(1 / 3)
-        assert _radius_frac(600) == pytest.approx(2 / 3)
-        assert _radius_frac(1400) == 1.0
+        assert _radius_frac(DISPLAY_RANGE_M) == 1.0
 
-    def test_smallest_known_genus_min_distance_is_clearly_visible(self) -> None:
-        """ 100m (Amphora Plant/Anemone/etc's minimum) used to collapse to a degenerate,
-        zero-radius point under a log scale anchored so 200m sat at 25%. """
-        frac = _radius_frac(100)
-        assert frac > 0.1 # comfortably non-zero, not a degenerate point
+    def test_scale_is_linear(self) -> None:
+        assert _radius_frac(DISPLAY_RANGE_M / 4) == pytest.approx(0.25)
+        assert _radius_frac(DISPLAY_RANGE_M / 2) == pytest.approx(0.5)
+
+    def test_rings_are_evenly_spaced(self) -> None:
+        for i, distance in enumerate(RING_DISTANCES_M, start=1):
+            assert _radius_frac(distance) == pytest.approx(i / len(RING_DISTANCES_M), abs=1e-3)
+
+    def test_smallest_known_genus_min_distance_is_visible(self) -> None:
+        """ 100m (Amphora Plant/Anemone/etc's minimum) must not collapse to a point. """
+        assert _radius_frac(100) * 150 * RING_AREA_FRAC > 3 # pixels, at the default radar size
 
     def test_largest_known_genus_min_distance_stays_within_the_outer_ring(self) -> None:
-        """ Electricae's 1000m -- the largest across all known genera -- must land inside the
-        outermost (1400m) ring, not clamped to its edge. """
+        """ Electricae's 1000m, the largest across all known genera, must land inside the outer ring. """
         assert 0.0 < _radius_frac(1000) < 1.0
 
     def test_beyond_the_outer_ring_clamps_to_one(self) -> None:
-        assert _radius_frac(2000) == 1.0
+        assert _radius_frac(DISPLAY_RANGE_M * 2) == 1.0
 
 class TestRingDotCount:
     """ A ring is drawn as individually-sent dot markers, not a connected polyline (the overlay
@@ -122,6 +125,137 @@ def _flying_state(store:ExplorerStore) -> ExplorerState:
     state.heading = 90.0
     return state
 
+class TestRadarSampleCircles:
+    """ With a circle-capable overlay, translucent circles of the species' minimum sample distance
+    surround the current genus's samples and codex-tagged waypoints, replacing the central ring. """
+
+    def _render(self, store:ExplorerStore, state:ExplorerState) -> dict:
+        radar = RadarOverlay(Overlay())
+        radar.overlay.supports_circle = True
+        radar.render(store, state)
+        return radar.overlay._overlay.shapes
+
+    @pytest.mark.overlay('Modern')
+    def test_circles_replace_central_ring(self, overlay_mode, store:ExplorerStore) -> None:
+        state = _landed_state(store, samples=1)
+        state.sample_positions["Bacterium"].append((10.0002, 20.0, "Lime", True))
+
+        shapes = self._render(store, state)
+
+        assert f"{FRAME_PREFIX}ring-active-Bacterium" not in shapes
+        _, shape, sample = shapes[f"{FRAME_PREFIX}circle-Bacterium-0"]
+        assert shape == "circle"
+        assert sample["color"] == f"#{ACTIVE_BORDER_ALPHA:02x}{SAMPLE_COLOR[1:]}" # real samples are drawn strongest
+        assert sample["fill"] == f"#{ACTIVE_FILL_ALPHA:02x}{SAMPLE_COLOR[1:]}"
+        _, _, tag = shapes[f"{FRAME_PREFIX}circle-Bacterium-1"]
+        assert tag["color"] == f"#{CIRCLE_BORDER_ALPHA:02x}{CODEX_TAG_COLORS['Lime'][1:]}" # waypoints stay lighter
+
+    @pytest.mark.overlay('Modern')
+    def test_radius_is_to_scale(self, overlay_mode, store:ExplorerStore) -> None:
+        state = _landed_state(store, samples=0)
+        state.current_genus = "Bacterium"
+        state.sample_positions["Bacterium"] = [(10.0, 20.0, None, False), (10.045, 20.0, None, False)] # at the player, then ~390m away
+        shapes = self._render(store, state)
+
+        min_dist:int = exobiology_data.genus_min_distance("Bacterium") or 0
+        expected:int = round(min_dist * DEFAULT_OVERLAY_RADAR_SIZE * RING_AREA_FRAC / DISPLAY_RANGE_M)
+        assert shapes[f"{FRAME_PREFIX}circle-Bacterium-0"][2]["radius"] == expected
+        assert shapes[f"{FRAME_PREFIX}circle-Bacterium-1"][2]["radius"] == expected
+
+    @pytest.mark.overlay('Modern')
+    def test_circle_touches_centre_at_min_dist(self, overlay_mode, store:ExplorerStore) -> None:
+        state = _landed_state(store, samples=0)
+        state.current_genus = "Bacterium"
+        state.sample_positions["Bacterium"] = [(10.0577, 20.0, None, False)] # ~500m north
+        shapes = self._render(store, state)
+
+        _, _, _, _, x, y, _, _, _ = shapes[f"{FRAME_PREFIX}sample-Bacterium-0"]
+        assert math.hypot(x + 3 - CENTER_X, y + 3 - CENTER_Y) == pytest.approx(shapes[f"{FRAME_PREFIX}circle-Bacterium-0"][2]["radius"], abs=3)
+
+    @pytest.mark.overlay('Modern')
+    def test_out_of_range_sample_has_no_circle(self, overlay_mode, store:ExplorerStore) -> None:
+        state = _landed_state(store, samples=0)
+        state.current_genus = "Bacterium"
+        state.sample_positions["Bacterium"] = [(10.4, 20.0, None, False)] # ~3.5km, past the outer ring
+
+        shapes = self._render(store, state)
+
+        assert f"{FRAME_PREFIX}circle-Bacterium-0" not in shapes
+        assert f"{FRAME_PREFIX}sample-Bacterium-0" in shapes
+
+    @pytest.mark.overlay('Modern')
+    def test_waypoint_opacity_never_strengthens(self, overlay_mode, store:ExplorerStore) -> None:
+        state = _landed_state(store, samples=0)
+        state.sample_positions["Bacterium"] = [(10.0003, 20.0, "Lime", True)]
+
+        before:str = self._render(store, state)[f"{FRAME_PREFIX}circle-Bacterium-0"][2]["fill"]
+        state.current_genus = "Bacterium"
+        after:str = self._render(store, state)[f"{FRAME_PREFIX}circle-Bacterium-0"][2]["fill"]
+
+        assert before == after == f"#{CIRCLE_FILL_ALPHA:02x}{CODEX_TAG_COLORS['Lime'][1:]}"
+
+    @pytest.mark.overlay('Modern')
+    def test_edge_circle_stays_in_bounds(self, overlay_mode, store:ExplorerStore) -> None:
+        state = _landed_state(store, samples=0)
+        state.current_genus = "Bacterium"
+        state.sample_positions["Bacterium"] = [(10.277, 20.0, None, False)] # ~2.4km north, just inside the outer ring
+        shapes = self._render(store, state)
+
+        _, _, c = shapes[f"{FRAME_PREFIX}circle-Bacterium-0"]
+        r:int = DEFAULT_OVERLAY_RADAR_SIZE
+        assert abs(c["x"] - CENTER_X) + c["radius"] <= r
+        assert abs(c["y"] - CENTER_Y) + c["radius"] <= r
+        assert 0 < c["radius"] < 20 # shrunk from its true ~29px
+
+    @pytest.mark.overlay('Modern')
+    def test_other_genus_samples_get_no_circle(self, overlay_mode, store:ExplorerStore) -> None:
+        state = _landed_state(store, genus="Bacterium", samples=1)
+        assert state.cmdr_id is not None and state.system_id is not None and state.body_id is not None
+        body_pk:int = store.get_or_create_body(state.cmdr_id, state.system_id, state.body_id, state.body_name)
+        store.get_or_create_species_progress(body_pk, "Fungoida")
+        state.sample_positions["Fungoida"] = [(10.0003, 20.0, None, False)]
+
+        shapes = self._render(store, state)
+
+        assert f"{FRAME_PREFIX}circle-Bacterium-0" in shapes
+        assert f"{FRAME_PREFIX}circle-Fungoida-0" not in shapes
+        assert f"{FRAME_PREFIX}sample-Fungoida-0" in shapes
+
+    @pytest.mark.overlay('Modern')
+    def test_other_genus_waypoints_get_their_own_circle(self, overlay_mode, store:ExplorerStore) -> None:
+        state = _landed_state(store, genus="Bacterium", samples=1)
+        assert state.cmdr_id is not None and state.system_id is not None and state.body_id is not None
+        body_pk:int = store.get_or_create_body(state.cmdr_id, state.system_id, state.body_id, state.body_name)
+        store.get_or_create_species_progress(body_pk, "Fungoida")
+        state.sample_positions["Fungoida"] = [(10.0003, 20.0, "Lime", True)]
+
+        shapes = self._render(store, state)
+
+        _, _, kwargs = shapes[f"{FRAME_PREFIX}circle-Fungoida-0"]
+        fungoida:int = exobiology_data.genus_min_distance("Fungoida") or 0
+        assert kwargs["radius"] == round(fungoida * DEFAULT_OVERLAY_RADAR_SIZE * RING_AREA_FRAC / DISPLAY_RANGE_M)
+        assert kwargs["color"] == f"#{CIRCLE_BORDER_ALPHA:02x}{CODEX_TAG_COLORS['Lime'][1:]}" # its own species color, not yet sampled so not strengthened
+        assert kwargs["fill"] == f"#{CIRCLE_FILL_ALPHA:02x}{CODEX_TAG_COLORS['Lime'][1:]}"
+
+    @pytest.mark.overlay('Modern')
+    def test_pref_off_keeps_central_ring(self, overlay_mode, harness:TestHarness, store:ExplorerStore) -> None:
+        harness.config.set(CFG_OVERLAY_RADAR_CIRCLES, False)
+        try:
+            shapes = self._render(store, _landed_state(store, samples=1))
+        finally:
+            harness.config.set(CFG_OVERLAY_RADAR_CIRCLES, True)
+
+        assert f"{FRAME_PREFIX}ring-active-Bacterium" in shapes
+        assert f"{FRAME_PREFIX}circle-Bacterium-0" not in shapes
+
+    @pytest.mark.overlay('Modern')
+    def test_no_circle_support_keeps_glyph_ring(self, overlay_mode, store:ExplorerStore) -> None:
+        radar = RadarOverlay(Overlay())
+        radar.render(store, _landed_state(store, samples=1))
+
+        assert any(k.startswith(f"{FRAME_PREFIX}ring-active-Bacterium-") for k in radar.overlay._overlay.messages)
+        assert f"{FRAME_PREFIX}circle-Bacterium-0" not in radar.overlay._overlay.shapes
+
 class TestRadarOverlayNoOverlay:
 
     @pytest.mark.overlay('None')
@@ -143,8 +277,8 @@ class TestRadarOverlayModern:
         radar.render(store, state)
 
         messages = radar.overlay._overlay.messages
-        assert f"{FRAME_PREFIX}ring-1400-0" in messages
-        assert f"{FRAME_PREFIX}ring-active-Bacterium-0" in messages # Bacterium's 500m min-distance fits within the fixed 1400m display range
+        assert f"{FRAME_PREFIX}ring-{OUTER}-0" in messages
+        assert f"{FRAME_PREFIX}ring-active-Bacterium-0" in messages # Bacterium's 500m min-distance fits within the fixed 2000m display range
         assert f"{FRAME_PREFIX}player" in messages
         shapes = radar.overlay._overlay.shapes
         assert f"{FRAME_PREFIX}sample-Bacterium-0" in shapes
@@ -180,10 +314,10 @@ class TestRadarOverlayModern:
         radar.render(store, _landed_state(store, samples=0))
 
         messages = radar.overlay._overlay.messages
-        assert f"{FRAME_PREFIX}ring-1400-1" in messages # more than just dot 0 -- an actual ring, not a single point
-        assert f"{FRAME_PREFIX}ring-1400-{RING_DOT_MIN - 1}" in messages
+        assert f"{FRAME_PREFIX}ring-{OUTER}-1" in messages # more than just dot 0 -- an actual ring, not a single point
+        assert f"{FRAME_PREFIX}ring-{OUTER}-{RING_DOT_MIN - 1}" in messages
 
-        _, text, _, _, _, kwargs = messages[f"{FRAME_PREFIX}ring-1400-0"]
+        _, text, _, _, _, kwargs = messages[f"{FRAME_PREFIX}ring-{OUTER}-0"]
         assert text == DOT_GLYPH
         assert kwargs["size"] == DOT_GLYPH_SIZE
 
@@ -197,12 +331,13 @@ class TestRadarOverlayModern:
         radar.render(store, _landed_state(store, samples=0))
 
         shapes = radar.overlay._overlay.shapes
-        assert f"{FRAME_PREFIX}ring-1400-0" not in shapes # no per-dot fallback ids
-        _, shape, kwargs = shapes[f"{FRAME_PREFIX}ring-1400"]
+        assert f"{FRAME_PREFIX}ring-{OUTER}-0" not in shapes # no per-dot fallback ids
+        _, shape, kwargs = shapes[f"{FRAME_PREFIX}ring-{OUTER}"]
         assert shape == "circle"
         assert kwargs["fill"] == "none" # a ring outlines a distance, it doesn't cover the view
         assert kwargs["thickness"] == RING_THICKNESS_PX
         assert kwargs["x"] == CENTER_X and kwargs["y"] == CENTER_Y
+        assert kwargs["color"] == RING_COLOR
 
     @pytest.mark.overlay('Modern')
     def test_player_draws_as_a_filled_native_circle_when_the_backend_supports_it(self, overlay_mode, store:ExplorerStore) -> None:
@@ -356,7 +491,7 @@ class TestRadarOverlayModern:
 
         radar = RadarOverlay(Overlay())
         state = _landed_state(store, genus="Bacterium", samples=0)
-        state.sample_positions["Bacterium"] = [(10.23, 20.0, None, False)] # ~2007m north -- past the fixed 1400m display range
+        state.sample_positions["Bacterium"] = [(10.4, 20.0, None, False)] # ~3490m north -- past the fixed 2000m display range
 
         radar.render(store, state)
 
@@ -367,7 +502,7 @@ class TestRadarOverlayModern:
 
         cx, cy = sx + w / 2, sy + h / 2
         expected_r = 150 * (RING_AREA_FRAC + 1.0) / 2
-        assert math.hypot(cx - CENTER_X, cy - CENTER_Y) == pytest.approx(expected_r)
+        assert math.hypot(cx - CENTER_X, cy - CENTER_Y) == pytest.approx(expected_r, abs=1) # positions are rounded to whole pixels
 
     @pytest.mark.overlay('Modern')
     def test_render_draws_no_active_ring_before_any_sample_is_taken(self, overlay_mode, store:ExplorerStore) -> None:
@@ -380,7 +515,7 @@ class TestRadarOverlayModern:
         radar.render(store, state)
 
         messages = radar.overlay._overlay.messages
-        assert f"{FRAME_PREFIX}ring-1400-0" in messages
+        assert f"{FRAME_PREFIX}ring-{OUTER}-0" in messages
         assert f"{FRAME_PREFIX}ring-active-Bacterium-0" not in messages
         assert f"{FRAME_PREFIX}player" in messages
 
@@ -401,7 +536,7 @@ class TestRadarOverlayModern:
         radar.render(store, state)
 
         messages = radar.overlay._overlay.messages
-        assert f"{FRAME_PREFIX}ring-1400-0" in messages
+        assert f"{FRAME_PREFIX}ring-{OUTER}-0" in messages
         assert f"{FRAME_PREFIX}player" in messages
 
     @pytest.mark.overlay('Modern')
@@ -418,7 +553,7 @@ class TestRadarOverlayModern:
         radar.render(store, state)
 
         messages = radar.overlay._overlay.messages
-        assert f"{FRAME_PREFIX}ring-1400-0" in messages
+        assert f"{FRAME_PREFIX}ring-{OUTER}-0" in messages
         assert f"{FRAME_PREFIX}ring-active-Bacterium-0" not in messages
 
     @pytest.mark.overlay('Modern')
@@ -488,11 +623,11 @@ class TestRadarOverlayModern:
             state = _landed_state(store, samples=0)
             radar.render(store, state)
 
-            _, _, _, x, _, _ = radar.overlay._overlay.messages[f"{FRAME_PREFIX}ring-1400-0"]
+            _, _, _, x, _, _ = radar.overlay._overlay.messages[f"{FRAME_PREFIX}ring-{OUTER}-0"]
             # dot 0's glyph position is nudged by DOT_GLYPH_OFFSET_X off the actual ring point --
             # the outermost ring sits at RING_AREA_FRAC of the configured size, not the full
             # radius -- the remaining margin is reserved for out-of-range dots (see module docstring)
-            assert x - DOT_GLYPH_OFFSET_X - CENTER_X == pytest.approx(300 * RING_AREA_FRAC)
+            assert x - DOT_GLYPH_OFFSET_X - CENTER_X == pytest.approx(300 * RING_AREA_FRAC, abs=1)
         finally:
             harness.config.set(CFG_OVERLAY_RADAR_SIZE, 150)
 
