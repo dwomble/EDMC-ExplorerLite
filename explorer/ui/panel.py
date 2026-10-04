@@ -327,11 +327,10 @@ class ExplorerPanel:
     def sorted_flagged(self, system_id:int) -> list[sqlite3.Row]:
         """ Flagged bodies in the CFG_BODY_SORT order; ties keep body_id order. """
         bodies:list[sqlite3.Row] = self.store.get_flagged_bodies(system_id)
-        mode:str = config.get_str(CFG_BODY_SORT, default=DEFAULT_BODY_SORT)
-        if mode == "System order": return bodies
-        if mode == "Value": return sorted(bodies, key=lambda b: tuple(-v for v in self._flagged_body_value(b)))
+        if config.get_str(CFG_BODY_SORT, default=DEFAULT_BODY_SORT) == "Value":
+            return sorted(bodies, key=lambda b: tuple(-v for v in self._flagged_body_value(b)))
 
-        return sorted(bodies, key=lambda b: b["distance_ls"] if b["distance_ls"] is not None else float("inf"))
+        return sorted(bodies, key=lambda b: [int(c) if c.isdigit() else c.lower() for c in re.split(r"(\d+)", b["body_name"])])
 
     def _flagged_body_value(self, body:sqlite3.Row) -> tuple[int, int]:
         """ (value_max, value_min) of a flagged body, as shown in its row. """
@@ -526,7 +525,7 @@ class ExplorerPanel:
         return slots
 
     def _collapse_prediction_names(self, items:list[dict], joiner:str = "/") -> str:
-        """ Full, abbreviated, or bare genus count """
+        """ Full, abbreviated, genus codes, or bare genus count """
         if len(items) <= 2:
             full:str = ", ".join(item["name"] for item in items)
             if len(full) <= MAX_FULL_NAME_CHARS:
@@ -537,6 +536,10 @@ class ExplorerPanel:
             return abbreviated
 
         genera:list[str] = list(dict.fromkeys(genus for item in items for genus in item["genera"]))
+        codes:str = joiner.join(exobiology_data.genus_code(g).capitalize() + "." for g in genera)
+        if len(codes) <= MAX_MERGED_TAG_CHARS:
+            return codes
+
         return f"{len(genera)} possibilities" # distinct genera, not slots
 
     def _abbreviated_name(self, item:dict) -> str:

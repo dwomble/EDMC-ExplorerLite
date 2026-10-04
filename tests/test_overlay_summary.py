@@ -85,24 +85,6 @@ class TestSystemSummaryOverlay:
         assert f"{FRAME_PREFIX}body-{MAX_BODY_LINES}" not in messages
         assert messages[f"{FRAME_PREFIX}overflow"][1] == "+2 more"
 
-    def test_flagged_bodies_within_a_group_are_ordered_by_distance(self, plugin:TestHarness) -> None:
-        """ Distance, not body_id, breaks ties in each group. """
-        plugin.load_events("explorer_events.json")
-        plugin.play_sequence("honk_only", 0.02)
-
-        assert Context.store is not None and Context.summary_overlay is not None
-        assert explorer_state.cmdr_id is not None and explorer_state.system_id is not None
-
-        far_pk:int = Context.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 1, "QuietSpace 1")
-        Context.store.update_body(far_pk, flagged_value=1, estimated_scan_value=1_000_000, was_discovered=1, was_mapped=1, distance_ls=500)
-        near_pk:int = Context.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 2, "QuietSpace 2")
-        Context.store.update_body(near_pk, flagged_value=1, estimated_scan_value=1_000_000, was_discovered=1, was_mapped=1, distance_ls=50)
-
-        Context.summary_overlay.render(Context.store, explorer_state)
-
-        messages = Context.summary_overlay.overlay._overlay.messages
-        assert messages[f"{FRAME_PREFIX}body-0"][1].startswith("2 ") # nearer body (50ls) leads
-
     def test_render_shows_current_body_species_progress(self, plugin:TestHarness) -> None:
         """
         Real feature gap: the overlay only ever mirrored the top-level flagged-body list, never
