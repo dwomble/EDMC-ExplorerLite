@@ -207,7 +207,7 @@ class RadarOverlay:
 
     def _active_genera(self, progress:list[sqlite3.Row]) -> list[str]:
         """ Every confirmed genus not yet fully sampled. """
-        return [row["genus"] for row in progress if not row["completed_at"]]
+        return list(dict.fromkeys(row["genus"] for row in progress if not row["completed_at"]))
 
     def _predicted_genus(self, predictions:list[sqlite3.Row]) -> str|None:
         """ Best pre-DSS guess (highest confidence, already the query's own ordering). """

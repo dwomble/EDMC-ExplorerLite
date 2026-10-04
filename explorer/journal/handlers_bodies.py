@@ -9,7 +9,7 @@ from config import config # type: ignore
 from explorer.db.store import ExplorerStore
 from explorer.state import ExplorerState
 from explorer.util import now_iso
-from explorer.valuation import cartography, exobiology, genus_prediction
+from explorer.valuation import cartography, exobiology, exobiology_data, genus_prediction
 from explorer.constants import (
     CFG_SCAN_VALUE_THRESHOLD, DEFAULT_SCAN_VALUE_THRESHOLD,
     CFG_EXOBIO_VALUE_THRESHOLD, DEFAULT_EXOBIO_VALUE_THRESHOLD,
@@ -183,7 +183,7 @@ def on_saa_signals_found(store:ExplorerStore, state:ExplorerState, entry:dict) -
 
     value_max_overall:int = 0
     for g in genuses:
-        genus:str = g.get("Genus_Localised") or g.get("Genus", "")
+        genus:str = exobiology_data.canon_genus(g.get("Genus_Localised") or g.get("Genus", ""))
         store.upsert_body_genus(body_pk, genus, None, "SAASignalsFound")
         store.get_or_create_species_progress(body_pk, genus)
 

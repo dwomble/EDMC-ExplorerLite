@@ -234,14 +234,31 @@ class ExplorerStore:
 
     # -- Exobiology sample progress --
 
-    def get_or_create_species_progress(self, body_pk:int, genus:str) -> int:
-        row:sqlite3.Row|None = self.conn.execute(
-            "SELECT id FROM species_progress WHERE body_id = ? AND genus = ?", (body_pk, genus)
-        ).fetchone()
+    def get_or_create_species_progress(self, body_pk:int, genus:str, species:str|None = None) -> int:
+        """ One row per species; a species-less row (from the DSS) is claimed by the first species seen. """
+        if species is None:
+            row:sqlite3.Row|None = self.conn.execute(
+                "SELECT id FROM species_progress WHERE body_id = ? AND genus = ?", (body_pk, genus)
+            ).fetchone()
+            if row: return row["id"]
 
-        if row: return row["id"]
+        if species is not None:
+            row = self.conn.execute(
+                "SELECT id FROM species_progress WHERE body_id = ? AND genus = ? AND species = ?", (body_pk, genus, species)
+            ).fetchone()
+            if row: return row["id"]
 
-        cur:sqlite3.Cursor = self.conn.execute("INSERT INTO species_progress (body_id, genus) VALUES (?, ?)", (body_pk, genus))
+            row = self.conn.execute(
+                "SELECT id FROM species_progress WHERE body_id = ? AND genus = ? AND species IS NULL", (body_pk, genus)
+            ).fetchone()
+            if row:
+                self.conn.execute("UPDATE species_progress SET species = ? WHERE id = ?", (species, row["id"]))
+                self.conn.commit()
+                return row["id"]
+
+        cur:sqlite3.Cursor = self.conn.execute(
+            "INSERT INTO species_progress (body_id, genus, species) VALUES (?, ?, ?)", (body_pk, genus, species)
+        )
         self.conn.commit()
         assert cur.lastrowid is not None
         return cur.lastrowid
@@ -252,13 +269,13 @@ class ExplorerStore:
     def get_species_progress_row(self, progress_id:int) -> sqlite3.Row|None:
         return self.conn.execute("SELECT * FROM species_progress WHERE id = ?", (progress_id,)).fetchone()
 
-    def abandon_other_species_progress(self, body_pk:int, keep_genus:str) -> None:
+    def abandon_other_species_progress(self, body_pk:int, keep_genus:str, keep_species:str|None) -> None:
         """ Logging a new organism discards any other mid-sequence. """
         self.conn.execute(
             """UPDATE species_progress SET samples_taken = 0, first_sample_at = NULL,
                    last_sample_at = NULL, last_stage = NULL
-               WHERE body_id = ? AND genus != ? AND completed_at IS NULL AND samples_taken > 0""",
-            (body_pk, keep_genus),
+               WHERE body_id = ? AND NOT (genus = ? AND species IS ?) AND completed_at IS NULL AND samples_taken > 0""",
+            (body_pk, keep_genus, keep_species),
         )
         self.conn.commit()
 
@@ -294,7 +311,7 @@ class ExplorerStore:
         self.conn.commit()
 
     def get_species_progress(self, body_pk:int) -> list[sqlite3.Row]:
-        return self.conn.execute("SELECT * FROM species_progress WHERE body_id = ?", (body_pk,)).fetchall()
+        return self.conn.execute("SELECT * FROM species_progress WHERE body_id = ? ORDER BY id", (body_pk,)).fetchall()
 
     # -- Sales (ground truth) --
 
