@@ -8,7 +8,7 @@ from explorer.utils.overlay import Overlay
 
 from explorer.db.store import ExplorerStore
 from explorer.state import ExplorerState
-from explorer.ui.panel import ExplorerPanel, system_status_text, system_body_count_text, flagged_body_sort_key
+from explorer.ui.panel import ExplorerPanel, system_status_text, system_body_count_text
 from explorer.constants import (
     CFG_PANEL_ENABLED, CFG_OVERLAY_SUMMARY_ENABLED,
     CFG_OVERLAY_SUMMARY_TEXT_COLOR, DEFAULT_OVERLAY_SUMMARY_TEXT_COLOR,
@@ -117,7 +117,7 @@ class SystemSummaryOverlay:
         self._last_had_header = True
         next_y:int = ANCHOR_Y + HEADER_LINE_HEIGHT_PX
 
-        flagged:list[sqlite3.Row] = sorted(store.get_flagged_bodies(system["id"]), key=flagged_body_sort_key)
+        flagged:list[sqlite3.Row] = self.panel.sorted_flagged(system["id"])
         rows:list[tuple[int, str]] = []
         for body in flagged:
             row = self.panel._flagged_body_row(system["name"], body)

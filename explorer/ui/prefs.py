@@ -19,6 +19,7 @@ from explorer.constants import (
     CFG_VISIBLE_LINES, DEFAULT_VISIBLE_LINES,
     CFG_OVERLAY_RADAR_SIZE, DEFAULT_OVERLAY_RADAR_SIZE, CFG_OVERLAY_RADAR_CIRCLES,
     CFG_OVERLAY_SUMMARY_TEXT_COLOR, DEFAULT_OVERLAY_SUMMARY_TEXT_COLOR,
+    CFG_BODY_SORT, DEFAULT_BODY_SORT, BODY_SORTS,
 )
 
 OVERLAYS_SECTION:str = "Overlays" # must match its title in SECTIONS below
@@ -28,17 +29,22 @@ GH_URL:str = f"https://github.com/{GH_OWNER}/{GH_PROJECT}"
 
 @dataclass
 class Pref:
-    kind:str # 'threshold', 'bool', or 'color'
+    kind:str # 'threshold', 'bool', 'color' or 'choice'
     key:str
     desc:str
     default:int|bool|str
     tooltip:str|None = None
+    options:tuple[str, ...] = ()
 
 SECTIONS:list[tuple[str, list[Pref]]] = [
     ("Thresholds", [
         Pref('threshold', CFG_SCAN_VALUE_THRESHOLD, "Minimum DSS value", DEFAULT_SCAN_VALUE_THRESHOLD, "Minimum value of a body scan to be shown. Bodies below this value will be ignored."),
         Pref('threshold', CFG_EXOBIO_VALUE_THRESHOLD, "Minimum exobiology value", DEFAULT_EXOBIO_VALUE_THRESHOLD, "Minimum value of exobiology scans to be shown. Bodies below this value will be ignored."),
         Pref('threshold', CFG_VISIBLE_LINES, "Maximum visible lines", DEFAULT_VISIBLE_LINES, "Number of lines to display before enabling scrolling."),
+    ]),
+    ("Display", [
+        Pref('choice', CFG_BODY_SORT, "Body sort order", DEFAULT_BODY_SORT,
+             "How listed bodies are ordered: by position in the system, highest value first, or nearest to the arrival star first.", BODY_SORTS),
     ]),
     (OVERLAYS_SECTION, [
         Pref('bool', CFG_OVERLAY_RADAR_ENABLED, "Show radar overlay", True, "When near a body with cartography potential, show a radar overlay of scans and waypoints."),
@@ -89,6 +95,17 @@ def _place_pref(frame:nb.Frame, p:Pref, row:int, col:int, enabled:bool) -> None:
             cb.grid(row=row, column=col, columnspan=2, sticky=tk.W, padx=(left_pad, 0), pady=pady)
             if p.tooltip:
                 th.Tooltip(cb, p.tooltip)
+
+        case 'choice':
+            _pref_vars[p.key] = tk.StringVar(value=config.get_str(p.key, default=p.default))
+            lbl:nb.Label = nb.Label(frame, text=p.desc)
+            lbl.grid(row=row, column=col, sticky=tk.W, padx=(left_pad, LABEL_GAP_PX), pady=pady)
+            opt:nb.OptionMenu = nb.OptionMenu(frame, _pref_vars[p.key], _pref_vars[p.key].get(), *p.options)
+            opt.configure(state=state)
+            opt.grid(row=row, column=col + 1, sticky=tk.W, pady=pady)
+            if p.tooltip:
+                th.Tooltip(lbl, p.tooltip)
+                th.Tooltip(opt, p.tooltip)
 
         case 'color':
             color:str = config.get_str(p.key, default=p.default)

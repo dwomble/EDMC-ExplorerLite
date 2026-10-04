@@ -19,7 +19,7 @@ from explorer.db.store import ExplorerStore
 from explorer.state import ExplorerState
 from explorer.util import format_pending_credits
 from explorer.valuation import cartography, exobiology, exobiology_data, signal_count_bias
-from explorer.constants import CFG_VISIBLE_LINES, DEFAULT_VISIBLE_LINES, CFG_PANEL_ENABLED, PLUGIN_NAME
+from explorer.constants import CFG_VISIBLE_LINES, DEFAULT_VISIBLE_LINES, CFG_PANEL_ENABLED, CFG_BODY_SORT, DEFAULT_BODY_SORT, PLUGIN_NAME
 
 HISTORY_GLYPH:str = "\U0001F553" # clock face
 
@@ -115,12 +115,6 @@ def system_header_line(store:ExplorerStore, system:sqlite3.Row) -> str:
 def _bold_font() -> tkfont.Font:
     default:tkfont.Font = tkfont.nametofont("TkDefaultFont")
     return tkfont.Font(family=default.actual("family"), size=default.actual("size"), weight="bold")
-
-def flagged_body_sort_key(body:sqlite3.Row) -> tuple[bool, float]:
-    """ Biological first, then nearest; the overlay agrees. """
-    biological:bool = bool(body["has_biological_signals"] == 1 or body["flagged_exobio"] or body["has_prediction"])
-    distance:float = body["distance_ls"] if body["distance_ls"] is not None else float('inf')
-    return not biological, distance
 
 def _body_designator(system_name:str, body_name:str) -> str:
     """ The short local part of a body's name, e.g. "Deltius B 6 c" -> "B 6 c". """
@@ -306,7 +300,7 @@ class ExplorerPanel:
         name:str = system["name"]
         # Current body's exobiology detail nests under its own row, not after the whole table
         anchors:tuple = ("w", "e", "e", "e", "w")
-        flagged:list[sqlite3.Row] = sorted(self.store.get_flagged_bodies(system["id"]), key=flagged_body_sort_key)
+        flagged:list[sqlite3.Row] = self.sorted_flagged(system["id"])
         focus_id:int|None = self.state.exobio_focus_body_id
         pending_rows:list = []
         current_row_shown:bool = False
@@ -330,8 +324,22 @@ class ExplorerPanel:
         if not current_row_shown and focus_id is not None and self.state.cmdr_id is not None:
             self._render_exobio()
 
-    def _flagged_body_row(self, system_name:str, body:sqlite3.Row) -> tuple[str, str, str, str, str]|None:
-        """ A body drops off this list once nothing is left to do; shown value is Full, not base. """
+    def sorted_flagged(self, system_id:int) -> list[sqlite3.Row]:
+        """ Flagged bodies in the CFG_BODY_SORT order; ties keep body_id order. """
+        bodies:list[sqlite3.Row] = self.store.get_flagged_bodies(system_id)
+        mode:str = config.get_str(CFG_BODY_SORT, default=DEFAULT_BODY_SORT)
+        if mode == "System order": return bodies
+        if mode == "Value": return sorted(bodies, key=lambda b: tuple(-v for v in self._flagged_body_value(b)))
+
+        return sorted(bodies, key=lambda b: b["distance_ls"] if b["distance_ls"] is not None else float("inf"))
+
+    def _flagged_body_value(self, body:sqlite3.Row) -> tuple[int, int]:
+        """ (value_max, value_min) of a flagged body, as shown in its row. """
+        value_min, value_max, _ = self._flagged_body_data(body)
+        return value_max, value_min
+
+    def _flagged_body_data(self, body:sqlite3.Row) -> tuple[int, int, str]:
+        """ (value_min, value_max, species_desc) of a flagged body; shown value is Full, not base. """
         species_desc:str = ""
         value_min:int = 0
         value_max:int = 0
@@ -374,6 +382,11 @@ class ExplorerPanel:
             count:int = body["biological_signal_count"] or 1
             species_desc = f"{count} biological signal" + ("" if count == 1 else "s")
 
+        return value_min, value_max, species_desc
+
+    def _flagged_body_row(self, system_name:str, body:sqlite3.Row) -> tuple[str, str, str, str, str]|None:
+        """ A body drops off this list once nothing is left to do. """
+        value_min, value_max, species_desc = self._flagged_body_data(body)
         if not value_max and not species_desc:
             return None # nothing left to do here -- drop it
 

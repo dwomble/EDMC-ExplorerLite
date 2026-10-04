@@ -16,6 +16,7 @@ CFG_DEV_MODE:str = f"{CONFIG_PREFIX}DevMode"
 CFG_VISIBLE_LINES:str = f"{CONFIG_PREFIX}VisibleLines"
 CFG_OVERLAY_RADAR_SIZE:str = f"{CONFIG_PREFIX}OverlayRadarSize"
 CFG_OVERLAY_RADAR_CIRCLES:str = f"{CONFIG_PREFIX}OverlayRadarCircles" # translucent sample-distance circles, native-circle overlays only
+CFG_BODY_SORT:str = f"{CONFIG_PREFIX}BodySort"
 CFG_HISTORY_WINDOW_GEOMETRY:str = f"{CONFIG_PREFIX}HistoryWindowGeometry"
 CFG_HISTORY_UNSOLD_ONLY:str = f"{CONFIG_PREFIX}HistoryUnsoldOnly"
 CFG_HISTORY_TIME_RANGE:str = f"{CONFIG_PREFIX}HistoryTimeRange"
@@ -27,5 +28,7 @@ DEFAULT_VISIBLE_LINES:int = 5
 DEFAULT_OVERLAY_RADAR_SIZE:int = 150 # on-screen pixel radius, matches overlay_frames.py's original hardcoded RADIUS_PX
 DEFAULT_OVERLAY_SUMMARY_TEXT_COLOR:str = "#ffffff"
 DEFAULT_HISTORY_TIME_RANGE:str = "All time"
+BODY_SORTS:tuple[str, ...] = ("System order", "Value", "Distance")
+DEFAULT_BODY_SORT:str = "Distance"
 
 DB_FILENAME:str = "explorer.sqlite"
