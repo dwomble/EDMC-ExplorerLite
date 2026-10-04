@@ -49,7 +49,7 @@ class TestRadiusFrac:
 
     def test_rings_are_evenly_spaced(self) -> None:
         for i, distance in enumerate(RING_DISTANCES_M, start=1):
-            assert _radius_frac(distance) == pytest.approx(i / len(RING_DISTANCES_M))
+            assert _radius_frac(distance) == pytest.approx(i / len(RING_DISTANCES_M), abs=1e-3)
 
     def test_smallest_known_genus_min_distance_is_visible(self) -> None:
         """ 100m (Amphora Plant/Anemone/etc's minimum) must not collapse to a point. """
@@ -140,10 +140,10 @@ class TestRadarSampleCircles:
         assert f"{FRAME_PREFIX}ring-active-Bacterium" not in shapes
         _, shape, sample = shapes[f"{FRAME_PREFIX}circle-Bacterium-0"]
         assert shape == "circle"
-        assert sample["color"] == f"#{ACTIVE_BORDER_ALPHA:02x}{SAMPLE_COLOR[1:]}" # the current genus is drawn strongest
+        assert sample["color"] == f"#{ACTIVE_BORDER_ALPHA:02x}{SAMPLE_COLOR[1:]}" # real samples are drawn strongest
         assert sample["fill"] == f"#{ACTIVE_FILL_ALPHA:02x}{SAMPLE_COLOR[1:]}"
         _, _, tag = shapes[f"{FRAME_PREFIX}circle-Bacterium-1"]
-        assert tag["color"] == f"#{ACTIVE_BORDER_ALPHA:02x}{CODEX_TAG_COLORS['Lime'][1:]}"
+        assert tag["color"] == f"#{CIRCLE_BORDER_ALPHA:02x}{CODEX_TAG_COLORS['Lime'][1:]}" # waypoints stay lighter
 
     @pytest.mark.overlay('Modern')
     def test_radius_shrinks_with_distance(self, overlay_mode, store:ExplorerStore) -> None:
@@ -180,16 +180,28 @@ class TestRadarSampleCircles:
         assert f"{FRAME_PREFIX}sample-Bacterium-0" in shapes
 
     @pytest.mark.overlay('Modern')
-    def test_circle_strengthens_at_first_sample(self, overlay_mode, store:ExplorerStore) -> None:
+    def test_waypoint_opacity_never_strengthens(self, overlay_mode, store:ExplorerStore) -> None:
         state = _landed_state(store, samples=0)
-        state.sample_positions["Bacterium"] = [(10.0003, 20.0, "Lime", True)] # a waypoint, nothing sampled yet
+        state.sample_positions["Bacterium"] = [(10.0003, 20.0, "Lime", True)]
 
         before:str = self._render(store, state)[f"{FRAME_PREFIX}circle-Bacterium-0"][2]["fill"]
-        state.current_genus = "Bacterium" # the first real sample sets this
+        state.current_genus = "Bacterium"
         after:str = self._render(store, state)[f"{FRAME_PREFIX}circle-Bacterium-0"][2]["fill"]
 
-        assert before == f"#{CIRCLE_FILL_ALPHA:02x}{CODEX_TAG_COLORS['Lime'][1:]}"
-        assert after == f"#{ACTIVE_FILL_ALPHA:02x}{CODEX_TAG_COLORS['Lime'][1:]}"
+        assert before == after == f"#{CIRCLE_FILL_ALPHA:02x}{CODEX_TAG_COLORS['Lime'][1:]}"
+
+    @pytest.mark.overlay('Modern')
+    def test_edge_circle_stays_in_bounds(self, overlay_mode, store:ExplorerStore) -> None:
+        state = _landed_state(store, samples=0)
+        state.current_genus = "Bacterium"
+        state.sample_positions["Bacterium"] = [(10.2308, 20.0, None, False)] # ~2km north, just inside the outer ring
+        shapes = self._render(store, state)
+
+        _, _, c = shapes[f"{FRAME_PREFIX}circle-Bacterium-0"]
+        r:int = DEFAULT_OVERLAY_RADAR_SIZE
+        assert abs(c["x"] - CENTER_X) + c["radius"] <= r
+        assert abs(c["y"] - CENTER_Y) + c["radius"] <= r
+        assert 0 < c["radius"] < 30 # shrunk from its true ~36px
 
     @pytest.mark.overlay('Modern')
     def test_other_genus_samples_get_no_circle(self, overlay_mode, store:ExplorerStore) -> None:

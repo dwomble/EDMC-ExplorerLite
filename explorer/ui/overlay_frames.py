@@ -40,15 +40,15 @@ TAG_TRIANGLE_SIZE_PX:int = 5 # vertex-to-center radius for a codex-tagged waypoi
 INVISIBLE:str = "#00000000" # fully transparent ARGB -- see _pin_bounds
 CIRCLE_FILL_ALPHA:int = 0x40 # ~25% opaque
 CIRCLE_BORDER_ALPHA:int = 0xB3 # ~70% opaque
-ACTIVE_FILL_ALPHA:int = 0x70 # the genus being sampled, stronger than the others to stand out
+ACTIVE_FILL_ALPHA:int = 0x70 # real samples, stronger than waypoints to stand out
 ACTIVE_BORDER_ALPHA:int = 0xFF
 
 # Disabled: ring/label for a tagged-but-unapproached genus (kept for possible future use).
 SHOW_TAGGED_GENUS:bool = False
 
-RING_DISTANCES_M:tuple[int, ...] = (300, 750, 1350, 2100) # evenly spaced on screen, so the scale is gently non-linear
+RING_DISTANCES_M:tuple[int, ...] = (433, 1133, 2100) # thirds of the radar radius under the scale below
 DISPLAY_RANGE_M:float = float(max(RING_DISTANCES_M)) # the "in range" boundary
-SCALE_A:float = 900.0 # distance = A*frac + B*frac^2 passes through every ring above
+SCALE_A:float = 900.0 # distance = A*frac + B*frac^2, gently non-linear
 SCALE_B:float = DISPLAY_RANGE_M - SCALE_A
 
 EDGE_DISPLAY_M:float = 2150.0 # radar's true edge -- a bit past the outer ring, margin for out-of-range dots
@@ -284,11 +284,13 @@ class RadarOverlay:
             sy:float = CENTER_Y - forward * pixel_r
 
             if min_dist and in_range and (is_tag or current):
-                # tangential scale: the circle reaches the radar centre exactly when the player is min_dist away
                 color:str = _tag_color(color_name) if is_tag else _sample_color(color_name)
-                border_alpha:int = ACTIVE_BORDER_ALPHA if current else CIRCLE_BORDER_ALPHA
-                fill_alpha:int = ACTIVE_FILL_ALPHA if current else CIRCLE_FILL_ALPHA
-                circle_r:int = round(min_dist * radius_px * RING_AREA_FRAC / (SCALE_A + SCALE_B * frac))
+                border_alpha:int = CIRCLE_BORDER_ALPHA if is_tag else ACTIVE_BORDER_ALPHA
+                fill_alpha:int = CIRCLE_FILL_ALPHA if is_tag else ACTIVE_FILL_ALPHA
+                # tangential scale: the circle reaches the radar centre exactly when the player is min_dist away
+                true_r:float = min_dist * radius_px * RING_AREA_FRAC / (SCALE_A + SCALE_B * frac)
+                # clamped inside the pinned bounds, else the group's bounding box shifts and the radar jumps
+                circle_r:int = round(min(true_r, radius_px - abs(sx - CENTER_X), radius_px - abs(sy - CENTER_Y)))
                 self.overlay.send_circle(f"{FRAME_PREFIX}circle-{genus}-{i}", _with_alpha(color, border_alpha), _with_alpha(color, fill_alpha),
                                          round(sx), round(sy), circle_r, RING_THICKNESS_PX, ttl=TTL)
 
