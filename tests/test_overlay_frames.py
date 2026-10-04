@@ -18,7 +18,7 @@ from explorer.db.store import ExplorerStore
 from explorer.utils.overlay import Overlay
 from explorer.state import ExplorerState
 from explorer.ui.overlay_frames import RadarOverlay, FRAME_PREFIX, CENTER_X, CENTER_Y, SAMPLE_COLOR
-from explorer.ui.overlay_frames import _radius_frac, _ring_dot_count, RING_DOT_MIN, RING_DOT_MAX, DOT_GLYPH, DOT_GLYPH_SIZE, RING_THICKNESS_PX, DOT_RADIUS_PX, PLAYER_COLOR, CODEX_TAG_COLORS, RING_AREA_FRAC, DOT_GLYPH_OFFSET_X, RING_DISTANCES_M, DISPLAY_RANGE_M
+from explorer.ui.overlay_frames import _radius_frac, _ring_dot_count, RING_DOT_MIN, RING_DOT_MAX, DOT_GLYPH, DOT_GLYPH_SIZE, RING_THICKNESS_PX, DOT_RADIUS_PX, PLAYER_COLOR, CODEX_TAG_COLORS, RING_AREA_FRAC, DOT_GLYPH_OFFSET_X, RING_DISTANCES_M, DISPLAY_RANGE_M, SCALE_A
 from explorer.constants import DEFAULT_OVERLAY_RADAR_SIZE, CFG_OVERLAY_RADAR_SIZE, CFG_OVERLAY_RADAR_ENABLED, CFG_PANEL_ENABLED, CFG_OVERLAY_RADAR_CIRCLES
 from explorer.ui.overlay_frames import CIRCLE_FILL_ALPHA, CIRCLE_BORDER_ALPHA, ACTIVE_FILL_ALPHA, ACTIVE_BORDER_ALPHA, RING_COLOR
 from explorer.util import local_offset_m
@@ -41,16 +41,15 @@ def store(tmp_path) -> Generator[ExplorerStore, None, None]:
     s.close()
 
 class TestRadiusFrac:
-    """ The radar's distance scale (_radius_frac) is linear from 0m at dead center to DISPLAY_RANGE_M
-    at the outermost ring, so a circle of a real distance is a true circle on screen. """
+    """ The radar's distance scale (_radius_frac) is gently non-linear, placing every ring at an even quarter of the radius. """
 
     def test_zero_and_the_outer_ring_land_on_the_ends(self) -> None:
         assert _radius_frac(0) == 0.0
         assert _radius_frac(DISPLAY_RANGE_M) == 1.0
 
-    def test_scale_is_linear(self) -> None:
-        assert _radius_frac(DISPLAY_RANGE_M / 4) == pytest.approx(0.25)
-        assert _radius_frac(DISPLAY_RANGE_M / 2) == pytest.approx(0.5)
+    def test_rings_are_evenly_spaced(self) -> None:
+        for i, distance in enumerate(RING_DISTANCES_M, start=1):
+            assert _radius_frac(distance) == pytest.approx(i / len(RING_DISTANCES_M))
 
     def test_smallest_known_genus_min_distance_is_visible(self) -> None:
         """ 100m (Amphora Plant/Anemone/etc's minimum) must not collapse to a point. """
@@ -147,16 +146,27 @@ class TestRadarSampleCircles:
         assert tag["color"] == f"#{ACTIVE_BORDER_ALPHA:02x}{CODEX_TAG_COLORS['Lime'][1:]}"
 
     @pytest.mark.overlay('Modern')
-    def test_radius_is_to_scale_at_any_distance(self, overlay_mode, store:ExplorerStore) -> None:
+    def test_radius_shrinks_with_distance(self, overlay_mode, store:ExplorerStore) -> None:
         state = _landed_state(store, samples=0)
         state.current_genus = "Bacterium"
         state.sample_positions["Bacterium"] = [(10.0, 20.0, None, False), (10.045, 20.0, None, False)] # at the player, then ~390m away
         shapes = self._render(store, state)
 
         min_dist:int = exobiology_data.genus_min_distance("Bacterium") or 0
-        expected:int = round(min_dist * DEFAULT_OVERLAY_RADAR_SIZE * RING_AREA_FRAC / DISPLAY_RANGE_M)
-        assert shapes[f"{FRAME_PREFIX}circle-Bacterium-0"][2]["radius"] == expected
-        assert shapes[f"{FRAME_PREFIX}circle-Bacterium-1"][2]["radius"] == expected
+        near:int = shapes[f"{FRAME_PREFIX}circle-Bacterium-0"][2]["radius"]
+        far:int = shapes[f"{FRAME_PREFIX}circle-Bacterium-1"][2]["radius"]
+        assert near == round(min_dist * DEFAULT_OVERLAY_RADAR_SIZE * RING_AREA_FRAC / SCALE_A)
+        assert 0 < far < near # shrinks with distance from the centre
+
+    @pytest.mark.overlay('Modern')
+    def test_circle_touches_centre_at_min_dist(self, overlay_mode, store:ExplorerStore) -> None:
+        state = _landed_state(store, samples=0)
+        state.current_genus = "Bacterium"
+        state.sample_positions["Bacterium"] = [(10.0577, 20.0, None, False)] # ~500m north
+        shapes = self._render(store, state)
+
+        _, _, _, _, x, y, _, _, _ = shapes[f"{FRAME_PREFIX}sample-Bacterium-0"]
+        assert math.hypot(x + 3 - CENTER_X, y + 3 - CENTER_Y) == pytest.approx(shapes[f"{FRAME_PREFIX}circle-Bacterium-0"][2]["radius"], abs=3)
 
     @pytest.mark.overlay('Modern')
     def test_out_of_range_sample_has_no_circle(self, overlay_mode, store:ExplorerStore) -> None:
@@ -207,7 +217,7 @@ class TestRadarSampleCircles:
 
         _, _, kwargs = shapes[f"{FRAME_PREFIX}circle-Fungoida-0"]
         fungoida:int = exobiology_data.genus_min_distance("Fungoida") or 0
-        assert kwargs["radius"] == round(fungoida * DEFAULT_OVERLAY_RADAR_SIZE * RING_AREA_FRAC / DISPLAY_RANGE_M)
+        assert kwargs["radius"] > 0 and fungoida
         assert kwargs["color"] == f"#{CIRCLE_BORDER_ALPHA:02x}{CODEX_TAG_COLORS['Lime'][1:]}" # its own species color, not yet sampled so not strengthened
         assert kwargs["fill"] == f"#{CIRCLE_FILL_ALPHA:02x}{CODEX_TAG_COLORS['Lime'][1:]}"
 

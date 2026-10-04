@@ -46,15 +46,18 @@ ACTIVE_BORDER_ALPHA:int = 0xFF
 # Disabled: ring/label for a tagged-but-unapproached genus (kept for possible future use).
 SHOW_TAGGED_GENUS:bool = False
 
-RING_DISTANCES_M:tuple[int, ...] = (500, 1000, 1500, 2000) # the radar scale is linear, so evenly spaced
+RING_DISTANCES_M:tuple[int, ...] = (300, 750, 1350, 2100) # evenly spaced on screen, so the scale is gently non-linear
 DISPLAY_RANGE_M:float = float(max(RING_DISTANCES_M)) # the "in range" boundary
+SCALE_A:float = 900.0 # distance = A*frac + B*frac^2 passes through every ring above
+SCALE_B:float = DISPLAY_RANGE_M - SCALE_A
 
 EDGE_DISPLAY_M:float = 2150.0 # radar's true edge -- a bit past the outer ring, margin for out-of-range dots
 RING_AREA_FRAC:float = DISPLAY_RANGE_M / EDGE_DISPLAY_M
 
 def _radius_frac(distance_m:float) -> float:
-    """ Linear 0.0 (0m) to 1.0 (DISPLAY_RANGE_M), so a circle of a real distance is a true circle on screen. """
-    return min(max(distance_m, 0.0) / DISPLAY_RANGE_M, 1.0)
+    """ 0.0 (0m) to 1.0 (DISPLAY_RANGE_M), inverting distance = A*frac + B*frac^2. """
+    d:float = min(max(distance_m, 0.0), DISPLAY_RANGE_M)
+    return (math.sqrt(SCALE_A ** 2 + 4 * SCALE_B * d) - SCALE_A) / (2 * SCALE_B)
 
 def _radius() -> int:
     """ Radar's radius in pixels, configurable. """
@@ -268,24 +271,26 @@ class RadarOverlay:
             return
 
         min_dist:int = (exobiology_data.genus_min_distance(genus) or 0) if circles else 0
-        px_per_m:float = radius_px * RING_AREA_FRAC / DISPLAY_RANGE_M
         for i, (lat, lon, color_name, is_tag) in enumerate(positions):
             east, north = local_offset_m(state.latitude, state.longitude, lat, lon, state.planet_radius)
             dist:float = math.hypot(east, north)
             in_range:bool = dist <= DISPLAY_RANGE_M
             unit_east, unit_north = (east / dist, north / dist) if dist > 0 else (0.0, 0.0)
             forward, right = _rotate_to_heading(unit_east, unit_north, heading)
+            frac:float = _radius_frac(dist)
             # out of range: midpoint of the reserved outer margin band, same bearing
-            pixel_r:float = radius_px * _radius_frac(dist) * RING_AREA_FRAC if in_range else radius_px * (RING_AREA_FRAC + 1.0) / 2
+            pixel_r:float = radius_px * frac * RING_AREA_FRAC if in_range else radius_px * (RING_AREA_FRAC + 1.0) / 2
             sx:float = CENTER_X + right * pixel_r
             sy:float = CENTER_Y - forward * pixel_r
 
             if min_dist and in_range and (is_tag or current):
+                # tangential scale: the circle reaches the radar centre exactly when the player is min_dist away
                 color:str = _tag_color(color_name) if is_tag else _sample_color(color_name)
                 border_alpha:int = ACTIVE_BORDER_ALPHA if current else CIRCLE_BORDER_ALPHA
                 fill_alpha:int = ACTIVE_FILL_ALPHA if current else CIRCLE_FILL_ALPHA
+                circle_r:int = round(min_dist * radius_px * RING_AREA_FRAC / (SCALE_A + SCALE_B * frac))
                 self.overlay.send_circle(f"{FRAME_PREFIX}circle-{genus}-{i}", _with_alpha(color, border_alpha), _with_alpha(color, fill_alpha),
-                                         round(sx), round(sy), round(min_dist * px_per_m), RING_THICKNESS_PX, ttl=TTL)
+                                         round(sx), round(sy), circle_r, RING_THICKNESS_PX, ttl=TTL)
 
             frame_id:str = f"{FRAME_PREFIX}sample-{genus}-{i}"
             if not is_tag:
