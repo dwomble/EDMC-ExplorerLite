@@ -251,3 +251,6 @@ tests/EDMC-ExplorerLite/
 
 # Internal design notes -- not for the public repo
 REQUIREMENTS.md
+
+# Written by the release workflow and updater, not tracked
+/version
