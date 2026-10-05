@@ -737,7 +737,7 @@ class TestPanelStates:
         assert body is not None
         row = Context.panel._flagged_body_row("QuietSpace", body)
         assert row is not None
-        assert row[4] == "2 – Bac. Cerbrus+Str. Tectonicas", row
+        assert row[4] == "2 – Bac.+Str.", row # species names would be too long here
 
     def test_confirmed_zero_signals_suppresses_a_stale_prediction(self, plugin:TestHarness) -> None:
         """
@@ -826,8 +826,7 @@ class TestPanelStates:
 
         best = Context.panel._best_predictions(body_pk)
         assert len(best) == 1, best # still exactly one real signal
-        assert "Bac. Cerbrus" in best[0]["name"], best # abbreviated -- both tied names, neither dropped
-        assert "Str. Tectonicas" in best[0]["name"], best
+        assert best[0]["name"] == "Bac./Str.", best # both tied genera kept, as short codes
         assert best[0]["value_min"] < best[0]["value_max"], best # spans both possibilities
 
     def test_tied_genera_get_separate_slots_when_there_is_room_for_both(self, plugin:TestHarness) -> None:
