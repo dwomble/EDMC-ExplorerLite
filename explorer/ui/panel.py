@@ -29,7 +29,7 @@ MAX_PREDICTED_SHOWN:int = 3
 
 INDENT_PX:int = 14
 MAX_SPECIES_LABEL_CHARS:int = 28
-MAX_FULL_NAME_CHARS:int = 24
+MAX_FULL_NAME_CHARS:int = 20
 MAX_MERGED_TAG_CHARS:int = 32
 SAMPLES_REQUIRED:int = 3
 GRAVITY_MS2_PER_G:float = 9.797759
@@ -532,7 +532,7 @@ class ExplorerPanel:
                 return full
 
         abbreviated:str = joiner.join(self._abbreviated_name(item) for item in items)
-        if len(abbreviated) <= MAX_MERGED_TAG_CHARS:
+        if len(abbreviated) <= MAX_FULL_NAME_CHARS:
             return abbreviated
 
         genera:list[str] = list(dict.fromkeys(genus for item in items for genus in item["genera"]))
