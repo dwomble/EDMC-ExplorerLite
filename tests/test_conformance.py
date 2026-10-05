@@ -15,20 +15,21 @@ from typing import Generator
 from harness import TestHarness, reset_plugin_modules
 
 from explorer.constants import CFG_SCAN_VALUE_THRESHOLD
+from explorer.state import state as explorer_state
+import explorer.db.store as store_module
+import explorer.session_persist as session_persist_module
+from explorer.context import Context
 
 @pytest.fixture
 def plugin(harness:TestHarness, tmp_path, monkeypatch) -> Generator[TestHarness, None, None]:
     # explorer.state.state is a module-level singleton (correct for production -- it should
     # persist across a real EDMC session) but isn't reset by reset_plugin_modules(), so it
     # must be reset explicitly here for test isolation across separate temp DBs.
-    from explorer.state import state as explorer_state
     explorer_state.reset_all()
 
     # Redirect the DB to a per-test temp path so tests don't accumulate state across runs.
-    import explorer.db.store as store_module
     monkeypatch.setattr(store_module, "resolve_db_path", lambda: tmp_path / "explorer.sqlite")
 
-    import explorer.session_persist as session_persist_module
     monkeypatch.setattr(session_persist_module, "resolve_session_path", lambda: tmp_path / "session_state.json")
 
     # Low threshold so this fixture's modest test values reliably clear it, independent of
@@ -56,17 +57,15 @@ class TestFullWalkthrough:
         plugin.load_events("explorer_events.json")
         plugin.play_sequence("full_walkthrough", 0.02)
 
-        import load
-        assert load.store is not None and load.panel is not None
-        from explorer.state import state
+        assert Context.store is not None and Context.panel is not None
 
-        assert state.system_name == "Deltius"
-        assert state.cmdr == "Testy"
+        assert explorer_state.system_name == "Deltius"
+        assert explorer_state.cmdr == "Testy"
 
-        cmdr_id = load.store.get_or_create_cmdr("Testy")
-        system_id = load.store.get_or_create_system(cmdr_id, 999000111, "Deltius")
+        cmdr_id = Context.store.get_or_create_cmdr("Testy")
+        system_id = Context.store.get_or_create_system(cmdr_id, 999000111, "Deltius")
 
-        system = load.store.get_system(system_id)
+        system = Context.store.get_system(system_id)
         assert system is not None
         assert system["honk_body_count"] == 3
         assert system["honk_non_body_count"] == 2
@@ -74,20 +73,20 @@ class TestFullWalkthrough:
         assert system["fss_body_count"] == 3
         assert system["sold_at"] is not None # MultiSellExplorationData named this system
 
-        flagged = load.store.get_flagged_bodies_for_system(system_id)
+        flagged = Context.store.get_flagged_bodies(system_id)
         flagged_body_ids = {b["body_id"] for b in flagged}
         assert 1 in flagged_body_ids # Deltius A 1, metal rich -- should clear the (lowered) threshold
 
-        body2 = load.store.get_or_create_body(cmdr_id, system_id, 2, "Deltius A 2")
-        genuses = load.store.get_body_genuses(body2)
+        body2 = Context.store.get_or_create_body(cmdr_id, system_id, 2, "Deltius A 2")
+        genuses = Context.store.get_body_genuses(body2)
         assert len(genuses) == 1
         assert genuses[0]["genus"] == "Bacterium"
 
-        body2_row = load.store.get_body(body2)
+        body2_row = Context.store.get_body(body2)
         assert body2_row is not None
         assert body2_row["flagged_exobio"] == 1 # Bacterium's range tops out at 9.1M, above the 5M default threshold
 
-        progress = load.store.get_species_progress_for_body(body2)
+        progress = Context.store.get_species_progress(body2)
         assert len(progress) == 1
         assert progress[0]["genus"] == "Bacterium"
         assert progress[0]["species"] == "Bacterium Aurasus"
@@ -100,7 +99,7 @@ class TestFullWalkthrough:
         # BioData's exact per-item Value+Bonus -- see on_sell_organic_data's docstring.
         assert progress[0]["sold_value"] == 5_000_000
 
-        totals = load.store.get_cmdr_totals(cmdr_id)
+        totals = Context.store.get_cmdr_totals(cmdr_id)
         assert totals is not None
         assert totals["actual_cartography_credits"] == 600_000
         assert totals["actual_exobiology_credits"] == 5_000_000
@@ -109,11 +108,10 @@ class TestFullWalkthrough:
         plugin.load_events("explorer_events.json")
         plugin.play_sequence("honk_only", 0.02)
 
-        import load
-        assert load.store is not None and load.panel is not None
-        cmdr_id = load.store.get_or_create_cmdr("Testy")
-        system_id = load.store.get_or_create_system(cmdr_id, 555000222, "QuietSpace")
-        system = load.store.get_system(system_id)
+        assert Context.store is not None and Context.panel is not None
+        cmdr_id = Context.store.get_or_create_cmdr("Testy")
+        system_id = Context.store.get_or_create_system(cmdr_id, 555000222, "QuietSpace")
+        system = Context.store.get_system(system_id)
         assert system is not None
         assert system["honk_body_count"] == 1
         assert system["honk_hint"] == "probably quiet"

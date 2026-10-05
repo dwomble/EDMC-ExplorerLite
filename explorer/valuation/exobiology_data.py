@@ -2,8 +2,10 @@
 credit values (excluding first-discovery/first-logged bonus). Clean-room sourced, cross-checked
 against 2 independent sources. Excludes Thargoid biologicals -- out of scope for this plugin.
 
-CAVEAT: exact in-game Genus_Localised singular-vs-plural is unconfirmed for 3 genera (marked
-below) -- singular used as the dict key pending verification against a real journal line. """
+The keys here are singular ("Brain Tree") with species as "<genus> <epithet>", but the game logs some
+airless genera as plural ("Brain Trees", "Bark Mounds") and species as "<epithet> <genus>". Journal names
+go through canon_genus()/canon_species() on the way in. Plurality is unconfirmed for Sinuous Tuber and
+Crystalline Shard (marked below), which the same normalisation covers either way. """
 
 # Minimum distance (meters) required between exobiology samples of the same genus.
 GENUS_MIN_DISTANCE_M:dict[str, int] = {
@@ -214,6 +216,17 @@ def genus_value_range(genus:str) -> tuple[int, int]|None:
 
 def species_value(genus:str, species:str) -> int|None:
     return SPECIES_VALUE.get(genus, {}).get(species)
+
+def canon_genus(name:str) -> str:
+    """ The game's plural genus name ("Brain Trees") as this table's singular key. """
+    singular:str = name.removesuffix("s")
+    return singular if name not in SPECIES_VALUE and singular in SPECIES_VALUE else name
+
+def canon_species(name:str) -> str:
+    """ The game's "Roseum Brain Tree" as this table's "Brain Tree Roseum". """
+    for genus in SPECIES_VALUE:
+        if name.endswith(f" {genus}"): return f"{genus} {name.removesuffix(f' {genus}')}"
+    return name
 
 def genus_from_species_name(species_name:str) -> str|None:
     """ Reverse lookup: which genus a full species name (e.g. "Tussock Propagito") belongs to. """

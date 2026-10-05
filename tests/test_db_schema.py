@@ -221,6 +221,23 @@ class TestSchemaMigration:
 
         assert conn.execute("SELECT name FROM cmdrs WHERE name = 'Testy'").fetchone() is not None
 
+    def test_old_progress_rows_survive_and_allow_many_species(self) -> None:
+        """ v10->v11: species_progress was UNIQUE(body_id, genus); rows must copy across and a second species fit. """
+        conn = _v1_connection()
+        conn.execute("INSERT INTO systems (cmdr_id, system_address, name) VALUES (1, 1, 'Test')")
+        conn.execute("INSERT INTO bodies (cmdr_id, system_id, body_id, body_name) VALUES (1, 1, 1, 'Test 1')")
+        insert:str = "INSERT INTO species_progress (body_id, genus, species, samples_taken) VALUES (1, 'Brain Tree', ?, ?)"
+        conn.execute(insert, ("Brain Tree Roseum", 3))
+        conn.commit()
+
+        ensure_schema(conn)
+        conn.execute(insert, ("Brain Tree Puniceum", 0)) # must not raise
+
+        rows = conn.execute("SELECT species, samples_taken FROM species_progress ORDER BY id").fetchall()
+        assert [(r["species"], r["samples_taken"]) for r in rows] == [("Brain Tree Roseum", 3), ("Brain Tree Puniceum", 0)]
+        tables:set[str] = {row[0] for row in conn.execute("SELECT name FROM sqlite_master WHERE type = 'table'")}
+        assert "species_progress_old" not in tables
+
     def test_ensure_schema_is_idempotent_on_an_up_to_date_database(self) -> None:
         """ ALTER TABLE ADD COLUMN on a column that already exists raises in SQLite -- calling
         ensure_schema() twice (e.g. two ExplorerStore instances against the same file) must not. """

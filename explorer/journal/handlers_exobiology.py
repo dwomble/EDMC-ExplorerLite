@@ -32,8 +32,8 @@ def _discard_tags_within_min_distance(state:ExplorerState, genus:str, lat:float,
         if not p[3] or surface_distance_m(lat, lon, p[0], p[1], state.planet_radius) >= min_dist
     ]
 
-def _too_close_to_existing_sample(state:ExplorerState, genus:str, lat:float, lon:float) -> bool:
-    """ Don't add a waypoint that's already within the genus's minimum sample distance of a real sample already taken """
+def _too_close(state:ExplorerState, genus:str, lat:float, lon:float) -> bool:
+    """ True if within the genus's minimum sample distance of a real sample already taken """
     if state.planet_radius is None:
         return False
     min_dist:int|None = exobiology_data.genus_min_distance(genus)
@@ -53,24 +53,19 @@ def on_scan_organic(store:ExplorerStore, state:ExplorerState, entry:dict) -> dic
     body_name:str = state.body_name if state.body_id == body_id else ""
     body_pk:int = store.get_or_create_body(state.cmdr_id, state.system_id, body_id, body_name)
 
-    genus:str = entry.get("Genus_Localised") or entry.get("Genus", "")
-    species:str = entry.get("Species_Localised") or entry.get("Species", "")
+    genus:str = exobiology_data.canon_genus(entry.get("Genus_Localised") or entry.get("Genus", ""))
+    species:str = exobiology_data.canon_species(entry.get("Species_Localised") or entry.get("Species", ""))
     variant:str = entry.get("Variant_Localised") or entry.get("Variant", "")
     scan_type:str = entry.get("ScanType", "")
 
     if scan_type == "Log":
-        store.abandon_other_species_progress(body_pk, genus)
+        store.abandon_other_species_progress(body_pk, genus, species or None)
 
-    progress_id:int = store.get_or_create_species_progress(body_pk, genus)
+    progress_id:int = store.get_or_create_species_progress(body_pk, genus, species or None)
     row:sqlite3.Row|None = store.get_species_progress_row(progress_id)
     now:str = now_iso()
 
-    # A same-genus species switch mid-sequence is discarded too.
-    if scan_type == "Log" and row and row["samples_taken"] and not row["completed_at"] \
-       and species and row["species"] and row["species"] != species:
-        row = None # treat as fresh, not a continuation of the abandoned count
-
-    fields:dict = dict(species=species, variant=variant, last_stage=scan_type)
+    fields:dict = dict(variant=variant, last_stage=scan_type)
 
     if scan_type in SAMPLE_SCAN_TYPES:
         fields["samples_taken"] = (row["samples_taken"] if row else 0) + 1
@@ -107,26 +102,27 @@ def on_codex_entry(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict
     if body_id is None or latitude is None or longitude is None:
         return {}
     species, color_name = split_localised_color(entry.get("Name_Localised", ""))
+    species = exobiology_data.canon_species(species)
     genus:str|None = exobiology_data.genus_from_species_name(species)
     if genus is None:
         return {}
 
     body_name:str = state.body_name if state.body_id == body_id else ""
     body_pk:int = store.get_or_create_body(state.cmdr_id, state.system_id, body_id, body_name)
-    progress_id:int = store.get_or_create_species_progress(body_pk, genus) # ensures it shows even before/without SAASignalsFound
+    progress_id:int = store.get_or_create_species_progress(body_pk, genus, species) # ensures it shows even before/without SAASignalsFound
 
-    fields:dict = dict(species=species)
+    fields:dict = {}
     confirmed_value:int|None = exobiology.estimate_confirmed_value(genus, species)
     if confirmed_value is not None:
         fields["confirmed_value"] = confirmed_value
     store.update_species_progress(progress_id, **fields)
 
-    if not _too_close_to_existing_sample(state, genus, latitude, longitude):
+    if not _too_close(state, genus, latitude, longitude):
         state.sample_positions.setdefault(genus, []).append((latitude, longitude, color_name, True))
     return {"panel": True, "overlay": "radar"}
 
 def on_sell_organic_data(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict:
-    """ BioData doesn't reliably itemize what actually got sold for how much so presume every completed sample was sold"""
+    """ BioData doesn't reliably itemize sales, so presume every completed sample was sold """
     if state.cmdr_id is None:
         return {}
     now:str = now_iso()
@@ -135,7 +131,7 @@ def on_sell_organic_data(store:ExplorerStore, state:ExplorerState, entry:dict) -
     if total > 0:
         store.record_sale(state.cmdr_id, "exobiology", now, state.system_name or None, total, json.dumps(entry))
 
-    completed:list[sqlite3.Row] = store.get_completed_unsold_species_for_cmdr(state.cmdr_id)
+    completed:list[sqlite3.Row] = store.get_unsold_species(state.cmdr_id)
     sold_values:list[tuple[int, int]] = [
         (row["id"], exobiology.with_first_logged_bonus(row["confirmed_value"] or 0, bool(row["was_footfalled"])))
         for row in completed

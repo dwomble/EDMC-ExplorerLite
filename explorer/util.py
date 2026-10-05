@@ -14,14 +14,12 @@ def format_pending_credits(value:int) -> str:
     return hfplus((value, 'num', '? Cr', ' Cr'))
 
 def split_localised_color(text:str) -> tuple[str, str|None]:
-    """ "Species Name - Color" -> (species, color); color is
-    None without a " - " suffix (e.g. a raw, non-localised
-    fallback). """
+    """ "Species Name - Color" -> (species, color); color is None without a " - " suffix. """
     parts:list[str] = text.split(" - ", 1)
     return parts[0].strip(), (parts[1].strip() if len(parts) > 1 else None)
 
 def local_offset_m(lat0:float, lon0:float, lat:float, lon:float, planet_radius_m:float) -> tuple[float, float]:
-    """ Flat-earth approximation, meters east/north from (lat0, lon0) -- fine at the scale of exobiology sample distances. """
+    """ Flat-earth approximation, meters east/north from (lat0, lon0) -- fine at exobiology sample scale. """
     y:float = math.radians(lat - lat0) * planet_radius_m
     x:float = math.radians(lon - lon0) * planet_radius_m * math.cos(math.radians(lat0))
     return x, y

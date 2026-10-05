@@ -19,11 +19,9 @@ from explorer.db.store import ExplorerStore
 from explorer.state import ExplorerState
 from explorer.util import format_pending_credits
 from explorer.valuation import cartography, exobiology, exobiology_data, signal_count_bias
-from explorer.constants import CFG_VISIBLE_LINES, DEFAULT_VISIBLE_LINES, CFG_PANEL_ENABLED, PLUGIN_NAME
+from explorer.constants import CFG_VISIBLE_LINES, DEFAULT_VISIBLE_LINES, CFG_PANEL_ENABLED, CFG_BODY_SORT, DEFAULT_BODY_SORT, PLUGIN_NAME
 
 HISTORY_GLYPH:str = "\U0001F553" # clock face
-PANEL_SHOWN_GLYPH:str = "\U0001F648" # see-no-evil monkey -- "pause" analog while visible
-PANEL_HIDDEN_GLYPH:str = "\U0001F441" # eye -- "play" analog while hidden
 
 WIDTH_CHARS:int = 60
 LINE_HEIGHT_PX:int = 18
@@ -31,7 +29,7 @@ MAX_PREDICTED_SHOWN:int = 3
 
 INDENT_PX:int = 14
 MAX_SPECIES_LABEL_CHARS:int = 28
-MAX_FULL_NAME_CHARS:int = 24
+MAX_FULL_NAME_CHARS:int = 20
 MAX_MERGED_TAG_CHARS:int = 32
 SAMPLES_REQUIRED:int = 3
 GRAVITY_MS2_PER_G:float = 9.797759
@@ -59,8 +57,7 @@ def _credits_range(min_val:int, max_val:int) -> str:
 
 
 def _sampling_distance_str(genera:list[str]) -> str:
-    """ Minimum walking distance between samples -- a range when a merged slot spans genera
-    with different requirements, since which one it actually is isn't confirmed yet. """
+    """ Minimum walking distance between samples -- a range if a merged slot spans several genera. """
     distances:list[int] = [d for d in (exobiology_data.genus_min_distance(g) for g in genera) if d is not None]
     if not distances:
         return "?"
@@ -71,11 +68,11 @@ def _next_actions(store:ExplorerStore, system_id:int) -> tuple[bool, bool]:
     """ (needs_dss, needs_sample) for the system. """
     needs_dss:bool = False
     needs_sample:bool = False
-    for body in store.get_flagged_bodies_for_system(system_id):
+    for body in store.get_flagged_bodies(system_id):
         if not body["mapped_at"]:
             needs_dss = True
             continue
-        if any(not p["completed_at"] for p in store.get_species_progress_for_body(body["id"])):
+        if any(not p["completed_at"] for p in store.get_species_progress(body["id"])):
             needs_sample = True
     return needs_dss, needs_sample
 
@@ -119,15 +116,8 @@ def _bold_font() -> tkfont.Font:
     default:tkfont.Font = tkfont.nametofont("TkDefaultFont")
     return tkfont.Font(family=default.actual("family"), size=default.actual("size"), weight="bold")
 
-def flagged_body_sort_key(body:sqlite3.Row) -> tuple[bool, float]:
-    """ Biological first, then nearest; the overlay agrees. """
-    biological:bool = bool(body["has_biological_signals"] == 1 or body["flagged_exobio"] or body["has_prediction"])
-    distance:float = body["distance_ls"] if body["distance_ls"] is not None else float('inf')
-    return not biological, distance
-
 def _body_designator(system_name:str, body_name:str) -> str:
-    """ The short local part of a body's name, e.g. "Deltius B 6 c" -> "B 6 c" -- system name
-    is implied by context, repeating it on every line just wastes width. """
+    """ The short local part of a body's name, e.g. "Deltius B 6 c" -> "B 6 c". """
     prefix:str = system_name + " "
     if body_name.startswith(prefix):
         designator:str = body_name[len(prefix):]
@@ -145,43 +135,22 @@ class ExplorerPanel:
         self.notice:th.RichText|None = None
         self.on_history_open:Callable[[], None]|None = None # wired up externally by load.py
 
-        self._panel_enabled:bool = config.get_bool(CFG_PANEL_ENABLED, default=True)
-
         self.frame:th.Frame = th.Frame(parent)
         self.frame.columnconfigure(0, weight=1)
 
-        # grid, not pack -- th.Base's pack() renders light/dark widget pairs twice
-        header:th.Frame = th.Frame(self.frame) # always shown -- only self.scroll below hides
-        header.grid(row=0, column=0, sticky=tk.EW)
-        header.columnconfigure(0, weight=1) # title/cart/exo share slack, spreading them out
-        header.columnconfigure(1, weight=1)
-        header.columnconfigure(2, weight=1)
+        self.view:th.Collapsible = th.Collapsible(self.frame, hidden=not config.get_bool(CFG_PANEL_ENABLED, default=True),
+                                                  on_toggle=self._on_toggle)
+        self.view.expanded.columnconfigure(0, weight=1)
+        self.view.collapsed.columnconfigure(0, weight=1)
 
         self._title_font:tkfont.Font = _bold_font()
-        self.title_label:th.Label = th.Label(header, text=PLUGIN_NAME, font=self._title_font, anchor="w")
-        self.title_label.grid(row=0, column=0, sticky=tk.W)
+        self.title_label, self.cart_value_label, self.exo_value_label, self.history_button, self.hide_button = \
+            self._build_header(self.view.expanded, True)
+        _, self._cart_collapsed, self._exo_collapsed, _, self.show_button = self._build_header(self.view.collapsed, False)
 
-        self.cart_value_label:th.Label = th.Label(header, text=format_pending_credits(0), anchor="w", width=10)
-        self.cart_value_label.grid(row=0, column=1, sticky=tk.W)
-        th.Tooltip(self.cart_value_label, "Pending cartography value")
-
-        self.exo_value_label:th.Label = th.Label(header, text=format_pending_credits(0), anchor="w", width=10)
-        self.exo_value_label.grid(row=0, column=2, sticky=tk.W)
-        th.Tooltip(self.exo_value_label, "Pending exobiology value")
-
-        self.history_button:th.Button = th.Button(header, text=HISTORY_GLYPH, width=3, command=self._open_history)
-        self.history_button.grid(row=0, column=3, sticky=tk.E)
-        th.Tooltip(self.history_button, "Open history")
-
-        self.toggle_button:th.Button = th.Button(header, text=self._toggle_glyph(), width=3, command=self._toggle_panel)
-        self.toggle_button.grid(row=0, column=4, sticky=tk.E)
-        self._toggle_tooltip:th.Tooltip = th.Tooltip(self.toggle_button, self._toggle_tooltip_text())
-
-        self.scroll:th.ScrollableFrame = th.ScrollableFrame(self.frame, maxheight=_visible_lines_px())
+        self.scroll:th.ScrollableFrame = th.ScrollableFrame(self.view.expanded, maxheight=_visible_lines_px())
         self.scroll.grid(row=2, column=0, sticky=tk.EW) # row 1 is the notice bar, shown/hidden lazily
         self.scroll.interior.columnconfigure(0, weight=1) # each row below is gridded, not packed -- see refresh()
-        if not self._panel_enabled:
-            self.scroll.grid_forget()
 
         self._pending:list[tuple] = [] # lines/tables queued by _line()/_render_table() during the current refresh()
         self._last_rendered:list[tuple] = [] # what's actually on screen right now, one entry per row widget
@@ -196,7 +165,7 @@ class ExplorerPanel:
             return
         notice:str = self.notices.pending_notice
         width:int = min(60, max(len(line) for line in notice.split("\n")))
-        self.notice = th.RichText(self.frame, width=width, markdown=notice, cursor='hand2')
+        self.notice = th.RichText(self.view.expanded, width=width, markdown=notice, cursor='hand2')
         self.notice.bind("<Button-1>", partial(self.dismiss_notice))
         self.notice.grid(row=1, column=0, sticky=tk.EW)
 
@@ -212,24 +181,37 @@ class ExplorerPanel:
         if self.on_history_open:
             self.on_history_open()
 
-    def _toggle_glyph(self) -> str:
-        return PANEL_SHOWN_GLYPH if self._panel_enabled else PANEL_HIDDEN_GLYPH
+    def _build_header(self, master:th.Frame, expanded:bool) -> tuple[th.Label, th.Label, th.Label, th.Button, th.Button]:
+        """ One header row; grid, not pack -- th.Base's pack() renders light/dark widget pairs twice """
+        header:th.Frame = th.Frame(master)
+        header.grid(row=0, column=0, sticky=tk.EW)
+        header.columnconfigure(0, weight=1) # title/cart/exo share slack, spreading them out
+        header.columnconfigure(1, weight=1)
+        header.columnconfigure(2, weight=1)
 
-    def _toggle_tooltip_text(self) -> str:
-        return "Hide panel" if self._panel_enabled else "Show panel"
+        title:th.Label = th.Label(header, text=PLUGIN_NAME, font=self._title_font, anchor="w")
+        title.grid(row=0, column=0, sticky=tk.W)
 
-    def _toggle_panel(self) -> None:
-        """ Shows/hides content; collection keeps going. """
-        self._panel_enabled = not self._panel_enabled
-        config.set(CFG_PANEL_ENABLED, self._panel_enabled)
-        self.toggle_button.configure(text=self._toggle_glyph())
-        self._toggle_tooltip.set_text(self._toggle_tooltip_text())
-        if not self._panel_enabled:
-            self.scroll.grid_forget()
-            return
+        cart:th.Label = th.Label(header, text=format_pending_credits(0), anchor="w", width=10)
+        cart.grid(row=0, column=1, sticky=tk.W)
+        th.Tooltip(cart, "Pending cartography value")
 
-        self.scroll.grid(row=1, column=0, sticky=tk.EW)
-        self.refresh()
+        exo:th.Label = th.Label(header, text=format_pending_credits(0), anchor="w", width=10)
+        exo.grid(row=0, column=2, sticky=tk.W)
+        th.Tooltip(exo, "Pending exobiology value")
+
+        history:th.Button = th.Button(header, text=HISTORY_GLYPH, width=3, command=self._open_history)
+        history.grid(row=0, column=3, sticky=tk.E)
+        th.Tooltip(history, "Open history")
+
+        toggle:th.Button = self.view.hide_button(header, "Hide panel") if expanded else self.view.show_button(header, "Show panel")
+        toggle.grid(row=0, column=4, sticky=tk.E)
+        return title, cart, exo, history, toggle
+
+    def _on_toggle(self, hidden:bool) -> None:
+        """ Persist the state; catch up on whatever changed while hidden """
+        config.set(CFG_PANEL_ENABLED, not hidden)
+        if not hidden: self.refresh()
 
     def _update_header_totals(self) -> None:
         cmdr_id:int|None = self.state.cmdr_id
@@ -237,6 +219,8 @@ class ExplorerPanel:
         exo:int = self.store.get_pending_exobiology_value(cmdr_id) if cmdr_id is not None else 0
         self.cart_value_label.configure(text=format_pending_credits(cart))
         self.exo_value_label.configure(text=format_pending_credits(exo))
+        self._cart_collapsed.configure(text=format_pending_credits(cart))
+        self._exo_collapsed.configure(text=format_pending_credits(exo))
 
     def _line(self, text:str) -> None:
         self._pending.append(("line", str_truncate(text, WIDTH_CHARS)))
@@ -282,8 +266,8 @@ class ExplorerPanel:
         """ Diffs _pending against _last_rendered row by row -- only rebuilds rows that changed. """
         self._update_header_totals() # header stays live even while the rest is hidden
 
-        if not self._panel_enabled:
-            return # hidden -- _toggle_panel() rebuilds fully once shown again
+        if self.view.hidden:
+            return # hidden -- _on_toggle() rebuilds fully once shown again
 
         self.scroll.configure(maxheight=_visible_lines_px()) # live prefs change -- no restart needed
 
@@ -316,7 +300,7 @@ class ExplorerPanel:
         name:str = system["name"]
         # Current body's exobiology detail nests under its own row, not after the whole table
         anchors:tuple = ("w", "e", "e", "e", "w")
-        flagged:list[sqlite3.Row] = sorted(self.store.get_flagged_bodies_for_system(system["id"]), key=flagged_body_sort_key)
+        flagged:list[sqlite3.Row] = self.sorted_flagged(system["id"])
         focus_id:int|None = self.state.exobio_focus_body_id
         pending_rows:list = []
         current_row_shown:bool = False
@@ -340,10 +324,21 @@ class ExplorerPanel:
         if not current_row_shown and focus_id is not None and self.state.cmdr_id is not None:
             self._render_exobio()
 
-    def _flagged_body_row(self, system_name:str, body:sqlite3.Row) -> tuple[str, str, str, str, str]|None:
-        """ A body drops off this to-do list once nothing's left to do there. Shown value is
-        Full (bonus-included) -- what the body would actually pay out, not the base/progression
-        number (see _exobio_progress_row/history view for the Base/Full split). """
+    def sorted_flagged(self, system_id:int) -> list[sqlite3.Row]:
+        """ Flagged bodies in the CFG_BODY_SORT order; ties keep body_id order. """
+        bodies:list[sqlite3.Row] = self.store.get_flagged_bodies(system_id)
+        if config.get_str(CFG_BODY_SORT, default=DEFAULT_BODY_SORT) == "Value":
+            return sorted(bodies, key=lambda b: tuple(-v for v in self._flagged_body_value(b)))
+
+        return sorted(bodies, key=lambda b: [int(c) if c.isdigit() else c.lower() for c in re.split(r"(\d+)", b["body_name"])])
+
+    def _flagged_body_value(self, body:sqlite3.Row) -> tuple[int, int]:
+        """ (value_max, value_min) of a flagged body, as shown in its row. """
+        value_min, value_max, _ = self._flagged_body_data(body)
+        return value_max, value_min
+
+    def _flagged_body_data(self, body:sqlite3.Row) -> tuple[int, int, str]:
+        """ (value_min, value_max, species_desc) of a flagged body; shown value is Full, not base. """
         species_desc:str = ""
         value_min:int = 0
         value_max:int = 0
@@ -356,7 +351,7 @@ class ExplorerPanel:
             value_min += cart_value
             value_max += cart_value
 
-        all_progress:list[sqlite3.Row] = self.store.get_species_progress_for_body(body["id"])
+        all_progress:list[sqlite3.Row] = self.store.get_species_progress(body["id"])
         active:list[sqlite3.Row] = [r for r in all_progress if not r["completed_at"]]
         fully_sampled:bool = bool(all_progress) and not active
         if active:
@@ -367,7 +362,7 @@ class ExplorerPanel:
                 value_min += exobiology.with_first_logged_bonus(r_min, was_footfalled)
                 value_max += exobiology.with_first_logged_bonus(r_max, was_footfalled)
 
-        predictions:list[dict] = self._best_predictions_for_body(body["id"]) if not active and not body["flagged_exobio"] else []
+        predictions:list[dict] = self._best_predictions(body["id"]) if not active and not body["flagged_exobio"] else []
 
         if predictions:
             # "?" only for a purely speculative guess -- a confirmed signal means a genus IS here
@@ -386,6 +381,11 @@ class ExplorerPanel:
             count:int = body["biological_signal_count"] or 1
             species_desc = f"{count} biological signal" + ("" if count == 1 else "s")
 
+        return value_min, value_max, species_desc
+
+    def _flagged_body_row(self, system_name:str, body:sqlite3.Row) -> tuple[str, str, str, str, str]|None:
+        """ A body drops off this list once nothing is left to do. """
+        value_min, value_max, species_desc = self._flagged_body_data(body)
         if not value_max and not species_desc:
             return None # nothing left to do here -- drop it
 
@@ -402,9 +402,9 @@ class ExplorerPanel:
         assert self.state.cmdr_id is not None and self.state.system_id is not None and focus_id is not None
         body_pk:int = self.store.get_or_create_body(self.state.cmdr_id, self.state.system_id, focus_id, self.state.exobio_focus_body_name)
 
-        all_progress:list[sqlite3.Row] = self.store.get_species_progress_for_body(body_pk)
+        all_progress:list[sqlite3.Row] = self.store.get_species_progress(body_pk)
         active:list[sqlite3.Row] = [row for row in all_progress if not row["completed_at"]]
-        predictions:list[dict] = [] if (active or all_progress) else self._best_predictions_for_body(body_pk)
+        predictions:list[dict] = [] if (active or all_progress) else self._best_predictions(body_pk)
 
         if not active and all_progress:
             return # every genus here is fully sampled -- nothing left to do, drop the section
@@ -434,8 +434,8 @@ class ExplorerPanel:
             return
 
 
-    def _best_predictions_for_body(self, body_pk:int) -> list[dict]:
-        all_predictions:list[sqlite3.Row] = self.store.get_genus_predictions_for_body(body_pk)
+    def _best_predictions(self, body_pk:int) -> list[dict]:
+        all_predictions:list[sqlite3.Row] = self.store.get_genus_predictions(body_pk)
         if not all_predictions:
             return []
 
@@ -525,17 +525,21 @@ class ExplorerPanel:
         return slots
 
     def _collapse_prediction_names(self, items:list[dict], joiner:str = "/") -> str:
-        """ Full, abbreviated, or bare genus count """
+        """ Full, abbreviated, genus codes, or bare genus count """
         if len(items) <= 2:
             full:str = ", ".join(item["name"] for item in items)
             if len(full) <= MAX_FULL_NAME_CHARS:
                 return full
 
         abbreviated:str = joiner.join(self._abbreviated_name(item) for item in items)
-        if len(abbreviated) <= MAX_MERGED_TAG_CHARS:
+        if len(abbreviated) <= MAX_FULL_NAME_CHARS:
             return abbreviated
 
         genera:list[str] = list(dict.fromkeys(genus for item in items for genus in item["genera"]))
+        codes:str = joiner.join(exobiology_data.genus_code(g).capitalize() + "." for g in genera)
+        if len(codes) <= MAX_MERGED_TAG_CHARS:
+            return codes
+
         return f"{len(genera)} possibilities" # distinct genera, not slots
 
     def _abbreviated_name(self, item:dict) -> str:
@@ -577,7 +581,7 @@ class ExplorerPanel:
 
         genus:str = row["genus"] or ""
         candidates:list[sqlite3.Row] = [
-            p for p in self.store.get_genus_predictions_for_body(row["body_id"]) if p["genus"] == genus and p["species"]
+            p for p in self.store.get_genus_predictions(row["body_id"]) if p["genus"] == genus and p["species"]
         ]
 
         if candidates:
@@ -597,7 +601,7 @@ class ExplorerPanel:
     def _possible_species_label(self, body_pk:int, genus:str) -> str:
         """ Still-plausible species from the Scan-time prediction, confidence-sorted, or "genus sp." if none. """
         candidates:list[sqlite3.Row] = sorted(
-            (p for p in self.store.get_genus_predictions_for_body(body_pk) if p["genus"] == genus and p["species"]),
+            (p for p in self.store.get_genus_predictions(body_pk) if p["genus"] == genus and p["species"]),
             key=lambda p: -p["confidence"],
         )
         if not candidates:

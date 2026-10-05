@@ -1,4 +1,5 @@
-""" Overlay radar: distance rings, a ring at the current species' minimum sample distance, and a
+""" Overlay radar: distance rings, a ring at the current species' minimum sample distance (or, with a
+circle-capable overlay, a translucent circle of that distance around its samples and every waypoint), and a
 marker per logged position (real samples vs. codex-tagged waypoints). """
 import math
 import sqlite3
@@ -13,7 +14,7 @@ from explorer.state import ExplorerState
 from explorer.util import local_offset_m
 from explorer.valuation import exobiology_data
 from explorer.constants import (
-    CFG_PANEL_ENABLED, CFG_OVERLAY_RADAR_ENABLED, CFG_OVERLAY_RADAR_SIZE, DEFAULT_OVERLAY_RADAR_SIZE,
+    CFG_PANEL_ENABLED, CFG_OVERLAY_RADAR_ENABLED, CFG_OVERLAY_RADAR_SIZE, DEFAULT_OVERLAY_RADAR_SIZE, CFG_OVERLAY_RADAR_CIRCLES,
 )
 
 FRAME_PREFIX:str = "explorerlite-radar-"
@@ -37,35 +38,29 @@ DOT_GLYPH_OFFSET_Y:int = -6
 TTL:int = 8 # generous vs. the ~1/sec dashboard-tick refresh cadence, so a missed/delayed tick doesn't visibly blank the radar
 TAG_TRIANGLE_SIZE_PX:int = 5 # vertex-to-center radius for a codex-tagged waypoint's triangle marker
 INVISIBLE:str = "#00000000" # fully transparent ARGB -- see _pin_bounds
+CIRCLE_FILL_ALPHA:int = 0x40 # ~25% opaque
+CIRCLE_BORDER_ALPHA:int = 0xB3 # ~70% opaque
+ACTIVE_FILL_ALPHA:int = 0x70 # real samples, stronger than waypoints to stand out
+ACTIVE_BORDER_ALPHA:int = 0xFF
 
 # Disabled: ring/label for a tagged-but-unapproached genus (kept for possible future use).
 SHOW_TAGGED_GENUS:bool = False
 
-RING_DISTANCES_M:tuple[int, ...] = (200, 600, 1400) # each double the real-world width of the last
+RING_DISTANCES_M:tuple[int, ...] = (833, 1667, 2500) # the radar scale is linear, so evenly spaced
 DISPLAY_RANGE_M:float = float(max(RING_DISTANCES_M)) # the "in range" boundary
-_RADIUS_FRAC_BOUNDARIES:tuple[float, ...] = (0.0,) + RING_DISTANCES_M
 
-EDGE_DISPLAY_M:float = 1500.0 # radar's true edge -- a bit past the outer ring, margin for out-of-range dots
+EDGE_DISPLAY_M:float = 2560.0 # radar's true edge -- a bit past the outer ring, margin for out-of-range dots
 RING_AREA_FRAC:float = DISPLAY_RANGE_M / EDGE_DISPLAY_M
 
 def _radius_frac(distance_m:float) -> float:
-    """ Piecewise-linear 0.0 (0m) to 1.0 (DISPLAY_RANGE_M); each ring segment double the last. """
-    if distance_m <= 0:
-        return 0.0
-
-    segment_count:int = len(RING_DISTANCES_M)
-    for i in range(segment_count):
-        lo, hi = _RADIUS_FRAC_BOUNDARIES[i], _RADIUS_FRAC_BOUNDARIES[i + 1]
-        if distance_m <= hi:
-            return (i + (distance_m - lo) / (hi - lo)) / segment_count
-
-    return 1.0 # beyond the outermost ring -- caller clamps/handles out-of-range separately
+    """ Linear 0.0 (0m) to 1.0 (DISPLAY_RANGE_M), so every circle of a real distance is the same size on screen. """
+    return min(max(distance_m, 0.0) / DISPLAY_RANGE_M, 1.0)
 
 def _radius() -> int:
     """ Radar's radius in pixels, configurable. """
     return config.get_int(CFG_OVERLAY_RADAR_SIZE, default=DEFAULT_OVERLAY_RADAR_SIZE)
 
-RING_COLOR:str = "#999999" # neutral grey -- distinct from every CODEX_TAG_COLORS entry below, so it never reads as a species color
+RING_COLOR:str = "#b2b2b2" # mid grey distance rings
 ACTIVE_RING_COLOR:str = "#ffaa00" # the current species being sampled this visit
 TAGGED_RING_COLOR:str = "#cc66ff" # a genus confirmed but not yet approached this visit -- see SHOW_TAGGED_GENUS
 SAMPLE_COLOR:str = "#00aaff" # fallback for a real sample with no recognized variant color
@@ -74,21 +69,24 @@ LABEL_COLOR:str = "#ffffff"
 
 # Odyssey exobiology variant color names
 CODEX_TAG_COLORS:dict[str, str] = {
-    "Amethyst": "#9966cc", "Aquamarine": "#7fffd4", "Blue": "#3366ff", "Cobalt": "#3355aa",
-    "Cyan": "#00e5e5", "Emerald": "#2ecc71", "Gold": "#ffd700", "Green": "#33aa33",
-    "Grey": "#aaaaaa", "Indigo": "#8758e6", "Lime": "#bfff00", "Magenta": "#ff33ff",
-    "Maroon": "#aa3344", "Mauve": "#aa77aa", "Mulberry": "#993366", "Ocher": "#bb9933",
+    "Amethyst": "#b67fed", "Aquamarine": "#7fffd4", "Blue": "#658cff", "Cobalt": "#3354a7",
+    "Cyan": "#00e5e5", "Emerald": "#2ecc71", "Gold": "#ffd700", "Green": "#14ac14",
+    "Grey": "#aaaaaa", "Indigo": "#793cf4", "Lime": "#bfff00", "Magenta": "#ff33ff",
+    "Maroon": "#aa3344", "Mauve": "#be53be", "Mulberry": "#B93175", "Ocher": "#cfa528",
     "Orange": "#ff8822", "Peach": "#ffaa88", "Red": "#ee3333", "Sage": "#889977",
-    "Teal": "#118877", "Turquoise": "#33cccc", "White": "#eeeeee", "Yellow": "#eedd22",
+    "Teal": "#0C9D87", "Turquoise": "#33cccc", "White": "#eeeeee", "Yellow": "#eedd22",
 }
 DEFAULT_TAG_COLOR:str = "#ff66aa"
 
 def _tag_color(color_name:str|None) -> str:
     return CODEX_TAG_COLORS.get(color_name, DEFAULT_TAG_COLOR) if color_name else DEFAULT_TAG_COLOR
 
+def _with_alpha(color:str, alpha:int) -> str:
+    """ "#rrggbb" to "#aarrggbb" """
+    return f"#{alpha:02x}{color[1:]}"
+
 def _sample_color(color_name:str|None) -> str:
-    """ Same lookup as _tag_color(), but falls back to
-    SAMPLE_COLOR rather than DEFAULT_TAG_COLOR. """
+    """ Same lookup as _tag_color(), but falls back to SAMPLE_COLOR rather than DEFAULT_TAG_COLOR. """
     return CODEX_TAG_COLORS.get(color_name, SAMPLE_COLOR) if color_name else SAMPLE_COLOR
 
 def _triangle_points(cx:float, cy:float, r:float) -> list[dict]:
@@ -169,11 +167,11 @@ class RadarOverlay:
 
         # Predicted genus only as a fallback when NOTHING is confirmed yet (matches panel.py).
         body_pk:int = store.get_or_create_body(state.cmdr_id, state.system_id, state.body_id, state.body_name)
-        all_progress:list[sqlite3.Row] = store.get_species_progress_for_body(body_pk)
+        all_progress:list[sqlite3.Row] = store.get_species_progress(body_pk)
         genera:list[str] = self._active_genera(all_progress)
 
         if not genera and not all_progress:
-            predicted:str|None = self._predicted_genus(store.get_genus_predictions_for_body(body_pk))
+            predicted:str|None = self._predicted_genus(store.get_genus_predictions(body_pk))
             genera = [predicted] if predicted else []
 
         if not genera:
@@ -184,6 +182,7 @@ class RadarOverlay:
         self._log_skip(None) # clear -- we're drawing
         self._ensure_group()
 
+        circles:bool = self.overlay.supports_circle and config.get_bool(CFG_OVERLAY_RADAR_CIRCLES, default=True)
         radius_px:int = _radius()
         heading_rad:float = math.radians(state.heading) if state.heading is not None else 0.0
         self._pin_bounds(radius_px)
@@ -192,11 +191,12 @@ class RadarOverlay:
         for genus in genera:
             in_progress:bool = bool(state.sample_positions.get(genus))
             if in_progress:
-                # Only the genus actually being sampled gets a ring -- with several genera's
-                # samples on screen at once, a ring per genus became illegible.
-                if genus == state.current_genus:
+                # Several rings at once were illegible, so only the genus being sampled gets the ring or sample circles.
+                # Waypoints get circles for every genus.
+                current:bool = genus == state.current_genus
+                if current and not circles:
                     self._draw_genus_ring(radius_px, genus, ACTIVE_RING_COLOR)
-                self._draw_samples(state, genus, radius_px, heading_rad)
+                self._draw_samples(state, genus, radius_px, heading_rad, circles, current)
                 continue
 
             if SHOW_TAGGED_GENUS:
@@ -207,15 +207,14 @@ class RadarOverlay:
 
     def _active_genera(self, progress:list[sqlite3.Row]) -> list[str]:
         """ Every confirmed genus not yet fully sampled. """
-        return [row["genus"] for row in progress if not row["completed_at"]]
+        return list(dict.fromkeys(row["genus"] for row in progress if not row["completed_at"]))
 
     def _predicted_genus(self, predictions:list[sqlite3.Row]) -> str|None:
         """ Best pre-DSS guess (highest confidence, already the query's own ordering). """
         return predictions[0]["genus"] if predictions else None
 
     def _draw_ring(self, frame_id:str, r:float, color:str) -> None:
-        """ A native circle when the overlay supports it (one message, perfectly round
-        regardless of size) -- else the dot-glyph fallback (see module docstring). """
+        """ A native circle when the overlay supports it, else the dot-glyph fallback (see module docstring). """
         if r <= 0:
             return
         if self.overlay.supports_circle:
@@ -226,7 +225,7 @@ class RadarOverlay:
                                    round(x) + DOT_GLYPH_OFFSET_X, round(y) + DOT_GLYPH_OFFSET_Y, ttl=TTL, size=DOT_GLYPH_SIZE)
 
     def _pin_bounds(self, radius_px:int) -> None:
-        """ Two invisible markers spanning the radar's full possible extent, sent every ticks or update, to prevent the whole radar from visibly drifting as that set changes. """
+        """ Two invisible markers spanning the radar's full extent, stopping it drifting as visible markers change. """
         self.overlay.send_text(f"{FRAME_PREFIX}pin-nw", " ", INVISIBLE, CENTER_X - radius_px, CENTER_Y - radius_px, ttl=TTL)
         self.overlay.send_text(f"{FRAME_PREFIX}pin-se", " ", INVISIBLE, CENTER_X + radius_px, CENTER_Y + radius_px, ttl=TTL)
 
@@ -261,13 +260,15 @@ class RadarOverlay:
             CENTER_X + DOT_GLYPH_OFFSET_X, CENTER_Y + DOT_GLYPH_OFFSET_Y, ttl=TTL, size=DOT_GLYPH_SIZE,
         )
 
-    def _draw_samples(self, state:ExplorerState, genus:str, radius_px:int, heading:float) -> None:
+    def _draw_samples(self, state:ExplorerState, genus:str, radius_px:int, heading:float, circles:bool = False, current:bool = False) -> None:
         """ Bearing (unit direction) and pixel radius (non-linear) computed separately, then combined. """
 
         positions:list[tuple[float, float, str|None, bool]] = state.sample_positions.get(genus, [])
         if not positions or state.planet_radius is None or state.latitude is None or state.longitude is None:
             return
 
+        min_dist:int = (exobiology_data.genus_min_distance(genus) or 0) if circles else 0
+        px_per_m:float = radius_px * RING_AREA_FRAC / DISPLAY_RANGE_M
         for i, (lat, lon, color_name, is_tag) in enumerate(positions):
             east, north = local_offset_m(state.latitude, state.longitude, lat, lon, state.planet_radius)
             dist:float = math.hypot(east, north)
@@ -278,6 +279,16 @@ class RadarOverlay:
             pixel_r:float = radius_px * _radius_frac(dist) * RING_AREA_FRAC if in_range else radius_px * (RING_AREA_FRAC + 1.0) / 2
             sx:float = CENTER_X + right * pixel_r
             sy:float = CENTER_Y - forward * pixel_r
+
+            if min_dist and in_range and (is_tag or current):
+                color:str = _tag_color(color_name) if is_tag else _sample_color(color_name)
+                border_alpha:int = CIRCLE_BORDER_ALPHA if is_tag else ACTIVE_BORDER_ALPHA
+                fill_alpha:int = CIRCLE_FILL_ALPHA if is_tag else ACTIVE_FILL_ALPHA
+                true_r:float = min_dist * px_per_m
+                # clamped inside the pinned bounds, else the group's bounding box shifts and the radar jumps
+                circle_r:int = round(min(true_r, radius_px - abs(sx - CENTER_X), radius_px - abs(sy - CENTER_Y)))
+                self.overlay.send_circle(f"{FRAME_PREFIX}circle-{genus}-{i}", _with_alpha(color, border_alpha), _with_alpha(color, fill_alpha),
+                                         round(sx), round(sy), circle_r, RING_THICKNESS_PX, ttl=TTL)
 
             frame_id:str = f"{FRAME_PREFIX}sample-{genus}-{i}"
             if not is_tag:

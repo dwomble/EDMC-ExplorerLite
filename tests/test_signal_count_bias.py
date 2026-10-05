@@ -7,7 +7,7 @@ Run with:
 """
 import pytest
 
-from explorer.valuation.signal_count_bias import expected_genera_for_signal_count, preferred_species_for_tier
+from explorer.valuation.signal_count_bias import expected_genera, preferred_species_for_tier
 
 class TestExpectedGeneraForSignalCount:
 
@@ -16,32 +16,32 @@ class TestExpectedGeneraForSignalCount:
         # real journal data showed it wrongly overriding a confirmed Bacterium body, since
         # Stratum Tectonicas's own spawn range is wide enough to be "eligible" on almost any
         # warm HMC body. Tier 1 is just Bacterium now, no exception.
-        assert expected_genera_for_signal_count(1, "CarbonDioxide") == {"Bacterium"}
-        assert expected_genera_for_signal_count(1, "SulphurDioxide") == {"Bacterium"}
+        assert expected_genera(1, "CarbonDioxide") == {"Bacterium"}
+        assert expected_genera(1, "SulphurDioxide") == {"Bacterium"}
 
     def test_cumulative_tiers_build_up(self) -> None:
-        assert expected_genera_for_signal_count(3, "CarbonDioxide") == {"Bacterium", "Stratum", "Tussock"}
-        assert expected_genera_for_signal_count(4, "CarbonDioxide") == {
+        assert expected_genera(3, "CarbonDioxide") == {"Bacterium", "Stratum", "Tussock"}
+        assert expected_genera(4, "CarbonDioxide") == {
             "Bacterium", "Stratum", "Tussock", "Osseus", "Tubus",
         }
-        assert expected_genera_for_signal_count(5, "CarbonDioxide") == {
+        assert expected_genera(5, "CarbonDioxide") == {
             "Bacterium", "Stratum", "Tussock", "Osseus", "Tubus", "Concha", "Frutexa",
         }
 
     def test_exception_atmospheres_disable_the_whole_chain(self) -> None:
         for atmosphere in ("Water", "Oxygen", "Nitrogen"):
-            assert expected_genera_for_signal_count(2, atmosphere) is None
+            assert expected_genera(2, atmosphere) is None
 
     def test_signal_count_above_five_still_expects_all_five_known_tiers(self) -> None:
         """ Extra signals beyond tier 5 are just unclassified -- they don't mean the known
         tiers stop being expected (e.g. a body with 7 signals still certainly has a Bacterium,
         a Stratum, etc. among them, per the priority order). """
-        assert expected_genera_for_signal_count(7, "CarbonDioxide") == {
+        assert expected_genera(7, "CarbonDioxide") == {
             "Bacterium", "Stratum", "Tussock", "Osseus", "Tubus", "Concha", "Frutexa",
         }
 
     def test_zero_or_negative_signal_count_has_no_bias(self) -> None:
-        assert expected_genera_for_signal_count(0, "CarbonDioxide") is None
+        assert expected_genera(0, "CarbonDioxide") is None
 
 class TestPreferredSpeciesForTier:
 

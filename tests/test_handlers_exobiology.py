@@ -10,7 +10,8 @@ from typing import Generator
 
 from explorer.db.store import ExplorerStore
 from explorer.state import ExplorerState
-from explorer.journal import handlers_exobiology
+from explorer.journal import handlers_bodies, handlers_exobiology
+from explorer.valuation import exobiology_data
 
 ORGANIC_SUBCATEGORY = "$Codex_SubCategory_Organic_Structures;"
 
@@ -105,7 +106,7 @@ class TestOnScanOrganic:
         })
 
         body_pk:int = store.get_or_create_body(state.cmdr_id, state.system_id, 1, "Deltius 1")
-        rows = store.get_sample_positions_for_body(body_pk)
+        rows = store.get_sample_positions(body_pk)
         assert len(rows) == 1
         assert rows[0]["genus"] == "Bacterium"
         assert rows[0]["latitude"] == 10.0 and rows[0]["longitude"] == 20.0
@@ -202,6 +203,57 @@ class TestOnScanOrganic:
         positions = state.sample_positions["Bacterium"]
         assert len(positions) == 2 # both the tag and the new real sample remain
         assert (10.1, 20.0, "Lime", True) in positions
+
+class TestGameNames:
+    """ Real journal names for airless genera: plural genus, species as "<epithet> <genus>". """
+
+    def _state(self, store:ExplorerStore) -> ExplorerState:
+        state = ExplorerState()
+        state.cmdr_id = store.get_or_create_cmdr("Testy")
+        state.system_id = store.get_or_create_system(state.cmdr_id, 1, "Deltius")
+        state.body_id = 5
+        return state
+
+    def test_dss_and_scan_use_the_table_names(self, store:ExplorerStore) -> None:
+        state = self._state(store)
+        genuses:list[dict] = [{"Genus_Localised": "Brain Trees"}]
+        handlers_bodies.on_saa_signals_found(store, state, {"BodyID": 5, "BodyName": "A 3", "Genuses": genuses})
+        handlers_exobiology.on_scan_organic(store, state, {
+            "ScanType": "Log", "Body": 5, "Genus_Localised": "Brain Trees", "Species_Localised": "Roseum Brain Tree",
+        })
+
+        assert state.cmdr_id is not None and state.system_id is not None
+        rows = store.get_species_progress(store.get_or_create_body(state.cmdr_id, state.system_id, 5, "A 3"))
+        assert [(r["genus"], r["species"], r["confirmed_value"]) for r in rows] == [("Brain Tree", "Brain Tree Roseum", 1_593_700)]
+        body = store.get_body(store.get_or_create_body(state.cmdr_id, state.system_id, 5, "A 3"))
+        assert body is not None and body["estimated_exobio_value_max"] == 3_565_100
+
+    def test_codex_tag_finds_the_genus(self, store:ExplorerStore) -> None:
+        state = self._state(store)
+        handlers_exobiology.on_codex_entry(store, state, {
+            "SubCategory": ORGANIC_SUBCATEGORY, "BodyID": 5, "Latitude": 2.0, "Longitude": 103.0, "Name_Localised": "Puniceum Brain Tree",
+        })
+
+        assert list(state.sample_positions) == ["Brain Tree"]
+
+    def test_second_species_keeps_the_first(self, store:ExplorerStore) -> None:
+        state = self._state(store)
+        for species in ("Roseum Brain Tree", "Puniceum Brain Tree"):
+            for scan in ("Log", "Sample", "Sample", "Analyse"):
+                handlers_exobiology.on_scan_organic(store, state, {
+                    "ScanType": scan, "Body": 5, "Genus_Localised": "Brain Trees", "Species_Localised": species,
+                })
+
+        assert state.cmdr_id is not None and state.system_id is not None
+        rows = store.get_species_progress(store.get_or_create_body(state.cmdr_id, state.system_id, 5, ""))
+        assert [(r["species"], r["completed_at"] is not None, r["confirmed_value"]) for r in rows] == [
+            ("Brain Tree Roseum", True, 1_593_700), ("Brain Tree Puniceum", True, 3_565_100),
+        ]
+
+    def test_regular_names_pass_through(self) -> None:
+        assert exobiology_data.canon_genus("Bacterium") == "Bacterium"
+        assert exobiology_data.canon_species("Tussock Propagito") == "Tussock Propagito"
+        assert exobiology_data.canon_species("Bark Mound") == "Bark Mound"
 
 class TestOnSellOrganicData:
 

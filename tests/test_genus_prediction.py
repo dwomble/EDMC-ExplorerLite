@@ -22,9 +22,10 @@ class TestPredictGenera:
 
     def test_close_match_scores_near_full_confidence(self) -> None:
         # Rocky body / CarbonDioxide / no volcanism / mid-range temp+gravity for Tubus
-        # (160-195.2K, max 0.1521G) -- comfortably inside on every axis.
+        # (160-195.2K, max 0.1521G) -- comfortably inside on every axis. Tubus's rulesets are
+        # all `unmodeled`, so this needs confirmed biology to exercise the matching itself.
         entry = _entry("Rocky body", "CarbonDioxide", "", 178.0, 0.1)
-        results = dict(predict_genera(entry, None))
+        results = dict(predict_genera(entry, None, has_biological_signals=1))
         assert "Tubus" in results
         assert results["Tubus"] >= 0.99
 
@@ -39,7 +40,7 @@ class TestPredictGenera:
         # stays comfortably inside every ruleset's range so temperature is the only tapering
         # factor -- landing in the margin instead of squarely inside or fully excluded.
         entry = _entry("Rocky body", "CarbonDioxide", "", 197.5, 0.2)
-        results = dict(predict_genera(entry, None))
+        results = dict(predict_genera(entry, None, has_biological_signals=1))
         assert "Tussock" in results
         assert 0.0 < results["Tussock"] < 1.0
 
@@ -70,7 +71,7 @@ class TestPredictSpecies:
         # reach 165K even with the tapering margin, so they should drop out entirely while
         # Ignis -- squarely inside its own range -- stays at (near) full confidence.
         entry = _entry("Rocky body", "CarbonDioxide", "", 165.0, 0.1)
-        results = dict(predict_species("Tussock", entry, None))
+        results = dict(predict_species("Tussock", entry, None, has_biological_signals=1))
         assert results.get("Tussock Ignis", 0.0) >= 0.99
         assert "Tussock Ventusa" not in results
         assert "Tussock Serrati" not in results

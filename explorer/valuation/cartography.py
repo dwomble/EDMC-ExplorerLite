@@ -103,6 +103,5 @@ def scan_value_with_bonus(base_value:int, was_discovered:bool) -> int:
     return base_value if was_discovered else round(base_value * (1 + FIRST_DISCOVERED_BONUS_FRACTION))
 
 def mapping_value_for_eligibility(mapping_value:int, was_mapped:bool) -> int:
-    """ estimate_mapping_value()'s number already assumes first-mapped-by-us -- back out that
-    assumed bonus when WasMapped says someone already has, rather than adding one. """
+    """ Backs out the first-mapped-by-us bonus already assumed in scan value when WasMapped says someone else did. """
     return mapping_value if not was_mapped else round(mapping_value / (1 + FIRST_MAPPED_BONUS_FRACTION))

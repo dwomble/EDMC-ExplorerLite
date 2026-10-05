@@ -10,9 +10,9 @@ import pytest
 
 import load
 from harness import TestHarness
+import explorer.db.store as store_module
 
 def test_plugin_start3_resolves_version_from_the_version_file(harness:TestHarness, tmp_path, monkeypatch) -> None:
-    import explorer.db.store as store_module
     monkeypatch.setattr(store_module, "resolve_db_path", lambda: tmp_path / "explorer.sqlite")
 
     (tmp_path / "version").write_text("9.9.9")

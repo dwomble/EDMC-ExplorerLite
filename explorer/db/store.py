@@ -68,8 +68,7 @@ class ExplorerStore:
         ).fetchone()
 
     def get_sale_totals(self, cmdr_id:int, since:str|None = None) -> dict[str, int]:
-        """ Sold credits by type, since cutoff -- unlike
-        get_cmdr_totals()'s all-time count. """
+        """ Sold credits by type, since cutoff. """
         query:str = "SELECT event_type, SUM(total_value) AS total FROM sale_events WHERE cmdr_id = ?"
         params:list = [cmdr_id]
         if since is not None:
@@ -80,13 +79,7 @@ class ExplorerStore:
         return {row["event_type"]: row["total"] for row in rows}
 
     def get_pending_cartography_value(self, cmdr_id:int) -> int:
-        """ Higher of scan/mapping value (each bonus-adjusted for known discovery/mapped
-        eligibility) of bodies whose system isn't sold/lost yet -- an approximation, distinct
-        from actual_cartography_credits (ground truth from real sales). Mapping value only
-        counts once mapped_at is set (we actually ran a DSS) -- estimated_mapping_value is a
-        "would be worth it" ceiling populated at Scan time regardless, and was_mapped means
-        someone (anyone) mapped it before us, not that we did -- same rule as the panel's own
-        per-body display (see _flagged_body_row). """
+        """ Estimated, bonus-adjusted, scan/mapping value across not-yet-sold/lost bodies. """
         rows:list[sqlite3.Row] = self.conn.execute(
             """SELECT estimated_scan_value, estimated_mapping_value, was_discovered, was_mapped, mapped_at FROM bodies
                JOIN systems ON systems.id = bodies.system_id
@@ -104,10 +97,7 @@ class ExplorerStore:
         return total
 
     def get_pending_exobiology_value(self, cmdr_id:int) -> int:
-        """ Full (bonus-included) value of completed-but-unsold-and-not-lost species samples --
-        "currently held" exobiology data ready to sell, distinct from actual_exobiology_credits
-        (ground truth from real sales). Matches the same held/unsold/not-lost definition used by
-        mark_species_progress_sold()/mark_all_unsold_species_progress_lost(). """
+        """ Full value of completed, unsold species samples. """
         rows:list[sqlite3.Row] = self.conn.execute(
             """SELECT species_progress.confirmed_value, bodies.was_footfalled FROM species_progress
                JOIN bodies ON bodies.id = species_progress.body_id
@@ -147,8 +137,7 @@ class ExplorerStore:
         self.conn.commit()
 
     def mark_all_unsold_systems_lost(self, cmdr_id:int, timestamp:str) -> None:
-        """ Ship destroyed -- any cartography data still held (never sold) across every system
-        this Cmdr has visited is gone, not just the current one. """
+        """ Ship destroyed, cargo lost. """
         self.conn.execute(
             "UPDATE systems SET lost_at = ? WHERE cmdr_id = ? AND sold_at IS NULL AND lost_at IS NULL",
             (timestamp, cmdr_id),
@@ -176,12 +165,11 @@ class ExplorerStore:
     def get_body(self, body_pk:int) -> sqlite3.Row|None:
         return self.conn.execute("SELECT * FROM bodies WHERE id = ?", (body_pk,)).fetchone()
 
-    def get_bodies_for_system(self, system_id:int) -> list[sqlite3.Row]:
+    def get_bodies(self, system_id:int) -> list[sqlite3.Row]:
         return self.conn.execute("SELECT * FROM bodies WHERE system_id = ? ORDER BY body_id", (system_id,)).fetchall()
 
-    def count_scanned_bodies_for_system(self, system_id:int) -> int:
-        """ Bodies actually Scanned (scanned_at set), not just FSSBodySignals-touched -- for
-        "N of M scanned" progress against the honk's total body count. """
+    def count_scanned_bodies(self, system_id:int) -> int:
+        """ Bodies actually scanned. """
         row:sqlite3.Row = self.conn.execute(
             "SELECT COUNT(*) AS n FROM bodies WHERE system_id = ? AND scanned_at IS NOT NULL", (system_id,)
         ).fetchone()
@@ -190,13 +178,8 @@ class ExplorerStore:
     def update_body(self, body_pk:int, **fields) -> None:
         self._update("bodies", body_pk, **fields)
 
-    def get_flagged_bodies_for_system(self, system_id:int) -> list[sqlite3.Row]:
-        """ `has_prediction` distinguishes a genuine Scan-based genus guess from a body that's
-        only here because FSSBodySignals already confirmed biology (no guess needed/available).
-        The `has_biological_signals IS NOT 0` guard only gates the prediction branch -- once
-        FSSBodySignals confirms a body has NO biology, a stale pre-Scan genus guess shouldn't
-        keep it listed for that reason, but a real cartography (flagged_value) or confirmed-bio
-        (flagged_exobio/has_biological_signals=1) match must still show regardless. """
+    def get_flagged_bodies(self, system_id:int) -> list[sqlite3.Row]:
+        """ Bodies worth showing: flagged cartography/exobio, or a still-plausible pre-Scan genus guess. """
         return self.conn.execute(
             """SELECT *, EXISTS (SELECT 1 FROM genus_predictions gp WHERE gp.body_id = bodies.id) AS has_prediction
                FROM bodies WHERE system_id = ? AND (
@@ -209,9 +192,7 @@ class ExplorerStore:
     # -- Genus predictions (pre-DSS, from Scan properties) --
 
     def replace_genus_predictions(self, body_pk:int, predictions:list[tuple[str, str|None, float]]) -> None:
-        """ Full replace, not merge -- predictions are always a fresh recompute from the latest
-        Scan. `species` is None for a genus-only guess (no species-level ruleset data for that
-        genus -- see valuation/species_conditions.py). """
+        """ Full replace, not merge -- a fresh recompute each Scan; species is None for a genus-only guess. """
         self.conn.execute("DELETE FROM genus_predictions WHERE body_id = ?", (body_pk,))
         self.conn.executemany(
             "INSERT INTO genus_predictions (body_id, genus, species, confidence) VALUES (?, ?, ?, ?)",
@@ -219,7 +200,7 @@ class ExplorerStore:
         )
         self.conn.commit()
 
-    def get_genus_predictions_for_body(self, body_pk:int) -> list[sqlite3.Row]:
+    def get_genus_predictions(self, body_pk:int) -> list[sqlite3.Row]:
         return self.conn.execute(
             "SELECT * FROM genus_predictions WHERE body_id = ? ORDER BY confidence DESC", (body_pk,)
         ).fetchall()
@@ -233,7 +214,7 @@ class ExplorerStore:
         )
         self.conn.commit()
 
-    def get_sample_positions_for_body(self, body_pk:int) -> list[sqlite3.Row]:
+    def get_sample_positions(self, body_pk:int) -> list[sqlite3.Row]:
         return self.conn.execute(
             "SELECT * FROM sample_positions WHERE body_id = ? ORDER BY id", (body_pk,)
         ).fetchall()
@@ -253,14 +234,31 @@ class ExplorerStore:
 
     # -- Exobiology sample progress --
 
-    def get_or_create_species_progress(self, body_pk:int, genus:str) -> int:
-        row:sqlite3.Row|None = self.conn.execute(
-            "SELECT id FROM species_progress WHERE body_id = ? AND genus = ?", (body_pk, genus)
-        ).fetchone()
+    def get_or_create_species_progress(self, body_pk:int, genus:str, species:str|None = None) -> int:
+        """ One row per species; a species-less row (from the DSS) is claimed by the first species seen. """
+        if species is None:
+            row:sqlite3.Row|None = self.conn.execute(
+                "SELECT id FROM species_progress WHERE body_id = ? AND genus = ?", (body_pk, genus)
+            ).fetchone()
+            if row: return row["id"]
 
-        if row: return row["id"]
+        if species is not None:
+            row = self.conn.execute(
+                "SELECT id FROM species_progress WHERE body_id = ? AND genus = ? AND species = ?", (body_pk, genus, species)
+            ).fetchone()
+            if row: return row["id"]
 
-        cur:sqlite3.Cursor = self.conn.execute("INSERT INTO species_progress (body_id, genus) VALUES (?, ?)", (body_pk, genus))
+            row = self.conn.execute(
+                "SELECT id FROM species_progress WHERE body_id = ? AND genus = ? AND species IS NULL", (body_pk, genus)
+            ).fetchone()
+            if row:
+                self.conn.execute("UPDATE species_progress SET species = ? WHERE id = ?", (species, row["id"]))
+                self.conn.commit()
+                return row["id"]
+
+        cur:sqlite3.Cursor = self.conn.execute(
+            "INSERT INTO species_progress (body_id, genus, species) VALUES (?, ?, ?)", (body_pk, genus, species)
+        )
         self.conn.commit()
         assert cur.lastrowid is not None
         return cur.lastrowid
@@ -271,23 +269,18 @@ class ExplorerStore:
     def get_species_progress_row(self, progress_id:int) -> sqlite3.Row|None:
         return self.conn.execute("SELECT * FROM species_progress WHERE id = ?", (progress_id,)).fetchone()
 
-    def abandon_other_species_progress(self, body_pk:int, keep_genus:str) -> None:
+    def abandon_other_species_progress(self, body_pk:int, keep_genus:str, keep_species:str|None) -> None:
         """ Logging a new organism discards any other mid-sequence. """
         self.conn.execute(
             """UPDATE species_progress SET samples_taken = 0, first_sample_at = NULL,
                    last_sample_at = NULL, last_stage = NULL
-               WHERE body_id = ? AND genus != ? AND completed_at IS NULL AND samples_taken > 0""",
-            (body_pk, keep_genus),
+               WHERE body_id = ? AND NOT (genus = ? AND species IS ?) AND completed_at IS NULL AND samples_taken > 0""",
+            (body_pk, keep_genus, keep_species),
         )
         self.conn.commit()
 
-    def get_completed_unsold_species_for_cmdr(self, cmdr_id:int) -> list[sqlite3.Row]:
-        """ Every completed-but-unsold sample across this Cmdr's bodies, with each body's
-        was_footfalled joined in -- used by handlers_exobiology.on_sell_organic_data to compute
-        the presumed sold value (SellOrganicData's BioData doesn't reliably itemize what
-        actually got sold for how much, e.g. a "sell all" at Vista Genomics, so there's nothing
-        reliable to match against -- presuming every completed-but-unsold sample was sold, at
-        its own confirmed value plus any first-logged bonus, is the best available estimate). """
+    def get_unsold_species(self, cmdr_id:int) -> list[sqlite3.Row]:
+        """ Every completed-but-unsold sample for this Cmdr, was_footfalled joined in, for sold-value estimation. """
         return self.conn.execute(
             """SELECT species_progress.id, species_progress.confirmed_value, bodies.was_footfalled FROM species_progress
                JOIN bodies ON bodies.id = species_progress.body_id
@@ -296,8 +289,7 @@ class ExplorerStore:
         ).fetchall()
 
     def mark_species_progress_sold(self, sold_values:list[tuple[int, int]], timestamp:str) -> None:
-        """ (progress_id, sold_value) pairs -- marks each as
-        sold at timestamp. """
+        """ (progress_id, sold_value) pairs -- marks each as sold at timestamp. """
         if not sold_values:
             return
         self.conn.executemany(
@@ -306,10 +298,8 @@ class ExplorerStore:
         )
         self.conn.commit()
 
-    def mark_all_unsold_species_progress_lost(self, cmdr_id:int, timestamp:str) -> None:
-        """ Ship destroyed -- any completed exobiology sample data still held (never sold) is
-        gone. Only completed rows count as "data" to lose (matches what SellOrganicData would
-        ever have sold); in-progress sampling isn't registered as data yet. """
+    def mark_unsold_species_lost(self, cmdr_id:int, timestamp:str) -> None:
+        """ Ship destroyed -- any completed-but-unsold exobiology sample data is gone. """
 
         self.conn.execute(
             """UPDATE species_progress SET lost_at = ?
@@ -320,26 +310,18 @@ class ExplorerStore:
         )
         self.conn.commit()
 
-    def get_species_progress_for_body(self, body_pk:int) -> list[sqlite3.Row]:
-        return self.conn.execute("SELECT * FROM species_progress WHERE body_id = ?", (body_pk,)).fetchall()
+    def get_species_progress(self, body_pk:int) -> list[sqlite3.Row]:
+        return self.conn.execute("SELECT * FROM species_progress WHERE body_id = ? ORDER BY id", (body_pk,)).fetchall()
 
     # -- Sales (ground truth) --
 
     def get_history_tree(self, cmdr_id:int, unsold_only:bool = False, since:str|None = None) -> list[dict]:
-        """ Nested System -> Body -> Species tree for history.
-        Cartography actual isn't attributable per-body, always 0;
-        cart_est adjusts for discovery/mapped eligibility.
-        Exobio Base excludes the first-logged bonus; Full is the
-        real payout (sold_value once sold, else Base + bonus).
-        `since` (ISO ts) keeps a system if visited, sold, or any of
-        its species sold, on/after it -- a sale can land long after
-        the visit, so visited_at alone could hide a recent sale.
-        `unsold_only` drops systems already fully sold/lost --
-        both cartography and every species. """
+        """ Nested System -> Body -> Species tree for history; Exobio Full is bonus-included, Base isn't. """
         # DESC + LIMIT -- most recent first, capped to stay bounded
         query:str = "SELECT * FROM systems WHERE cmdr_id = ?"
         params:list = [cmdr_id]
         if since is not None:
+            # a sale can land long after the visit, so also match on a sale (system or species) since
             query += """ AND (visited_at >= ? OR sold_at >= ? OR EXISTS (
                 SELECT 1 FROM species_progress JOIN bodies ON bodies.id = species_progress.body_id
                 WHERE bodies.system_id = systems.id AND species_progress.sold_at >= ?
@@ -351,7 +333,7 @@ class ExplorerStore:
 
         tree:list[dict] = []
         for system in systems:
-            bodies:list[sqlite3.Row] = self.get_bodies_for_system(system["id"])
+            bodies:list[sqlite3.Row] = self.get_bodies(system["id"])
 
             body_nodes:list[dict] = []
             system_cart_est:int = 0
@@ -360,7 +342,7 @@ class ExplorerStore:
             exobio_pending:bool = False
             for body in bodies:
                 was_footfalled:bool = bool(body["was_footfalled"])
-                progress_rows:list[sqlite3.Row] = self.get_species_progress_for_body(body["id"])
+                progress_rows:list[sqlite3.Row] = self.get_species_progress(body["id"])
                 exobio_pending = exobio_pending or any(_species_pending(row) for row in progress_rows)
                 species_nodes:list[dict] = [
                     {
@@ -370,7 +352,8 @@ class ExplorerStore:
                         "cart_est": 0,
                         "cart_actual": 0,
                         "exo_base": row["confirmed_value"] or 0,
-                        "exo_full": row["sold_value"] if row["sold"] else exobiology.with_first_logged_bonus(row["confirmed_value"] or 0, was_footfalled),
+                        "exo_full": row["sold_value"] if row["sold"] else
+                                    exobiology.with_first_logged_bonus(row["confirmed_value"] or 0, was_footfalled),
                     }
                     for row in progress_rows
                 ]

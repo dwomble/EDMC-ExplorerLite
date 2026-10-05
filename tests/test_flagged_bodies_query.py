@@ -1,5 +1,5 @@
 """
-Unit tests for store.get_flagged_bodies_for_system(). Pure store calls, no journal/Tk harness
+Unit tests for store.get_flagged_bodies(). Pure store calls, no journal/Tk harness
 needed.
 
 Run with:
@@ -34,7 +34,7 @@ class TestGetFlaggedBodiesForSystem:
         body_pk:int = store.get_or_create_body(cmdr_id, system_id, 3, "Dryoea Flyuae KL-P d5-2027 3")
         store.update_body(body_pk, flagged_value=1, has_biological_signals=0)
 
-        flagged = store.get_flagged_bodies_for_system(system_id)
+        flagged = store.get_flagged_bodies(system_id)
         assert any(b["body_name"] == "Dryoea Flyuae KL-P d5-2027 3" for b in flagged), flagged
 
     def test_stale_prediction_still_hidden_once_biology_confirmed_absent(self, store:ExplorerStore) -> None:
@@ -47,7 +47,7 @@ class TestGetFlaggedBodiesForSystem:
         store.update_body(body_pk, has_biological_signals=0)
         store.replace_genus_predictions(body_pk, [("Bacterium", "Bacterium Aurasus", 0.9)])
 
-        flagged = store.get_flagged_bodies_for_system(system_id)
+        flagged = store.get_flagged_bodies(system_id)
         assert not any(b["body_name"] == "QuietSpace A 1" for b in flagged), flagged
 
     def test_prediction_still_shows_while_biology_status_unknown(self, store:ExplorerStore) -> None:
@@ -58,7 +58,7 @@ class TestGetFlaggedBodiesForSystem:
         body_pk:int = store.get_or_create_body(cmdr_id, system_id, 1, "QuietSpace A 1")
         store.replace_genus_predictions(body_pk, [("Bacterium", "Bacterium Aurasus", 0.9)])
 
-        flagged = store.get_flagged_bodies_for_system(system_id)
+        flagged = store.get_flagged_bodies(system_id)
         assert any(b["body_name"] == "QuietSpace A 1" for b in flagged), flagged
 
 if __name__ == '__main__':

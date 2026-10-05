@@ -32,7 +32,7 @@ class TestOnScanBeltCluster:
 
         handlers_bodies.on_scan(store, state, BELT_CLUSTER_SCAN)
 
-        assert store.get_bodies_for_system(state.system_id) == []
+        assert store.get_bodies(state.system_id) == []
 
     def test_belt_cluster_scans_do_not_inflate_the_scanned_body_count(self, store:ExplorerStore) -> None:
         """
@@ -54,7 +54,7 @@ class TestOnScanBeltCluster:
         for belt_body_id in (2, 3, 4, 5, 6):
             handlers_bodies.on_scan(store, state, {**BELT_CLUSTER_SCAN, "BodyID": belt_body_id})
 
-        assert store.count_scanned_bodies_for_system(state.system_id) == 1
+        assert store.count_scanned_bodies(state.system_id) == 1
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v', '--tb=short'])

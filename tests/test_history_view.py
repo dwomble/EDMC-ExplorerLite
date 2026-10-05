@@ -11,6 +11,11 @@ from typing import Generator
 
 from harness import TestHarness, reset_plugin_modules
 from explorer.db.store import ExplorerStore
+from explorer.state import state as explorer_state
+from explorer.constants import CFG_SCAN_VALUE_THRESHOLD, CFG_HISTORY_UNSOLD_ONLY, CFG_HISTORY_WINDOW_GEOMETRY
+import explorer.db.store as store_module
+import explorer.session_persist as session_persist_module
+from explorer.context import Context
 
 @pytest.fixture
 def store(tmp_path) -> Generator[ExplorerStore, None, None]:
@@ -20,16 +25,12 @@ def store(tmp_path) -> Generator[ExplorerStore, None, None]:
 
 @pytest.fixture
 def plugin(harness:TestHarness, tmp_path, monkeypatch) -> Generator[TestHarness, None, None]:
-    from explorer.state import state as explorer_state
     explorer_state.reset_all()
 
-    import explorer.db.store as store_module
     monkeypatch.setattr(store_module, "resolve_db_path", lambda: tmp_path / "explorer.sqlite")
 
-    import explorer.session_persist as session_persist_module
     monkeypatch.setattr(session_persist_module, "resolve_session_path", lambda: tmp_path / "session_state.json")
 
-    from explorer.constants import CFG_SCAN_VALUE_THRESHOLD
     harness.config.set(CFG_SCAN_VALUE_THRESHOLD, 50000)
 
     reset_plugin_modules()
@@ -51,9 +52,8 @@ class TestHistoryTreeQuery:
         plugin.load_events("explorer_events.json")
         plugin.play_sequence("full_walkthrough", 0.02)
 
-        import load
-        assert load.store is not None and load.explorer_state.cmdr_id is not None
-        tree = load.store.get_history_tree(load.explorer_state.cmdr_id)
+        assert Context.store is not None and explorer_state.cmdr_id is not None
+        tree = Context.store.get_history_tree(explorer_state.cmdr_id)
 
         assert len(tree) == 1
         system = tree[0]
@@ -194,7 +194,6 @@ class TestUnsoldOnlyAndLimits:
         assert [system["name"] for system in tree] == ["Old"]
 
     def test_hard_limit_caps_the_systems_returned(self, store:ExplorerStore, monkeypatch) -> None:
-        import explorer.db.store as store_module
         monkeypatch.setattr(store_module, "MAX_HISTORY_SYSTEMS", 3)
 
         cmdr_id:int = store.get_or_create_cmdr("Testy")
@@ -213,78 +212,73 @@ class TestHistoryViewPopup:
         plugin.load_events("explorer_events.json")
         plugin.play_sequence("full_walkthrough", 0.02)
 
-        import load
-        assert load.history_view is not None
-        load.history_view.open()
-        assert load.history_view.unsold_only_var is not None
-        load.history_view.unsold_only_var.set(False) # this fixture's system is fully sold
-        load.history_view.refresh()
+        assert Context.history_view is not None
+        Context.history_view.open()
+        assert Context.history_view.unsold_only_var is not None
+        Context.history_view.unsold_only_var.set(False) # this fixture's system is fully sold
+        Context.history_view.refresh()
 
-        assert load.history_view.window is not None
-        assert load.history_view.window.winfo_exists()
-        assert load.history_view.summary_label is not None
-        assert "Exobiology — sold: 5M Cr" in load.history_view.summary_label["text"]
+        assert Context.history_view.window is not None
+        assert Context.history_view.window.winfo_exists()
+        assert Context.history_view.summary_label is not None
+        assert "Exobiology — sold: 5M Cr" in Context.history_view.summary_label["text"]
 
-        assert load.history_view.tree is not None
-        systems = load.history_view.tree.get_children()
+        assert Context.history_view.tree is not None
+        systems = Context.history_view.tree.get_children()
         assert len(systems) == 1
-        bodies = load.history_view.tree.get_children(systems[0])
+        bodies = Context.history_view.tree.get_children(systems[0])
         assert len(bodies) >= 1
 
         # Status is title-cased for display ("Sold" not "sold").
-        system_values = load.history_view.tree.item(systems[0], "values")
+        system_values = Context.history_view.tree.item(systems[0], "values")
         assert system_values[0] == "Sold"
 
-        load.history_view._on_close()
+        Context.history_view._on_close()
 
     def test_unsold_only_defaults_to_checked_and_hides_a_sold_system(self, plugin:TestHarness) -> None:
         plugin.load_events("explorer_events.json")
         plugin.play_sequence("full_walkthrough", 0.02) # this fixture's system ends up fully sold
 
-        import load
-        assert load.history_view is not None
-        load.history_view.open()
+        assert Context.history_view is not None
+        Context.history_view.open()
 
-        assert load.history_view.unsold_only_var is not None
-        assert load.history_view.unsold_only_var.get() is True
-        assert load.history_view.tree is not None
-        assert load.history_view.tree.get_children() == ()
+        assert Context.history_view.unsold_only_var is not None
+        assert Context.history_view.unsold_only_var.get() is True
+        assert Context.history_view.tree is not None
+        assert Context.history_view.tree.get_children() == ()
 
-        load.history_view._on_close()
+        Context.history_view._on_close()
 
     def test_toggling_unsold_only_persists_and_refreshes(self, plugin:TestHarness) -> None:
-        from explorer.constants import CFG_HISTORY_UNSOLD_ONLY
 
         plugin.load_events("explorer_events.json")
         plugin.play_sequence("full_walkthrough", 0.02)
 
-        import load
-        assert load.history_view is not None
-        load.history_view.open()
-        assert load.history_view.unsold_only_var is not None and load.history_view.tree is not None
+        assert Context.history_view is not None
+        Context.history_view.open()
+        assert Context.history_view.unsold_only_var is not None and Context.history_view.tree is not None
 
-        load.history_view.unsold_only_var.set(False)
-        load.history_view._on_filter_changed()
+        Context.history_view.unsold_only_var.set(False)
+        Context.history_view._on_filter_changed()
 
         assert plugin.config.get_bool(CFG_HISTORY_UNSOLD_ONLY, default=True) is False
-        assert len(load.history_view.tree.get_children()) == 1
+        assert len(Context.history_view.tree.get_children()) == 1
 
-        load.history_view._on_close()
+        Context.history_view._on_close()
 
     def test_tree_has_a_vertical_scrollbar(self, plugin:TestHarness) -> None:
         plugin.load_events("explorer_events.json")
         plugin.play_sequence("full_walkthrough", 0.02)
 
-        import load
-        assert load.history_view is not None
-        load.history_view.open()
-        assert load.history_view.tree is not None
+        assert Context.history_view is not None
+        Context.history_view.open()
+        assert Context.history_view.tree is not None
 
         # A Treeview manages scrolling itself -- the widget on screen is a sibling Scrollbar
         # wired to it, not a property of the tree, so check its yscrollcommand is actually set.
-        assert load.history_view.tree.cget("yscrollcommand") != ""
+        assert Context.history_view.tree.cget("yscrollcommand") != ""
 
-        load.history_view._on_close()
+        Context.history_view._on_close()
 
     def test_date_column_sorts_without_crashing_on_a_blank_date(self, plugin:TestHarness) -> None:
         """ A body with no Scan yet has no date -- the column must still be sortable rather
@@ -292,32 +286,29 @@ class TestHistoryViewPopup:
         plugin.load_events("explorer_events.json")
         plugin.play_sequence("full_walkthrough", 0.02)
 
-        import load
-        assert load.store is not None and load.explorer_state.cmdr_id is not None and load.explorer_state.system_id is not None
-        load.store.get_or_create_body(load.explorer_state.cmdr_id, load.explorer_state.system_id, 99, "Deltius A 99")
+        assert Context.store is not None and explorer_state.cmdr_id is not None and explorer_state.system_id is not None
+        Context.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 99, "Deltius A 99")
 
-        assert load.history_view is not None
-        load.history_view.open()
-        assert load.history_view.unsold_only_var is not None and load.history_view.tree is not None
-        load.history_view.unsold_only_var.set(False) # need the sold rows on-screen too
-        load.history_view.refresh()
+        assert Context.history_view is not None
+        Context.history_view.open()
+        assert Context.history_view.unsold_only_var is not None and Context.history_view.tree is not None
+        Context.history_view.unsold_only_var.set(False) # need the sold rows on-screen too
+        Context.history_view.refresh()
 
-        load.history_view.tree._sort_by_name("date", False) # must not raise despite a blank date among the rows
+        Context.history_view.tree._sort_by_name("date", False) # must not raise despite a blank date among the rows
 
-        load.history_view._on_close()
+        Context.history_view._on_close()
 
     def test_close_saves_the_windows_current_geometry(self, plugin:TestHarness) -> None:
         plugin.load_events("explorer_events.json")
         plugin.play_sequence("full_walkthrough", 0.02)
 
-        import load
-        from explorer.constants import CFG_HISTORY_WINDOW_GEOMETRY
 
-        assert load.history_view is not None
-        load.history_view.open()
-        assert load.history_view.window is not None
-        current_geometry:str = load.history_view.window.geometry()
-        load.history_view._on_close()
+        assert Context.history_view is not None
+        Context.history_view.open()
+        assert Context.history_view.window is not None
+        current_geometry:str = Context.history_view.window.geometry()
+        Context.history_view._on_close()
 
         assert plugin.config.get_str(CFG_HISTORY_WINDOW_GEOMETRY, default="") == current_geometry
 
@@ -325,9 +316,7 @@ class TestHistoryViewPopup:
         plugin.load_events("explorer_events.json")
         plugin.play_sequence("full_walkthrough", 0.02)
 
-        import load
         import tkinter as tk
-        from explorer.constants import CFG_HISTORY_WINDOW_GEOMETRY
 
         plugin.config.set(CFG_HISTORY_WINDOW_GEOMETRY, "620x480+15+15")
         requested:list[str] = []
@@ -340,24 +329,22 @@ class TestHistoryViewPopup:
 
         monkeypatch.setattr(tk.Toplevel, "geometry", _spy_geometry)
 
-        assert load.history_view is not None
-        load.history_view.open()
+        assert Context.history_view is not None
+        Context.history_view.open()
         assert "620x480+15+15" in requested
-        load.history_view._on_close()
+        Context.history_view._on_close()
 
     def test_refresh_without_open_window_is_a_safe_noop(self, plugin:TestHarness) -> None:
-        import load
-        assert load.history_view is not None
-        load.history_view.refresh() # never opened -- must not raise
+        assert Context.history_view is not None
+        Context.history_view.refresh() # never opened -- must not raise
 
     def test_panel_history_button_opens_the_popup(self, plugin:TestHarness) -> None:
-        import load
-        assert load.panel is not None
-        load.panel._open_history()
+        assert Context.panel is not None
+        Context.panel._open_history()
 
-        assert load.history_view is not None
-        assert load.history_view.window is not None
-        load.history_view._on_close()
+        assert Context.history_view is not None
+        assert Context.history_view.window is not None
+        Context.history_view._on_close()
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v', '--tb=short'])

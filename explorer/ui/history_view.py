@@ -72,7 +72,9 @@ class HistoryView:
         filter_row.pack(fill=tk.X, padx=4, pady=4)
 
         self.unsold_only_var = tk.BooleanVar(value=config.get_bool(CFG_HISTORY_UNSOLD_ONLY, default=True))
-        unsold_check:tk.Checkbutton = tk.Checkbutton(filter_row, text="Unsold only", variable=self.unsold_only_var, command=self._on_filter_changed)
+        unsold_check:tk.Checkbutton = tk.Checkbutton(
+            filter_row, text="Unsold only", variable=self.unsold_only_var, command=self._on_filter_changed,
+        )
         unsold_check.pack(side=tk.LEFT)
 
         self.time_range_var = tk.StringVar(value=config.get_str(CFG_HISTORY_TIME_RANGE, default=DEFAULT_HISTORY_TIME_RANGE))

@@ -7,7 +7,7 @@ implementation plan for the rationale behind each table.
 """
 import sqlite3
 
-SCHEMA_VERSION = 10
+SCHEMA_VERSION = 11
 
 DDL = """
 CREATE TABLE IF NOT EXISTS schema_meta (
@@ -97,7 +97,7 @@ CREATE TABLE IF NOT EXISTS species_progress (
     sold_value INTEGER,
     sold_at TEXT,
     lost_at TEXT, -- completed data lost (ship destroyed) before it could be sold
-    UNIQUE(body_id, genus)
+    UNIQUE(body_id, genus, species) -- one row per species, a body can host several of a genus
 );
 
 CREATE TABLE IF NOT EXISTS sale_events (
@@ -151,8 +151,7 @@ def _ensure_columns(conn:sqlite3.Connection) -> None:
     conn.commit()
 
 def _migrate_genus_predictions_species_column(conn:sqlite3.Connection) -> None:
-    """ v3->v4: genus_predictions gains a `species` column. SQLite can't ALTER a UNIQUE constraint
-    in place, so drop the table -- it's fully derived/ephemeral, the DDL below recreates it fresh. """
+    """ v3->v4: genus_predictions gains a species column -- dropped and DDL-recreated since it's fully derived. """
     tables:set[str] = {row[0] for row in conn.execute("SELECT name FROM sqlite_master WHERE type = 'table'")}
     if "genus_predictions" not in tables:
         return
@@ -161,10 +160,31 @@ def _migrate_genus_predictions_species_column(conn:sqlite3.Connection) -> None:
         conn.execute("DROP TABLE genus_predictions")
         conn.commit()
 
+def _migrate_progress_unique(conn:sqlite3.Connection) -> None:
+    """ v10->v11: species_progress was UNIQUE(body_id, genus), set aside here and copied back after the DDL recreates it. """
+    row:sqlite3.Row|None = conn.execute("SELECT sql FROM sqlite_master WHERE name = 'species_progress'").fetchone()
+    if not row or "UNIQUE(body_id, genus)" not in row[0]: return
+
+    conn.execute("ALTER TABLE species_progress RENAME TO species_progress_old")
+    conn.commit()
+
+def _copy_progress_back(conn:sqlite3.Connection) -> None:
+    tables:set[str] = {row[0] for row in conn.execute("SELECT name FROM sqlite_master WHERE type = 'table'")}
+    if "species_progress_old" not in tables: return
+
+    old:set[str] = {row[1] for row in conn.execute("PRAGMA table_info(species_progress_old)")}
+    new:set[str] = {row[1] for row in conn.execute("PRAGMA table_info(species_progress)")}
+    cols:str = ", ".join(sorted(old & new))
+    conn.execute(f"INSERT INTO species_progress ({cols}) SELECT {cols} FROM species_progress_old")
+    conn.execute("DROP TABLE species_progress_old")
+    conn.commit()
+
 def ensure_schema(conn:sqlite3.Connection) -> None:
     """ Create tables if they don't exist yet, add any new columns, and stamp/verify the schema version. """
     _migrate_genus_predictions_species_column(conn) # must run BEFORE the DDL recreates the table
+    _migrate_progress_unique(conn) # likewise
     conn.executescript(DDL)
+    _copy_progress_back(conn)
     _ensure_columns(conn)
 
     row:sqlite3.Row|None = conn.execute("SELECT value FROM schema_meta WHERE key = 'version'").fetchone()
