@@ -7,6 +7,7 @@ import tkinter.font as tkfont
 import sqlite3
 import re
 from functools import partial
+from pathlib import Path
 from typing import Callable
 
 from config import config # type: ignore
@@ -22,6 +23,7 @@ from explorer.valuation import cartography, exobiology, exobiology_data, signal_
 from explorer.constants import CFG_VISIBLE_LINES, DEFAULT_VISIBLE_LINES, CFG_PANEL_ENABLED, CFG_BODY_SORT, DEFAULT_BODY_SORT, PLUGIN_NAME
 
 HISTORY_GLYPH:str = "\U0001F553" # clock face
+ICON_PATH:Path = Path(__file__).resolve().parents[2] / "assets" / "icon_20.png"
 
 WIDTH_CHARS:int = 60
 LINE_HEIGHT_PX:int = 18
@@ -144,6 +146,9 @@ class ExplorerPanel:
         self.view.collapsed.columnconfigure(0, weight=1)
 
         self._title_font:tkfont.Font = _bold_font()
+        self._icon:tk.PhotoImage|None = None
+        try: self._icon = tk.PhotoImage(master=parent, file=ICON_PATH)
+        except tk.TclError: pass # missing/unreadable icon just leaves the plain title
         self.title_label, self.cart_value_label, self.exo_value_label, self.history_button, self.hide_button = \
             self._build_header(self.view.expanded, True)
         _, self._cart_collapsed, self._exo_collapsed, _, self.show_button = self._build_header(self.view.collapsed, False)
@@ -191,6 +196,7 @@ class ExplorerPanel:
 
         title:th.Label = th.Label(header, text=PLUGIN_NAME, font=self._title_font, anchor="w")
         title.grid(row=0, column=0, sticky=tk.W)
+        if not expanded and self._icon: title.configure(image=self._icon, compound=tk.LEFT)
 
         cart:th.Label = th.Label(header, text=format_pending_credits(0), anchor="w", width=10)
         cart.grid(row=0, column=1, sticky=tk.W)
