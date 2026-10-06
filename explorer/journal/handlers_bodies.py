@@ -8,6 +8,7 @@ from config import config # type: ignore
 
 from explorer.db.store import ExplorerStore
 from explorer.state import ExplorerState
+from explorer.journal.handlers_context import persist
 from explorer.util import now_iso
 from explorer.valuation import cartography, exobiology, exobiology_data, genus_prediction
 from explorer.constants import (
@@ -180,6 +181,7 @@ def on_saa_signals_found(store:ExplorerStore, state:ExplorerState, entry:dict) -
     if genuses:
         state.last_bio_body_id = body_id
         state.last_bio_body_name = entry.get("BodyName", "")
+        persist(state) # so an EDMC restart in orbit still shows this body's genera
 
     value_max_overall:int = 0
     for g in genuses:

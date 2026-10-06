@@ -8,8 +8,9 @@ from explorer import session_persist
 from explorer.util import split_localised_color
 from explorer.valuation import exobiology_data
 
-def _persist(state:ExplorerState) -> None:
-    session_persist.save(state.cmdr, state.system_address, state.system_name, state.body_id, state.body_name)
+def persist(state:ExplorerState) -> None:
+    session_persist.save(state.cmdr, state.system_address, state.system_name, state.body_id, state.body_name,
+                         state.last_bio_body_id, state.last_bio_body_name)
 
 def _restore_sample_positions(store:ExplorerStore, state:ExplorerState) -> None:
     """ Reloads this visit's radar samples on restart. """
@@ -40,13 +41,15 @@ def restore_last_session(store:ExplorerStore, state:ExplorerState) -> None:
     state.system_id = store.get_or_create_system(state.cmdr_id, system_address, state.system_name)
     state.body_id = saved.get("body_id")
     state.body_name = saved.get("body_name") or ""
+    state.last_bio_body_id = saved.get("last_bio_body_id")
+    state.last_bio_body_name = saved.get("last_bio_body_name") or ""
     state.restored_at_startup = True
     _restore_sample_positions(store, state) # else the radar starts blank until the next jump
 
 def on_load_game(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict:
     state.reset_body()
     if not state.restored_at_startup: # don't overwrite the still-unconfirmed resumable snapshot on disk
-        _persist(state)
+        persist(state)
     return {"panel": True}
 
 def on_continued(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict:
@@ -74,20 +77,22 @@ def enter_system(store:ExplorerStore, state:ExplorerState, edmc_state:dict) -> d
     if saved and saved.get("cmdr") == state.cmdr and saved.get("system_address") == system_address:
         state.body_id = saved.get("body_id")
         state.body_name = saved.get("body_name") or ""
+        state.last_bio_body_id = saved.get("last_bio_body_id")
+        state.last_bio_body_name = saved.get("last_bio_body_name") or ""
         _restore_sample_positions(store, state)
 
-    _persist(state)
+    persist(state)
     return {"panel": True, "overlay": "radar"}
 
 def on_start_jump(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict:
     state.reset_body()
-    _persist(state)
+    persist(state)
     return {}
 
 def on_approach_body(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict:
     state.body_id = entry.get("BodyID")
     state.body_name = entry.get("Body", "")
-    _persist(state)
+    persist(state)
     return {"panel": True, "overlay": "radar"}
 
 def on_supercruise_exit(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict:
@@ -99,12 +104,12 @@ def on_supercruise_exit(store:ExplorerStore, state:ExplorerState, entry:dict) ->
         return {}
     state.body_id = body_id
     state.body_name = entry.get("Body", "")
-    _persist(state)
+    persist(state)
     return {"panel": True, "overlay": "radar"}
 
 def on_leave_body(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict:
     state.reset_body()
-    _persist(state)
+    persist(state)
     return {"panel": True, "overlay": "radar"}
 
 def on_touchdown(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict:
