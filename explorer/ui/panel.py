@@ -23,7 +23,7 @@ from explorer.valuation import cartography, exobiology, exobiology_data, signal_
 from explorer.constants import CFG_VISIBLE_LINES, DEFAULT_VISIBLE_LINES, CFG_PANEL_ENABLED, CFG_BODY_SORT, DEFAULT_BODY_SORT, PLUGIN_NAME
 
 HISTORY_GLYPH:str = "\U0001F553" # clock face
-ICON_PATH:Path = Path(__file__).resolve().parents[2] / "assets" / "icon_20.png"
+ICON_PATH:Path = Path(__file__).resolve().parents[2] / "assets" / "icon_20_color.png"
 
 WIDTH_CHARS:int = 60
 LINE_HEIGHT_PX:int = 18

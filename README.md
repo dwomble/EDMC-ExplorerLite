@@ -1,4 +1,4 @@
-<img src="assets/logo.png" width="125" height="125" alt="ExplorerLite logo">
+<img src="assets/logo_color.png" width="125" height="125" alt="ExplorerLite logo">
 
 # EDMC-ExplorerLite
 
