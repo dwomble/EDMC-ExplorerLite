@@ -194,9 +194,11 @@ class ExplorerPanel:
         header.columnconfigure(1, weight=1)
         header.columnconfigure(2, weight=1)
 
-        title:th.Label = th.Label(header, text=PLUGIN_NAME, font=self._title_font, anchor="w")
-        title.grid(row=0, column=0, sticky=tk.W)
-        if not expanded and self._icon: title.configure(image=self._icon, compound=tk.LEFT)
+        brand:th.Frame = th.Frame(header)
+        brand.grid(row=0, column=0, sticky=tk.W)
+        if self._icon: th.Label(brand, image=self._icon).grid(row=0, column=0, padx=(0, 5))
+        title:th.Label = th.Label(brand, text=PLUGIN_NAME, font=self._title_font, anchor="w")
+        title.grid(row=0, column=1, sticky=tk.W)
 
         cart:th.Label = th.Label(header, text=format_pending_credits(0), anchor="w", width=10)
         cart.grid(row=0, column=1, sticky=tk.W)

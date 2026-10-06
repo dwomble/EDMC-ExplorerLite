@@ -1,3 +1,5 @@
+<img src="assets/logo.png" width="125" height="125" alt="ExplorerLite logo">
+
 # EDMC-ExplorerLite
 
 ![Python](https://img.shields.io/badge/Python-3.x-blue?logo=python)
