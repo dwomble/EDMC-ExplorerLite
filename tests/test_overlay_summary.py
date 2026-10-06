@@ -85,6 +85,28 @@ class TestSystemSummaryOverlay:
         assert f"{FRAME_PREFIX}body-{MAX_BODY_LINES}" not in messages
         assert messages[f"{FRAME_PREFIX}overflow"][1] == "+2 more"
 
+    def test_species_lines_count_toward_the_cap(self, plugin:TestHarness) -> None:
+        plugin.load_events("explorer_events.json")
+        plugin.play_sequence("honk_only", 0.02)
+
+        assert Context.store is not None and Context.summary_overlay is not None
+        assert explorer_state.cmdr_id is not None and explorer_state.system_id is not None
+        for body_id in range(1, MAX_BODY_LINES + 3):
+            body_pk:int = Context.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, body_id, f"QuietSpace A {body_id}")
+            Context.store.update_body(body_pk, flagged_value=1, estimated_scan_value=1_000_000, was_discovered=1, was_mapped=1)
+        focus_pk:int = Context.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, 1, "QuietSpace A 1")
+        for genus in ("Bacterium", "Tussock", "Stratum", "Fungoida"):
+            Context.store.get_or_create_species_progress(focus_pk, genus)
+        explorer_state.body_id = 1
+        explorer_state.body_name = "QuietSpace A 1"
+
+        Context.summary_overlay.render(Context.store, explorer_state)
+
+        messages = Context.summary_overlay.overlay._overlay.messages
+        assert f"{FRAME_PREFIX}current-3" in messages # all four species listed, none truncated
+        assert f"{FRAME_PREFIX}body-1" in messages and f"{FRAME_PREFIX}body-2" not in messages # 1 + 4 + 1 rows
+        assert messages[f"{FRAME_PREFIX}overflow"][1] == f"+{MAX_BODY_LINES} more"
+
     def test_render_shows_current_body_species_progress(self, plugin:TestHarness) -> None:
         """
         Real feature gap: the overlay only ever mirrored the top-level flagged-body list, never

@@ -22,7 +22,7 @@ ANCHOR_Y:int = 20
 LINE_HEIGHT_PX:int = 20
 HEADER_LINE_HEIGHT_PX:int = 25 # "large" text needs more room than LINE_HEIGHT_PX
 CURRENT_BODY_INDENT_PX:int = 20 # matches panel's own indent treatment
-MAX_BODY_LINES:int = 6 # no scrolling on the overlay, unlike the panel
+MAX_BODY_LINES:int = 6 # no scrolling on the overlay, unlike the panel; body rows and the current body's species both count
 
 TTL:int = 300
 OVERFLOW_COLOR:str = "#999999" # same grey as radar's rings, a subdued hint
@@ -124,8 +124,14 @@ class SystemSummaryOverlay:
             if row is not None:
                 rows.append((body["body_id"], _format_body_line(row)))
 
-        shown:list[tuple[int, str]] = rows[:MAX_BODY_LINES]
         current_lines:list[str] = self._current_body_lines(store, state)
+        shown:list[tuple[int, str]] = []
+        used:int = 0
+        for body_id, line in rows:
+            if used >= MAX_BODY_LINES: break
+            shown.append((body_id, line))
+            used += 1 + (len(current_lines) if body_id == state.exobio_focus_body_id else 0)
+
         current_shown:bool = False # nests under the focus body, matching the panel
         for i, (body_id, line) in enumerate(shown):
             self.overlay.send_text(f"{FRAME_PREFIX}body-{i}", line, color, ANCHOR_X, next_y, ttl=TTL)
