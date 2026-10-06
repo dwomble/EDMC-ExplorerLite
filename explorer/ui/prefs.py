@@ -44,7 +44,7 @@ SECTIONS:list[tuple[str, list[Pref]]] = [
     ]),
     ("Display", [
         Pref('choice', CFG_BODY_SORT, "Body sort order", DEFAULT_BODY_SORT,
-             "How listed bodies are ordered: by name (A 2 before A 10), or highest value first.", BODY_SORTS),
+             "How listed bodies are ordered: by name (A 2 before A 10), highest value first, or nearest the arrival star first.", BODY_SORTS),
     ]),
     (OVERLAYS_SECTION, [
         Pref('bool', CFG_OVERLAY_RADAR_ENABLED, "Show radar overlay", True, "When near a body with cartography potential, show a radar overlay of scans and waypoints."),

@@ -327,8 +327,9 @@ class ExplorerPanel:
     def sorted_flagged(self, system_id:int) -> list[sqlite3.Row]:
         """ Flagged bodies in the CFG_BODY_SORT order; ties keep body_id order. """
         bodies:list[sqlite3.Row] = self.store.get_flagged_bodies(system_id)
-        if config.get_str(CFG_BODY_SORT, default=DEFAULT_BODY_SORT) == "Value":
-            return sorted(bodies, key=lambda b: tuple(-v for v in self._flagged_body_value(b)))
+        mode:str = config.get_str(CFG_BODY_SORT, default=DEFAULT_BODY_SORT)
+        if mode == "Value": return sorted(bodies, key=lambda b: tuple(-v for v in self._flagged_body_value(b)))
+        if mode == "Distance": return sorted(bodies, key=lambda b: b["distance_ls"] if b["distance_ls"] is not None else float("inf"))
 
         return sorted(bodies, key=lambda b: [int(c) if c.isdigit() else c.lower() for c in re.split(r"(\d+)", b["body_name"])])
 

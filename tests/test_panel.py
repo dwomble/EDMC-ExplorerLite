@@ -285,11 +285,11 @@ class TestPanelStates:
         assert Context.store is not None and Context.panel is not None
         assert explorer_state.cmdr_id is not None and explorer_state.system_id is not None
 
-        for body_id, num, value in ((1, 9, 1_000_000), (2, 10, 3_000_000), (3, 2, 2_000_000)):
+        for body_id, num, value, dist in ((1, 9, 1_000_000, 100), (2, 10, 3_000_000, 300), (3, 2, 2_000_000, 200)):
             pk:int = Context.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, body_id, f"QuietSpace {num}")
-            Context.store.update_body(pk, flagged_value=1, estimated_scan_value=value, was_discovered=1, was_mapped=1)
+            Context.store.update_body(pk, flagged_value=1, estimated_scan_value=value, was_discovered=1, was_mapped=1, distance_ls=dist)
 
-        for mode, expected in (("Name", [2, 9, 10]), ("Value", [10, 2, 9])): # name order is numeric-aware
+        for mode, expected in (("Name", [2, 9, 10]), ("Value", [10, 2, 9]), ("Distance", [9, 2, 10])): # name order is numeric-aware
             plugin.config.set(CFG_BODY_SORT, mode)
             Context.panel.refresh()
             lines = _panel_lines()

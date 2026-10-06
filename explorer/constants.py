@@ -28,7 +28,7 @@ DEFAULT_VISIBLE_LINES:int = 5
 DEFAULT_OVERLAY_RADAR_SIZE:int = 150 # on-screen pixel radius, matches overlay_frames.py's original hardcoded RADIUS_PX
 DEFAULT_OVERLAY_SUMMARY_TEXT_COLOR:str = "#ffffff"
 DEFAULT_HISTORY_TIME_RANGE:str = "All time"
-BODY_SORTS:tuple[str, ...] = ("Name", "Value")
+BODY_SORTS:tuple[str, ...] = ("Name", "Value", "Distance")
 DEFAULT_BODY_SORT:str = "Name"
 
 DB_FILENAME:str = "explorer.sqlite"
