@@ -198,14 +198,14 @@ class TestRadarSampleCircles:
     def test_edge_circle_stays_in_bounds(self, overlay_mode, store:ExplorerStore) -> None:
         state = _landed_state(store, samples=0)
         state.current_genus = "Bacterium"
-        state.sample_positions["Bacterium"] = [(10.277, 20.0, None, False)] # ~2.4km north, just inside the outer ring
+        state.sample_positions["Bacterium"] = [(10.2423, 20.0, None, False)] # ~2.1km north, just inside the outer ring
         shapes = self._render(store, state)
 
         _, _, c = shapes[f"{FRAME_PREFIX}circle-Bacterium-0"]
         r:int = DEFAULT_OVERLAY_RADAR_SIZE
         assert abs(c["x"] - CENTER_X) + c["radius"] <= r
         assert abs(c["y"] - CENTER_Y) + c["radius"] <= r
-        assert 0 < c["radius"] < 20 # shrunk from its true ~29px
+        assert 0 < c["radius"] < 20 # shrunk from its true ~33px
 
     @pytest.mark.overlay('Modern')
     def test_other_genus_samples_get_no_circle(self, overlay_mode, store:ExplorerStore) -> None:

@@ -46,10 +46,10 @@ ACTIVE_BORDER_ALPHA:int = 0xFF
 # Disabled: ring/label for a tagged-but-unapproached genus (kept for possible future use).
 SHOW_TAGGED_GENUS:bool = False
 
-RING_DISTANCES_M:tuple[int, ...] = (833, 1667, 2500) # the radar scale is linear, so evenly spaced
+RING_DISTANCES_M:tuple[int, ...] = (750, 1500, 2250) # the radar scale is linear, so evenly spaced
 DISPLAY_RANGE_M:float = float(max(RING_DISTANCES_M)) # the "in range" boundary
 
-EDGE_DISPLAY_M:float = 2560.0 # radar's true edge -- a bit past the outer ring, margin for out-of-range dots
+EDGE_DISPLAY_M:float = 2304.0 # radar's true edge -- a bit past the outer ring, margin for out-of-range dots
 RING_AREA_FRAC:float = DISPLAY_RANGE_M / EDGE_DISPLAY_M
 
 def _radius_frac(distance_m:float) -> float:
