@@ -73,7 +73,7 @@ CODEX_TAG_COLORS:dict[str, str] = {
     "Cyan": "#00e5e5", "Emerald": "#2ecc71", "Gold": "#ffd700", "Green": "#14ac14",
     "Grey": "#aaaaaa", "Indigo": "#793cf4", "Lime": "#bfff00", "Magenta": "#ff33ff",
     "Maroon": "#aa3344", "Mauve": "#be53be", "Mulberry": "#B93175", "Ocher": "#cfa528",
-    "Orange": "#ff8822", "Peach": "#ffaa88", "Red": "#ee3333", "Sage": "#889977",
+    "Orange": "#ff8822", "Peach": "#ffaa88", "Red": "#ee3333", "Rose": "#ff7799", "Sage": "#889977",
     "Teal": "#0C9D87", "Turquoise": "#33cccc", "White": "#eeeeee", "Yellow": "#eedd22",
 }
 DEFAULT_TAG_COLOR:str = "#ff66aa"

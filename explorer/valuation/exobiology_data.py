@@ -199,6 +199,19 @@ SPECIES_VALUE:dict[str, dict[str, int]] = {
 # Confirmed: total payout for a first-logged sample = base value x 5 (i.e. base + 4x bonus).
 FIRST_LOGGED_BONUS_MULTIPLIER:int = 5
 
+# Brain Tree, Sinuous Tuber and Anemone species have no variant colour in the journal, so the radar uses the colour each name implies.
+SPECIES_COLORS:dict[str, str] = {
+    "Brain Tree Aureum": "Gold", "Brain Tree Gypseeum": "White", "Brain Tree Lindigoticum": "Indigo",
+    "Brain Tree Lividum": "Cobalt", "Brain Tree Ostrinum": "Amethyst", "Brain Tree Puniceum": "Red",
+    "Brain Tree Roseum": "Rose", "Brain Tree Viride": "Green",
+    "Sinuous Tuber Albidum": "White", "Sinuous Tuber Blatteum": "Mulberry", "Sinuous Tuber Caeruleum": "Blue",
+    "Sinuous Tuber Lindigoticum": "Indigo", "Sinuous Tuber Prasinum": "Emerald", "Sinuous Tuber Roseus": "Rose",
+    "Sinuous Tuber Violaceum": "Mauve", "Sinuous Tuber Viride": "Green",
+    "Anemone Blatteum Bioluminescent": "Mulberry", "Anemone Croceum": "Orange", "Anemone Luteolum": "Yellow",
+    "Anemone Prasinum Bioluminescent": "Emerald", "Anemone Puniceum": "Red", "Anemone Roseum": "Rose",
+    "Anemone Roseum Bioluminescent": "Rose", "Anemone Rubeum Bioluminescent": "Maroon",
+}
+
 def genus_code(genus:str) -> str:
     """ Confirmed unique across all 21 genera above. """
     return genus[:3].upper()

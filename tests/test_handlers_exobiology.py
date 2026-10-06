@@ -250,6 +250,24 @@ class TestGameNames:
             ("Brain Tree Roseum", True, 1_593_700), ("Brain Tree Puniceum", True, 3_565_100),
         ]
 
+    def test_brain_tree_gets_its_species_colour(self, store:ExplorerStore) -> None:
+        state = self._state(store)
+        state.has_lat_long, state.latitude, state.longitude = True, 2.0, 103.0
+        handlers_exobiology.on_scan_organic(store, state, {
+            "ScanType": "Log", "Body": 5, "Genus_Localised": "Brain Trees", "Species_Localised": "Roseum Brain Tree",
+            "Variant_Localised": "Roseum Brain Tree",
+        })
+        handlers_exobiology.on_codex_entry(store, state, {
+            "SubCategory": ORGANIC_SUBCATEGORY, "BodyID": 5, "Latitude": 2.5, "Longitude": 103.0, "Name_Localised": "Viride Brain Tree",
+        })
+
+        assert [p[2] for p in state.sample_positions["Brain Tree"]] == ["Rose", "Green"]
+
+    def test_species_colours_are_known_names(self) -> None:
+        from explorer.ui.overlay_frames import CODEX_TAG_COLORS
+        assert set(exobiology_data.SPECIES_COLORS.values()) <= set(CODEX_TAG_COLORS)
+        assert all(exobiology_data.genus_from_species_name(s) for s in exobiology_data.SPECIES_COLORS)
+
     def test_regular_names_pass_through(self) -> None:
         assert exobiology_data.canon_genus("Bacterium") == "Bacterium"
         assert exobiology_data.canon_species("Tussock Propagito") == "Tussock Propagito"
