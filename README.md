@@ -10,7 +10,7 @@ An unobtrusive, lightweight exploration and exobiology assistant for [EDMC](http
 
 <img width="478" height="47" alt="Screenshot 2026-08-16 215121" src="https://github.com/user-attachments/assets/92830698-5053-4837-85f4-17b48ed7cbc1" />
 
-At every stage of exploring a system ExplorerLite tells you whether it's worth your time and what's worth doing next, in a clean, compact panel that gets out of the way when there's nothing to report. It's designed to be lightweight and self-contained with overlay support for single-screen/VR/heads-up operation.
+At every stage of exploring a system ExplorerLite tells you whether it's worth your time and what's worth doing next, in a clean, compact panel that gets out of the way when there's nothing to report. It's designed to be lightweight and self-contained with overlay support for single-screen/heads-up operation.
 
 ## Key Features
 
@@ -61,19 +61,27 @@ When the FSS reports biological signals on a body, ExplorerLite indicates likely
 
 Per-species genetic sampling progress (`N/M scanned`) is shown live while you're on the body, along with the minimum distance required between samples for that genus. Values shown always include the first-discovery/first-logged bonus you'd actually be paid — not just the base value that only matters for in-game session-progression math.
 
+Waypoints solve the problem of the genetic sampler only doing on species at a time. If you find a location for a different species, tag it with the composition scanner and it gets added to the radar as a waypoint to return to later. As species are sampled their waypoints are automatically removed from the radar.
+
 <img width="406" height="177" alt="Screenshot 2026-08-16 215440" src="https://github.com/user-attachments/assets/cd1d5511-7c9f-4243-9878-236ebaba80fa" />
 
-## Overlay
+## Overlays
 
 Requires the [modern overlay](https://github.com/SweetJonnySauce/EDMCModernOverlay), the legacy `EDMCOverlay`/`edmcoverlay2` plugins aren't supported. Without it, ExplorerLite still works fully — the overlay is a heads-up convenience, not a requirement. The panel's 👁/🙈 header toggle hides both overlay elements too, alongside the panel's own content. Both also hide automatically whenever they'd just be in the way — docked, on-foot inside a station, with any ship/on-foot panel (galaxy map, system map, station services, etc.) open, etc..
 
-Two independently toggleable overlay elements:
+Two independently configurable overlays:
 
-- **System summary** — mirrors the panel's own header and flagged-body list (same columns: distance, gravity, type, value), capped to a handful of lines (with a "+N more" overflow) so it stays glanceable. The body you're currently standing on gets its own indented species-progress detail underneath. Text colour is configurable. Background, border and position are configurable via Modern Overlay's overlay controller.
+### System summary
 
-- **Radar** — centered on you, shows distance rings, a highlighted ring at the current genus's minimum sample distance, a marker for each logged sample (filled = in range, hollow = out of range), and a hollow triangle for any comp. scanner-tagged waypoint, colored by variant. Rotates with your heading. Radar size is configurable.
+Mirrors the panel's own header and flagged-body list (same columns: distance, gravity, type, value), capped to a handful of lines (with a "+N more" overflow) so it stays glanceable. The body you're currently walking, driving, or flying on/over gets its own indented species-progress detail underneath. Text colour is configurable. Background, border and position are configurable via Modern Overlay's overlay controller.
 
-<img width="200" height="196" alt="Screenshot 2026-08-16 182145" src="https://github.com/user-attachments/assets/6dca3cd4-35f2-4770-8d06-a8da67d768fd" />
+### Sample radar
+
+Offers two alternate views. Both are centered on you with distance rings, a square for each logged sample (filled = in range, hollow = out of range) and a hollow triangle for each tagged waypoint, both colored by variant. Both views rotate with your heading and their size, border, background, and position are configurable.
+
+The difference is that the first view is commander focused showing a highlighted ring the size of the current genus' minimum sample distance centered on your current location. The alternate view is sample-focused showing a ring around each sample and waypoint showing that genus' minimum sample distance. This version requires a circle-capable overlay such as [ModernOverlay v0.9.2](https://github.com/SweetJonnySauce/EDMCModernOverlay/releases) or later.
+
+<img width="200" height="196" alt="Standard radar view" src="https://github.com/user-attachments/assets/6dca3cd4-35f2-4770-8d06-a8da67d768fd" />
 
 ## Panel header
 

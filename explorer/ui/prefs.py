@@ -50,7 +50,7 @@ SECTIONS:list[tuple[str, list[Pref]]] = [
         Pref('bool', CFG_OVERLAY_RADAR_ENABLED, "Show radar overlay", True, "When near a body with cartography potential, show a radar overlay of scans and waypoints."),
         Pref('bool', CFG_OVERLAY_SUMMARY_ENABLED, "Show summary overlay", True, "Display a summary of cartography and exobiology data."),
         Pref('threshold', CFG_OVERLAY_RADAR_SIZE, "Radar size", DEFAULT_OVERLAY_RADAR_SIZE, "Pixel radius of the radar overlay."),
-        Pref('bool', CFG_OVERLAY_RADAR_CIRCLES, "Sample-centric radar", True, "Show scan distance as circle around each scan or waypoint rather than\nthe default single minimum distance from current location (requires circle-capable overlay)."),
+        Pref('bool', CFG_OVERLAY_RADAR_CIRCLES, "Sample-focused radar", True, "Show scan distance as circle around each sample (scan or waypoint) rather than\nthe default Commander-focused single minimum distance circle around the current location (requires circle-capable overlay)."),
         Pref('color', CFG_OVERLAY_SUMMARY_TEXT_COLOR, "Summary overlay text colour", DEFAULT_OVERLAY_SUMMARY_TEXT_COLOR, "Colour of the text displayed in the summary overlay."),
     ]),
     ("Debug", [

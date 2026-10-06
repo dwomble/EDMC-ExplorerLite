@@ -1,19 +1,23 @@
 # EDMC-ExplorerLite Changelog
 
-## v1.5.0 2026-??-??
+## v1.5.0 2026-10-??
 
 ### New Features
 
-* A second radar overlay option to show minimum scan distance as a circle around the location of the biological for each scan or waypoint.
-* Added body sort order options for name or value sorting.
+* A second radar overlay option to show minimum scan distance as a circle around the location of the biological for each scan or waypoint
+* Added sort order options for body name, distance, or estimated value
+* Added colors for biologicals that don't have a color but whose species indicates their color
 
 ### Changes
 
-* Tweaks to the species colours to make them more visible
+* Adjusted species colors to make them more visible
+* Tidied up the preferences and added tooltips for more detail
 
 ### Bug Fixes
 
 * An error where braintrees weren't being properly recorded
+* Fixed length and height of summary overlay
+* An error where Explorer didn't remember the last DSSed body over a restart
 
 ## v1.1.0 2026-09-15
 
