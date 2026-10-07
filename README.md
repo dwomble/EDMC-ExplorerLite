@@ -81,9 +81,17 @@ Mirrors the panel's own header and flagged-body list (same columns: distance, gr
 
 Offers two alternate views. Both are centered on you with distance rings, a square for each logged sample (filled = in range, hollow = out of range) and a hollow triangle for each tagged waypoint, both colored by variant. Both views rotate with your heading and their size, border, background, and position are configurable.
 
-The difference is that the first view is commander focused showing a highlighted ring the size of the current genus' minimum sample distance centered on your current location. The alternate view is sample-focused showing a ring around each sample and waypoint showing that genus' minimum sample distance. This version requires a circle-capable overlay such as [ModernOverlay v0.9.2](https://github.com/SweetJonnySauce/EDMCModernOverlay/releases) or later.
+The difference is that the first view is commander-focused showing a highlighted ring the size of the current genus' minimum sample distance centered on your current location. The alternate view is sample-focused showing a ring around each sample and waypoint showing that genus' minimum sample distance. This version requires a circle-capable overlay such as [ModernOverlay v0.9.2](https://github.com/SweetJonnySauce/EDMCModernOverlay/releases) or later.
 
-<img width="200" height="196" alt="Standard radar view" src="https://github.com/user-attachments/assets/6dca3cd4-35f2-4770-8d06-a8da67d768fd" />
+**Commander-focused (without and with ModernOverlay >=0.9.2**
+
+<img width="200" height="196" alt="Commander-focused radar view" src="https://github.com/user-attachments/assets/6dca3cd4-35f2-4770-8d06-a8da67d768fd" />
+<img width="200" height="196" alt="Commander-focused radar view with circle support" src="https://github.com/user-attachments/assets/65908aaf-ae89-4509-b423-85328465d9d7" />
+
+**Sample-focused**
+
+<img width="200" height="196" alt="Sample-focused radar view" src="https://github.com/user-attachments/assets/1403aa39-057b-47df-91a6-1d916bef89d3" />
+<img width="200" height="196" alt="Sample-focused radar view" src="https://github.com/user-attachments/assets/75dfc5c5-c5dd-4c35-8c12-f6136a4d2835" />
 
 ## Panel header
 
