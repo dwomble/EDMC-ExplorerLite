@@ -145,6 +145,7 @@ class RadarOverlay:
         self._halt:threading.Event = threading.Event()
         self._sweep_r:float = 0.0
         self._seen:float = 0.0 # monotonic time of the last render() that actually drew the radar
+        self._snap:tuple|None = None
 
     def _log_skip(self, reason:str|None) -> None:
         """ Avoid spamming duplicates """
@@ -225,6 +226,10 @@ class RadarOverlay:
 
         self._draw_player()
 
+        snap:tuple = (tuple(genera), tuple(len(state.sample_positions.get(g, [])) for g in genera), state.planet_radius is not None)
+        if snap != self._snap:
+            self._snap = snap
+            Debug.logger.debug(f"Radar drawing genera={snap[0]} positions={snap[1]} radius_known={snap[2]}")
         if time.monotonic() - began > 0.1: Debug.logger.debug(f"Radar render took {time.monotonic() - began:.2f}s")
         if not config.get_bool(CFG_OVERLAY_RADAR_SWEEP, default=False):
             self._seen = 0.0
