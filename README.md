@@ -137,6 +137,7 @@ This plugin was conceived, specified, and designed by a human. The code was subs
 - Cartography value constants cross-checked against two independent community sources, including the Frontier forums' "Exploration value formulae" thread.
 - Exobiology species value/distance data sourced from the Elite Dangerous Fandom wiki's "Exobiology Sample Values and Details" page, cross-checked against [njthomson/SrvSurvey](https://github.com/njthomson/SrvSurvey)'s organic-scanning reference.
 - Genus spawn-condition data independently transcribed from public sources, cross-checked against [Silarn/EDMC-BioScan](https://github.com/Silarn/EDMC-BioScan) (GPLv2) and ed-dsn.net's community temperature-band data.
+- Surface mining data independently transcribed from the community prospecting survey published by EDIntel and distributed by [Fumlop/EDRhinoSpotter](https://github.com/Fumlop/EDRhinoSpotter).
 - Codex-tag overlay colors cross-checked against EDMC-BioScan's own variant color names.
 
 ## Suggestions

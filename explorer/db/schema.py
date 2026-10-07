@@ -7,7 +7,7 @@ implementation plan for the rationale behind each table.
 """
 import sqlite3
 
-SCHEMA_VERSION = 11
+SCHEMA_VERSION = 12
 
 DDL = """
 CREATE TABLE IF NOT EXISTS schema_meta (
@@ -138,6 +138,9 @@ COLUMN_ADDITIONS:list[tuple[str, str, str]] = [
     ("bodies", "atmosphere_type", "TEXT"),
     ("bodies", "surface_gravity", "REAL"),
     ("bodies", "was_footfalled", "INTEGER"),
+    ("bodies", "volcanism", "TEXT"),
+    ("bodies", "landable", "INTEGER"),
+    ("bodies", "materials", "TEXT"), # JSON {name: percent} from Scan
     ("systems", "lost_at", "TEXT"),
     ("species_progress", "lost_at", "TEXT"),
     ("species_progress", "sold_at", "TEXT"),

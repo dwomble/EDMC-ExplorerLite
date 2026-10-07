@@ -4,6 +4,7 @@ configured visible-line count (CFG_VISIBLE_LINES), collapses to a single muted l
 """
 import tkinter as tk
 import tkinter.font as tkfont
+import json
 import sqlite3
 import re
 from functools import partial
@@ -19,8 +20,8 @@ from explorer.utils.updater import Notices
 from explorer.db.store import ExplorerStore
 from explorer.state import ExplorerState
 from explorer.util import format_pending_credits
-from explorer.valuation import cartography, exobiology, exobiology_data, signal_count_bias
-from explorer.constants import CFG_VISIBLE_LINES, DEFAULT_VISIBLE_LINES, CFG_PANEL_ENABLED, CFG_BODY_SORT, DEFAULT_BODY_SORT, PLUGIN_NAME
+from explorer.valuation import cartography, exobiology, exobiology_data, mining, signal_count_bias
+from explorer.constants import CFG_VISIBLE_LINES, DEFAULT_VISIBLE_LINES, CFG_PANEL_ENABLED, CFG_BODY_SORT, DEFAULT_BODY_SORT, PLUGIN_NAME, CFG_MINING_COMMODITIES, CFG_MINING_MATERIALS
 
 HISTORY_GLYPH:str = "\U0001F553" # clock face
 ICON_PATH:Path = Path(__file__).resolve().parents[2] / "assets" / "icon_20.png"
@@ -36,6 +37,7 @@ MAX_MERGED_TAG_CHARS:int = 32
 SAMPLES_REQUIRED:int = 3
 GRAVITY_MS2_PER_G:float = 9.797759
 GENUS_COLOR:str = "steelblue" # reads well on both light and dark theme backgrounds
+MINING_COLOR:str = "darkorange"
 
 def _visible_lines_px() -> int:
     return config.get_int(CFG_VISIBLE_LINES, default=DEFAULT_VISIBLE_LINES) * LINE_HEIGHT_PX
@@ -309,28 +311,49 @@ class ExplorerPanel:
         # Current body's exobiology detail nests under its own row, not after the whole table
         anchors:tuple = ("w", "e", "e", "e", "w")
         flagged:list[sqlite3.Row] = self.sorted_flagged(system["id"])
+        flagged_ids:set[int] = {b["id"] for b in flagged}
+        mining_only:list[sqlite3.Row] = [b for b in self.store.get_bodies(system["id"]) if b["id"] not in flagged_ids and self._mining_row(b)]
         focus_id:int|None = self.state.exobio_focus_body_id
         pending_rows:list = []
         current_row_shown:bool = False
-        for body in flagged:
-            row:tuple[str, str, str, str, str]|None = self._flagged_body_row(name, body)
+        for body in flagged + mining_only:
+            mining_row:tuple[str, str]|None = self._mining_row(body)
+            row:tuple[str, str, str, str, str]|None = self._flagged_body_row(name, body, force=mining_row is not None)
             if row is None:
                 continue
-            if focus_id is not None and body["body_id"] == focus_id:
-                if pending_rows:
-                    self._render_table(pending_rows, anchors=anchors)
-                    pending_rows = []
-                self._render_table([row], anchors=anchors)
+            is_focus:bool = focus_id is not None and body["body_id"] == focus_id
+            if not is_focus and not mining_row:
+                pending_rows.append(row)
+                continue
+
+            if pending_rows:
+                self._render_table(pending_rows, anchors=anchors)
+                pending_rows = []
+            self._render_table([row], anchors=anchors)
+            if is_focus:
                 self._render_exobio()
                 current_row_shown = True
-            else:
-                pending_rows.append(row)
+            if mining_row:
+                self._render_table([mining_row], anchors=("w", "e"), indent=INDENT_PX, cell_kwargs=[{c: {"foreground": MINING_COLOR} for c in range(2)}])
         if pending_rows:
             self._render_table(pending_rows, anchors=anchors)
 
         # Focus body may not be in the flagged list (e.g. on-foot)
         if not current_row_shown and focus_id is not None and self.state.cmdr_id is not None:
             self._render_exobio()
+
+    def _mining_row(self, body:sqlite3.Row) -> tuple[str, str]|None:
+        """ (commodity odds, exact materials) for a landable body's watch-list hits, or None. """
+        if not body["landable"]: return None
+
+        wanted:set[str] = mining.parse_watch(config.get_str(CFG_MINING_COMMODITIES, default=""))
+        wanted_mats:set[str] = mining.parse_watch(config.get_str(CFG_MINING_MATERIALS, default=""))
+        rates:list[tuple[str, float]] = mining.watched_rates(body["planet_class"], body["volcanism"], wanted)
+        mats:dict = json.loads(body["materials"] or "{}")
+        found:list[tuple[str, float]] = sorted(((n, p) for n, p in mats.items() if mining.norm(n) in wanted_mats), key=lambda m: -m[1])
+        if not rates and not found: return None
+
+        return (", ".join(f"{n} ~{p:.0f}%" for n, p in rates), ", ".join(f"{n.capitalize()} {p:.1f}%" for n, p in found))
 
     def sorted_flagged(self, system_id:int) -> list[sqlite3.Row]:
         """ Flagged bodies in the CFG_BODY_SORT order; ties keep body_id order. """
@@ -392,10 +415,10 @@ class ExplorerPanel:
 
         return value_min, value_max, species_desc
 
-    def _flagged_body_row(self, system_name:str, body:sqlite3.Row) -> tuple[str, str, str, str, str]|None:
+    def _flagged_body_row(self, system_name:str, body:sqlite3.Row, force:bool = False) -> tuple[str, str, str, str, str]|None:
         """ A body drops off this list once nothing is left to do. """
         value_min, value_max, species_desc = self._flagged_body_data(body)
-        if not value_max and not species_desc:
+        if not value_max and not species_desc and not force:
             return None # nothing left to do here -- drop it
 
         designator:str = _body_designator(system_name, body["body_name"])

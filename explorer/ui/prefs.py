@@ -19,7 +19,7 @@ from explorer.constants import (
     CFG_VISIBLE_LINES, DEFAULT_VISIBLE_LINES,
     CFG_OVERLAY_RADAR_SIZE, DEFAULT_OVERLAY_RADAR_SIZE, CFG_OVERLAY_RADAR_CIRCLES, CFG_OVERLAY_RADAR_SWEEP,
     CFG_OVERLAY_SUMMARY_TEXT_COLOR, DEFAULT_OVERLAY_SUMMARY_TEXT_COLOR,
-    CFG_BODY_SORT, DEFAULT_BODY_SORT, BODY_SORTS,
+    CFG_BODY_SORT, DEFAULT_BODY_SORT, BODY_SORTS, CFG_MINING_COMMODITIES, CFG_MINING_MATERIALS,
 )
 
 OVERLAYS_SECTION:str = "Overlays" # must match its title in SECTIONS below
@@ -29,7 +29,7 @@ GH_URL:str = f"https://github.com/{GH_OWNER}/{GH_PROJECT}"
 
 @dataclass
 class Pref:
-    kind:str # 'threshold', 'bool', 'color' or 'choice'
+    kind:str # 'threshold', 'bool', 'color', 'choice' or 'text'
     key:str
     desc:str
     default:int|bool|str
@@ -45,6 +45,12 @@ SECTIONS:list[tuple[str, list[Pref]]] = [
     ("Display", [
         Pref('choice', CFG_BODY_SORT, "Body sort order", DEFAULT_BODY_SORT,
              "How listed bodies are ordered: by name (A 2 before A 10), highest value first, or nearest the arrival star first.", BODY_SORTS),
+    ]),
+    ("Mining watch list", [
+        Pref('text', CFG_MINING_COMMODITIES, "Commodities", "",
+             "Comma-separated surface mining commodities (e.g. Platinum, Olivine). Landable bodies likely to have one or more get a mining row, with the survey odds."),
+        Pref('text', CFG_MINING_MATERIALS, "Materials", "",
+             "Comma-separated materials (e.g. Antimony, Polonium). Landable bodies whose scan lists one or more get a mining row, with the exact percentage."),
     ]),
     (OVERLAYS_SECTION, [
         Pref('bool', CFG_OVERLAY_RADAR_ENABLED, "Show radar overlay", True, "When near a body with cartography potential, show a radar overlay of scans and waypoints."),
@@ -107,6 +113,16 @@ def _place_pref(frame:nb.Frame, p:Pref, row:int, col:int, enabled:bool) -> None:
             if p.tooltip:
                 th.Tooltip(lbl, p.tooltip)
                 th.Tooltip(opt, p.tooltip)
+
+        case 'text':
+            _pref_vars[p.key] = tk.StringVar(value=config.get_str(p.key, default=p.default))
+            lbl:nb.Label = nb.Label(frame, text=p.desc)
+            lbl.grid(row=row, column=col, sticky=tk.W, padx=(left_pad, LABEL_GAP_PX), pady=pady)
+            ent:nb.EntryMenu = nb.EntryMenu(frame, textvariable=_pref_vars[p.key], width=30, state=state)
+            ent.grid(row=row, column=col + 1, sticky=tk.W, pady=pady)
+            if p.tooltip:
+                th.Tooltip(lbl, p.tooltip)
+                th.Tooltip(ent, p.tooltip)
 
         case 'color':
             color:str = config.get_str(p.key, default=p.default)
