@@ -9,6 +9,7 @@ is switched per-test via TestHarness.set_overlay_mode() (a runtime call, not the
 kwarg) since the harness is already constructed by the time any test runs.
 """
 import math
+import time
 import pytest
 from typing import Generator
 
@@ -19,11 +20,12 @@ from explorer.utils.overlay import Overlay
 from explorer.state import ExplorerState
 from explorer.ui.overlay_frames import RadarOverlay, FRAME_PREFIX, CENTER_X, CENTER_Y, SAMPLE_COLOR
 from explorer.ui.overlay_frames import _radius_frac, _ring_dot_count, RING_DOT_MIN, RING_DOT_MAX, DOT_GLYPH, DOT_GLYPH_SIZE, RING_THICKNESS_PX, DOT_RADIUS_PX, PLAYER_COLOR, CODEX_TAG_COLORS, RING_AREA_FRAC, DOT_GLYPH_OFFSET_X, RING_DISTANCES_M, DISPLAY_RANGE_M
-from explorer.constants import DEFAULT_OVERLAY_RADAR_SIZE, CFG_OVERLAY_RADAR_SIZE, CFG_OVERLAY_RADAR_ENABLED, CFG_PANEL_ENABLED, CFG_OVERLAY_RADAR_CIRCLES
+from explorer.constants import DEFAULT_OVERLAY_RADAR_SIZE, CFG_OVERLAY_RADAR_SIZE, CFG_OVERLAY_RADAR_ENABLED, CFG_PANEL_ENABLED, CFG_OVERLAY_RADAR_CIRCLES, CFG_OVERLAY_RADAR_SWEEP
 from explorer.ui.overlay_frames import CIRCLE_FILL_ALPHA, CIRCLE_BORDER_ALPHA, ACTIVE_FILL_ALPHA, ACTIVE_BORDER_ALPHA, RING_COLOR
 from explorer.util import local_offset_m
 from explorer.valuation import exobiology_data
 import explorer.ui.overlay_frames as overlay_frames
+from explorer.ui.overlay_frames import _sweep_points, SWEEP_PERIOD_S
 
 OUTER:int = RING_DISTANCES_M[-1] # the outermost distance ring, in meters
 
@@ -653,3 +655,32 @@ class TestRadarOverlayModern:
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v', '--tb=short'])
+
+class TestRadarSweep:
+
+    def test_sweep_starts_at_twelve(self) -> None:
+        assert _sweep_points(100, 0)[1] == {"x": CENTER_X, "y": CENTER_Y - 100}
+        assert _sweep_points(100, SWEEP_PERIOD_S / 4)[1] == {"x": CENTER_X + 100, "y": CENTER_Y}
+
+    @pytest.mark.overlay('Modern')
+    def test_sweep_off_by_default(self, overlay_mode, store:ExplorerStore) -> None:
+        radar = RadarOverlay(Overlay())
+        radar.render(store, _landed_state(store))
+
+        assert radar._thread is None
+
+    @pytest.mark.overlay('Modern')
+    def test_sweep_thread_draws_line(self, overlay_mode, harness:TestHarness, store:ExplorerStore) -> None:
+        harness.config.set(CFG_OVERLAY_RADAR_SWEEP, True)
+        radar = RadarOverlay(Overlay())
+        try:
+            radar.render(store, _landed_state(store))
+            deadline:float = time.monotonic() + 2
+            while f"{FRAME_PREFIX}sweep" not in radar.overlay._overlay.shapes and time.monotonic() < deadline: time.sleep(0.02)
+            sent:dict = radar.overlay._overlay.shapes[f"{FRAME_PREFIX}sweep"][0]
+        finally:
+            harness.config.set(CFG_OVERLAY_RADAR_SWEEP, False)
+            radar.stop()
+
+        assert sent["shape"] == "vect" and len(sent["vector"]) == 2
+        assert radar._thread is not None and not radar._thread.is_alive()

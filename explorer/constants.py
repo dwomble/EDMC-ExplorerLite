@@ -16,6 +16,7 @@ CFG_DEV_MODE:str = f"{CONFIG_PREFIX}DevMode"
 CFG_VISIBLE_LINES:str = f"{CONFIG_PREFIX}VisibleLines"
 CFG_OVERLAY_RADAR_SIZE:str = f"{CONFIG_PREFIX}OverlayRadarSize"
 CFG_OVERLAY_RADAR_CIRCLES:str = f"{CONFIG_PREFIX}OverlayRadarCircles" # translucent sample-distance circles, native-circle overlays only
+CFG_OVERLAY_RADAR_SWEEP:str = f"{CONFIG_PREFIX}OverlayRadarSweep"
 CFG_BODY_SORT:str = f"{CONFIG_PREFIX}BodySort"
 CFG_HISTORY_WINDOW_GEOMETRY:str = f"{CONFIG_PREFIX}HistoryWindowGeometry"
 CFG_HISTORY_UNSOLD_ONLY:str = f"{CONFIG_PREFIX}HistoryUnsoldOnly"

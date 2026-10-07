@@ -48,6 +48,8 @@ def plugin_stop() -> None:
     """ EDMC is closing """
     if Context.updater and Context.updater.install_update:
         Context.updater.install()
+    if Context.radar:
+        Context.radar.stop()
     if Context.store:
         Context.store.close()
     Context.reset()

@@ -3,6 +3,8 @@ circle-capable overlay, a translucent circle of that distance around its samples
 marker per logged position (real samples vs. codex-tagged waypoints). """
 import math
 import sqlite3
+import threading
+import time
 
 from config import config # type: ignore
 
@@ -15,6 +17,7 @@ from explorer.util import local_offset_m
 from explorer.valuation import exobiology_data
 from explorer.constants import (
     CFG_PANEL_ENABLED, CFG_OVERLAY_RADAR_ENABLED, CFG_OVERLAY_RADAR_SIZE, DEFAULT_OVERLAY_RADAR_SIZE, CFG_OVERLAY_RADAR_CIRCLES,
+    CFG_OVERLAY_RADAR_SWEEP,
 )
 
 FRAME_PREFIX:str = "explorerlite-radar-"
@@ -42,6 +45,12 @@ CIRCLE_FILL_ALPHA:int = 0x40 # ~25% opaque
 CIRCLE_BORDER_ALPHA:int = 0xB3 # ~70% opaque
 ACTIVE_FILL_ALPHA:int = 0x70 # real samples, stronger than waypoints to stand out
 ACTIVE_BORDER_ALPHA:int = 0xFF
+
+SWEEP_PERIOD_S:float = 4.0 # one full turn
+SWEEP_INTERVAL_S:float = 1 / 15 # redraw cadence, much faster than render()'s ~1/sec tick
+SWEEP_STALE_S:float = 2.0 # stop drawing once render() hasn't confirmed the radar is showing for this long
+SWEEP_TTL:int = 1 # a stopped sweep fades quickly
+SWEEP_COLOR:str = "#b333ff88" # translucent green
 
 # Disabled: ring/label for a tagged-but-unapproached genus (kept for possible future use).
 SHOW_TAGGED_GENUS:bool = False
@@ -113,6 +122,12 @@ def _ring_dot_positions(cx:float, cy:float, r:float) -> list[tuple[float, float]
         for i in range(count)
     ]
 
+def _sweep_points(radius:float, t:float) -> list[dict]:
+    """ Centre to rim at the sweep's angle for time t: 12 o'clock at t=0, clockwise. """
+    angle:float = 2 * math.pi * (t % SWEEP_PERIOD_S) / SWEEP_PERIOD_S
+    tip:dict = {"x": round(CENTER_X + radius * math.sin(angle)), "y": round(CENTER_Y - radius * math.cos(angle))}
+    return [{"x": CENTER_X, "y": CENTER_Y}, tip]
+
 def _rotate_to_heading(east:float, north:float, heading:float) -> tuple[float, float]:
     """ Rotate a world-space (east, north) offset into a heading-up screen frame """
     sin_h, cos_h = math.sin(heading), math.cos(heading)
@@ -126,6 +141,10 @@ class RadarOverlay:
         self.overlay:Overlay = overlay
         self._group_defined:bool = False
         self._last_skip_reason:str|None = None # dedupe diagnostic logging -- log only on change
+        self._thread:threading.Thread|None = None
+        self._halt:threading.Event = threading.Event()
+        self._sweep_r:float = 0.0
+        self._seen:float = 0.0 # monotonic time of the last render() that actually drew the radar
 
     def _log_skip(self, reason:str|None) -> None:
         """ Avoid spamming duplicates """
@@ -204,6 +223,27 @@ class RadarOverlay:
                 self._draw_genus_label(radius_px, genus)
 
         self._draw_player()
+
+        if not config.get_bool(CFG_OVERLAY_RADAR_SWEEP, default=False): return
+
+        self._sweep_r = radius_px * RING_AREA_FRAC
+        self._seen = time.monotonic()
+        if self._thread is None:
+            self._thread = threading.Thread(target=self._sweep_loop, name="ExplorerLite radar sweep", daemon=True)
+            self._thread.start()
+
+    def stop(self) -> None:
+        """ End the sweep thread. """
+        self._halt.set()
+        if self._thread: self._thread.join(timeout=1)
+
+    def _sweep_loop(self) -> None:
+        """ Redraw only the sweep line, at a smooth cadence. """
+        while not self._halt.wait(SWEEP_INTERVAL_S):
+            now:float = time.monotonic()
+            if now - self._seen > SWEEP_STALE_S: continue
+
+            self.overlay.send_vect(f"{FRAME_PREFIX}sweep", _sweep_points(self._sweep_r, now), SWEEP_COLOR, ttl=SWEEP_TTL)
 
     def _active_genera(self, progress:list[sqlite3.Row]) -> list[str]:
         """ Every confirmed genus not yet fully sampled. """
