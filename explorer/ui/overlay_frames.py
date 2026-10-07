@@ -46,9 +46,9 @@ CIRCLE_BORDER_ALPHA:int = 0xB3 # ~70% opaque
 ACTIVE_FILL_ALPHA:int = 0x70 # real samples, stronger than waypoints to stand out
 ACTIVE_BORDER_ALPHA:int = 0xFF
 
-SWEEP_PERIOD_S:float = 4.0 # one full turn
+SWEEP_PERIOD_S:float = 6.0 # one full turn
 SWEEP_INTERVAL_S:float = 1 / 15 # redraw cadence, much faster than render()'s ~1/sec tick
-SWEEP_STALE_S:float = 2.0 # stop drawing once render() hasn't confirmed the radar is showing for this long
+SWEEP_STALE_S:float = float(TTL) # render() only runs when Status.json changes, so match how long the radar's own markers last
 SWEEP_TTL:int = 1 # a stopped sweep fades quickly
 SWEEP_COLOR:str = "#b333ff88" # translucent green
 
@@ -204,6 +204,7 @@ class RadarOverlay:
         circles:bool = self.overlay.supports_circle and config.get_bool(CFG_OVERLAY_RADAR_CIRCLES, default=True)
         radius_px:int = _radius()
         heading_rad:float = math.radians(state.heading) if state.heading is not None else 0.0
+        began:float = time.monotonic()
         self._pin_bounds(radius_px)
         self._draw_distance_rings(radius_px)
 
@@ -224,7 +225,10 @@ class RadarOverlay:
 
         self._draw_player()
 
-        if not config.get_bool(CFG_OVERLAY_RADAR_SWEEP, default=False): return
+        if time.monotonic() - began > 0.1: Debug.logger.debug(f"Radar render took {time.monotonic() - began:.2f}s")
+        if not config.get_bool(CFG_OVERLAY_RADAR_SWEEP, default=False):
+            self._seen = 0.0
+            return
 
         self._sweep_r = radius_px * RING_AREA_FRAC
         self._seen = time.monotonic()
@@ -239,10 +243,15 @@ class RadarOverlay:
 
     def _sweep_loop(self) -> None:
         """ Redraw only the sweep line, at a smooth cadence. """
+        last:float = 0.0
         while not self._halt.wait(SWEEP_INTERVAL_S):
             now:float = time.monotonic()
-            if now - self._seen > SWEEP_STALE_S: continue
+            if now - self._seen > SWEEP_STALE_S:
+                last = 0.0
+                continue
 
+            if last and now - last > 0.25: Debug.logger.debug(f"Radar sweep gap {now - last:.2f}s")
+            last = now
             self.overlay.send_vect(f"{FRAME_PREFIX}sweep", _sweep_points(self._sweep_r, now), SWEEP_COLOR, ttl=SWEEP_TTL)
 
     def _active_genera(self, progress:list[sqlite3.Row]) -> list[str]:

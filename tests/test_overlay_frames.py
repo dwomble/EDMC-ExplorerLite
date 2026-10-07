@@ -684,3 +684,18 @@ class TestRadarSweep:
 
         assert sent["shape"] == "vect" and len(sent["vector"]) == 2
         assert radar._thread is not None and not radar._thread.is_alive()
+
+    @pytest.mark.overlay('Modern')
+    def test_sweep_stops_when_disabled(self, overlay_mode, harness:TestHarness, store:ExplorerStore) -> None:
+        harness.config.set(CFG_OVERLAY_RADAR_SWEEP, True)
+        radar = RadarOverlay(Overlay())
+        try:
+            radar.render(store, _landed_state(store))
+            assert radar._seen > 0.0
+            harness.config.set(CFG_OVERLAY_RADAR_SWEEP, False)
+            radar.render(store, _landed_state(store))
+        finally:
+            harness.config.set(CFG_OVERLAY_RADAR_SWEEP, False)
+            radar.stop()
+
+        assert radar._seen == 0.0
