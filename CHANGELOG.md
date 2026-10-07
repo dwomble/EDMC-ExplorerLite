@@ -5,6 +5,7 @@
 ### New Features
 
 * A second radar overlay option to show minimum scan distance as a circle around the location of the biological for each scan or waypoint
+* Added option for a radar sweep (just for fun)
 * Added sort order options for body name, distance, or estimated value
 * Added colors for biologicals that don't have a color but whose species indicates their color
 
