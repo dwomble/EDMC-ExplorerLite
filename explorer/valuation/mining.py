@@ -1,4 +1,5 @@
 """ Surface mining prediction: ground type (planet class + volcanism) to likely commodities, from data/mining_rates.json. """
+import difflib
 import json
 import re
 import unicodedata
@@ -13,6 +14,12 @@ _ROCKY_VOLCANISM:tuple[tuple[str, str], ...] = (
 _CLASSES:dict[str, str] = {
     'Icy body': 'icy', 'Rocky ice body': 'rocky ice', 'High metal content body': 'high metal content', 'Metal rich body': 'metal rich',
 }
+
+MATERIALS:tuple[str, ...] = (
+    'Antimony', 'Arsenic', 'Cadmium', 'Carbon', 'Chromium', 'Germanium', 'Iron', 'Manganese', 'Mercury', 'Molybdenum', 'Nickel', 'Niobium',
+    'Phosphorus', 'Polonium', 'Ruthenium', 'Selenium', 'Sulphur', 'Technetium', 'Tellurium', 'Tin', 'Tungsten', 'Vanadium', 'Yttrium',
+    'Zinc', 'Zirconium',
+)
 
 ALIASES:dict[str, str] = {
     'lowtemperaturediamonds': 'lowtempdiamonds', 'ltd': 'lowtempdiamonds', 'ltds': 'lowtempdiamonds',
@@ -46,3 +53,18 @@ def watched_rates(planet_class:str|None, volcanism:str|None, watched:set[str]) -
 
     hits:list[tuple[str, float]] = [(name, pct) for name, pct in ground['rates'].items() if norm(name) in watched]
     return sorted(hits, key=lambda h: -h[1])
+
+def unknown_names(csv:str, known:list[str]) -> list[tuple[str, str|None]]:
+    """ (typed name, closest known name or None) for each watch-list entry that matches nothing. """
+    keys:dict[str, str] = {norm(k): k for k in known}
+    bad:list[tuple[str, str|None]] = []
+    for name in (s.strip() for s in csv.split(',') if s.strip()):
+        if norm(name) in keys: continue
+
+        close:list[str] = difflib.get_close_matches(norm(name), list(keys), n=1, cutoff=0.7)
+        bad.append((name, keys[close[0]] if close else None))
+
+    return bad
+
+def known_commodities() -> list[str]:
+    return sorted({n for g in GROUNDS.values() for n in g['rates']})

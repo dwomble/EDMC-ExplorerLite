@@ -18,6 +18,10 @@ def test_watch_aliases():
         'lowtempdiamonds', 'bastnasite', 'helium3', 'sulphur'}
     assert [n for n, _ in mining.watched_rates('Icy body', None, mining.parse_watch('LTD'))] == ['Low Temp Diamonds']
 
+def test_unknown_names_suggest():
+    assert mining.unknown_names('Platinum, Platinun, Zzzz', mining.known_commodities()) == [('Platinun', 'Platinum'), ('Zzzz', None)]
+    assert mining.unknown_names('Antimony, sulfur', list(mining.MATERIALS)) == []
+
 def test_rates_data_valid():
     for g in mining.GROUNDS.values():
         assert g['sites'] > 0 and all(0 < p <= 100 for p in g['rates'].values())

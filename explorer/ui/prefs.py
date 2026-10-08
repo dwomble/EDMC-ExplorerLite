@@ -10,6 +10,7 @@ from ttkHyperlinkLabel import HyperlinkLabel # type: ignore
 from config import config # type: ignore
 
 import explorer.utils.th as th
+from explorer.valuation import mining
 
 from explorer.constants import (
     PLUGIN_NAME, GH_OWNER, GH_PROJECT,
@@ -19,7 +20,7 @@ from explorer.constants import (
     CFG_VISIBLE_LINES, DEFAULT_VISIBLE_LINES,
     CFG_OVERLAY_RADAR_SIZE, DEFAULT_OVERLAY_RADAR_SIZE, CFG_OVERLAY_RADAR_CIRCLES, CFG_OVERLAY_RADAR_SWEEP,
     CFG_OVERLAY_SUMMARY_TEXT_COLOR, DEFAULT_OVERLAY_SUMMARY_TEXT_COLOR,
-    CFG_BODY_SORT, DEFAULT_BODY_SORT, BODY_SORTS, CFG_MINING_COMMODITIES, CFG_MINING_MATERIALS,
+    CFG_BODY_SORT, DEFAULT_BODY_SORT, BODY_SORTS, CFG_MINING_ENABLED, CFG_MINING_COMMODITIES, CFG_MINING_MATERIALS,
 )
 
 OVERLAYS_SECTION:str = "Overlays" # must match its title in SECTIONS below
@@ -47,6 +48,7 @@ SECTIONS:list[tuple[str, list[Pref]]] = [
              "How listed bodies are ordered: by name (A 2 before A 10), highest value first, or nearest the arrival star first.", BODY_SORTS),
     ]),
     ("Mining watch list", [
+        Pref('bool', CFG_MINING_ENABLED, "Show mining rows", True, "Show watch-list commodities and materials under landable bodies."),
         Pref('text', CFG_MINING_COMMODITIES, "Commodities", "",
              "Comma-separated surface mining commodities (e.g. Platinum, Olivine). Landable bodies likely to have one or more get a mining row, with the survey odds."),
         Pref('text', CFG_MINING_MATERIALS, "Materials", "",
@@ -196,6 +198,17 @@ def build_prefs(parent:tk.Widget, cmdr:str, is_beta:bool, overlay_available:bool
 
     return frame
 
+def _warn_unknown_names() -> None:
+    """ Typos are kept (the survey data may gain names) but flagged with the nearest known name. """
+    lines:list[str] = []
+    for key, known in ((CFG_MINING_COMMODITIES, mining.known_commodities()), (CFG_MINING_MATERIALS, list(mining.MATERIALS))):
+        var = _pref_vars.get(key)
+        if var is None: continue
+
+        lines += [f"{n} - did you mean {s}?" if s else f"{n} - not recognised" for n, s in mining.unknown_names(var.get(), known)]
+
+    if lines: messagebox.showwarning(PLUGIN_NAME, "Unrecognised mining watch-list names:\n\n" + "\n".join(lines))
+
 def save_prefs(cmdr:str, is_beta:bool) -> None:
     for p in PREFS:
         var = _pref_vars.get(p.key)
@@ -207,3 +220,5 @@ def save_prefs(cmdr:str, is_beta:bool) -> None:
                 config.set(p.key, int(var.get()) if var.get().isdigit() else p.default)
             case _:
                 config.set(p.key, var.get())
+
+    _warn_unknown_names()

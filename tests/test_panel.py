@@ -16,7 +16,7 @@ from typing import Any, Generator, cast
 from harness import TestHarness, reset_plugin_modules
 import tests.edmc.requests as mock_requests
 from explorer.db.store import ExplorerStore
-from explorer.ui.panel import _credits_range, system_status_text, system_header_line, system_body_count_text, MAX_SPECIES_LABEL_CHARS, ExplorerPanel, LINE_HEIGHT_PX
+from explorer.ui.panel import _credits_range, system_status_text, system_header_line, system_body_count_text, MAX_SPECIES_LABEL_CHARS, GENUS_COLOR, ExplorerPanel, LINE_HEIGHT_PX
 from explorer.state import state as explorer_state, ExplorerState
 from explorer.journal import handlers_context
 from explorer.util import now_iso
@@ -1016,7 +1016,7 @@ class TestPanelStates:
         assert any("Bacterium Aurasus" in line for line in lines), lines
 
     def test_active_species_line_styling(self, plugin:TestHarness) -> None:
-        """ The whole line reads steelblue in both themes; the progress
+        """ The whole line reads GENUS_COLOR in both themes; the progress
         cell also bolds once sampling has actually started. """
         import tkinter.font as tkfont
 
@@ -1039,11 +1039,11 @@ class TestPanelStates:
         unstarted_name = _find_label(Context.panel.scroll.interior, "Tussock Stigmasis")
         assert started_name is not None and unstarted_name is not None
 
-        # Every cell in the row, not just the name, reads steelblue
+        # Every cell in the row, not just the name, reads GENUS_COLOR
         for label in (started_name, unstarted_name):
             for column in range(4):
                 cell = _row_cell(label, column=column)
-                assert str(cell.cget("foreground")) == "steelblue", (column, cell.cget("text"))
+                assert str(cell.cget("foreground")) == GENUS_COLOR, (column, cell.cget("text"))
 
         started_progress = _row_cell(started_name, column=0)
         unstarted_progress = _row_cell(unstarted_name, column=0)
