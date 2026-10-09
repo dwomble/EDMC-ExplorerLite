@@ -79,7 +79,7 @@ SPECIES_VALUE:dict[str, dict[str, int]] = {
         "Brain Tree Lindigoticum": 3_565_100,
         "Brain Tree Lividum": 1_593_700,
         "Brain Tree Ostrinum": 3_565_100,
-        "Brain Tree Puniceum": 3_565_100,
+        "Brain Tree Puniceum": 1_593_700,
         "Brain Tree Roseum": 1_593_700,
         "Brain Tree Viride": 1_593_700,
     },

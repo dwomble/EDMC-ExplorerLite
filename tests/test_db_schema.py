@@ -254,3 +254,26 @@ class TestSchemaMigration:
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v', '--tb=short'])
+
+class TestUpgradeBackup:
+
+    def test_upgrade_makes_backup(self, tmp_path) -> None:
+        path = tmp_path / "e.sqlite"
+        conn = sqlite3.connect(str(path))
+        ensure_schema(conn)
+        conn.execute("INSERT INTO cmdrs (name) VALUES ('Testy')")
+        conn.execute("UPDATE schema_meta SET value = '10' WHERE key = 'version'")
+        conn.commit()
+        ensure_schema(conn)
+
+        backup = sqlite3.connect(str(tmp_path / "e.sqlite.v10.bak"))
+        assert backup.execute("SELECT value FROM schema_meta WHERE key = 'version'").fetchone()[0] == "10"
+        assert backup.execute("SELECT name FROM cmdrs").fetchone()[0] == "Testy"
+        assert conn.execute("SELECT value FROM schema_meta WHERE key = 'version'").fetchone()[0] == str(SCHEMA_VERSION)
+
+    def test_current_version_no_backup(self, tmp_path) -> None:
+        conn = sqlite3.connect(str(tmp_path / "e.sqlite"))
+        ensure_schema(conn)
+        ensure_schema(conn)
+
+        assert list(tmp_path.glob("*.bak")) == []
