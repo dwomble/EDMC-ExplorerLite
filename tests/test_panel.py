@@ -1263,7 +1263,7 @@ class TestPrefs:
 
     def test_build_and_save_roundtrip(self, plugin:TestHarness) -> None:
 
-        frame = prefs_ui.build_prefs(plugin.parent, "Testy", False)
+        frame = prefs_ui.build_prefs(plugin.parent, "Testy", False).winfo_children()[-1] # unwrap the padding frame
         assert frame is not None
 
         prefs_ui._pref_vars[CFG_SCAN_VALUE_THRESHOLD].set("123456")
@@ -1287,7 +1287,7 @@ class TestPrefs:
 
     def test_header_shows_name_version_and_github_link(self, plugin:TestHarness) -> None:
 
-        frame = prefs_ui.build_prefs(plugin.parent, "Testy", False, version="1.2.3")
+        frame = prefs_ui.build_prefs(plugin.parent, "Testy", False, version="1.2.3").winfo_children()[-1] # unwrap the padding frame
         labels = {c.cget("text") for c in frame.winfo_children() if "text" in c.keys()}
         assert f"{PLUGIN_NAME} v1.2.3" in labels
 
@@ -1298,7 +1298,7 @@ class TestPrefs:
 
     def test_all_sections_are_present(self, plugin:TestHarness) -> None:
 
-        frame = prefs_ui.build_prefs(plugin.parent, "Testy", False)
+        frame = prefs_ui.build_prefs(plugin.parent, "Testy", False).winfo_children()[-1] # unwrap the padding frame
         labels = {c.cget("text") for c in frame.winfo_children() if "text" in c.keys()}
         assert {"Thresholds", "Overlays", "Debug", prefs_ui.DATA_SECTION_TITLE} <= labels
 
@@ -1311,7 +1311,7 @@ class TestPrefs:
 
     def test_overlays_section_disabled_without_an_overlay_backend(self, plugin:TestHarness) -> None:
 
-        frame = prefs_ui.build_prefs(plugin.parent, "Testy", False, overlay_available=False)
+        frame = prefs_ui.build_prefs(plugin.parent, "Testy", False, overlay_available=False).winfo_children()[-1] # unwrap the padding frame
         radar_cb = next(c for c in frame.winfo_children() if "text" in c.keys() and c.cget("text") == "Show radar overlay")
         assert str(radar_cb.cget("state")) == "disabled"
 
@@ -1320,20 +1320,20 @@ class TestPrefs:
 
     def test_overlays_section_enabled_with_an_overlay_backend(self, plugin:TestHarness) -> None:
 
-        frame = prefs_ui.build_prefs(plugin.parent, "Testy", False, overlay_available=True)
+        frame = prefs_ui.build_prefs(plugin.parent, "Testy", False, overlay_available=True).winfo_children()[-1] # unwrap the padding frame
         radar_cb = next(c for c in frame.winfo_children() if "text" in c.keys() and c.cget("text") == "Show radar overlay")
         assert str(radar_cb.cget("state")) == "normal"
 
     def test_clear_unsold_data_button_is_present(self, plugin:TestHarness) -> None:
 
-        frame = prefs_ui.build_prefs(plugin.parent, "Testy", False)
+        frame = prefs_ui.build_prefs(plugin.parent, "Testy", False).winfo_children()[-1] # unwrap the padding frame
         btn = next(c for c in frame.winfo_children() if isinstance(c, (tk.Button, ttk.Button)) and c.cget("text") == "Delete")
         assert btn.cget("command")
 
     def test_clear_unsold_data_button_is_flagged_as_dangerous(self, plugin:TestHarness) -> None:
         """ Irreversible -- red sets it apart from other prefs. """
 
-        frame = prefs_ui.build_prefs(plugin.parent, "Testy", False)
+        frame = prefs_ui.build_prefs(plugin.parent, "Testy", False).winfo_children()[-1] # unwrap the padding frame
         btn = next(c for c in frame.winfo_children() if isinstance(c, (tk.Button, ttk.Button)) and c.cget("text") == "Delete")
         assert str(btn.cget("background")) == prefs_ui.DANGER_COLOR
 
@@ -1346,7 +1346,7 @@ class TestPrefs:
         monkeypatch.setattr(prefs_ui.messagebox, "askyesno", lambda *a, **kw: False)
         monkeypatch.setattr(prefs_ui.messagebox, "showinfo", lambda *a, **kw: None)
 
-        frame = prefs_ui.build_prefs(plugin.parent, "Testy", False, clear_unsold_data=_record)
+        frame = prefs_ui.build_prefs(plugin.parent, "Testy", False, clear_unsold_data=_record).winfo_children()[-1] # unwrap the padding frame
         btn = next(c for c in frame.winfo_children() if isinstance(c, (tk.Button, ttk.Button)) and c.cget("text") == "Delete")
         btn.invoke()
 
@@ -1363,7 +1363,7 @@ class TestPrefs:
         monkeypatch.setattr(prefs_ui.messagebox, "askyesno", lambda *a, **kw: True)
         monkeypatch.setattr(prefs_ui.messagebox, "showinfo", lambda title, message, **kw: shown.append(message))
 
-        frame = prefs_ui.build_prefs(plugin.parent, "Testy", False, clear_unsold_data=lambda cmdr: f"cleared for {cmdr}")
+        frame = prefs_ui.build_prefs(plugin.parent, "Testy", False, clear_unsold_data=lambda cmdr: f"cleared for {cmdr}").winfo_children()[-1] # unwrap the padding frame
         btn = next(c for c in frame.winfo_children() if isinstance(c, (tk.Button, ttk.Button)) and c.cget("text") == "Delete")
         btn.invoke()
 

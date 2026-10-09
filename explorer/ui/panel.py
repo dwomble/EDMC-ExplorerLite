@@ -21,7 +21,7 @@ from explorer.db.store import ExplorerStore
 from explorer.state import ExplorerState
 from explorer.util import format_pending_credits
 from explorer.valuation import cartography, exobiology, exobiology_data, mining, signal_count_bias
-from explorer.constants import CFG_VISIBLE_LINES, DEFAULT_VISIBLE_LINES, CFG_PANEL_ENABLED, CFG_BODY_SORT, DEFAULT_BODY_SORT, PLUGIN_NAME, CFG_MINING_ENABLED, CFG_MINING_COMMODITIES, CFG_MINING_MATERIALS
+from explorer.constants import CFG_VISIBLE_LINES, DEFAULT_VISIBLE_LINES, CFG_PANEL_ENABLED, CFG_BODY_SORT, DEFAULT_BODY_SORT, PLUGIN_NAME, CFG_MINING_ENABLED, CFG_MINING_MIN_COMMODITY, CFG_MINING_MIN_MATERIAL, CFG_MINING_COMMODITIES, CFG_MINING_MATERIALS
 
 HISTORY_GLYPH:str = "\U0001F553" # clock face
 ICON_PATH:Path = Path(__file__).resolve().parents[2] / "assets" / "icon_20.png"
@@ -345,15 +345,17 @@ class ExplorerPanel:
             self._render_exobio()
 
     def _mining_rows(self, body:sqlite3.Row) -> list[tuple[str, str]]:
-        """ (text, colour) lines for a landable body's watch-list hits: commodity odds, then exact materials. """
+        """ (text, colour) lines for a landable body's watch-list hits over their thresholds: commodity odds, then exact materials. """
         if not body["landable"] or not config.get_bool(CFG_MINING_ENABLED, default=True): return []
 
         wanted:set[str] = mining.parse_watch(config.get_str(CFG_MINING_COMMODITIES, default=""))
         wanted_mats:set[str] = mining.parse_watch(config.get_str(CFG_MINING_MATERIALS, default=""))
-        rates:list[tuple[str, float]] = mining.watched_rates(body["planet_class"], body["volcanism"], wanted)
+        min_comm:int = config.get_int(CFG_MINING_MIN_COMMODITY, default=0)
+        min_mat:int = config.get_int(CFG_MINING_MIN_MATERIAL, default=0)
+        rates:list[tuple[str, float]] = [r for r in mining.watched_rates(body["planet_class"], body["volcanism"], wanted) if r[1] >= min_comm]
         mats:dict = json.loads(body["materials"] or "{}")
-        found:list[tuple[str, float]] = sorted(((n, p) for n, p in mats.items() if mining.norm(n) in wanted_mats), key=lambda m: -m[1])
-
+        found:list[tuple[str, float]] = sorted(((n, p) for n, p in mats.items() if mining.norm(n) in wanted_mats and p >= min_mat),
+                                               key=lambda m: -m[1])
         rows:list[tuple[str, str]] = []
         if rates: rows.append((", ".join(f"{n} ~{p:.0f}%" for n, p in rates), COMMODITY_COLOR))
         if found: rows.append((", ".join(f"{n.capitalize()} {p:.1f}%" for n, p in found), MATERIAL_COLOR))

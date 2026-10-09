@@ -20,7 +20,7 @@ from explorer.constants import (
     CFG_VISIBLE_LINES, DEFAULT_VISIBLE_LINES,
     CFG_OVERLAY_RADAR_SIZE, DEFAULT_OVERLAY_RADAR_SIZE, CFG_OVERLAY_RADAR_CIRCLES, CFG_OVERLAY_RADAR_SWEEP,
     CFG_OVERLAY_SUMMARY_TEXT_COLOR, DEFAULT_OVERLAY_SUMMARY_TEXT_COLOR,
-    CFG_BODY_SORT, DEFAULT_BODY_SORT, BODY_SORTS, CFG_MINING_ENABLED, CFG_MINING_COMMODITIES, CFG_MINING_MATERIALS,
+    CFG_BODY_SORT, DEFAULT_BODY_SORT, BODY_SORTS, CFG_MINING_ENABLED, CFG_MINING_MIN_COMMODITY, CFG_MINING_MIN_MATERIAL, CFG_MINING_COMMODITIES, CFG_MINING_MATERIALS,
 )
 
 OVERLAYS_SECTION:str = "Overlays" # must match its title in SECTIONS below
@@ -53,6 +53,8 @@ SECTIONS:list[tuple[str, list[Pref]]] = [
              "Comma-separated surface mining commodities (e.g. Platinum, Olivine). Landable bodies likely to have one or more get a mining row, with the survey odds."),
         Pref('text', CFG_MINING_MATERIALS, "Materials", "",
              "Comma-separated materials (e.g. Antimony, Polonium). Landable bodies whose scan lists one or more get a mining row, with the exact percentage."),
+        Pref('threshold', CFG_MINING_MIN_COMMODITY, "Minimum commodity %", 0, "Hide commodities whose survey odds on a body are below this percentage."),
+        Pref('threshold', CFG_MINING_MIN_MATERIAL, "Minimum material %", 0, "Hide materials whose scanned percentage on a body is below this value."),
     ]),
     (OVERLAYS_SECTION, [
         Pref('bool', CFG_OVERLAY_RADAR_ENABLED, "Show radar overlay", True, "When near a body with cartography potential, show a radar overlay of scans and waypoints."),
@@ -71,6 +73,7 @@ PREFS:list[Pref] = [p for _, section_prefs in SECTIONS for p in section_prefs] #
 LABEL_GAP_PX:int = 16 # between a pref's own label and its control
 GROUP_GAP_PX:int = 24 # between the left half and the right half
 ROW_GAP_PX:int = 6 # vertical space between pref rows
+PAD_PX:int = 10 # matches the padding BGS-Tally and NeutronDancer give their settings tabs
 DANGER_COLOR:str = "#ee0000" # flags an irreversible action, e.g. Clear unsold data
 
 _pref_vars:dict[str, tk.Variable] = {}
@@ -166,7 +169,10 @@ def build_prefs(parent:tk.Widget, cmdr:str, is_beta:bool, overlay_available:bool
     global _pref_vars
     _pref_vars = {}
 
-    frame:nb.Frame = nb.Frame(parent)
+    outer:nb.Frame = nb.Frame(parent)
+    outer.columnconfigure(0, weight=1)
+    frame:nb.Frame = nb.Frame(outer)
+    frame.grid(row=0, column=0, padx=PAD_PX, pady=PAD_PX, sticky=tk.NSEW)
     frame.columnconfigure(3, weight=1) # only the trailing column stretches -- keeps halves close
     default:tkfont.Font = tkfont.nametofont("TkDefaultFont")
     bold:tkfont.Font = tkfont.Font(family=default.actual("family"), size=default.actual("size"), weight="bold")
@@ -196,7 +202,7 @@ def build_prefs(parent:tk.Widget, cmdr:str, is_beta:bool, overlay_available:bool
     btn.grid(row=row, column=col, rowspan=3, sticky=tk.W, pady=(0, ROW_GAP_PX))
     th.Tooltip(btn, "Danger! This is an irreversible action! It will mark all pending cartography and exobiology data as lost,\nas if the commander died without EDMC running. Use only if you are sure you want to do this.")
 
-    return frame
+    return outer
 
 def _warn_unknown_names() -> None:
     """ Typos are kept (the survey data may gain names) but flagged with the nearest known name. """
