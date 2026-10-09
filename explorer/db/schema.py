@@ -6,6 +6,9 @@ data lives in explorer/valuation/exobiology_data.py, not the DB. See REQUIREMENT
 implementation plan for the rationale behind each table.
 """
 import sqlite3
+from contextlib import closing
+
+from explorer.utils.debug import Debug
 
 SCHEMA_VERSION = 12
 
@@ -184,6 +187,15 @@ def _copy_progress_back(conn:sqlite3.Connection) -> None:
 
 def ensure_schema(conn:sqlite3.Connection) -> None:
     """ Create tables if they don't exist yet, add any new columns, and stamp/verify the schema version. """
+    has_meta:bool = conn.execute("SELECT 1 FROM sqlite_master WHERE name = 'schema_meta'").fetchone() is not None
+    old:sqlite3.Row|None = conn.execute("SELECT value FROM schema_meta WHERE key = 'version'").fetchone() if has_meta else None
+    file:str = conn.execute("PRAGMA database_list").fetchone()[2]
+    if old and file and int(old[0]) < SCHEMA_VERSION:
+        try:
+            with closing(sqlite3.connect(f"{file}.v{old[0]}.bak")) as dest: conn.backup(dest)
+        except (sqlite3.Error, OSError) as e:
+            Debug.logger.warning(f"Could not back up {file} before upgrading its schema: {e}")
+
     _migrate_genus_predictions_species_column(conn) # must run BEFORE the DDL recreates the table
     _migrate_progress_unique(conn) # likewise
     conn.executescript(DDL)
@@ -198,7 +210,8 @@ def ensure_schema(conn:sqlite3.Connection) -> None:
 
     stored_version:int = int(row[0])
     if stored_version > SCHEMA_VERSION:
-        raise RuntimeError(f"explorer.sqlite schema version {stored_version} is newer than this plugin version supports ({SCHEMA_VERSION})")
+        raise RuntimeError(f"explorer.sqlite schema version {stored_version} is newer than this plugin supports ({SCHEMA_VERSION}); "
+                           f"restore the .v{SCHEMA_VERSION}.bak backup next to it to use this version")
     if stored_version < SCHEMA_VERSION:
         # New tables are handled by the DDL script above; new columns on existing tables by
         # _ensure_columns(). This just stamps the version once both have run. A future
