@@ -30,12 +30,15 @@ GH_URL:str = f"https://github.com/{GH_OWNER}/{GH_PROJECT}"
 
 @dataclass
 class Pref:
-    kind:str # 'threshold', 'bool', 'color', 'choice' or 'text'
+    kind:str # 'threshold', 'bool', 'color', 'choice', 'text' or 'spin'
     key:str
     desc:str
-    default:int|bool|str
+    default:int|float|bool|str
     tooltip:str|None = None
     options:tuple[str, ...] = ()
+    lo:float = 0 # 'spin' bounds and increment
+    hi:float = 100
+    step:float = 1
     full_row:bool = False # alone on its row; the next pref starts a new one
 
 SECTIONS:list[tuple[str, list[Pref]]] = [
@@ -52,10 +55,11 @@ SECTIONS:list[tuple[str, list[Pref]]] = [
         Pref('bool', CFG_MINING_ENABLED, "Show mining rows", True, "Show watch-list commodities and materials under landable bodies.", full_row=True),
         Pref('text', CFG_MINING_COMMODITIES, "Commodities", "",
              "Comma-separated surface mining commodities (e.g. Platinum, Olivine). Landable bodies likely to have one or more get a mining row, with the survey odds."),
-        Pref('threshold', CFG_MINING_MIN_COMMODITY, "Minimum commodity %", 0, "Hide commodities whose survey odds on a body are below this percentage."),
+        Pref('spin', CFG_MINING_MIN_COMMODITY, "Minimum commodity %", 0, "Hide commodities whose survey odds on a body are below this percentage."),
         Pref('text', CFG_MINING_MATERIALS, "Materials", "",
              "Comma-separated materials (e.g. Antimony, Polonium). Landable bodies whose scan lists one or more get a mining row, with the exact percentage."),
-        Pref('threshold', CFG_MINING_MIN_MATERIAL, "Minimum material %", 0, "Hide materials whose scanned percentage on a body is below this value."),
+        Pref('spin', CFG_MINING_MIN_MATERIAL, "Minimum material %", 0.0, "Hide materials whose scanned percentage on a body is below this value.",
+             lo=0, hi=30, step=0.1),
     ]),
     (OVERLAYS_SECTION, [
         Pref('bool', CFG_OVERLAY_SUMMARY_ENABLED, "Show summary overlay", True, "Display a summary of cartography and exobiology data."),
@@ -129,6 +133,18 @@ def _place_pref(frame:nb.Frame, p:Pref, row:int, col:int, enabled:bool) -> None:
             if p.tooltip:
                 th.Tooltip(lbl, p.tooltip)
                 th.Tooltip(ent, p.tooltip)
+
+        case 'spin':
+            raw:str = str(config.get_int(p.key, default=int(p.default))) if p.step == 1 else config.get_str(p.key, default=str(p.default))
+            _pref_vars[p.key] = tk.StringVar(value=raw)
+            lbl:nb.Label = nb.Label(frame, text=p.desc)
+            lbl.grid(row=row, column=col, sticky=tk.W, padx=(left_pad, LABEL_GAP_PX), pady=pady)
+            spin:ttk.Spinbox = ttk.Spinbox(frame, from_=p.lo, to=p.hi, increment=p.step, textvariable=_pref_vars[p.key], width=7,
+                                           format="%.0f" if p.step == 1 else "%.1f", state=state)
+            spin.grid(row=row, column=col + 1, sticky=tk.W, pady=pady)
+            if p.tooltip:
+                th.Tooltip(lbl, p.tooltip)
+                th.Tooltip(spin, p.tooltip)
 
         case 'color':
             color:str = config.get_str(p.key, default=p.default)
@@ -225,6 +241,10 @@ def save_prefs(cmdr:str, is_beta:bool) -> None:
         match p.kind:
             case 'threshold':
                 config.set(p.key, int(var.get()) if var.get().isdigit() else p.default)
+            case 'spin':
+                try: val:float = min(max(float(var.get()), p.lo), p.hi)
+                except ValueError: val = float(p.default)
+                config.set(p.key, int(val) if p.step == 1 else str(round(val, 1)))
             case _:
                 config.set(p.key, var.get())
 

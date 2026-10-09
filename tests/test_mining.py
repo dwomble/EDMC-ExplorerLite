@@ -28,3 +28,13 @@ def test_short_names():
 def test_rates_data_valid():
     for g in mining.GROUNDS.values():
         assert g['sites'] > 0 and all(0 < p <= 100 for p in g['rates'].values())
+
+def test_loadout_dss_hides_panel():
+    from explorer.journal import handlers_context
+    from explorer.state import ExplorerState
+    st = ExplorerState()
+    dss = {"Modules": [{"Item": "int_detailedsurfacescanner_tiny"}, {"Item": "int_mkiilargebuggybay_size2_class3"}]}
+    assert "auto_hide" not in handlers_context.on_loadout(None, st, dss) and st.has_rhino  # type: ignore
+    assert handlers_context.on_loadout(None, st, {"Modules": []})["auto_hide"] is True  # type: ignore
+    assert st.has_rhino is False
+    assert handlers_context.on_loadout(None, st, dss)["auto_hide"] is False  # type: ignore

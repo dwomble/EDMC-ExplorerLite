@@ -15,6 +15,7 @@ SYSTEM_ENTRY_EVENTS:frozenset[str] = frozenset({"Location", "FSDJump", "CarrierJ
 
 EVENT_HANDLERS:dict[str, Callable] = {
     "LoadGame": handlers_context.on_load_game,
+    "Loadout": handlers_context.on_loadout,
     "Continued": handlers_context.on_continued,
     "StartJump": handlers_context.on_start_jump,
     "ApproachBody": handlers_context.on_approach_body,

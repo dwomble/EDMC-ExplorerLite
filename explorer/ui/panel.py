@@ -348,12 +348,13 @@ class ExplorerPanel:
 
     def _mining_row(self, body:sqlite3.Row) -> tuple[str, str]|None:
         """ (commodity odds, exact materials) for a landable body's watch-list hits over their thresholds, or None. """
-        if not body["landable"] or not config.get_bool(CFG_MINING_ENABLED, default=True): return None
+        if not body["landable"] or self.state.has_rhino is False or not config.get_bool(CFG_MINING_ENABLED, default=True): return None
 
         wanted:set[str] = mining.parse_watch(config.get_str(CFG_MINING_COMMODITIES, default=""))
         wanted_mats:set[str] = mining.parse_watch(config.get_str(CFG_MINING_MATERIALS, default=""))
         min_comm:int = config.get_int(CFG_MINING_MIN_COMMODITY, default=0)
-        min_mat:int = config.get_int(CFG_MINING_MIN_MATERIAL, default=0)
+        try: min_mat:float = float(config.get_str(CFG_MINING_MIN_MATERIAL, default="0"))
+        except ValueError: min_mat = 0.0
         rates:list[tuple[str, float]] = [r for r in mining.watched_rates(body["planet_class"], body["volcanism"], wanted) if r[1] >= min_comm]
         mats:dict = json.loads(body["materials"] or "{}")
         found:list[tuple[str, float]] = sorted(((n.capitalize(), p) for n, p in mats.items() if mining.norm(n) in wanted_mats and p >= min_mat),

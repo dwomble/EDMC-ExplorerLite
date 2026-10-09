@@ -125,3 +125,16 @@ def on_touchdown(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict:
 def on_liftoff(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict:
     state.landed = False
     return {"panel": True, "overlay": "radar"}
+
+def on_loadout(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict:
+    """ Collapse the panel when the DSS status changes to none, expand when it gains one; the player can still toggle it. """
+    items:list[str] = [m.get("Item", "").lower() for m in entry.get("Modules", [])]
+    has_dss:bool = any("detailedsurfacescanner" in i for i in items)
+    state.has_rhino = any("mkiilargebuggybay" in i for i in items)
+    previous:bool|None = state.has_dss
+    state.has_dss = has_dss
+
+    flags:dict = {"panel": True}
+    if has_dss != previous and not (previous is None and has_dss): flags["auto_hide"] = not has_dss
+
+    return flags
