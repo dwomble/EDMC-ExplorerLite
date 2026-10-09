@@ -68,3 +68,12 @@ def unknown_names(csv:str, known:list[str]) -> list[tuple[str, str|None]]:
 
 def known_commodities() -> list[str]:
     return sorted({n for g in GROUNDS.values() for n in g['rates']})
+
+def short(name:str) -> str:
+    """ Compact form for a tight panel row: Platinum -> Plat., Low Temp Diamonds -> LTD., Helium-3 -> Heli-3. """
+    if ' ' in name: return ''.join(w[0] for w in name.split()).upper() + '.'
+
+    if len(name) <= 4: return name
+
+    head, dash, tail = name.partition('-')
+    return head[:4] + ('.' if not dash else '-' + tail)

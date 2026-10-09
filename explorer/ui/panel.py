@@ -34,6 +34,7 @@ INDENT_PX:int = 14
 MAX_SPECIES_LABEL_CHARS:int = 28
 MAX_FULL_NAME_CHARS:int = 20
 MAX_MERGED_TAG_CHARS:int = 32
+MAX_MINING_CHARS:int = 36 # beyond this a mining line switches to short names
 SAMPLES_REQUIRED:int = 3
 GRAVITY_MS2_PER_G:float = 9.797759
 GENUS_COLOR:str = "seagreen" # these three read well on both light and dark theme backgrounds
@@ -313,17 +314,17 @@ class ExplorerPanel:
         anchors:tuple = ("w", "e", "e", "e", "w")
         flagged:list[sqlite3.Row] = self.sorted_flagged(system["id"])
         flagged_ids:set[int] = {b["id"] for b in flagged}
-        mining_only:list[sqlite3.Row] = [b for b in self.store.get_bodies(system["id"]) if b["id"] not in flagged_ids and self._mining_rows(b)]
+        mining_only:list[sqlite3.Row] = [b for b in self.store.get_bodies(system["id"]) if b["id"] not in flagged_ids and self._mining_row(b)]
         focus_id:int|None = self.state.exobio_focus_body_id
         pending_rows:list = []
         current_row_shown:bool = False
         for body in flagged + mining_only:
-            mining_rows:list[tuple[str, str]] = self._mining_rows(body)
-            row:tuple[str, str, str, str, str]|None = self._flagged_body_row(name, body, force=bool(mining_rows))
+            mining_row:tuple[str, str]|None = self._mining_row(body)
+            row:tuple[str, str, str, str, str]|None = self._flagged_body_row(name, body, force=mining_row is not None)
             if row is None:
                 continue
             is_focus:bool = focus_id is not None and body["body_id"] == focus_id
-            if not is_focus and not mining_rows:
+            if not is_focus and not mining_row:
                 pending_rows.append(row)
                 continue
 
@@ -334,9 +335,10 @@ class ExplorerPanel:
             if is_focus:
                 self._render_exobio()
                 current_row_shown = True
-            if mining_rows:
-                self._render_table([("-", text) for text, _ in mining_rows], anchors=("w", "w"), indent=INDENT_PX,
-                                   cell_kwargs=[{c: {"foreground": color} for c in range(2)} for _, color in mining_rows])
+            if mining_row:
+                self._render_table([("-", *mining_row)], anchors=("w", "w", "w"), indent=INDENT_PX,
+                                   cell_kwargs=[{0: {"foreground": COMMODITY_COLOR}, 1: {"foreground": COMMODITY_COLOR},
+                                                 2: {"foreground": MATERIAL_COLOR}}])
         if pending_rows:
             self._render_table(pending_rows, anchors=anchors)
 
@@ -344,9 +346,9 @@ class ExplorerPanel:
         if not current_row_shown and focus_id is not None and self.state.cmdr_id is not None:
             self._render_exobio()
 
-    def _mining_rows(self, body:sqlite3.Row) -> list[tuple[str, str]]:
-        """ (text, colour) lines for a landable body's watch-list hits over their thresholds: commodity odds, then exact materials. """
-        if not body["landable"] or not config.get_bool(CFG_MINING_ENABLED, default=True): return []
+    def _mining_row(self, body:sqlite3.Row) -> tuple[str, str]|None:
+        """ (commodity odds, exact materials) for a landable body's watch-list hits over their thresholds, or None. """
+        if not body["landable"] or not config.get_bool(CFG_MINING_ENABLED, default=True): return None
 
         wanted:set[str] = mining.parse_watch(config.get_str(CFG_MINING_COMMODITIES, default=""))
         wanted_mats:set[str] = mining.parse_watch(config.get_str(CFG_MINING_MATERIALS, default=""))
@@ -354,13 +356,18 @@ class ExplorerPanel:
         min_mat:int = config.get_int(CFG_MINING_MIN_MATERIAL, default=0)
         rates:list[tuple[str, float]] = [r for r in mining.watched_rates(body["planet_class"], body["volcanism"], wanted) if r[1] >= min_comm]
         mats:dict = json.loads(body["materials"] or "{}")
-        found:list[tuple[str, float]] = sorted(((n, p) for n, p in mats.items() if mining.norm(n) in wanted_mats and p >= min_mat),
+        found:list[tuple[str, float]] = sorted(((n.capitalize(), p) for n, p in mats.items() if mining.norm(n) in wanted_mats and p >= min_mat),
                                                key=lambda m: -m[1])
-        rows:list[tuple[str, str]] = []
-        if rates: rows.append((", ".join(f"{n} ~{p:.0f}%" for n, p in rates), COMMODITY_COLOR))
-        if found: rows.append((", ".join(f"{n.capitalize()} {p:.1f}%" for n, p in found), MATERIAL_COLOR))
+        if not rates and not found: return None
 
-        return rows
+        def line(short:bool) -> tuple[str, str]:
+            name = mining.short if short else str
+            comm:str = ", ".join(f"{name(n)} ~{p:.0f}%" for n, p in rates)
+            mat:str = ", ".join(f"{name(n)} {p:.1f}%" for n, p in found)
+            return (comm + "," if comm and mat else comm, mat)
+
+        full:tuple[str, str] = line(False)
+        return full if len(" ".join(full)) <= MAX_MINING_CHARS else line(True)
 
     def sorted_flagged(self, system_id:int) -> list[sqlite3.Row]:
         """ Flagged bodies in the CFG_BODY_SORT order; ties keep body_id order. """

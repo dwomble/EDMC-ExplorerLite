@@ -22,6 +22,9 @@ def test_unknown_names_suggest():
     assert mining.unknown_names('Platinum, Platinun, Zzzz', mining.known_commodities()) == [('Platinun', 'Platinum'), ('Zzzz', None)]
     assert mining.unknown_names('Antimony, sulfur', list(mining.MATERIALS)) == []
 
+def test_short_names():
+    assert [mining.short(n) for n in ('Platinum', 'Low Temp Diamonds', 'Helium-3', 'Tin')] == ['Plat.', 'LTD.', 'Heli-3', 'Tin']
+
 def test_rates_data_valid():
     for g in mining.GROUNDS.values():
         assert g['sites'] > 0 and all(0 < p <= 100 for p in g['rates'].values())
