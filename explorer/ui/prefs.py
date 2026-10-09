@@ -36,33 +36,34 @@ class Pref:
     default:int|bool|str
     tooltip:str|None = None
     options:tuple[str, ...] = ()
+    full_row:bool = False # alone on its row; the next pref starts a new one
 
 SECTIONS:list[tuple[str, list[Pref]]] = [
     ("Thresholds", [
         Pref('threshold', CFG_SCAN_VALUE_THRESHOLD, "Minimum DSS value", DEFAULT_SCAN_VALUE_THRESHOLD, "Minimum value of a body scan to be shown. Bodies below this value will be ignored."),
         Pref('threshold', CFG_EXOBIO_VALUE_THRESHOLD, "Minimum exobiology value", DEFAULT_EXOBIO_VALUE_THRESHOLD, "Minimum value of exobiology scans to be shown. Bodies below this value will be ignored."),
-        Pref('threshold', CFG_VISIBLE_LINES, "Maximum visible lines", DEFAULT_VISIBLE_LINES, "Number of lines to display before enabling scrolling."),
     ]),
     ("Display", [
+        Pref('threshold', CFG_VISIBLE_LINES, "Maximum visible lines", DEFAULT_VISIBLE_LINES, "Number of lines to display before enabling scrolling."),
         Pref('choice', CFG_BODY_SORT, "Body sort order", DEFAULT_BODY_SORT,
              "How listed bodies are ordered: by name (A 2 before A 10), highest value first, or nearest the arrival star first.", BODY_SORTS),
     ]),
-    ("Mining watch list", [
-        Pref('bool', CFG_MINING_ENABLED, "Show mining rows", True, "Show watch-list commodities and materials under landable bodies."),
+    ("Mining", [
+        Pref('bool', CFG_MINING_ENABLED, "Show mining rows", True, "Show watch-list commodities and materials under landable bodies.", full_row=True),
         Pref('text', CFG_MINING_COMMODITIES, "Commodities", "",
              "Comma-separated surface mining commodities (e.g. Platinum, Olivine). Landable bodies likely to have one or more get a mining row, with the survey odds."),
+        Pref('threshold', CFG_MINING_MIN_COMMODITY, "Minimum commodity %", 0, "Hide commodities whose survey odds on a body are below this percentage."),
         Pref('text', CFG_MINING_MATERIALS, "Materials", "",
              "Comma-separated materials (e.g. Antimony, Polonium). Landable bodies whose scan lists one or more get a mining row, with the exact percentage."),
-        Pref('threshold', CFG_MINING_MIN_COMMODITY, "Minimum commodity %", 0, "Hide commodities whose survey odds on a body are below this percentage."),
         Pref('threshold', CFG_MINING_MIN_MATERIAL, "Minimum material %", 0, "Hide materials whose scanned percentage on a body is below this value."),
     ]),
     (OVERLAYS_SECTION, [
-        Pref('bool', CFG_OVERLAY_RADAR_ENABLED, "Show radar overlay", True, "When near a body with cartography potential, show a radar overlay of scans and waypoints."),
         Pref('bool', CFG_OVERLAY_SUMMARY_ENABLED, "Show summary overlay", True, "Display a summary of cartography and exobiology data."),
+        Pref('color', CFG_OVERLAY_SUMMARY_TEXT_COLOR, "Summary overlay text colour", DEFAULT_OVERLAY_SUMMARY_TEXT_COLOR, "Colour of the text displayed in the summary overlay."),
+        Pref('bool', CFG_OVERLAY_RADAR_ENABLED, "Show radar overlay", True, "When near a body with cartography potential, show a radar overlay of scans and waypoints."),
         Pref('threshold', CFG_OVERLAY_RADAR_SIZE, "Radar size", DEFAULT_OVERLAY_RADAR_SIZE, "Pixel radius of the radar overlay."),
         Pref('bool', CFG_OVERLAY_RADAR_CIRCLES, "Sample-focused radar", True, "Show scan distance as circle around each sample (scan or waypoint) rather than\nthe default Commander-focused single minimum distance circle around the current location (requires circle-capable overlay)."),
         Pref('bool', CFG_OVERLAY_RADAR_SWEEP, "Radar sweep line", False, "Animate a rotating sweep line on the radar (redrawn about 15 times a second)."),
-        Pref('color', CFG_OVERLAY_SUMMARY_TEXT_COLOR, "Summary overlay text colour", DEFAULT_OVERLAY_SUMMARY_TEXT_COLOR, "Colour of the text displayed in the summary overlay."),
     ]),
     ("Debug", [
         Pref('bool', CFG_DEV_MODE, "Developer/debug logging", False),
@@ -160,7 +161,7 @@ def _build_section(frame:nb.Frame, section_prefs:list[Pref], row:int, enabled:bo
 
     for p in section_prefs:
         _place_pref(frame, p, row, col, enabled)
-        row, col = (row + 1, 0) if col == 2 else (row, 2)
+        row, col = (row + 1, 0) if col == 2 or p.full_row else (row, 2)
 
     return row + 1 if col != 0 else row
 
