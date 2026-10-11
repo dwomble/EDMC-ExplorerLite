@@ -22,6 +22,7 @@ At every stage of exploring a system ExplorerLite tells you whether it's worth y
 - Honk heuristic flags whether a system is worth a full FSS pass, based on star type and body/signal counts.
 - Flags bodies whose cartography (scan/mapping) value or exobiology potential meets your configured credit thresholds, including first-discovery/first-mapped bonuses.
 - FSS prediction ranks likely biology from a body's atmosphere, temperature, gravity, and volcanism as soon as it's scanned
+- FSS predictions for surface mining selected commodities and materials
 - Live per-species sampling progress once you're on the ground, including the first-logged bonus.
 - Waypoints track other species tagged with the composition scanner.
 - History browser with running sold/pending totals for both cartography and exobiology.
@@ -66,6 +67,10 @@ Per-species genetic sampling progress (`N/M scanned`) is shown live while you're
 Waypoints solve the problem of the genetic sampler only doing on species at a time. If you find a location for a different species, tag it with the composition scanner and it gets added to the radar as a waypoint to return to later. As species are sampled their waypoints are automatically removed from the radar.
 
 <img width="406" height="177" alt="Screenshot 2026-08-16 215440" src="https://github.com/user-attachments/assets/cd1d5511-7c9f-4243-9878-236ebaba80fa" />
+
+## Surface Mining
+
+You can turn on surface mining predictions in the preferences and enter commodities and materials that you want to be notified about along with probabilities for commodities and concentrations for materials. These will only be shown if you have a Rhino on board.
 
 ## Overlays
 
@@ -137,6 +142,7 @@ This plugin was conceived, specified, and designed by a human. The code was subs
 - Cartography value constants cross-checked against two independent community sources, including the Frontier forums' "Exploration value formulae" thread.
 - Exobiology species value/distance data sourced from the Elite Dangerous Fandom wiki's "Exobiology Sample Values and Details" page, cross-checked against [njthomson/SrvSurvey](https://github.com/njthomson/SrvSurvey)'s organic-scanning reference.
 - Genus spawn-condition data independently transcribed from public sources, cross-checked against [Silarn/EDMC-BioScan](https://github.com/Silarn/EDMC-BioScan) (GPLv2) and ed-dsn.net's community temperature-band data.
+- Surface mining data independently transcribed from the community prospecting survey published by EDIntel and distributed by [Fumlop/EDRhinoSpotter](https://github.com/Fumlop/EDRhinoSpotter).
 - Codex-tag overlay colors cross-checked against EDMC-BioScan's own variant color names.
 
 ## Suggestions

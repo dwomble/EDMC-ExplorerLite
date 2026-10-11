@@ -10,6 +10,7 @@ from ttkHyperlinkLabel import HyperlinkLabel # type: ignore
 from config import config # type: ignore
 
 import explorer.utils.th as th
+from explorer.valuation import mining
 
 from explorer.constants import (
     PLUGIN_NAME, GH_OWNER, GH_PROJECT,
@@ -19,7 +20,7 @@ from explorer.constants import (
     CFG_VISIBLE_LINES, DEFAULT_VISIBLE_LINES,
     CFG_OVERLAY_RADAR_SIZE, DEFAULT_OVERLAY_RADAR_SIZE, CFG_OVERLAY_RADAR_CIRCLES, CFG_OVERLAY_RADAR_SWEEP,
     CFG_OVERLAY_SUMMARY_TEXT_COLOR, DEFAULT_OVERLAY_SUMMARY_TEXT_COLOR,
-    CFG_BODY_SORT, DEFAULT_BODY_SORT, BODY_SORTS,
+    CFG_BODY_SORT, DEFAULT_BODY_SORT, BODY_SORTS, CFG_MINING_ENABLED, CFG_MINING_MIN_COMMODITY, CFG_MINING_MIN_MATERIAL, CFG_MINING_COMMODITIES, CFG_MINING_MATERIALS,
 )
 
 OVERLAYS_SECTION:str = "Overlays" # must match its title in SECTIONS below
@@ -29,30 +30,44 @@ GH_URL:str = f"https://github.com/{GH_OWNER}/{GH_PROJECT}"
 
 @dataclass
 class Pref:
-    kind:str # 'threshold', 'bool', 'color' or 'choice'
+    kind:str # 'threshold', 'bool', 'color', 'choice', 'text' or 'spin'
     key:str
     desc:str
-    default:int|bool|str
+    default:int|float|bool|str
     tooltip:str|None = None
     options:tuple[str, ...] = ()
+    lo:float = 0 # 'spin' bounds and increment
+    hi:float = 100
+    step:float = 1
+    full_row:bool = False # alone on its row; the next pref starts a new one
 
 SECTIONS:list[tuple[str, list[Pref]]] = [
     ("Thresholds", [
         Pref('threshold', CFG_SCAN_VALUE_THRESHOLD, "Minimum DSS value", DEFAULT_SCAN_VALUE_THRESHOLD, "Minimum value of a body scan to be shown. Bodies below this value will be ignored."),
         Pref('threshold', CFG_EXOBIO_VALUE_THRESHOLD, "Minimum exobiology value", DEFAULT_EXOBIO_VALUE_THRESHOLD, "Minimum value of exobiology scans to be shown. Bodies below this value will be ignored."),
-        Pref('threshold', CFG_VISIBLE_LINES, "Maximum visible lines", DEFAULT_VISIBLE_LINES, "Number of lines to display before enabling scrolling."),
     ]),
     ("Display", [
+        Pref('threshold', CFG_VISIBLE_LINES, "Maximum visible lines", DEFAULT_VISIBLE_LINES, "Number of lines to display before enabling scrolling."),
         Pref('choice', CFG_BODY_SORT, "Body sort order", DEFAULT_BODY_SORT,
              "How listed bodies are ordered: by name (A 2 before A 10), highest value first, or nearest the arrival star first.", BODY_SORTS),
     ]),
+    ("Mining", [
+        Pref('bool', CFG_MINING_ENABLED, "Show mining rows", True, "Show watch-list commodities and materials under landable bodies.", full_row=True),
+        Pref('text', CFG_MINING_COMMODITIES, "Commodities", "",
+             "Comma-separated surface mining commodities (e.g. Platinum, Olivine). Landable bodies likely to have one or more get a mining row, with the survey odds."),
+        Pref('spin', CFG_MINING_MIN_COMMODITY, "Minimum commodity %", 0, "Hide commodities whose survey odds on a body are below this percentage."),
+        Pref('text', CFG_MINING_MATERIALS, "Materials", "",
+             "Comma-separated materials (e.g. Antimony, Polonium). Landable bodies whose scan lists one or more get a mining row, with the exact percentage."),
+        Pref('spin', CFG_MINING_MIN_MATERIAL, "Minimum material %", 0.0, "Hide materials whose scanned percentage on a body is below this value.",
+             lo=0, hi=30, step=0.1),
+    ]),
     (OVERLAYS_SECTION, [
-        Pref('bool', CFG_OVERLAY_RADAR_ENABLED, "Show radar overlay", True, "When near a body with cartography potential, show a radar overlay of scans and waypoints."),
         Pref('bool', CFG_OVERLAY_SUMMARY_ENABLED, "Show summary overlay", True, "Display a summary of cartography and exobiology data."),
+        Pref('color', CFG_OVERLAY_SUMMARY_TEXT_COLOR, "Summary overlay text colour", DEFAULT_OVERLAY_SUMMARY_TEXT_COLOR, "Colour of the text displayed in the summary overlay."),
+        Pref('bool', CFG_OVERLAY_RADAR_ENABLED, "Show radar overlay", True, "When near a body with cartography potential, show a radar overlay of scans and waypoints."),
         Pref('threshold', CFG_OVERLAY_RADAR_SIZE, "Radar size", DEFAULT_OVERLAY_RADAR_SIZE, "Pixel radius of the radar overlay."),
         Pref('bool', CFG_OVERLAY_RADAR_CIRCLES, "Sample-focused radar", True, "Show scan distance as circle around each sample (scan or waypoint) rather than\nthe default Commander-focused single minimum distance circle around the current location (requires circle-capable overlay)."),
         Pref('bool', CFG_OVERLAY_RADAR_SWEEP, "Radar sweep line", False, "Animate a rotating sweep line on the radar (redrawn about 15 times a second)."),
-        Pref('color', CFG_OVERLAY_SUMMARY_TEXT_COLOR, "Summary overlay text colour", DEFAULT_OVERLAY_SUMMARY_TEXT_COLOR, "Colour of the text displayed in the summary overlay."),
     ]),
     ("Debug", [
         Pref('bool', CFG_DEV_MODE, "Developer/debug logging", False),
@@ -63,6 +78,7 @@ PREFS:list[Pref] = [p for _, section_prefs in SECTIONS for p in section_prefs] #
 LABEL_GAP_PX:int = 16 # between a pref's own label and its control
 GROUP_GAP_PX:int = 24 # between the left half and the right half
 ROW_GAP_PX:int = 6 # vertical space between pref rows
+PAD_PX:int = 10 # matches the padding BGS-Tally and NeutronDancer give their settings tabs
 DANGER_COLOR:str = "#ee0000" # flags an irreversible action, e.g. Clear unsold data
 
 _pref_vars:dict[str, tk.Variable] = {}
@@ -108,6 +124,28 @@ def _place_pref(frame:nb.Frame, p:Pref, row:int, col:int, enabled:bool) -> None:
                 th.Tooltip(lbl, p.tooltip)
                 th.Tooltip(opt, p.tooltip)
 
+        case 'text':
+            _pref_vars[p.key] = tk.StringVar(value=config.get_str(p.key, default=p.default))
+            lbl:nb.Label = nb.Label(frame, text=p.desc)
+            lbl.grid(row=row, column=col, sticky=tk.W, padx=(left_pad, LABEL_GAP_PX), pady=pady)
+            ent:nb.EntryMenu = nb.EntryMenu(frame, textvariable=_pref_vars[p.key], width=30, state=state)
+            ent.grid(row=row, column=col + 1, sticky=tk.W, pady=pady)
+            if p.tooltip:
+                th.Tooltip(lbl, p.tooltip)
+                th.Tooltip(ent, p.tooltip)
+
+        case 'spin':
+            raw:str = str(config.get_int(p.key, default=int(p.default))) if p.step == 1 else config.get_str(p.key, default=str(p.default))
+            _pref_vars[p.key] = tk.StringVar(value=raw)
+            lbl:nb.Label = nb.Label(frame, text=p.desc)
+            lbl.grid(row=row, column=col, sticky=tk.W, padx=(left_pad, LABEL_GAP_PX), pady=pady)
+            spin:ttk.Spinbox = ttk.Spinbox(frame, from_=p.lo, to=p.hi, increment=p.step, textvariable=_pref_vars[p.key], width=7,
+                                           format="%.0f" if p.step == 1 else "%.1f", state=state)
+            spin.grid(row=row, column=col + 1, sticky=tk.W, pady=pady)
+            if p.tooltip:
+                th.Tooltip(lbl, p.tooltip)
+                th.Tooltip(spin, p.tooltip)
+
         case 'color':
             color:str = config.get_str(p.key, default=p.default)
             color_var:tk.StringVar = tk.StringVar(value=color)
@@ -139,7 +177,7 @@ def _build_section(frame:nb.Frame, section_prefs:list[Pref], row:int, enabled:bo
 
     for p in section_prefs:
         _place_pref(frame, p, row, col, enabled)
-        row, col = (row + 1, 0) if col == 2 else (row, 2)
+        row, col = (row + 1, 0) if col == 2 or p.full_row else (row, 2)
 
     return row + 1 if col != 0 else row
 
@@ -148,7 +186,10 @@ def build_prefs(parent:tk.Widget, cmdr:str, is_beta:bool, overlay_available:bool
     global _pref_vars
     _pref_vars = {}
 
-    frame:nb.Frame = nb.Frame(parent)
+    outer:nb.Frame = nb.Frame(parent)
+    outer.columnconfigure(0, weight=1)
+    frame:nb.Frame = nb.Frame(outer)
+    frame.grid(row=0, column=0, padx=PAD_PX, pady=PAD_PX, sticky=tk.NSEW)
     frame.columnconfigure(3, weight=1) # only the trailing column stretches -- keeps halves close
     default:tkfont.Font = tkfont.nametofont("TkDefaultFont")
     bold:tkfont.Font = tkfont.Font(family=default.actual("family"), size=default.actual("size"), weight="bold")
@@ -178,7 +219,18 @@ def build_prefs(parent:tk.Widget, cmdr:str, is_beta:bool, overlay_available:bool
     btn.grid(row=row, column=col, rowspan=3, sticky=tk.W, pady=(0, ROW_GAP_PX))
     th.Tooltip(btn, "Danger! This is an irreversible action! It will mark all pending cartography and exobiology data as lost,\nas if the commander died without EDMC running. Use only if you are sure you want to do this.")
 
-    return frame
+    return outer
+
+def _warn_unknown_names() -> None:
+    """ Typos are kept (the survey data may gain names) but flagged with the nearest known name. """
+    lines:list[str] = []
+    for key, known in ((CFG_MINING_COMMODITIES, mining.known_commodities()), (CFG_MINING_MATERIALS, list(mining.MATERIALS))):
+        var = _pref_vars.get(key)
+        if var is None: continue
+
+        lines += [f"{n} - did you mean {s}?" if s else f"{n} - not recognised" for n, s in mining.unknown_names(var.get(), known)]
+
+    if lines: messagebox.showwarning(PLUGIN_NAME, "Unrecognised mining watch-list names:\n\n" + "\n".join(lines))
 
 def save_prefs(cmdr:str, is_beta:bool) -> None:
     for p in PREFS:
@@ -189,5 +241,11 @@ def save_prefs(cmdr:str, is_beta:bool) -> None:
         match p.kind:
             case 'threshold':
                 config.set(p.key, int(var.get()) if var.get().isdigit() else p.default)
+            case 'spin':
+                try: val:float = min(max(float(var.get()), p.lo), p.hi)
+                except ValueError: val = float(p.default)
+                config.set(p.key, int(val) if p.step == 1 else str(round(val, 1)))
             case _:
                 config.set(p.key, var.get())
+
+    _warn_unknown_names()

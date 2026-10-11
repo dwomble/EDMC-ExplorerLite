@@ -26,6 +26,9 @@ class ExplorerState:
     last_bio_body_id:int|None = None # last body DSSed with confirmed biology, kept after
     last_bio_body_name:str = "" # leaving it so its list keeps showing until we reach another
 
+    has_dss:bool|None = None # from Loadout; None until the first one is seen
+    has_rhino:bool|None = None
+
     landed:bool = False
     on_foot:bool = False # from Status.json (dashboard.py), not EDMC's journal-derived state['OnFoot'] --
     # more immediate, and EDMC's own docs admit theirs "might not set this 100% correctly"

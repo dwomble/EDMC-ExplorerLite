@@ -2,6 +2,7 @@
 Per-body handlers: FSSBodySignals (pre-DSS signal counts), Scan (body properties + cartography
 value estimate), SAAScanComplete (DSS mapping done), SAASignalsFound (post-DSS exact genus).
 """
+import json
 import sqlite3
 
 from config import config # type: ignore
@@ -111,6 +112,9 @@ def on_scan(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict:
         was_discovered=1 if entry.get("WasDiscovered") else 0,
         was_mapped=1 if entry.get("WasMapped") else 0,
         was_footfalled=1 if entry.get("WasFootfalled") else 0,
+        volcanism=entry.get("Volcanism"),
+        landable=1 if entry.get("Landable") else 0,
+        materials=json.dumps({m["Name"]: m["Percent"] for m in entry.get("Materials", [])}),
         estimated_scan_value=scan_value,
         estimated_mapping_value=mapping_value,
         flagged_value=1 if flagged else 0,

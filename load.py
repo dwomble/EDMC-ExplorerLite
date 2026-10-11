@@ -90,6 +90,8 @@ def prefs_changed(cmdr:str, is_beta:bool) -> None:
     prefs_ui.save_prefs(cmdr, is_beta)
 
 def _apply_flags(flags:dict) -> None:
+    if "auto_hide" in flags and Context.panel is not None:
+        Context.panel.view.toggle(flags["auto_hide"]) # persists as the saved choice, like the button
     if flags.get("panel") and Context.panel is not None:
         Context.panel.refresh()
     if flags.get("panel") and Context.history_view is not None:

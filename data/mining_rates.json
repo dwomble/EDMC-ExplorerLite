@@ -1,0 +1,189 @@
+{
+ "dataset": "2026-09-29",
+ "note": "Share (%) of surveyed mining sites per body ground type that carried each commodity. Community survey, not Frontier spawn rates. Replace this file to update.",
+ "grounds": {
+  "rocky metallic magma": {
+   "sites": 84,
+   "rates": {
+    "Olivine": 48.8,
+    "Quartz Pyroxenite": 47.6,
+    "Bastnasite": 46.4,
+    "Alexandrite": 41.7,
+    "Monazite": 40.5,
+    "Samarium": 33.3,
+    "Copper": 32.1,
+    "Uraninite": 29.8,
+    "Serendibite": 27.4,
+    "Sapphire": 23.8,
+    "Haematite": 22.6,
+    "Ruby": 21.4,
+    "Thorium": 21.4,
+    "Magnesite": 20.2,
+    "Diamond": 16.7,
+    "Gold": 15.5,
+    "Palladium": 14.3,
+    "Silver": 13.1,
+    "Jadeite": 9.5,
+    "Grandidierite": 8.3,
+    "Thortveitite": 4.8,
+    "Helium": 2.4,
+    "Low Temp Diamonds": 2.4,
+    "Deuterium": 1.2,
+    "Periclase Dunite": 1.2
+   }
+  },
+  "rocky rocky magma": {
+   "sites": 23,
+   "rates": {
+    "Olivine": 60.9,
+    "Bastnasite": 52.2,
+    "Monazite": 52.2,
+    "Copper": 47.8,
+    "Haematite": 43.5,
+    "Silver": 43.5,
+    "Serendibite": 39.1,
+    "Gold": 34.8,
+    "Thorium": 34.8,
+    "Magnesite": 30.4,
+    "Alexandrite": 26.1,
+    "Samarium": 21.7,
+    "Uraninite": 21.7,
+    "Palladium": 17.4,
+    "Diamond": 8.7,
+    "Helium": 8.7,
+    "Low Temp Diamonds": 8.7,
+    "Jadeite": 4.3,
+    "Periclase Dunite": 4.3,
+    "Ruby": 4.3,
+    "Thortveitite": 4.3
+   }
+  },
+  "rocky none": {
+   "sites": 242,
+   "rates": {
+    "Copper": 64.9,
+    "Uraninite": 51.2,
+    "Haematite": 50.8,
+    "Thorium": 48.3,
+    "Samarium": 43.8,
+    "Magnesite": 43.0,
+    "Gold": 33.1,
+    "Silver": 28.9,
+    "Palladium": 28.5,
+    "Jadeite": 21.1,
+    "Thortveitite": 13.6,
+    "Grandidierite": 11.2,
+    "Bastnasite": 9.5,
+    "Periclase Dunite": 9.5,
+    "Helium": 6.6,
+    "Olivine": 6.6,
+    "Deuterium": 5.8,
+    "Low Temp Diamonds": 4.1,
+    "Monazite": 3.3,
+    "Alexandrite": 2.5,
+    "Diamond": 2.1,
+    "Serendibite": 2.1,
+    "Sapphire": 1.2
+   }
+  },
+  "rocky silicate vapour": {
+   "sites": 139,
+   "rates": {
+    "Jadeite": 61.9,
+    "Helium": 60.4,
+    "Copper": 49.6,
+    "Haematite": 45.3,
+    "Uraninite": 43.9,
+    "Thorium": 36.0,
+    "Samarium": 33.8,
+    "Gold": 33.1,
+    "Magnesite": 33.1,
+    "Silver": 30.2,
+    "Palladium": 26.6,
+    "Grandidierite": 12.2,
+    "Thortveitite": 10.1,
+    "Low Temp Diamonds": 6.5,
+    "Periclase Dunite": 5.8,
+    "Olivine": 4.3,
+    "Bastnasite": 2.9,
+    "Deuterium": 2.9,
+    "Monazite": 1.4,
+    "Sapphire": 1.4
+   }
+  },
+  "rocky ice": {
+   "sites": 47,
+   "rates": {
+    "Copper": 85.1,
+    "Methanol Monohydrate Crystals": 76.6,
+    "Water": 76.6,
+    "Haematite": 74.5,
+    "Palladium": 27.7,
+    "Deuterium": 23.4,
+    "Olivine": 19.1,
+    "Low Temp Diamonds": 8.5,
+    "Helium": 4.3,
+    "Diamond": 2.1
+   }
+  },
+  "high metal content": {
+   "sites": 247,
+   "rates": {
+    "Copper": 55.5,
+    "Haematite": 53.4,
+    "Titanium": 52.6,
+    "Lithium": 45.3,
+    "Osmium": 40.1,
+    "Uranium": 38.9,
+    "Platinum": 38.5,
+    "Tantalum": 34.8,
+    "Thorium": 34.0,
+    "Samarium": 28.3,
+    "Silver": 25.9,
+    "Iridium": 19.8,
+    "Gold": 19.0,
+    "Palladium": 10.5,
+    "Helium": 6.1,
+    "Ruby": 5.3,
+    "Sapphire": 4.9,
+    "Diamond": 4.0,
+    "Rhodplumsite": 3.2
+   }
+  },
+  "metal rich": {
+   "sites": 114,
+   "rates": {
+    "Platinum": 46.5,
+    "Titanium": 44.7,
+    "Copper": 43.9,
+    "Haematite": 41.2,
+    "Thorium": 39.5,
+    "Lithium": 37.7,
+    "Samarium": 36.8,
+    "Osmium": 33.3,
+    "Tantalum": 33.3,
+    "Diamond": 29.8,
+    "Iridium": 29.8,
+    "Silver": 28.9,
+    "Gold": 28.1,
+    "Uranium": 22.8,
+    "Rhodplumsite": 10.5,
+    "Sapphire": 7.9,
+    "Ruby": 6.1,
+    "Helium": 5.3,
+    "Palladium": 5.3
+   }
+  },
+  "icy": {
+   "sites": 178,
+   "rates": {
+    "Water": 99.4,
+    "Methanol Monohydrate Crystals": 66.9,
+    "Deuterium": 55.6,
+    "Tritium": 33.1,
+    "Low Temp Diamonds": 24.2,
+    "Helium-3": 17.4
+   }
+  }
+ }
+}
