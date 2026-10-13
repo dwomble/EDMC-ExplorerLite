@@ -1,25 +1,30 @@
 # EDMC-ExplorerLite Changelog
 
-## v1.5.0 2026-10-??
+## v2.0.0 2026-10-??
 
 ### New Features
 
 * A second radar overlay option to show minimum scan distance as a circle around the location of the biological for each scan or waypoint
 * Added option for a radar sweep (just for fun)
-* Added sort order options for body name, distance, or estimated value
+* Added sort order options for body name, distance, and estimated value
 * Added colors for biologicals that don't have a color but whose species indicates their color
-* Added surface mining predictions of commodities and materials.
+* Added option for surface mining predictions of commodities and materials
+* Created a logo and icon for ExplorerLite
 
 ### Changes
 
 * Adjusted species colors to make them more visible
 * Tidied up the preferences and added tooltips for more detail
+* Collapsed view includes icon as well as estimate of total unredeemed Cartography and Exobiology credits
+* Show/hide is adaptive dependent on the presence of a DSS scanner in your current ship
+* Tidied preferences frame
 
 ### Bug Fixes
 
 * An error where braintrees weren't being properly recorded
 * Fixed length and height of summary overlay
 * An error where Explorer didn't remember the last DSSed body over a restart
+* Removed broken badge in README.md
 
 ## v1.1.0 2026-09-15
 

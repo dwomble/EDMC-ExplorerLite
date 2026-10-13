@@ -70,7 +70,9 @@ Waypoints solve the problem of the genetic sampler only doing on species at a ti
 
 ## Surface Mining
 
-You can turn on surface mining predictions in the preferences and enter commodities and materials that you want to be notified about along with probabilities for commodities and concentrations for materials. These will only be shown if you have a Rhino on board.
+Surface mining commodity and material predictions can be shown once a body has been FSS scanned.
+
+Predictions are optional and only display if you have a Mk II Large Planetary Vehicle Hangar installed and have turned on `Show mining rows` in preferences. You can restrict which commodities and materials are displayed by entering a list of commodities and materials as well as probability and concentration thresholds (probability for commodities, concentraion for materials).
 
 ## Overlays
 
@@ -84,32 +86,38 @@ Mirrors the panel's own header and flagged-body list (same columns: distance, gr
 
 ### Sample radar
 
-Offers two alternate views. Both are centered on you with distance rings, a square for each logged sample (filled = in range, hollow = out of range) and a hollow triangle for each tagged waypoint, both colored by variant. Both views rotate with your heading and their size, border, background, and position are configurable.
+Offers two alternate views. Both are centered on you with distance rings, a square for each logged sample (filled = in range, hollow = out of range) and a hollow triangle for each tagged waypoint, both colored by variant. Both views rotate with your heading. Their size, border, background, and position are all configurable.
 
-The difference is that the first view is commander-focused showing a highlighted ring the size of the current genus' minimum sample distance centered on your current location. The alternate view is sample-focused showing a ring around each sample and waypoint showing that genus' minimum sample distance. This version requires a circle-capable overlay such as [ModernOverlay v0.9.2](https://github.com/SweetJonnySauce/EDMCModernOverlay/releases) or later.
+The difference is that the first view is commander-focused showing a highlighted ring the size of the current genus' minimum sample distance centered on your current location. If there are any square samples within this ring you're too close to take a new sample.
 
-**Commander-focused (without and with ModernOverlay >=0.9.2**
+The alternate view is sample-focused showing a ring around each sample and waypoint whose radius is the genus' minimum sample distance. If you are within the ring of an existing sample or waypoint you are too close for another sample of that genus. Because the radar range is slightly non-linear circles may shrink slightly as they move further away.
+
+Note, while the commander-focused view looks better with a circle-capable overlay, such as [ModernOverlay v0.9.2](https://github.com/SweetJonnySauce/EDMCModernOverlay/releases) or later, the sample-focused view requires a circle-capable overlay.
+
+**Commander-focused (without and with ModernOverlay >=0.9.2)**
 
 <img width="200" height="196" alt="Commander-focused radar view" src="https://github.com/user-attachments/assets/6dca3cd4-35f2-4770-8d06-a8da67d768fd" />
 <img width="200" height="196" alt="Commander-focused radar view with circle support" src="https://github.com/user-attachments/assets/65908aaf-ae89-4509-b423-85328465d9d7" />
 
-**Sample-focused**
+**Sample-focused (requires ModernOverlay >=0.9.2)**
 
 <img width="200" height="196" alt="Sample-focused radar view" src="https://github.com/user-attachments/assets/1403aa39-057b-47df-91a6-1d916bef89d3" />
 <img width="200" height="196" alt="Sample-focused radar view" src="https://github.com/user-attachments/assets/75dfc5c5-c5dd-4c35-8c12-f6136a4d2835" />
 
 ## Panel header
 
-The top row of the panel is always visible — the plugin name on the left, your pending cartography and exobiology credits in the middle, and two icon buttons on the right (all four have tooltips):
+The ExplorerLite display can be collapsed minimizing its space use and hiding overlays keeping it out of the way when you aren't exploring. In addition to manually showing/hiding the panel it is adaptive. If you switch to a ship without a DSS scanner it hides itself. If you switch to one with a scanner it shows itself.
 
-- 🕓 opens the History browser (below).
-- 🙈/👁 shows or hides everything below the header as well as the overlays. Data collection continues but this declutters the EDMC window. Your choice is remembered across restarts.
+When hidden just the top row of the panel is visible — the plugin name and icon on the left, your estimated unredeemed cartography and exobiology credits in the middle, and two icon buttons on the right (all four have tooltips):
+
+- 🕓 button opens the History browser (below).
+- 🙈/👁 buttons show or hide everything below the header as well as the overlays. Data collection continues but this declutters the EDMC window. Your choice is remembered across restarts.
 
 ## History
 
 Click 🕓 on the panel to open a System → Body → Species browser (per Cmdr), showing status, date, and both estimated and actual value for cartography (`Cart. Est.`/`Cart. Actual`) and exobiology (`Exo. Base`/`Exo. Full`). A running totals line at the top shows sold vs. still-pending credits for both categories, alongside an "Unsold only" checkbox (on by default) and a time-range dropdown (All time/Last day/Last week/Last month) so a long career's history stays manageable — both choices are remembered across sessions, as is window size/position. The underlying query is also capped to the 1,000 most recently visited systems.
 
-Actual sold values always come straight from the ED journal — ground truth, never a formula. Estimates exist purely to flag what's worth your time before you sell.
+Sold values come from the ED journal so are accurate and include bonuses and crew wages. Unsold values are estimates based on available data and so may be slightly inaccurate.
 
 <img width="1030" height="397" alt="Screenshot 2026-08-16 214935" src="https://github.com/user-attachments/assets/db8f58ab-8669-49bd-8f74-56c2277c63bc" />
 
@@ -118,7 +126,8 @@ Actual sold values always come straight from the ED journal — ground truth, ne
 The following settings are configurable from the EDMC preferences panel:
 
 - **Thresholds** — minimum cartography (scan/mapping) value, minimum exobiology species value, panel lines before scrolling
-- **Overlays** — radar on/off, system summary on/off, radar size, overlay summary text colour (greyed out entirely if no overlay backend is installed)
+- **Mining Predictions** — enable/disable mining predictions, commodity list, commodity probability threshold, material list, material concentration threshold.
+- **Overlays** — system summary on/off, overlay summary text colour, radar on/off, radar type, radar size, sweep on/off. All are greyed out if no overlay backend is installed.
 - **Debug** — developer/debug logging
 - **Data** — a **Clear unsold data** button for when your ship was destroyed while EDMC wasn't running to see it happen (normally, dying marks all held-but-unsold cartography and exobiology data as lost automatically). Asks for confirmation first, since it can't be undone.
 
