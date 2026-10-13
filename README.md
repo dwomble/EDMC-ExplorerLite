@@ -34,25 +34,31 @@ At every stage of exploring a system ExplorerLite tells you whether it's worth y
 
 Create a directory in your EDMC `plugins` folder called `EDMC-ExplorerLite`, download the latest release .zip file and extract it into that directory, then restart EDMC.
 
-## Honk
+## Process and Recommendations
 
-The system line shows the known body count plus the next thing worth doing, e.g. `Deltius — 7 bodies — **DSS**`.
+The system line shows the system name, body count if known, and recommended next action, e.g. `Deltius — 7 bodies — **DSS**`.
 
-The order is `Honk` → `FSS` → `DSS` / `Sample` / `DSS + Sample` → `Done`.
+The order of recommendations is `Honk` → `FSS` → `DSS` / `Sample` / `DSS + Sample` → `Done`.
+
+`Honk` (Discovery Scan) stays until you've run a discovery scan.
 
 `FSS` (Full Spectrum Scan) stays until you've finished scanning the system bodies.
 
 `DSS` (Detailed Surface Scan) means a scanned body is worth mapping, either for its cargographic value or its biological value.
 
-`Sample` (Genetic Sampling) means a mapped body still needs its biology sampled.
+`Sample` (Genetic Sampling) means a mapped body has biology work sampling.
 
 `DSS + Sample` means both are true somewhere in the system.
 
 `Done` there's nothing else recommended to do.
 
+### Discovery Scan (aka Honk)
+
+You should perform this on arrival at every system. It determines how many bodies there are in the system. If they're all stars ExplorerLite will then show `Done`. If there are bodies that may be worthwhile it will say `FSS`
+
 ## FSS
 
-As bodies are scanned, any whose estimated cartography value clears your threshold are listed with type (`T HMC`, `WW`, `ELW`, `AW`, `GG`, etc. — `T` prefix for terraformable), distance, gravity, and approximate value.
+As bodies are scanned, any whose estimated cartography value clears your mapping threshold are listed with their type (`T HMC`, `WW`, `ELW`, `AW`, `GG`, etc. — `T` prefix for terraformable), distance, gravity, and approximate value.
 
 ## DSS
 
@@ -62,9 +68,13 @@ Bodies whose value exceeds a configurable threshold are recommended for DSS as a
 
 When the FSS reports biological signals on a body, ExplorerLite indicates likely genera based on the body's atmosphere, temperature, gravity, volcanism, and nearby star type. Estimated genera are shown with a `?` prefix and a value range until confirmed. The DSS narrows this to the genera actually present and the first genetic sample per genus locks in the exact species (if not already determined) and variant.
 
+### Sampling
+
 Per-species genetic sampling progress (`N/M scanned`) is shown live while you're on the body, along with the minimum distance required between samples for that genus. Values shown always include the first-discovery/first-logged bonus you'd actually be paid — not just the base value that only matters for in-game session-progression math.
 
-Waypoints solve the problem of the genetic sampler only doing on species at a time. If you find a location for a different species, tag it with the composition scanner and it gets added to the radar as a waypoint to return to later. As species are sampled their waypoints are automatically removed from the radar.
+### Waypoints
+
+Waypoints solve the problem of the genetic sampler only doing on species at a time. If you find a location for a different species, tag it with the composition scanner and it gets added to the [radar overlay](#sample-radar) as a waypoint to return to later. As species are sampled their waypoints are automatically removed from the radar.
 
 <img width="406" height="177" alt="Screenshot 2026-08-16 215440" src="https://github.com/user-attachments/assets/cd1d5511-7c9f-4243-9878-236ebaba80fa" />
 
@@ -86,20 +96,20 @@ Mirrors the panel's own header and flagged-body list (same columns: distance, gr
 
 ### Sample radar
 
-Offers two alternate views. Both are centered on you with distance rings, a square for each logged sample (filled = in range, hollow = out of range) and a hollow triangle for each tagged waypoint, both colored by variant. Both views rotate with your heading. Their size, border, background, and position are all configurable.
+Offers two views. Both are centered on you with distance rings; a square for each logged sample (filled = in range, hollow = out of range); and a hollow triangle for each tagged waypoint. Samples and waypoints are colored by species variant. Both radar views rotate with your heading and their size, border, background, and position are all configurable.
 
-The difference is that the first view is commander-focused showing a highlighted ring the size of the current genus' minimum sample distance centered on your current location. If there are any square samples within this ring you're too close to take a new sample.
+The difference is that the first view is commander-focused showing a highlighted ring the size of the current genus' minimum sample distance centered on your current location. If there are any sample squares within this ring you're too close to take a new sample.
 
 The alternate view is sample-focused showing a ring around each sample and waypoint whose radius is the genus' minimum sample distance. If you are within the ring of an existing sample or waypoint you are too close for another sample of that genus. Because the radar range is slightly non-linear circles may shrink slightly as they move further away.
 
-Note, while the commander-focused view looks better with a circle-capable overlay, such as [ModernOverlay v0.9.2](https://github.com/SweetJonnySauce/EDMCModernOverlay/releases) or later, the sample-focused view requires a circle-capable overlay.
+Note, while the commander-focused view looks better with a circle-capable overlay, such as [ModernOverlay v0.9.2](https://github.com/SweetJonnySauce/EDMCModernOverlay/releases) or later, it can work without it. The sample-focused view however requires a circle-capable overlay.
 
-**Commander-focused (without and with ModernOverlay >=0.9.2)**
+**Commander-focused (without and with ModernOverlay >= 0.9.2)**
 
 <img width="200" height="196" alt="Commander-focused radar view" src="https://github.com/user-attachments/assets/6dca3cd4-35f2-4770-8d06-a8da67d768fd" />
 <img width="200" height="196" alt="Commander-focused radar view with circle support" src="https://github.com/user-attachments/assets/65908aaf-ae89-4509-b423-85328465d9d7" />
 
-**Sample-focused (requires ModernOverlay >=0.9.2)**
+**Sample-focused (requires ModernOverlay >= 0.9.2)**
 
 <img width="200" height="196" alt="Sample-focused radar view" src="https://github.com/user-attachments/assets/1403aa39-057b-47df-91a6-1d916bef89d3" />
 <img width="200" height="196" alt="Sample-focused radar view" src="https://github.com/user-attachments/assets/75dfc5c5-c5dd-4c35-8c12-f6136a4d2835" />
