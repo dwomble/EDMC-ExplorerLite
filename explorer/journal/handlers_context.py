@@ -6,19 +6,23 @@ from explorer.db.store import ExplorerStore
 from explorer.state import ExplorerState
 from explorer import session_persist
 from explorer.util import split_localised_color
+from explorer.valuation import exobiology_data
 
-def _persist(state:ExplorerState) -> None:
-    session_persist.save(state.cmdr, state.system_address, state.system_name, state.body_id, state.body_name)
+def persist(state:ExplorerState) -> None:
+    session_persist.save(state.cmdr, state.system_address, state.system_name, state.body_id, state.body_name,
+                         state.last_bio_body_id, state.last_bio_body_name)
 
 def _restore_sample_positions(store:ExplorerStore, state:ExplorerState) -> None:
     """ Reloads this visit's radar samples on restart. """
     if state.cmdr_id is None or state.system_id is None or state.body_id is None:
         return
     body_pk:int = store.get_or_create_body(state.cmdr_id, state.system_id, state.body_id, state.body_name)
-    variants:dict[str, str] = {row["genus"]: row["variant"] or "" for row in store.get_species_progress(body_pk)}
+    colors:dict[str, str|None] = {
+        row["genus"]: split_localised_color(row["variant"] or "")[1] or exobiology_data.SPECIES_COLORS.get(row["species"] or "")
+        for row in store.get_species_progress(body_pk)
+    }
     for row in store.get_sample_positions(body_pk):
-        _, color_name = split_localised_color(variants.get(row["genus"], ""))
-        state.sample_positions.setdefault(row["genus"], []).append((row["latitude"], row["longitude"], color_name, False))
+        state.sample_positions.setdefault(row["genus"], []).append((row["latitude"], row["longitude"], colors.get(row["genus"]), False))
         state.current_genus = row["genus"] # last row wins, insertion-ordered
 
 def restore_last_session(store:ExplorerStore, state:ExplorerState) -> None:
@@ -37,13 +41,15 @@ def restore_last_session(store:ExplorerStore, state:ExplorerState) -> None:
     state.system_id = store.get_or_create_system(state.cmdr_id, system_address, state.system_name)
     state.body_id = saved.get("body_id")
     state.body_name = saved.get("body_name") or ""
+    state.last_bio_body_id = saved.get("last_bio_body_id")
+    state.last_bio_body_name = saved.get("last_bio_body_name") or ""
     state.restored_at_startup = True
     _restore_sample_positions(store, state) # else the radar starts blank until the next jump
 
 def on_load_game(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict:
     state.reset_body()
     if not state.restored_at_startup: # don't overwrite the still-unconfirmed resumable snapshot on disk
-        _persist(state)
+        persist(state)
     return {"panel": True}
 
 def on_continued(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict:
@@ -71,20 +77,22 @@ def enter_system(store:ExplorerStore, state:ExplorerState, edmc_state:dict) -> d
     if saved and saved.get("cmdr") == state.cmdr and saved.get("system_address") == system_address:
         state.body_id = saved.get("body_id")
         state.body_name = saved.get("body_name") or ""
+        state.last_bio_body_id = saved.get("last_bio_body_id")
+        state.last_bio_body_name = saved.get("last_bio_body_name") or ""
         _restore_sample_positions(store, state)
 
-    _persist(state)
+    persist(state)
     return {"panel": True, "overlay": "radar"}
 
 def on_start_jump(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict:
     state.reset_body()
-    _persist(state)
+    persist(state)
     return {}
 
 def on_approach_body(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict:
     state.body_id = entry.get("BodyID")
     state.body_name = entry.get("Body", "")
-    _persist(state)
+    persist(state)
     return {"panel": True, "overlay": "radar"}
 
 def on_supercruise_exit(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict:
@@ -96,12 +104,12 @@ def on_supercruise_exit(store:ExplorerStore, state:ExplorerState, entry:dict) ->
         return {}
     state.body_id = body_id
     state.body_name = entry.get("Body", "")
-    _persist(state)
+    persist(state)
     return {"panel": True, "overlay": "radar"}
 
 def on_leave_body(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict:
     state.reset_body()
-    _persist(state)
+    persist(state)
     return {"panel": True, "overlay": "radar"}
 
 def on_touchdown(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict:
@@ -117,3 +125,16 @@ def on_touchdown(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict:
 def on_liftoff(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict:
     state.landed = False
     return {"panel": True, "overlay": "radar"}
+
+def on_loadout(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict:
+    """ Collapse the panel when the DSS status changes to none, expand when it gains one; the player can still toggle it. """
+    items:list[str] = [m.get("Item", "").lower() for m in entry.get("Modules", [])]
+    has_dss:bool = any("detailedsurfacescanner" in i for i in items)
+    state.has_rhino = any("mkiilargebuggybay" in i for i in items)
+    previous:bool|None = state.has_dss
+    state.has_dss = has_dss
+
+    flags:dict = {"panel": True}
+    if has_dss != previous and not (previous is None and has_dss): flags["auto_hide"] = not has_dss
+
+    return flags

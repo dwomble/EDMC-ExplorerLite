@@ -76,7 +76,7 @@ def on_scan_organic(store:ExplorerStore, state:ExplorerState, entry:dict) -> dic
         # ScanOrganic itself carries no position so capture the dashboard's latest lat/long
         state.current_genus = genus # the radar's one active ring belongs to whichever genus you're actually sampling
         if state.has_lat_long and state.latitude is not None and state.longitude is not None:
-            _, color_name = split_localised_color(variant) # radar square matches the species' own variant color
+            color_name:str|None = split_localised_color(variant)[1] or exobiology_data.SPECIES_COLORS.get(species) # radar square matches the species' colour
             state.sample_positions.setdefault(genus, []).append((state.latitude, state.longitude, color_name, False))
             store.add_sample_position(body_pk, genus, state.latitude, state.longitude) # survives an EDMC restart, unlike state.py alone
             _discard_tags_within_min_distance(state, genus, state.latitude, state.longitude)
@@ -103,6 +103,7 @@ def on_codex_entry(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict
         return {}
     species, color_name = split_localised_color(entry.get("Name_Localised", ""))
     species = exobiology_data.canon_species(species)
+    color_name = color_name or exobiology_data.SPECIES_COLORS.get(species)
     genus:str|None = exobiology_data.genus_from_species_name(species)
     if genus is None:
         return {}

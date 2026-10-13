@@ -12,7 +12,7 @@ from typing import Generator
 import explorer.session_persist as session_persist
 from explorer.db.store import ExplorerStore
 from explorer.state import ExplorerState
-from explorer.journal import handlers_context
+from explorer.journal import handlers_bodies, handlers_context
 
 @pytest.fixture(autouse=True)
 def session_path(tmp_path, monkeypatch) -> None:
@@ -33,7 +33,24 @@ class TestSaveLoad:
         session_persist.save("Testy", 123, "Deltius", 5, "Deltius 5")
         assert session_persist.load() == {
             "cmdr": "Testy", "system_address": 123, "system_name": "Deltius", "body_id": 5, "body_name": "Deltius 5",
+            "last_bio_body_id": None, "last_bio_body_name": "",
         }
+
+class TestLastBioBody:
+
+    def test_dss_body_survives_a_restart_in_orbit(self, store:ExplorerStore) -> None:
+        """ Regression: the genera list vanished after restarting EDMC while orbiting a DSSed body. """
+        state = ExplorerState()
+        state.cmdr = "Testy"
+        state.cmdr_id = store.get_or_create_cmdr("Testy")
+        state.system_address = 123
+        state.system_id = store.get_or_create_system(state.cmdr_id, 123, "Deltius")
+        handlers_bodies.on_saa_signals_found(store, state, {"BodyID": 5, "BodyName": "Deltius 5", "Genuses": [{"Genus_Localised": "Bacterium"}]})
+
+        fresh = ExplorerState()
+        handlers_context.restore_last_session(store, fresh)
+
+        assert fresh.body_id is None and fresh.exobio_focus_body_id == 5
 
 class TestRestoreLastSession:
     """ restore_last_session() runs at plugin startup, before any journal event -- unlike

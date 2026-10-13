@@ -16,7 +16,7 @@ from typing import Any, Generator, cast
 from harness import TestHarness, reset_plugin_modules
 import tests.edmc.requests as mock_requests
 from explorer.db.store import ExplorerStore
-from explorer.ui.panel import _credits_range, system_status_text, system_header_line, system_body_count_text, MAX_SPECIES_LABEL_CHARS, ExplorerPanel, LINE_HEIGHT_PX
+from explorer.ui.panel import _credits_range, system_status_text, system_header_line, system_body_count_text, MAX_SPECIES_LABEL_CHARS, GENUS_COLOR, ExplorerPanel, LINE_HEIGHT_PX
 from explorer.state import state as explorer_state, ExplorerState
 from explorer.journal import handlers_context
 from explorer.util import now_iso
@@ -285,11 +285,11 @@ class TestPanelStates:
         assert Context.store is not None and Context.panel is not None
         assert explorer_state.cmdr_id is not None and explorer_state.system_id is not None
 
-        for body_id, num, value in ((1, 9, 1_000_000), (2, 10, 3_000_000), (3, 2, 2_000_000)):
+        for body_id, num, value, dist in ((1, 9, 1_000_000, 100), (2, 10, 3_000_000, 300), (3, 2, 2_000_000, 200)):
             pk:int = Context.store.get_or_create_body(explorer_state.cmdr_id, explorer_state.system_id, body_id, f"QuietSpace {num}")
-            Context.store.update_body(pk, flagged_value=1, estimated_scan_value=value, was_discovered=1, was_mapped=1)
+            Context.store.update_body(pk, flagged_value=1, estimated_scan_value=value, was_discovered=1, was_mapped=1, distance_ls=dist)
 
-        for mode, expected in (("Name", [2, 9, 10]), ("Value", [10, 2, 9])): # name order is numeric-aware
+        for mode, expected in (("Name", [2, 9, 10]), ("Value", [10, 2, 9]), ("Distance", [9, 2, 10])): # name order is numeric-aware
             plugin.config.set(CFG_BODY_SORT, mode)
             Context.panel.refresh()
             lines = _panel_lines()
@@ -1016,7 +1016,7 @@ class TestPanelStates:
         assert any("Bacterium Aurasus" in line for line in lines), lines
 
     def test_active_species_line_styling(self, plugin:TestHarness) -> None:
-        """ The whole line reads steelblue in both themes; the progress
+        """ The whole line reads GENUS_COLOR in both themes; the progress
         cell also bolds once sampling has actually started. """
         import tkinter.font as tkfont
 
@@ -1039,11 +1039,11 @@ class TestPanelStates:
         unstarted_name = _find_label(Context.panel.scroll.interior, "Tussock Stigmasis")
         assert started_name is not None and unstarted_name is not None
 
-        # Every cell in the row, not just the name, reads steelblue
+        # Every cell in the row, not just the name, reads GENUS_COLOR
         for label in (started_name, unstarted_name):
             for column in range(4):
                 cell = _row_cell(label, column=column)
-                assert str(cell.cget("foreground")) == "steelblue", (column, cell.cget("text"))
+                assert str(cell.cget("foreground")) == GENUS_COLOR, (column, cell.cget("text"))
 
         started_progress = _row_cell(started_name, column=0)
         unstarted_progress = _row_cell(unstarted_name, column=0)
@@ -1263,7 +1263,7 @@ class TestPrefs:
 
     def test_build_and_save_roundtrip(self, plugin:TestHarness) -> None:
 
-        frame = prefs_ui.build_prefs(plugin.parent, "Testy", False)
+        frame = prefs_ui.build_prefs(plugin.parent, "Testy", False).winfo_children()[-1] # unwrap the padding frame
         assert frame is not None
 
         prefs_ui._pref_vars[CFG_SCAN_VALUE_THRESHOLD].set("123456")
@@ -1287,7 +1287,7 @@ class TestPrefs:
 
     def test_header_shows_name_version_and_github_link(self, plugin:TestHarness) -> None:
 
-        frame = prefs_ui.build_prefs(plugin.parent, "Testy", False, version="1.2.3")
+        frame = prefs_ui.build_prefs(plugin.parent, "Testy", False, version="1.2.3").winfo_children()[-1] # unwrap the padding frame
         labels = {c.cget("text") for c in frame.winfo_children() if "text" in c.keys()}
         assert f"{PLUGIN_NAME} v1.2.3" in labels
 
@@ -1298,7 +1298,7 @@ class TestPrefs:
 
     def test_all_sections_are_present(self, plugin:TestHarness) -> None:
 
-        frame = prefs_ui.build_prefs(plugin.parent, "Testy", False)
+        frame = prefs_ui.build_prefs(plugin.parent, "Testy", False).winfo_children()[-1] # unwrap the padding frame
         labels = {c.cget("text") for c in frame.winfo_children() if "text" in c.keys()}
         assert {"Thresholds", "Overlays", "Debug", prefs_ui.DATA_SECTION_TITLE} <= labels
 
@@ -1311,7 +1311,7 @@ class TestPrefs:
 
     def test_overlays_section_disabled_without_an_overlay_backend(self, plugin:TestHarness) -> None:
 
-        frame = prefs_ui.build_prefs(plugin.parent, "Testy", False, overlay_available=False)
+        frame = prefs_ui.build_prefs(plugin.parent, "Testy", False, overlay_available=False).winfo_children()[-1] # unwrap the padding frame
         radar_cb = next(c for c in frame.winfo_children() if "text" in c.keys() and c.cget("text") == "Show radar overlay")
         assert str(radar_cb.cget("state")) == "disabled"
 
@@ -1320,20 +1320,20 @@ class TestPrefs:
 
     def test_overlays_section_enabled_with_an_overlay_backend(self, plugin:TestHarness) -> None:
 
-        frame = prefs_ui.build_prefs(plugin.parent, "Testy", False, overlay_available=True)
+        frame = prefs_ui.build_prefs(plugin.parent, "Testy", False, overlay_available=True).winfo_children()[-1] # unwrap the padding frame
         radar_cb = next(c for c in frame.winfo_children() if "text" in c.keys() and c.cget("text") == "Show radar overlay")
         assert str(radar_cb.cget("state")) == "normal"
 
     def test_clear_unsold_data_button_is_present(self, plugin:TestHarness) -> None:
 
-        frame = prefs_ui.build_prefs(plugin.parent, "Testy", False)
+        frame = prefs_ui.build_prefs(plugin.parent, "Testy", False).winfo_children()[-1] # unwrap the padding frame
         btn = next(c for c in frame.winfo_children() if isinstance(c, (tk.Button, ttk.Button)) and c.cget("text") == "Delete")
         assert btn.cget("command")
 
     def test_clear_unsold_data_button_is_flagged_as_dangerous(self, plugin:TestHarness) -> None:
         """ Irreversible -- red sets it apart from other prefs. """
 
-        frame = prefs_ui.build_prefs(plugin.parent, "Testy", False)
+        frame = prefs_ui.build_prefs(plugin.parent, "Testy", False).winfo_children()[-1] # unwrap the padding frame
         btn = next(c for c in frame.winfo_children() if isinstance(c, (tk.Button, ttk.Button)) and c.cget("text") == "Delete")
         assert str(btn.cget("background")) == prefs_ui.DANGER_COLOR
 
@@ -1346,7 +1346,7 @@ class TestPrefs:
         monkeypatch.setattr(prefs_ui.messagebox, "askyesno", lambda *a, **kw: False)
         monkeypatch.setattr(prefs_ui.messagebox, "showinfo", lambda *a, **kw: None)
 
-        frame = prefs_ui.build_prefs(plugin.parent, "Testy", False, clear_unsold_data=_record)
+        frame = prefs_ui.build_prefs(plugin.parent, "Testy", False, clear_unsold_data=_record).winfo_children()[-1] # unwrap the padding frame
         btn = next(c for c in frame.winfo_children() if isinstance(c, (tk.Button, ttk.Button)) and c.cget("text") == "Delete")
         btn.invoke()
 
@@ -1363,7 +1363,7 @@ class TestPrefs:
         monkeypatch.setattr(prefs_ui.messagebox, "askyesno", lambda *a, **kw: True)
         monkeypatch.setattr(prefs_ui.messagebox, "showinfo", lambda title, message, **kw: shown.append(message))
 
-        frame = prefs_ui.build_prefs(plugin.parent, "Testy", False, clear_unsold_data=lambda cmdr: f"cleared for {cmdr}")
+        frame = prefs_ui.build_prefs(plugin.parent, "Testy", False, clear_unsold_data=lambda cmdr: f"cleared for {cmdr}").winfo_children()[-1] # unwrap the padding frame
         btn = next(c for c in frame.winfo_children() if isinstance(c, (tk.Button, ttk.Button)) and c.cget("text") == "Delete")
         btn.invoke()
 

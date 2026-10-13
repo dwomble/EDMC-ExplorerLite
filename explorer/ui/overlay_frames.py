@@ -3,6 +3,8 @@ circle-capable overlay, a translucent circle of that distance around its samples
 marker per logged position (real samples vs. codex-tagged waypoints). """
 import math
 import sqlite3
+import threading
+import time
 
 from config import config # type: ignore
 
@@ -15,6 +17,7 @@ from explorer.util import local_offset_m
 from explorer.valuation import exobiology_data
 from explorer.constants import (
     CFG_PANEL_ENABLED, CFG_OVERLAY_RADAR_ENABLED, CFG_OVERLAY_RADAR_SIZE, DEFAULT_OVERLAY_RADAR_SIZE, CFG_OVERLAY_RADAR_CIRCLES,
+    CFG_OVERLAY_RADAR_SWEEP,
 )
 
 FRAME_PREFIX:str = "explorerlite-radar-"
@@ -43,13 +46,19 @@ CIRCLE_BORDER_ALPHA:int = 0xB3 # ~70% opaque
 ACTIVE_FILL_ALPHA:int = 0x70 # real samples, stronger than waypoints to stand out
 ACTIVE_BORDER_ALPHA:int = 0xFF
 
+SWEEP_PERIOD_S:float = 6.0 # one full turn
+SWEEP_INTERVAL_S:float = 1 / 15 # redraw cadence, much faster than render()'s ~1/sec tick
+SWEEP_STALE_S:float = float(TTL) # render() only runs when Status.json changes, so match how long the radar's own markers last
+SWEEP_TTL:int = 1 # a stopped sweep fades quickly
+SWEEP_COLOR:str = "#b333ff88" # translucent green
+
 # Disabled: ring/label for a tagged-but-unapproached genus (kept for possible future use).
 SHOW_TAGGED_GENUS:bool = False
 
-RING_DISTANCES_M:tuple[int, ...] = (833, 1667, 2500) # the radar scale is linear, so evenly spaced
+RING_DISTANCES_M:tuple[int, ...] = (750, 1500, 2250) # the radar scale is linear, so evenly spaced
 DISPLAY_RANGE_M:float = float(max(RING_DISTANCES_M)) # the "in range" boundary
 
-EDGE_DISPLAY_M:float = 2560.0 # radar's true edge -- a bit past the outer ring, margin for out-of-range dots
+EDGE_DISPLAY_M:float = 2304.0 # radar's true edge -- a bit past the outer ring, margin for out-of-range dots
 RING_AREA_FRAC:float = DISPLAY_RANGE_M / EDGE_DISPLAY_M
 
 def _radius_frac(distance_m:float) -> float:
@@ -73,7 +82,7 @@ CODEX_TAG_COLORS:dict[str, str] = {
     "Cyan": "#00e5e5", "Emerald": "#2ecc71", "Gold": "#ffd700", "Green": "#14ac14",
     "Grey": "#aaaaaa", "Indigo": "#793cf4", "Lime": "#bfff00", "Magenta": "#ff33ff",
     "Maroon": "#aa3344", "Mauve": "#be53be", "Mulberry": "#B93175", "Ocher": "#cfa528",
-    "Orange": "#ff8822", "Peach": "#ffaa88", "Red": "#ee3333", "Sage": "#889977",
+    "Orange": "#ff8822", "Peach": "#ffaa88", "Red": "#ee3333", "Rose": "#ff7799", "Sage": "#889977",
     "Teal": "#0C9D87", "Turquoise": "#33cccc", "White": "#eeeeee", "Yellow": "#eedd22",
 }
 DEFAULT_TAG_COLOR:str = "#ff66aa"
@@ -113,6 +122,12 @@ def _ring_dot_positions(cx:float, cy:float, r:float) -> list[tuple[float, float]
         for i in range(count)
     ]
 
+def _sweep_points(radius:float, t:float) -> list[dict]:
+    """ Centre to rim at the sweep's angle for time t: 12 o'clock at t=0, clockwise. """
+    angle:float = 2 * math.pi * (t % SWEEP_PERIOD_S) / SWEEP_PERIOD_S
+    tip:dict = {"x": round(CENTER_X + radius * math.sin(angle)), "y": round(CENTER_Y - radius * math.cos(angle))}
+    return [{"x": CENTER_X, "y": CENTER_Y}, tip]
+
 def _rotate_to_heading(east:float, north:float, heading:float) -> tuple[float, float]:
     """ Rotate a world-space (east, north) offset into a heading-up screen frame """
     sin_h, cos_h = math.sin(heading), math.cos(heading)
@@ -126,6 +141,11 @@ class RadarOverlay:
         self.overlay:Overlay = overlay
         self._group_defined:bool = False
         self._last_skip_reason:str|None = None # dedupe diagnostic logging -- log only on change
+        self._thread:threading.Thread|None = None
+        self._halt:threading.Event = threading.Event()
+        self._sweep_r:float = 0.0
+        self._seen:float = 0.0 # monotonic time of the last render() that actually drew the radar
+        self._snap:tuple|None = None
 
     def _log_skip(self, reason:str|None) -> None:
         """ Avoid spamming duplicates """
@@ -185,6 +205,7 @@ class RadarOverlay:
         circles:bool = self.overlay.supports_circle and config.get_bool(CFG_OVERLAY_RADAR_CIRCLES, default=True)
         radius_px:int = _radius()
         heading_rad:float = math.radians(state.heading) if state.heading is not None else 0.0
+        began:float = time.monotonic()
         self._pin_bounds(radius_px)
         self._draw_distance_rings(radius_px)
 
@@ -204,6 +225,39 @@ class RadarOverlay:
                 self._draw_genus_label(radius_px, genus)
 
         self._draw_player()
+
+        snap:tuple = (tuple(genera), tuple(len(state.sample_positions.get(g, [])) for g in genera), state.planet_radius is not None)
+        if snap != self._snap:
+            self._snap = snap
+            Debug.logger.debug(f"Radar drawing genera={snap[0]} positions={snap[1]} radius_known={snap[2]}")
+        if time.monotonic() - began > 0.1: Debug.logger.debug(f"Radar render took {time.monotonic() - began:.2f}s")
+        if not config.get_bool(CFG_OVERLAY_RADAR_SWEEP, default=False):
+            self._seen = 0.0
+            return
+
+        self._sweep_r = radius_px * RING_AREA_FRAC
+        self._seen = time.monotonic()
+        if self._thread is None:
+            self._thread = threading.Thread(target=self._sweep_loop, name="ExplorerLite radar sweep", daemon=True)
+            self._thread.start()
+
+    def stop(self) -> None:
+        """ End the sweep thread. """
+        self._halt.set()
+        if self._thread: self._thread.join(timeout=1)
+
+    def _sweep_loop(self) -> None:
+        """ Redraw only the sweep line, at a smooth cadence. """
+        last:float = 0.0
+        while not self._halt.wait(SWEEP_INTERVAL_S):
+            now:float = time.monotonic()
+            if now - self._seen > SWEEP_STALE_S:
+                last = 0.0
+                continue
+
+            if last and now - last > 0.25: Debug.logger.debug(f"Radar sweep gap {now - last:.2f}s")
+            last = now
+            self.overlay.send_vect(f"{FRAME_PREFIX}sweep", _sweep_points(self._sweep_r, now), SWEEP_COLOR, ttl=SWEEP_TTL)
 
     def _active_genera(self, progress:list[sqlite3.Row]) -> list[str]:
         """ Every confirmed genus not yet fully sampled. """

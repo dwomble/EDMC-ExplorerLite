@@ -27,7 +27,7 @@ jobs:
           echo "${{ env.VERSION }}" | sed 's/^v//' > version
 
     - name: Zip Folder
-      run: zip -r ${{ github.event.repository.name }}.zip explorer data LICENSE load.py version -x \*__pycache__\* \*.pytest_cache\*
+      run: zip -r ${{ github.event.repository.name }}.zip explorer data assets LICENSE load.py version -x \*__pycache__\* \*.pytest_cache\*
 
     - name: Release
       uses: softprops/action-gh-release@v2
