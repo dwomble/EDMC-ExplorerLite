@@ -24,15 +24,16 @@ At every stage of exploring a system ExplorerLite tells you whether it's worth y
 - FSS prediction ranks likely biology from a body's atmosphere, temperature, gravity, and volcanism as soon as it's scanned
 - FSS predictions for surface mining selected commodities and materials
 - Live per-species sampling progress once you're on the ground, including the first-logged bonus.
-- Waypoints track other species tagged with the composition scanner.
+- Waypoints enable tracking of **multiple** species simultaneously.
 - History browser with running sold/pending totals for both cartography and exobiology.
-- Multi-commander support.
 
 <img width="477" height="173" alt="Screenshot 2026-08-16 183627" src="https://github.com/user-attachments/assets/15b6d141-8385-47ee-ba5d-9474bd56aaa6" />
 
 ## Installation
 
-Create a directory in your EDMC `plugins` folder called `EDMC-ExplorerLite`, download the latest release .zip file and extract it into that directory, then restart EDMC.
+Create a folder in your EDMC `plugins` folder (suggest calling it `EDMC-ExplorerLite`), download the [latest release](https://github.com/dwomble/EDMC-ExplorerLite/releases/latest) .zip file and extract it into your newly created folder, then restart EDMC.
+
+As new releases become available ExplorerLite will offer to automatically update to the latest version.
 
 ## Process and Recommendations
 
@@ -40,41 +41,36 @@ The system line shows the system name, body count if known, and recommended next
 
 The order of recommendations is `Honk` → `FSS` → `DSS` / `Sample` / `DSS + Sample` → `Done`.
 
-`Honk` (Discovery Scan) stays until you've run a discovery scan.
+- `Honk` (Discovery Scan) stays until you've run a discovery scan.
+- `FSS` (Full Spectrum Scan) stays until you've finished scanning the system bodies.
+- `DSS` (Detailed Surface Scan) means there's a scanned body worth mapping, either for its cargographic value or potential exobiology value.
+- `Sample` (Genetic Sampling) means a mapped body has biology worth sampling.
+- `DSS + Sample` means both are true somewhere in the system.
+- `Done` there's nothing else recommended to do.
 
-`FSS` (Full Spectrum Scan) stays until you've finished scanning the system bodies.
+###  Honk (Discovery Scan)
 
-`DSS` (Detailed Surface Scan) means a scanned body is worth mapping, either for its cargographic value or its biological value.
+You should discovery scan, commonly called honk, every system on arrival. It determines how many bodies there are in the system. If they're all stars ExplorerLite will then show `Done`. If there are bodies that may be worthwhile it will say `FSS`.
 
-`Sample` (Genetic Sampling) means a mapped body has biology work sampling.
-
-`DSS + Sample` means both are true somewhere in the system.
-
-`Done` there's nothing else recommended to do.
-
-### Discovery Scan (aka Honk)
-
-You should perform this on arrival at every system. It determines how many bodies there are in the system. If they're all stars ExplorerLite will then show `Done`. If there are bodies that may be worthwhile it will say `FSS`
-
-## FSS
+### FSS
 
 As bodies are scanned, any whose estimated cartography value clears your mapping threshold are listed with their type (`T HMC`, `WW`, `ELW`, `AW`, `GG`, etc. — `T` prefix for terraformable), distance, gravity, and approximate value.
 
-## DSS
+### DSS
 
 Bodies whose value exceeds a configurable threshold are recommended for DSS as are planets whose likely biologicals exceed a configurable threshold.
 
 ## Exobiology
 
-When the FSS reports biological signals on a body, ExplorerLite indicates likely genera based on the body's atmosphere, temperature, gravity, volcanism, and nearby star type. Estimated genera are shown with a `?` prefix and a value range until confirmed. The DSS narrows this to the genera actually present and the first genetic sample per genus locks in the exact species (if not already determined) and variant.
+When the FSS reports biological signals on a body, ExplorerLite indicates likely genera based on the body's atmosphere, temperature, gravity, volcanism, and nearby star type. Estimated genera are shown with a `?` prefix and a value range until confirmed. The DSS narrows this to the genera actually present and the first genetic sample per genus locks in the exact species (if not already determined) and value.
 
 ### Sampling
 
-Per-species genetic sampling progress (`N/M scanned`) is shown live while you're on the body, along with the minimum distance required between samples for that genus. Values shown always include the first-discovery/first-logged bonus you'd actually be paid — not just the base value that only matters for in-game session-progression math.
+Per-species genetic sampling progress (`N/M scanned`) is shown live while you're on the body, along with the minimum distance required between samples for that genus. Values shown always include the first-discovery/first-logged bonus you'll actually be paid. This is based on first footfall so it is possible to get occasionally get a first-discovery bonus that ExplorerLite didn't predict.
 
 ### Waypoints
 
-Waypoints solve the problem of the genetic sampler only doing on species at a time. If you find a location for a different species, tag it with the composition scanner and it gets added to the [radar overlay](#sample-radar) as a waypoint to return to later. As species are sampled their waypoints are automatically removed from the radar.
+Waypoints solve the problem of coming across a hard to find species while sampling a different species. If you find a location for a different species, tag it with the composition scanner and it gets added to the [radar overlay](#sample-radar) as a waypoint to return to later. As species are sampled their waypoints are automatically removed from the radar.
 
 <img width="406" height="177" alt="Screenshot 2026-08-16 215440" src="https://github.com/user-attachments/assets/cd1d5511-7c9f-4243-9878-236ebaba80fa" />
 
