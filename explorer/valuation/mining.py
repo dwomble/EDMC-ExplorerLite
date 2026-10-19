@@ -1,5 +1,5 @@
 """ Surface mining prediction: ground type (planet class + volcanism) to likely commodities, from data/mining_rates.json. """
-import difflib
+from explorer.extras import difflib
 import json
 import re
 import unicodedata
