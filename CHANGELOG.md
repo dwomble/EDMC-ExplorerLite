@@ -1,6 +1,12 @@
 # EDMC-ExplorerLite Changelog
 
-## v2.0.0 2026-10-??
+## v2.0.1 2026-10-19
+
+### Bug Fixes
+
+* Fix issue with missing `difflib` python library
+
+## v2.0.0 2026-10-16
 
 ### New Features
 
