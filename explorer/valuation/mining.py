@@ -1,9 +1,10 @@
 """ Surface mining prediction: ground type (planet class + volcanism) to likely commodities, from data/mining_rates.json. """
-import difflib
 import json
 import re
 import unicodedata
 from pathlib import Path
+
+from explorer.extras import difflib
 
 _DATA:dict = json.loads((Path(__file__).resolve().parent.parent.parent / 'data' / 'mining_rates.json').read_text())
 GROUNDS:dict[str, dict] = _DATA['grounds']
