@@ -416,6 +416,9 @@ class ExplorerPanel:
             prefix:str = "" if body["has_biological_signals"] else "?"
             signal_count:int|None = body["biological_signal_count"] # ground truth count, vs. the guessed kinds below
             collapsed:str = self._collapse_prediction_names(predictions, joiner="+")
+            if len(collapsed) > MAX_FULL_NAME_CHARS: # a run of genus codes reads as "all present"; a bare count doesn't
+                genera:int = len({g for p in predictions for g in p["genera"]})
+                collapsed = f"{genera} possibilities"
             sep:str = "of" if collapsed.endswith("possibilities") else "–" # "N of M possibilities" reads clearer than "N – M"
             count_prefix:str = f"{signal_count} {sep} " if signal_count else ""
             species_desc = f"{count_prefix}{prefix}{collapsed}"
