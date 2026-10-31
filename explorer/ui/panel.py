@@ -144,8 +144,9 @@ class ExplorerPanel:
         self.frame:th.Frame = th.Frame(parent)
         self.frame.columnconfigure(0, weight=1)
 
+        # CFG_PANEL_ENABLED seeds Collapsible's own saved state and stays in step for the overlays that read it
         self.view:th.Collapsible = th.Collapsible(self.frame, hidden=not config.get_bool(CFG_PANEL_ENABLED, default=True),
-                                                  on_toggle=self._on_toggle)
+                                                  movable=True, on_toggle=self._on_toggle)
         self.view.expanded.columnconfigure(0, weight=1)
         self.view.collapsed.columnconfigure(0, weight=1)
 
@@ -153,9 +154,13 @@ class ExplorerPanel:
         self._icon:tk.PhotoImage|None = None
         try: self._icon = tk.PhotoImage(master=parent, file=ICON_PATH)
         except tk.TclError: pass # missing/unreadable icon just leaves the plain title
-        self.title_label, self.cart_value_label, self.exo_value_label, self.history_button, self.hide_button = \
-            self._build_header(self.view.expanded, True)
-        _, self._cart_collapsed, self._exo_collapsed, _, self.show_button = self._build_header(self.view.collapsed, False)
+        self.title_label, self.cart_value_label, self.exo_value_label, self.history_button, top = \
+            self._build_header(self.view.expanded)
+        _, self._cart_collapsed, self._exo_collapsed, _, bottom = self._build_header(self.view.collapsed)
+        self.hide_button:th.Button = self.view.button("hide", in_=top, row=0, column=4, sticky=tk.E)
+        self.view.button("up", in_=bottom, row=0, column=4, sticky=tk.E)
+        self.view.button("down", in_=bottom, row=0, column=5, sticky=tk.E)
+        self.show_button:th.Button = self.view.button("show", in_=bottom, row=0, column=6, sticky=tk.E)
 
         self.scroll:th.ScrollableFrame = th.ScrollableFrame(self.view.expanded, maxheight=_visible_lines_px())
         self.scroll.grid(row=2, column=0, sticky=tk.EW) # row 1 is the notice bar, shown/hidden lazily
@@ -190,7 +195,7 @@ class ExplorerPanel:
         if self.on_history_open:
             self.on_history_open()
 
-    def _build_header(self, master:th.Frame, expanded:bool) -> tuple[th.Label, th.Label, th.Label, th.Button, th.Button]:
+    def _build_header(self, master:th.Frame) -> tuple[th.Label, th.Label, th.Label, th.Button, th.Frame]:
         """ One header row; grid, not pack -- th.Base's pack() renders light/dark widget pairs twice """
         header:th.Frame = th.Frame(master)
         header.grid(row=0, column=0, sticky=tk.EW)
@@ -216,9 +221,7 @@ class ExplorerPanel:
         history.grid(row=0, column=3, sticky=tk.E)
         th.Tooltip(history, "Open history")
 
-        toggle:th.Button = self.view.hide_button(header, "Hide panel") if expanded else self.view.show_button(header, "Show panel")
-        toggle.grid(row=0, column=4, sticky=tk.E)
-        return title, cart, exo, history, toggle
+        return title, cart, exo, history, header
 
     def _on_toggle(self, hidden:bool) -> None:
         """ Persist the state; catch up on whatever changed while hidden """

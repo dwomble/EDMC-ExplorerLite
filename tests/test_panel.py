@@ -11,6 +11,7 @@ import tkinter as tk
 from tkinter import ttk
 import sqlite3
 import pytest
+from pathlib import Path
 from typing import Any, Generator, cast
 
 from harness import TestHarness, reset_plugin_modules
@@ -1160,7 +1161,8 @@ class TestNoDuplicateWidgets:
 
     def test_toggle_buttons_gridded(self, plugin:TestHarness) -> None:
         assert Context.store is not None and Context.panel is not None
-        for button in (Context.panel.hide_button, Context.panel.show_button):
+        view = Context.panel.view
+        for button in (Context.panel.hide_button, Context.panel.show_button, view.button("up"), view.button("down")):
             assert {button.obj.winfo_manager(), button.alt.winfo_manager()} == {"grid", ""}
 
 class TestPanelHeaderToggle:
@@ -1238,7 +1240,8 @@ class TestPanelHeaderToggle:
         assert _panel_lines() != before
 
     def test_panel_starts_hidden(self, harness:TestHarness, tmp_path) -> None:
-
+        """ With nothing saved by Collapsible yet, the existing CFG_PANEL_ENABLED decides the start state. """
+        harness.config.data.pop(f"th_{Path(__file__).resolve().parents[1].name}_hidden".lower(), None)
         harness.config.set(CFG_PANEL_ENABLED, False)
         store = ExplorerStore(tmp_path / "explorer_standalone.sqlite")
         try:
