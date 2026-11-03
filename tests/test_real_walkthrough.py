@@ -87,3 +87,42 @@ class TestEolProuWalkthrough:
         ).fetchone()
         assert sale["event_type"] == "exobiology"
         assert sale["total_value"] == 57_032_400 # real ground truth for THIS transaction (Stratum Tectonicas)
+
+class TestRealCycle:
+    """ Real 2026-08-23 session: jump, honk, scan, DSS, sample, then sell both data types. """
+
+    def _system(self, name:str) -> sqlite3.Row:
+        assert Context.store is not None
+        return Context.store.conn.execute("SELECT * FROM systems WHERE name = ?", (name,)).fetchone()
+
+    def test_full_cycle(self, plugin:TestHarness) -> None:
+        plugin.load_events("real_cycle.json")
+        plugin.play_sequence("explore", delay=0.0)
+
+        store = Context.store
+        assert store is not None
+        cmdr_id:int|None = explorer_state.cmdr_id
+        assert cmdr_id is not None
+
+        b57:sqlite3.Row = self._system("Eol Prou YI-W b17-57")
+        b69:sqlite3.Row = self._system("Eol Prou YI-W b17-69")
+        assert (b57["honk_body_count"], b69["honk_body_count"]) == (14, 55)
+
+        mapped:list[sqlite3.Row] = [b for s in (b57, b69) for b in store.get_bodies(s["id"]) if b["mapped_at"]]
+        assert sorted(b["body_name"] for b in mapped) == [f"Eol Prou YI-W {n}" for n in ("b17-57 B 2", "b17-57 B 3", "b17-69 D 4")]
+
+        species:list[sqlite3.Row] = [r for b in mapped for r in store.get_species_progress(b["id"])]
+        done:list[tuple] = [(r["species"], r["samples_taken"]) for r in species if r["completed_at"]]
+        assert done == [("Stratum Tectonicas", 3)] * 3
+        assert {r["genus"] for r in species if not r["completed_at"]} == {"Bacterium"}
+        assert store.get_pending_exobiology_value(cmdr_id) == 57_032_400
+        assert store.get_pending_cartography_value(cmdr_id) > 0
+
+        plugin.play_sequence("sell_cartography", delay=0.0)
+        assert self._system("Eol Prou YI-W b17-57")["sold_at"] is not None
+        assert self._system("Eol Prou YI-W b17-69")["sold_at"] is None # really sold in a later session
+        assert store.get_sale_totals(cmdr_id)["cartography"] == 35_533_177 + 37_567_861 + 191_063
+
+        plugin.play_sequence("sell_organic", delay=0.0)
+        assert store.get_pending_exobiology_value(cmdr_id) == 0
+        assert store.get_sale_totals(cmdr_id)["exobiology"] == 57_032_400
