@@ -127,7 +127,7 @@ def _body_designator(system_name:str, body_name:str) -> str:
     prefix:str = system_name + " "
     if body_name.startswith(prefix):
         designator:str = body_name[len(prefix):]
-        return designator if designator else body_name
+        return designator or body_name
 
     return body_name
 
@@ -537,7 +537,7 @@ class ExplorerPanel:
 
         for genus, slot in genus_slots.items():
             if genus not in claimed:
-                units.append({**slot, "chain_tier": None})
+                units.append(slot | {"chain_tier": None})
 
         by_confidence:list[dict] = sorted(units, key=lambda u: -u["confidence"])
         groups:list[list[dict]] = []
@@ -556,7 +556,7 @@ class ExplorerPanel:
 
         groups.sort(key=group_key)
 
-        limit:int = signal_count if signal_count else MAX_PREDICTED_SHOWN
+        limit:int = signal_count or MAX_PREDICTED_SHOWN
         slots:list[dict] = []
         remaining:int = limit
         for group in groups:
@@ -617,7 +617,7 @@ class ExplorerPanel:
             value:int = exobiology.estimate_confirmed_value(row["genus"], row["species"]) or 0
             return (value, value)
         value_range:tuple[int, int]|None = exobiology.estimate_genus_range(row["genus"])
-        return value_range if value_range else (0, 0)
+        return value_range or (0, 0)
 
     def _predicted_genus_row(self, slot:dict, confirmed_signal:bool, was_footfalled:bool) -> tuple[str, str, str]:
         """ Full (bonus-included) value. """
@@ -642,12 +642,12 @@ class ExplorerPanel:
             return (min(values), max(values))
         value_range:tuple[int, int]|None = exobiology.estimate_genus_range(genus)
 
-        return value_range if value_range else (0, 0)
+        return value_range or (0, 0)
 
     def _join_species_names(self, genus:str, names:list[str]) -> str:
         """ first name kept in full, genus prefix stripped from the rest, then joined with slashes. """
         prefix:str = f"{genus} "
-        joined:list[str] = [names[0]] + [n[len(prefix):] if n.startswith(prefix) else n for n in names[1:]]
+        joined:list[str] = [names[0]] + [n.removeprefix(prefix) for n in names[1:]]
 
         return str_truncate("/".join(joined), MAX_SPECIES_LABEL_CHARS)
 
