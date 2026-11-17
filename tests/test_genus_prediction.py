@@ -64,6 +64,29 @@ class TestPredictGenera:
         scores = [score for _, score in results]
         assert scores == sorted(scores, reverse=True)
 
+    def test_region_requirement_ignored_when_region_unset(self) -> None:
+        # Amphora Plants have a region requirement, so check that we still
+        # predict them when region is unknown
+        entry = _entry("Metal rich body", "None", "metallic", 1500.0, 1.0)
+        results = dict(predict_genera(entry, "A", None, 1))
+        assert "Amphora Plant" in results
+
+
+    def test_region_requirement_excludes_mismatch(self) -> None:
+        # Amphora Plants have a region requirement, so check that they're
+        # excluded when region is known and doesn't match
+        entry = _entry("Metal rich body", "None", "metallic", 1500.0, 1.0)
+        results_outside_region = dict(predict_genera(entry, "A", "Galactic Centre", 1))
+        assert "Amphora Plant" not in results_outside_region
+
+    def test_region_requirement_includes_match(self) -> None:
+        # Amphora Plants have a region requirement, so check that they're
+        # predicted in a matching region
+        entry = _entry("Metal rich body", "None", "metallic", 1500.0, 1.0)
+        results_in_region = dict(predict_genera(entry, "A", "Norma Expanse", 1))
+        assert "Amphora Plant" in results_in_region
+
+
 class TestPredictSpecies:
 
     def test_narrows_to_the_matching_species_within_a_genus(self) -> None:
@@ -87,6 +110,30 @@ class TestPredictSpecies:
         results = predict_species("Tussock", entry, None)
         scores = [score for _, score in results]
         assert scores == sorted(scores, reverse=True)
+
+    def test_region_requirement_ignored_when_region_unset(self) -> None:
+        # Stratum Frigus has a region requirement, so check that we still
+        # predict it when region is unknown
+        entry = _entry("Rocky body", "CarbonDioxide", "", 200.0, 0.5)
+        results = dict(predict_species("Stratum", entry, "F", None, 1))
+        assert "Stratum Frigus" in results
+        assert results["Stratum Frigus"] > 0
+
+    def test_region_requirement_excludes_mismatch(self) -> None:
+        # Stratum Frigus has a region requirement, so check that it's excluded
+        # when region is known and doesn't match
+        entry = _entry("Rocky body", "CarbonDioxide", "", 200.0, 0.5)
+        results = dict(predict_species("Stratum", entry, "F", "Galactic Centre", 1))
+        assert "Stratum Frigus" not in results
+
+    def test_region_requirement_includes_match(self) -> None:
+        # Stratum Frigus has a region requirement, so check that it's predicted
+        # in a matching region
+        entry = _entry("Rocky body", "CarbonDioxide", "", 200.0, 0.5)
+        results = dict(predict_species("Stratum", entry, "F", "Perseus Arm", 1))
+        assert "Stratum Frigus" in results
+        assert results["Stratum Frigus"] > 0
+
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v', '--tb=short'])
