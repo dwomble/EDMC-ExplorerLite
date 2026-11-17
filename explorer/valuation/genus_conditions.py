@@ -25,6 +25,7 @@ class Ruleset:
     min_pressure_atm:float|None
     max_pressure_atm:float|None
     volcanism:str|set[str]|None # None, 'any', 'none', or a set of substring keywords
+    regions:set[str]|None
     unmodeled:bool = False
 
 def ruleset_from_json(entry:dict) -> Ruleset:
@@ -36,6 +37,7 @@ def ruleset_from_json(entry:dict) -> Ruleset:
         max_gravity_g=entry.get('max_gravity_g'), min_temp_k=entry.get('min_temp_k'),
         max_temp_k=entry.get('max_temp_k'), min_pressure_atm=entry.get('min_pressure_atm'),
         max_pressure_atm=entry.get('max_pressure_atm'), volcanism=as_set(entry.get('volcanism')),
+        regions=as_set(entry.get('regions')),
         unmodeled='unmodeled' in entry,
     )
 
