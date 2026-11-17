@@ -6,6 +6,7 @@ from explorer.db.store import ExplorerStore
 from explorer.state import ExplorerState
 from explorer import session_persist
 from explorer.util import split_localised_color
+from explorer.utils.debug import Debug
 from explorer.valuation import exobiology_data, regions
 
 def persist(state:ExplorerState) -> None:
@@ -69,6 +70,7 @@ def enter_system(store:ExplorerStore, state:ExplorerState, edmc_state:dict) -> d
     state.system_name = edmc_state.get("SystemName") or ""
     if "StarPos" in edmc_state:
         state.region_name = regions.find_region(*edmc_state["StarPos"])
+        Debug.logger.info(f"Updated region: {state.region_name=} (from pos {edmc_state["StarPos"]} for system {edmc_state["SystemName"]})")
     else:
         state.region_name = None
     state.nearest_star_type = None

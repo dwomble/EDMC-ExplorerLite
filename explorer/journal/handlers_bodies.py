@@ -11,6 +11,7 @@ from explorer.db.store import ExplorerStore
 from explorer.state import ExplorerState
 from explorer.journal.handlers_context import persist
 from explorer.util import now_iso
+from explorer.utils.debug import Debug
 from explorer.valuation import cartography, exobiology, exobiology_data, genus_prediction
 from explorer.constants import (
     CFG_SCAN_VALUE_THRESHOLD, DEFAULT_SCAN_VALUE_THRESHOLD,
@@ -152,6 +153,7 @@ def _worthwhile_predictions(entry:dict, nearest_star_type:str|None, region: str|
             if bypass_threshold or exobiology.exceeds_threshold(value, threshold):
                 worthwhile.append((genus, species, confidence))
 
+    Debug.logger.info(f"Predicted bios for {entry["BodyName"]} ({nearest_star_type=}, {region=}, {bypass_threshold=}, {has_bio=}): {worthwhile}")
     return worthwhile
 
 def on_saa_scan_complete(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict:
