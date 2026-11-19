@@ -325,9 +325,9 @@ class TestHarness:
                             event[k1] = v1
                             if isinstance(v1, str) and v1.startswith("delta:"):
                                 delta_seconds = int(v1.split(":")[1])
-                                event[k1] = (datetime.now(timezone.utc) + timedelta(seconds=delta_seconds)).isoformat()
+                                event[k1] = (datetime.now(timezone.utc) + timedelta(seconds=delta_seconds)).strftime("%Y-%m-%dT%H:%M:%SZ")
                             if isinstance(v1, str) and v1.startswith("now:"):
-                                event[k1] = datetime.now(timezone.utc).isoformat()
+                                event[k1] = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
                             if isinstance(v1, str) and '{' in v1 and '}' in v1:
                                 try:
                                     event[k1] = eval("f'" + v1 + "'")
@@ -362,7 +362,7 @@ class TestHarness:
 
         # Add a timestamp if not provided.
         if 'timestamp' not in event:
-            event['timestamp'] = datetime.now(timezone.utc).isoformat()
+            event['timestamp'] = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
         # Do the opposite of what EDMC does with a startup event. i.e. update monitor fron the faux event rather than create a faux event from the monitor state.
         if event['event'] == 'Startup':
