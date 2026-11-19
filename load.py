@@ -23,6 +23,7 @@ from explorer.ui import prefs as prefs_ui
 from explorer.ui.overlay_frames import RadarOverlay
 from explorer.ui.overlay_summary import SystemSummaryOverlay
 from explorer.ui.history_view import HistoryView
+from explorer.valuation import regions
 
 VERSION:str = "0.0.0" # placeholder -- plugin_start3() overwrites this
 
@@ -35,7 +36,7 @@ def plugin_start3(plugin_dir:str) -> str:
     Debug(plugin_dir, config.get_bool(CFG_DEV_MODE, default=False))
 
     Context.updater = Updater(plugin_dir, GH_OWNER, GH_PROJECT)
-    Context.updater.check_for_update(version)
+    Context.updater.check_for_update(version, extra=regions.refresh)
     Context.notices = Notices(GH_OWNER, GH_PROJECT)
     Context.notices.check_for_notices()
     Context.store = ExplorerStore()

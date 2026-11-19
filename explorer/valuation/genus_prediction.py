@@ -3,6 +3,7 @@ fields alone, pre-DSS. Categorical fields are hard gates; temperature/gravity/pr
 confidence toward a ruleset's edge rather than hard-failing. Confidence is the best (max) score
 across a genus/species's matching rulesets. predict_species() returns [] for a genus outside
 SPECIES_RULESETS -- callers fall back to predict_genera()'s genus-only guess. """
+from explorer.valuation import regions
 from explorer.valuation.genus_conditions import GENUS_RULESETS, Ruleset
 from explorer.valuation.species_conditions import SPECIES_RULESETS
 
@@ -34,14 +35,12 @@ def _volcanism_matches(spec:str|set[str]|None, volcanism:str) -> bool:
         return not has_volcanism
     return any(keyword in volcanism for keyword in spec)
 
-def _hard_gates_pass(rs:Ruleset, star_type:str|None, planet_class:str, atmosphere_type:str, volcanism:str, region:str|None) -> bool:
+def _hard_gates_pass(rs:Ruleset, star_type:str|None, planet_class:str, atmosphere_type:str, volcanism:str) -> bool:
     if rs.atmosphere is not None and atmosphere_type not in rs.atmosphere:
         return False
     if rs.body_types is not None and planet_class not in rs.body_types:
         return False
     if rs.star_types is not None and star_type is not None and star_type not in rs.star_types:
-        return False
-    if rs.regions is not None and region is not None and region not in rs.regions:
         return False
     return _volcanism_matches(rs.volcanism, volcanism)
 
@@ -75,7 +74,7 @@ def _parse_entry_conditions(entry:dict) -> tuple[str, str, str, float|None, floa
 
 def _best_ruleset_score(
     rulesets:list[Ruleset], star_type:str|None, planet_class:str, atmosphere_type:str, volcanism:str,
-    temp_k:float|None, gravity_g:float|None, pressure_atm:float|None, region: str|None, has_biological_signals:int|None,
+    temp_k:float|None, gravity_g:float|None, pressure_atm:float|None, has_biological_signals:int|None,
 ) -> float|None:
     """ Best (max) confidence across `rulesets` that pass their hard gates, or None if none do. """
     best:float|None = None
@@ -83,7 +82,7 @@ def _best_ruleset_score(
         # unmodeled rulesets are too loose alone without at least some real signal evidence
         if rs.unmodeled and has_biological_signals is None:
             continue
-        if not _hard_gates_pass(rs, star_type, planet_class, atmosphere_type, volcanism, region):
+        if not _hard_gates_pass(rs, star_type, planet_class, atmosphere_type, volcanism):
             continue
         score:float = _ruleset_confidence(rs, temp_k, gravity_g, pressure_atm)
         if score > 0.0 and (best is None or score > best):
@@ -96,8 +95,10 @@ def predict_genera(entry:dict, nearest_star_type:str|None, region:str|None = Non
 
     results:list[tuple[str, float]] = []
     for genus, rulesets in GENUS_RULESETS.items():
+        if not any(regions.allowed(name, region) for name in SPECIES_RULESETS.get(genus) or [genus]):
+            continue
         best:float|None = _best_ruleset_score(
-            rulesets, nearest_star_type, planet_class, atmosphere_type, volcanism, temp_k, gravity_g, pressure_atm, region, has_biological_signals
+            rulesets, nearest_star_type, planet_class, atmosphere_type, volcanism, temp_k, gravity_g, pressure_atm, has_biological_signals
         )
         if best is not None:
             results.append((genus, best))
@@ -115,8 +116,10 @@ def predict_species(genus:str, entry:dict, nearest_star_type:str|None, region:st
 
     results:list[tuple[str, float]] = []
     for species, rulesets in rulesets_by_species.items():
+        if not regions.allowed(species, region):
+            continue
         best:float|None = _best_ruleset_score(
-            rulesets, nearest_star_type, planet_class, atmosphere_type, volcanism, temp_k, gravity_g, pressure_atm, region, has_biological_signals
+            rulesets, nearest_star_type, planet_class, atmosphere_type, volcanism, temp_k, gravity_g, pressure_atm, has_biological_signals
         )
         if best is not None:
             results.append((species, best))

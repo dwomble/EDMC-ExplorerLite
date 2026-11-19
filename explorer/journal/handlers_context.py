@@ -68,11 +68,9 @@ def enter_system(store:ExplorerStore, state:ExplorerState, edmc_state:dict) -> d
 
     state.system_address = system_address
     state.system_name = edmc_state.get("SystemName") or ""
-    if "StarPos" in edmc_state:
-        state.region_name = regions.find_region(*edmc_state["StarPos"])
-        Debug.logger.info(f"Updated region: {state.region_name=} (from pos {edmc_state["StarPos"]} for system {edmc_state["SystemName"]})")
-    else:
-        state.region_name = None
+    star_pos:tuple|None = edmc_state.get("StarPos") # EDMC keeps the key but sets it to None at times
+    state.region_name = regions.find_region(*star_pos) if star_pos else None
+    Debug.logger.debug(f"Region {state.region_name} at {star_pos} for {state.system_name}")
     state.nearest_star_type = None
     state.last_bio_body_id = None
     state.last_bio_body_name = ""

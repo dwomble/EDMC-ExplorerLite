@@ -133,7 +133,8 @@ def on_scan(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict:
 
     return {"panel": True, "overlay": "radar"}
 
-def _worthwhile_predictions(entry:dict, nearest_star_type:str|None, region: str|None, bypass_threshold:bool = False, has_bio:int|None = None) -> list:
+def _worthwhile_predictions(entry:dict, nearest_star_type:str|None, region:str|None,
+                            bypass_threshold:bool = False, has_bio:int|None = None) -> list:
     """ Predicted (genus, species, confidence) rows whose value clears the exobio threshold """
     threshold:int = _exobio_threshold()
     was_footfalled:bool = bool(entry.get("WasFootfalled"))
@@ -153,7 +154,7 @@ def _worthwhile_predictions(entry:dict, nearest_star_type:str|None, region: str|
             if bypass_threshold or exobiology.exceeds_threshold(value, threshold):
                 worthwhile.append((genus, species, confidence))
 
-    Debug.logger.info(f"Predicted bios for {entry["BodyName"]} ({nearest_star_type=}, {region=}, {bypass_threshold=}, {has_bio=}): {worthwhile}")
+    Debug.logger.debug(f"Predicted bios for {entry.get('BodyName')} ({nearest_star_type}, {region}, {has_bio=}): {worthwhile}")
     return worthwhile
 
 def on_saa_scan_complete(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict:
