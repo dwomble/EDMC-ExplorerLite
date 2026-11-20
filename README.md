@@ -159,6 +159,7 @@ This plugin was conceived, specified, and designed by a human. The code was subs
 - Genus spawn-condition data independently transcribed from public sources, cross-checked against [Silarn/EDMC-BioScan](https://github.com/Silarn/EDMC-BioScan) (GPLv2) and ed-dsn.net's community temperature-band data.
 - Surface mining data independently transcribed from the community prospecting survey published by EDIntel and distributed by [Fumlop/EDRhinoSpotter](https://github.com/Fumlop/EDRhinoSpotter).
 - Codex-tag overlay colors cross-checked against EDMC-BioScan's own variant color names.
+- Galactic region-specific prediction data from [Canonn Bioforge](https://bioforge.canonn.tech/), code from [dmarcuse](https://github.com/dmarcuse)
 
 ## Suggestions
 

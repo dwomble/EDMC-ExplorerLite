@@ -1,10 +1,14 @@
 # EDMC-ExplorerLite Changelog
 
-## v2.1.0 2026-11-??
+## v3.0.0 2026-11-??
 
 ### New Features
 
 * Added plugin reordering from th library
+
+### Changes
+
+* Filter predictions based on galactic region using data from Canonn. Thanks to [dmarcuse](https://github.com/dmarcuse)
 
 ## v2.0.1 2026-10-19
 
