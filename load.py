@@ -9,7 +9,7 @@ from explorer.utils.debug import Debug
 from explorer.utils.updater import Notices, Updater, read_version_file
 from explorer.utils.overlay import Overlay
 
-from explorer.constants import PLUGIN_NAME, GH_OWNER, GH_PROJECT, CFG_DEV_MODE
+from explorer.constants import PLUGIN_NAME, GH_OWNER, GH_PROJECT, CFG_DEV_MODE, CFG_PRE_RELEASE
 from explorer.context import Context
 from explorer.db.store import ExplorerStore
 from explorer.state import state as explorer_state
@@ -36,6 +36,7 @@ def plugin_start3(plugin_dir:str) -> str:
     Debug(plugin_dir, config.get_bool(CFG_DEV_MODE, default=False))
 
     Context.updater = Updater(plugin_dir, GH_OWNER, GH_PROJECT)
+    Context.updater.accept_prerelease = config.get_bool(f"CFG_PRE_RELEASE", False)
     Context.updater.check_for_update(version, extra=regions.refresh)
     Context.notices = Notices(GH_OWNER, GH_PROJECT)
     Context.notices.check_for_notices()

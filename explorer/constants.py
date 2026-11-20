@@ -26,6 +26,7 @@ CFG_MINING_MATERIALS:str = f"{CONFIG_PREFIX}MiningMaterials"
 CFG_HISTORY_WINDOW_GEOMETRY:str = f"{CONFIG_PREFIX}HistoryWindowGeometry"
 CFG_HISTORY_UNSOLD_ONLY:str = f"{CONFIG_PREFIX}HistoryUnsoldOnly"
 CFG_HISTORY_TIME_RANGE:str = f"{CONFIG_PREFIX}HistoryTimeRange"
+CFG_PRE_RELEASE:str = f"{CONFIG_PREFIX}InstallPreReleases"
 
 # Defaults agreed during requirements gathering (REQUIREMENTS.md), excluding first-discovery bonus
 DEFAULT_SCAN_VALUE_THRESHOLD:int = 750_000

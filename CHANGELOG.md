@@ -5,10 +5,7 @@
 ### New Features
 
 * Added plugin reordering from `th` library
-
-### Changes
-
-* Filter predictions based on galactic region using data from Canonn. Thanks to [dmarcuse](https://github.com/dmarcuse)
+* Added prediction filtering based on galactic region using data from [Canonn Bioforge](https://bioforge.canonn.tech/). (Thanks [dmarcuse](https://github.com/dmarcuse))
 
 ## v2.0.1 2026-10-19
 

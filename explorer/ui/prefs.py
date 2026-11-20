@@ -11,12 +11,11 @@ from config import config # type: ignore
 
 import explorer.utils.th as th
 from explorer.valuation import mining
-
 from explorer.constants import (
     PLUGIN_NAME, GH_OWNER, GH_PROJECT,
     CFG_SCAN_VALUE_THRESHOLD, DEFAULT_SCAN_VALUE_THRESHOLD,
     CFG_EXOBIO_VALUE_THRESHOLD, DEFAULT_EXOBIO_VALUE_THRESHOLD,
-    CFG_OVERLAY_RADAR_ENABLED, CFG_OVERLAY_SUMMARY_ENABLED, CFG_DEV_MODE,
+    CFG_OVERLAY_RADAR_ENABLED, CFG_OVERLAY_SUMMARY_ENABLED, CFG_DEV_MODE, CFG_PRE_RELEASE,
     CFG_VISIBLE_LINES, DEFAULT_VISIBLE_LINES,
     CFG_OVERLAY_RADAR_SIZE, DEFAULT_OVERLAY_RADAR_SIZE, CFG_OVERLAY_RADAR_CIRCLES, CFG_OVERLAY_RADAR_SWEEP,
     CFG_OVERLAY_SUMMARY_TEXT_COLOR, DEFAULT_OVERLAY_SUMMARY_TEXT_COLOR,
@@ -69,7 +68,8 @@ SECTIONS:list[tuple[str, list[Pref]]] = [
         Pref('bool', CFG_OVERLAY_RADAR_CIRCLES, "Sample-focused radar", True, "Show scan distance as circle around each sample (scan or waypoint) rather than\nthe default Commander-focused single minimum distance circle around the current location (requires circle-capable overlay)."),
         Pref('bool', CFG_OVERLAY_RADAR_SWEEP, "Radar sweep line", False, "Animate a rotating sweep line on the radar (redrawn about 15 times a second)."),
     ]),
-    ("Debug", [
+    ("Advanced", [
+        Pref('bool', CFG_PRE_RELEASE, "Install pre-releases", False, "Auto-install pre-release versions."),
         Pref('bool', CFG_DEV_MODE, "Developer/debug logging", False),
     ]),
 ]
