@@ -1303,7 +1303,7 @@ class TestPrefs:
 
         frame = prefs_ui.build_prefs(plugin.parent, "Testy", False).winfo_children()[-1] # unwrap the padding frame
         labels = {c.cget("text") for c in frame.winfo_children() if "text" in c.keys()}
-        assert {"Thresholds", "Overlays", "Debug", prefs_ui.DATA_SECTION_TITLE} <= labels
+        assert {"Thresholds", "Overlays", "Advanced", prefs_ui.DATA_SECTION_TITLE} <= labels
 
     def test_every_pref_still_has_a_live_widget(self, plugin:TestHarness) -> None:
         """ Regression guard for the two-up layout: every Pref must still end up with a
