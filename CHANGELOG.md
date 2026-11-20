@@ -1,5 +1,11 @@
 # EDMC-ExplorerLite Changelog
 
+## v2.1.0 2026-11-??
+
+### New Features
+
+* Added plugin reordering from th library
+
 ## v2.0.1 2026-10-19
 
 ### Bug Fixes

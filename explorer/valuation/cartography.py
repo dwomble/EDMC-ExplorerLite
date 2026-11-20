@@ -41,7 +41,7 @@ FIRST_MAPPED_BONUS_FRACTION:float = 0.6 # +60% mapping value if nobody has mappe
 # assumed by FIRST_MAPPED_MULTIPLIER above, so eligibility adjustment backs it out rather than adding it
 
 def _star_category(star_type:str) -> str:
-    star_type = (star_type or "").upper()
+    star_type = star_type.upper()
     if star_type.startswith("D"):
         return "white_dwarf"
     if star_type in ("N", "H", "SUPERMASSIVEBLACKHOLE"):
@@ -49,7 +49,7 @@ def _star_category(star_type:str) -> str:
     return "default"
 
 def _planet_category(planet_class:str) -> str:
-    planet_class = (planet_class or "").lower()
+    planet_class = planet_class.lower()
     if "gas giant" in planet_class or "water giant" in planet_class:
         return "default" # checked first, else collides with "ammonia" below
     if "metal rich" in planet_class:

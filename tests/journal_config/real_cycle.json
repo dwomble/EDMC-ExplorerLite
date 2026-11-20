@@ -1,0 +1,6428 @@
+{
+  "explore": [
+    {
+      "timestamp": "2026-08-23T14:53:29Z",
+      "event": "LoadGame",
+      "FID": "F00000000",
+      "Commander": "TestCmdr",
+      "Horizons": true,
+      "Odyssey": true,
+      "Ship": "Explorer_NX",
+      "Ship_Localised": "Caspian Explorer",
+      "ShipID": 115,
+      "ShipName": "Test Ship",
+      "ShipIdent": "TS-01",
+      "FuelLevel": 124.580002,
+      "FuelCapacity": 128.0,
+      "GameMode": "Open",
+      "Credits": 11202140091,
+      "Loan": 0,
+      "language": "English/UK",
+      "gameversion": "4.4.0.3",
+      "build": "r330683/r0 "
+    },
+    {
+      "timestamp": "2026-08-23T14:54:07Z",
+      "event": "Location",
+      "DistFromStarLS": 1258.208439,
+      "Docked": false,
+      "Taxi": false,
+      "Multicrew": false,
+      "StarSystem": "Lux Caeli",
+      "SystemAddress": 17935010931282,
+      "StarPos": [
+        -9489.96875,
+        -911.71875,
+        19818.03125
+      ],
+      "SystemAllegiance": "Independent",
+      "SystemEconomy": "$economy_Extraction;",
+      "SystemEconomy_Localised": "Extraction",
+      "SystemSecondEconomy": "$economy_None;",
+      "SystemSecondEconomy_Localised": "None",
+      "SystemGovernment": "$government_Democracy;",
+      "SystemGovernment_Localised": "Democracy",
+      "SystemSecurity": "$SYSTEM_SECURITY_medium;",
+      "SystemSecurity_Localised": "Medium Security",
+      "Population": 1642600,
+      "Body": "Lux Caeli 3 f",
+      "BodyID": 23,
+      "BodyType": "Planet",
+      "Factions": [
+        {
+          "Name": "Ukraine Colonist Alliance",
+          "FactionState": "War",
+          "Government": "Corporate",
+          "Influence": 0.166,
+          "Allegiance": "Independent",
+          "Happiness": "$Faction_HappinessBand2;",
+          "Happiness_Localised": "Happy",
+          "MyReputation": 0.0,
+          "ActiveStates": [
+            {
+              "State": "Expansion"
+            },
+            {
+              "State": "War"
+            }
+          ]
+        },
+        {
+          "Name": "ICU Colonial Corps",
+          "FactionState": "War",
+          "Government": "Communism",
+          "Influence": 0.166,
+          "Allegiance": "Independent",
+          "Happiness": "$Faction_HappinessBand2;",
+          "Happiness_Localised": "Happy",
+          "MyReputation": 30.0,
+          "RecoveringStates": [
+            {
+              "State": "PirateAttack",
+              "Trend": 0
+            }
+          ],
+          "ActiveStates": [
+            {
+              "State": "War"
+            }
+          ]
+        },
+        {
+          "Name": "Infinity's End Deep Space Company",
+          "FactionState": "Boom",
+          "Government": "Democracy",
+          "Influence": 0.402,
+          "Allegiance": "Independent",
+          "Happiness": "$Faction_HappinessBand2;",
+          "Happiness_Localised": "Happy",
+          "MyReputation": 33.0,
+          "ActiveStates": [
+            {
+              "State": "Boom"
+            }
+          ]
+        },
+        {
+          "Name": "Likedeeler of Colonia",
+          "FactionState": "Boom",
+          "Government": "Democracy",
+          "Influence": 0.266,
+          "Allegiance": "Independent",
+          "Happiness": "$Faction_HappinessBand2;",
+          "Happiness_Localised": "Happy",
+          "MyReputation": 57.0,
+          "ActiveStates": [
+            {
+              "State": "Boom"
+            }
+          ]
+        }
+      ],
+      "SystemFaction": {
+        "Name": "Infinity's End Deep Space Company",
+        "FactionState": "Boom"
+      },
+      "Conflicts": [
+        {
+          "WarType": "war",
+          "Status": "active",
+          "Faction1": {
+            "Name": "Ukraine Colonist Alliance",
+            "Stake": "Simelane Excavation Complex",
+            "WonDays": 0
+          },
+          "Faction2": {
+            "Name": "ICU Colonial Corps",
+            "Stake": "Hammond Metallurgic Exchange",
+            "WonDays": 0
+          }
+        }
+      ]
+    },
+    {
+      "timestamp": "2026-08-23T14:54:07Z",
+      "event": "Loadout",
+      "Ship": "explorer_nx",
+      "ShipID": 115,
+      "ShipName": "Test Ship",
+      "ShipIdent": "TS-01",
+      "ModulesValue": 250776841,
+      "HullHealth": 0.982275,
+      "UnladenMass": 1367.900024,
+      "CargoCapacity": 64,
+      "MaxJumpRange": 81.917572,
+      "FuelCapacity": {
+        "Main": 128.0,
+        "Reserve": 1.14
+      },
+      "Rebuy": 12538844,
+      "Modules": [
+        {
+          "Slot": "TinyHardpoint3",
+          "Item": "hpt_heatsinklauncher_turret_tiny",
+          "On": true,
+          "Priority": 0,
+          "AmmoInClip": 1,
+          "AmmoInHopper": 3,
+          "Health": 0.993397,
+          "Value": 3072,
+          "Engineering": {
+            "Engineer": "Ram Tah",
+            "EngineerID": 300110,
+            "BlueprintID": 128731666,
+            "BlueprintName": "Misc_HeatSinkCapacity",
+            "Level": 1,
+            "Quality": 1.0,
+            "Modifiers": [
+              {
+                "Label": "Mass",
+                "Value": 2.6,
+                "OriginalValue": 1.3,
+                "LessIsGood": 1
+              },
+              {
+                "Label": "AmmoMaximum",
+                "Value": 3.0,
+                "OriginalValue": 2.0,
+                "LessIsGood": 0
+              },
+              {
+                "Label": "ReloadTime",
+                "Value": 15.0,
+                "OriginalValue": 10.0,
+                "LessIsGood": 1
+              }
+            ]
+          }
+        },
+        {
+          "Slot": "Armour",
+          "Item": "explorer_nx_armour_grade1_default",
+          "On": true,
+          "Priority": 1,
+          "Health": 1.0,
+          "Engineering": {
+            "Engineer": "Selene Jean",
+            "EngineerID": 300210,
+            "BlueprintID": 128673643,
+            "BlueprintName": "Armour_HeavyDuty",
+            "Level": 4,
+            "Quality": 1.0,
+            "Modifiers": [
+              {
+                "Label": "DefenceModifierHealthMultiplier",
+                "Value": 128.600006,
+                "OriginalValue": 79.999992,
+                "LessIsGood": 0
+              },
+              {
+                "Label": "KineticResistance",
+                "Value": -15.200006,
+                "OriginalValue": -20.000004,
+                "LessIsGood": 0
+              },
+              {
+                "Label": "ThermicResistance",
+                "Value": 4.000002,
+                "OriginalValue": 0.0,
+                "LessIsGood": 0
+              },
+              {
+                "Label": "ExplosiveResistance",
+                "Value": -34.399998,
+                "OriginalValue": -39.999996,
+                "LessIsGood": 0
+              }
+            ]
+          }
+        },
+        {
+          "Slot": "Decal1",
+          "Item": "decal_caspianownersclub_01",
+          "On": true,
+          "Priority": 1,
+          "Health": 1.0
+        },
+        {
+          "Slot": "Decal2",
+          "Item": "decal_explorer_elite05",
+          "On": true,
+          "Priority": 1,
+          "Health": 1.0
+        },
+        {
+          "Slot": "Decal3",
+          "Item": "decal_exobio_elite01",
+          "On": true,
+          "Priority": 1,
+          "Health": 1.0
+        },
+        {
+          "Slot": "ShipName0",
+          "Item": "nameplate_explorer01_white",
+          "On": true,
+          "Priority": 1,
+          "Health": 1.0
+        },
+        {
+          "Slot": "ShipName1",
+          "Item": "nameplate_explorer01_white",
+          "On": true,
+          "Priority": 1,
+          "Health": 1.0
+        },
+        {
+          "Slot": "ShipID0",
+          "Item": "nameplate_shipid_doubleline_white",
+          "On": true,
+          "Priority": 1,
+          "Health": 1.0
+        },
+        {
+          "Slot": "ShipID1",
+          "Item": "nameplate_shipid_doubleline_white",
+          "On": true,
+          "Priority": 1,
+          "Health": 1.0
+        },
+        {
+          "Slot": "PowerPlant",
+          "Item": "int_powerplant_size5_class5",
+          "On": true,
+          "Priority": 1,
+          "Health": 0.995744,
+          "Value": 3794047,
+          "Engineering": {
+            "Engineer": "Hera Tani",
+            "EngineerID": 300090,
+            "BlueprintID": 128673764,
+            "BlueprintName": "PowerPlant_Armoured",
+            "Level": 5,
+            "Quality": 1.0,
+            "ExperimentalEffect": "special_powerplant_cooled",
+            "ExperimentalEffect_Localised": "Thermal Spread",
+            "Modifiers": [
+              {
+                "Label": "Mass",
+                "Value": 12.0,
+                "OriginalValue": 10.0,
+                "LessIsGood": 1
+              },
+              {
+                "Label": "Integrity",
+                "Value": 233.200012,
+                "OriginalValue": 106.0,
+                "LessIsGood": 0
+              },
+              {
+                "Label": "PowerCapacity",
+                "Value": 22.848,
+                "OriginalValue": 20.4,
+                "LessIsGood": 0
+              },
+              {
+                "Label": "HeatEfficiency",
+                "Value": 0.3168,
+                "OriginalValue": 0.4,
+                "LessIsGood": 1
+              }
+            ]
+          }
+        },
+        {
+          "Slot": "MainEngines",
+          "Item": "int_engine_size7_class5_gravityoptimised_mkii",
+          "On": true,
+          "Priority": 0,
+          "Health": 0.999159,
+          "Value": 59993261,
+          "Engineering": {
+            "Engineer": "Professor Palin",
+            "EngineerID": 300220,
+            "BlueprintID": 128673659,
+            "BlueprintName": "Engine_Dirty",
+            "Level": 5,
+            "Quality": 1.0,
+            "ExperimentalEffect": "special_engine_overloaded",
+            "ExperimentalEffect_Localised": "Drag Drives",
+            "Modifiers": [
+              {
+                "Label": "Integrity",
+                "Value": 122.400002,
+                "OriginalValue": 144.0,
+                "LessIsGood": 0
+              },
+              {
+                "Label": "PowerDraw",
+                "Value": 10.2144,
+                "OriginalValue": 9.12,
+                "LessIsGood": 1
+              },
+              {
+                "Label": "EngineOptimalMass",
+                "Value": 1890.0,
+                "OriginalValue": 2160.0,
+                "LessIsGood": 0
+              },
+              {
+                "Label": "EngineOptPerformance",
+                "Value": 145.599991,
+                "OriginalValue": 100.0,
+                "LessIsGood": 0
+              },
+              {
+                "Label": "EngineHeatRate",
+                "Value": 2.288,
+                "OriginalValue": 1.3,
+                "LessIsGood": 1
+              }
+            ]
+          }
+        },
+        {
+          "Slot": "FrameShiftDrive",
+          "Item": "int_hyperdrive_overcharge_size8_class5_overchargebooster_mkii",
+          "On": true,
+          "Priority": 0,
+          "Health": 0.993156,
+          "Value": 71991912,
+          "Engineering": {
+            "Engineer": "Elvira Martuuk",
+            "EngineerID": 300160,
+            "BlueprintID": 128673694,
+            "BlueprintName": "FSD_LongRange",
+            "Level": 5,
+            "Quality": 1.0,
+            "ExperimentalEffect": "special_fsd_heavy",
+            "ExperimentalEffect_Localised": "Mass Manager",
+            "Modifiers": [
+              {
+                "Label": "Mass",
+                "Value": 208.0,
+                "OriginalValue": 160.0,
+                "LessIsGood": 1
+              },
+              {
+                "Label": "Integrity",
+                "Value": 147.016006,
+                "OriginalValue": 188.0,
+                "LessIsGood": 0
+              },
+              {
+                "Label": "PowerDraw",
+                "Value": 1.2075,
+                "OriginalValue": 1.05,
+                "LessIsGood": 1
+              },
+              {
+                "Label": "FSDOptimalMass",
+                "Value": 7528.039551,
+                "OriginalValue": 4670.0,
+                "LessIsGood": 0
+              }
+            ]
+          }
+        },
+        {
+          "Slot": "LifeSupport",
+          "Item": "int_lifesupport_size5_class2",
+          "On": true,
+          "Priority": 0,
+          "Health": 0.992267,
+          "Value": 69713
+        },
+        {
+          "Slot": "PowerDistributor",
+          "Item": "int_powerdistributor_size5_class2",
+          "On": true,
+          "Priority": 0,
+          "Health": 0.997037,
+          "Value": 69713,
+          "Engineering": {
+            "Engineer": "Marco Qwent",
+            "EngineerID": 300200,
+            "BlueprintID": 128673742,
+            "BlueprintName": "PowerDistributor_PriorityEngines",
+            "Level": 3,
+            "Quality": 1.0,
+            "ExperimentalEffect": "special_powerdistributor_fast",
+            "ExperimentalEffect_Localised": "Super Conduits",
+            "Modifiers": [
+              {
+                "Label": "WeaponsCapacity",
+                "Value": 27.081598,
+                "OriginalValue": 31.0,
+                "LessIsGood": 0
+              },
+              {
+                "Label": "WeaponsRecharge",
+                "Value": 3.22816,
+                "OriginalValue": 3.2,
+                "LessIsGood": 0
+              },
+              {
+                "Label": "EnginesCapacity",
+                "Value": 29.567999,
+                "OriginalValue": 22.0,
+                "LessIsGood": 0
+              },
+              {
+                "Label": "EnginesRecharge",
+                "Value": 2.5688,
+                "OriginalValue": 1.9,
+                "LessIsGood": 0
+              },
+              {
+                "Label": "SystemsCapacity",
+                "Value": 19.219198,
+                "OriginalValue": 22.0,
+                "LessIsGood": 0
+              },
+              {
+                "Label": "SystemsRecharge",
+                "Value": 1.79816,
+                "OriginalValue": 1.9,
+                "LessIsGood": 0
+              }
+            ]
+          }
+        },
+        {
+          "Slot": "Radar",
+          "Item": "int_sensors_size8_class2",
+          "On": true,
+          "Priority": 0,
+          "Health": 0.982217,
+          "Value": 1530326
+        },
+        {
+          "Slot": "FuelTank",
+          "Item": "int_fueltank_size7_class3",
+          "On": true,
+          "Priority": 1,
+          "Health": 1.0
+        },
+        {
+          "Slot": "Slot01_Size7",
+          "Item": "int_fuelscoop_size7_class5",
+          "On": true,
+          "Priority": 0,
+          "Health": 0.990525,
+          "Value": 80011016
+        },
+        {
+          "Slot": "Slot02_Size6",
+          "Item": "int_repairer_size6_class5",
+          "On": false,
+          "Priority": 2,
+          "Health": 0.984894,
+          "Value": 13430578
+        },
+        {
+          "Slot": "Slot03_Size6",
+          "Item": "int_repairer_size6_class5",
+          "On": false,
+          "Priority": 2,
+          "Health": 0.991743,
+          "Value": 13430578
+        },
+        {
+          "Slot": "Slot04_Size5",
+          "Item": "int_guardianfsdbooster_size5",
+          "On": true,
+          "Priority": 3,
+          "Health": 0.993474,
+          "Value": 5688921
+        },
+        {
+          "Slot": "Slot05_Size5",
+          "Item": "int_shieldgenerator_size5_class2",
+          "On": true,
+          "Priority": 3,
+          "Health": 0.982465,
+          "Value": 165879
+        },
+        {
+          "Slot": "Slot06_Size5",
+          "Item": "int_fighterbaymk2_size5_class1_free",
+          "On": true,
+          "Priority": 0,
+          "Health": 0.98958
+        },
+        {
+          "Slot": "Slot07_Size5",
+          "Item": "int_cargorack_size5_class1",
+          "On": true,
+          "Priority": 1,
+          "Health": 1.0,
+          "Value": 108777
+        },
+        {
+          "Slot": "Slot08_Size4",
+          "Item": "int_corrosionproofcargorack_size4_class1",
+          "On": true,
+          "Priority": 1,
+          "Health": 1.0,
+          "Value": 91970
+        },
+        {
+          "Slot": "Slot09_Size4",
+          "Item": "int_corrosionproofcargorack_size4_class1",
+          "On": true,
+          "Priority": 1,
+          "Health": 1.0,
+          "Value": 82774
+        },
+        {
+          "Slot": "Slot10_Size3",
+          "Item": "int_multidronecontrol_operations_size3_class3",
+          "On": false,
+          "Priority": 0,
+          "Health": 0.997069,
+          "Value": 43875
+        },
+        {
+          "Slot": "Slot11_Size2",
+          "Item": "int_buggybay_size2_class2",
+          "On": false,
+          "Priority": 1,
+          "Health": 0.987336,
+          "Value": 20429
+        },
+        {
+          "Slot": "Slot12_Size1",
+          "Item": "int_detailedsurfacescanner_tiny",
+          "On": true,
+          "Priority": 0,
+          "Health": 0.994098,
+          "Value": 250000
+        },
+        {
+          "Slot": "Slot13_Size1",
+          "Item": "int_supercruiseassist",
+          "On": true,
+          "Priority": 2,
+          "Health": 0.995502
+        },
+        {
+          "Slot": "Slot14_Size1",
+          "Item": "int_dockingcomputer_advanced",
+          "On": true,
+          "Priority": 2,
+          "Health": 0.999393
+        },
+        {
+          "Slot": "PlanetaryApproachSuite",
+          "Item": "int_planetapproachsuite_advanced",
+          "On": true,
+          "Priority": 1,
+          "Health": 1.0
+        },
+        {
+          "Slot": "Bobble01",
+          "Item": "bobble_trophy_exploration",
+          "On": true,
+          "Priority": 1,
+          "Health": 1.0
+        },
+        {
+          "Slot": "Bobble10",
+          "Item": "bobble_trophy_exploration",
+          "On": true,
+          "Priority": 1,
+          "Health": 1.0
+        },
+        {
+          "Slot": "VesselVoice",
+          "Item": "voicepack_verity",
+          "On": true,
+          "Priority": 1,
+          "Health": 1.0
+        },
+        {
+          "Slot": "ShipCockpit",
+          "Item": "explorer_nx_cockpit",
+          "On": true,
+          "Priority": 1,
+          "Health": 0.994104
+        },
+        {
+          "Slot": "CargoHatch",
+          "Item": "modularcargobaydoor",
+          "On": true,
+          "Priority": 2,
+          "Health": 0.990336
+        }
+      ]
+    },
+    {
+      "timestamp": "2026-08-23T14:55:26Z",
+      "event": "StartJump",
+      "JumpType": "Supercruise",
+      "Taxi": false
+    },
+    {
+      "timestamp": "2026-08-23T14:57:08Z",
+      "event": "LeaveBody",
+      "StarSystem": "Lux Caeli",
+      "SystemAddress": 17935010931282,
+      "Body": "Lux Caeli 3 f",
+      "BodyID": 23
+    },
+    {
+      "timestamp": "2026-08-23T14:59:41Z",
+      "event": "SAASignalsFound",
+      "BodyName": "Lux Caeli 3 b",
+      "SystemAddress": 17935010931282,
+      "BodyID": 19,
+      "Signals": [
+        {
+          "Type": "$SAA_SignalType_Biological;",
+          "Type_Localised": "Biological",
+          "Count": 4
+        },
+        {
+          "Type": "$SAA_SignalType_Human;",
+          "Type_Localised": "Human",
+          "Count": 2
+        }
+      ],
+      "Genuses": [
+        {
+          "Genus": "$Codex_Ent_Bacterial_Genus_Name;",
+          "Genus_Localised": "Bacterium"
+        },
+        {
+          "Genus": "$Codex_Ent_Recepta_Genus_Name;",
+          "Genus_Localised": "Recepta"
+        },
+        {
+          "Genus": "$Codex_Ent_Shrubs_Genus_Name;",
+          "Genus_Localised": "Frutexa"
+        },
+        {
+          "Genus": "$Codex_Ent_Tussocks_Genus_Name;",
+          "Genus_Localised": "Tussock"
+        }
+      ]
+    },
+    {
+      "timestamp": "2026-08-23T14:59:45Z",
+      "event": "SAASignalsFound",
+      "BodyName": "Lux Caeli 3 a",
+      "SystemAddress": 17935010931282,
+      "BodyID": 18,
+      "Signals": [
+        {
+          "Type": "$SAA_SignalType_Human;",
+          "Type_Localised": "Human",
+          "Count": 5
+        }
+      ],
+      "Genuses": []
+    },
+    {
+      "timestamp": "2026-08-23T15:00:49Z",
+      "event": "ApproachBody",
+      "StarSystem": "Lux Caeli",
+      "SystemAddress": 17935010931282,
+      "Body": "Lux Caeli 3 a",
+      "BodyID": 18
+    },
+    {
+      "timestamp": "2026-08-23T15:01:16Z",
+      "event": "SupercruiseExit",
+      "Taxi": false,
+      "Multicrew": false,
+      "StarSystem": "Lux Caeli",
+      "SystemAddress": 17935010931282,
+      "Body": "Lux Caeli 3 a",
+      "BodyID": 18,
+      "BodyType": "Planet"
+    },
+    {
+      "timestamp": "2026-08-23T15:07:53Z",
+      "event": "MultiSellExplorationData",
+      "Discovered": [
+        {
+          "SystemName": "Voqooe XB-J d10-649",
+          "NumBodies": 17
+        },
+        {
+          "SystemName": "Voqooe KD-Q d6-751",
+          "NumBodies": 26
+        },
+        {
+          "SystemName": "Eoch Flya SF-C d14-783",
+          "NumBodies": 21
+        },
+        {
+          "SystemName": "Dryoea Flyuae QR-W d1-810",
+          "NumBodies": 1
+        },
+        {
+          "SystemName": "Dryio Flyuae UM-Y c28-105",
+          "NumBodies": 3
+        },
+        {
+          "SystemName": "Voqooe GC-S d5-842",
+          "NumBodies": 3
+        },
+        {
+          "SystemName": "Dryoea Flyuae MC-M d7-852",
+          "NumBodies": 12
+        },
+        {
+          "SystemName": "Voqooe ZP-V d3-861",
+          "NumBodies": 3
+        },
+        {
+          "SystemName": "Dryio Flyuae AR-D d12-913",
+          "NumBodies": 4
+        },
+        {
+          "SystemName": "Voqooe ZH-H d11-913",
+          "NumBodies": 10
+        },
+        {
+          "SystemName": "Dryio Flyi QY-S d3-927",
+          "NumBodies": 2
+        },
+        {
+          "SystemName": "Voqooe UV-K d9-933",
+          "NumBodies": 14
+        },
+        {
+          "SystemName": "Eol Prou OW-L c8-118",
+          "NumBodies": 8
+        },
+        {
+          "SystemName": "Dryio Flyuae GX-B d13-992",
+          "NumBodies": 17
+        },
+        {
+          "SystemName": "Eoch Pruae ZU-X c1-124",
+          "NumBodies": 27
+        },
+        {
+          "SystemName": "Dryio Flyuae HM-D d12-1011",
+          "NumBodies": 25
+        },
+        {
+          "SystemName": "Dryio Flyuae PU-D c26-129",
+          "NumBodies": 15
+        },
+        {
+          "SystemName": "Dryoea Flyuae MT-I d9-1091",
+          "NumBodies": 32
+        },
+        {
+          "SystemName": "Dryoea Flyuae LR-N d6-1105",
+          "NumBodies": 4
+        },
+        {
+          "SystemName": "Voqooe AI-H d11-1116",
+          "NumBodies": 17
+        },
+        {
+          "SystemName": "Dryio Flyuae KD-A d14-1121",
+          "NumBodies": 18
+        },
+        {
+          "SystemName": "Dryoea Flyuae SK-I c9-142",
+          "NumBodies": 3
+        },
+        {
+          "SystemName": "Eol Prou YJ-G b12-18",
+          "NumBodies": 23
+        },
+        {
+          "SystemName": "Granoae MO-X d2-1207",
+          "NumBodies": 2
+        },
+        {
+          "SystemName": "Voqooe CW-T d4-1239",
+          "NumBodies": 5
+        },
+        {
+          "SystemName": "Voqooe AC-S d5-1262",
+          "NumBodies": 1
+        },
+        {
+          "SystemName": "Dryoea Flyuae KC-M d7-1293",
+          "NumBodies": 20
+        },
+        {
+          "SystemName": "Dryoea Flyuae NI-K d8-1352",
+          "NumBodies": 1
+        },
+        {
+          "SystemName": "Eoch Pruae ZO-A d1414",
+          "NumBodies": 2
+        },
+        {
+          "SystemName": "Eoch Flya YL-J d10-1527",
+          "NumBodies": 2
+        },
+        {
+          "SystemName": "Voqooe RX-A d1-1578",
+          "NumBodies": 24
+        },
+        {
+          "SystemName": "Granoae NU-V d3-1584",
+          "NumBodies": 1
+        },
+        {
+          "SystemName": "Dryoea Flyuae LL-P d5-1588",
+          "NumBodies": 31
+        },
+        {
+          "SystemName": "Eol Prou IT-S c4-201",
+          "NumBodies": 26
+        },
+        {
+          "SystemName": "Dryio Flyuae PS-K d8-1637",
+          "NumBodies": 2
+        },
+        {
+          "SystemName": "Dryio Flyuae GG-F d11-1680",
+          "NumBodies": 1
+        },
+        {
+          "SystemName": "Eol Prou LQ-N c7-223",
+          "NumBodies": 3
+        },
+        {
+          "SystemName": "Eoch Pruae VO-A d1811",
+          "NumBodies": 1
+        },
+        {
+          "SystemName": "Eoch Pruae AG-X d1-1861",
+          "NumBodies": 11
+        },
+        {
+          "SystemName": "Eoch Pruae XZ-Y d1990",
+          "NumBodies": 16
+        },
+        {
+          "SystemName": "Dryoea Flyuae KL-P d5-2027",
+          "NumBodies": 8
+        },
+        {
+          "SystemName": "Dryoea Flyuae MR-N d6-2056",
+          "NumBodies": 17
+        },
+        {
+          "SystemName": "Dryio Flyuae GG-F d11-2115",
+          "NumBodies": 28
+        },
+        {
+          "SystemName": "Dryoea Flyuae OZ-G d10-2183",
+          "NumBodies": 2
+        },
+        {
+          "SystemName": "Eol Prou OR-V d2-2294",
+          "NumBodies": 2
+        },
+        {
+          "SystemName": "Dryio Flyuae IM-D d12-2330",
+          "NumBodies": 3
+        },
+        {
+          "SystemName": "Dryoea Flyuae QO-I d9-2416",
+          "NumBodies": 9
+        },
+        {
+          "SystemName": "Dryio Flyuae KS-B d13-2428",
+          "NumBodies": 13
+        },
+        {
+          "SystemName": "Eol Prou XA-D b14-47",
+          "NumBodies": 17
+        },
+        {
+          "SystemName": "Eoch Pruae EY-O b7-74",
+          "NumBodies": 23
+        }
+      ],
+      "BaseValue": 39051284,
+      "Bonus": 430000,
+      "TotalEarnings": 35533177
+    },
+    {
+      "timestamp": "2026-08-23T15:08:54Z",
+      "event": "MultiSellExplorationData",
+      "Discovered": [
+        {
+          "SystemName": "Granoae WO-A f103",
+          "NumBodies": 2
+        },
+        {
+          "SystemName": "Voqooe NU-Y b33-0",
+          "NumBodies": 7
+        },
+        {
+          "SystemName": "Voqooe ZU-X e1-182",
+          "NumBodies": 3
+        },
+        {
+          "SystemName": "Granoae WW-W c4-3",
+          "NumBodies": 6
+        },
+        {
+          "SystemName": "Voqooe GH-V f2-1893",
+          "NumBodies": 9
+        },
+        {
+          "SystemName": "Voqooe VD-B e455",
+          "NumBodies": 1
+        },
+        {
+          "SystemName": "Voqooe TD-Z d1-59",
+          "NumBodies": 3
+        },
+        {
+          "SystemName": "Voqooe BO-F d12-61",
+          "NumBodies": 3
+        },
+        {
+          "SystemName": "Eoch Flyi CR-N e6-501",
+          "NumBodies": 1
+        },
+        {
+          "SystemName": "Dryoea Flyuae RS-U e2-565",
+          "NumBodies": 3
+        },
+        {
+          "SystemName": "Granoae BZ-H b16-1",
+          "NumBodies": 26
+        },
+        {
+          "SystemName": "Dryoea Flyuae SY-S e3-652",
+          "NumBodies": 4
+        },
+        {
+          "SystemName": "Voqooe WO-Z e717",
+          "NumBodies": 17
+        },
+        {
+          "SystemName": "Voqooe OJ-O d7-101",
+          "NumBodies": 8
+        },
+        {
+          "SystemName": "Voqooe CZ-D d13-111",
+          "NumBodies": 10
+        },
+        {
+          "SystemName": "Eol Prou XV-H a27-0",
+          "NumBodies": 1
+        },
+        {
+          "SystemName": "Eoch Flya RZ-D d13-128",
+          "NumBodies": 20
+        },
+        {
+          "SystemName": "Dryoea Flyuae IR-W e1-1124",
+          "NumBodies": 2
+        },
+        {
+          "SystemName": "Voqooe LI-N a5-0",
+          "NumBodies": 6
+        },
+        {
+          "SystemName": "Granoae QM-X b7-2",
+          "NumBodies": 1
+        },
+        {
+          "SystemName": "Granoae TK-A c3-21",
+          "NumBodies": 22
+        },
+        {
+          "SystemName": "Granoae RI-B e1378",
+          "NumBodies": 3
+        },
+        {
+          "SystemName": "Granoae KO-X d2-176",
+          "NumBodies": 9
+        },
+        {
+          "SystemName": "Voqooe EA-C c2-26",
+          "NumBodies": 10
+        },
+        {
+          "SystemName": "Dryoea Flyuae WF-O d6-224",
+          "NumBodies": 1
+        },
+        {
+          "SystemName": "Dryio Flyuae SG-A c28-30",
+          "NumBodies": 2
+        },
+        {
+          "SystemName": "Eoch Flya MT-Q e5-2094",
+          "NumBodies": 41
+        },
+        {
+          "SystemName": "Granoae RE-C c2-36",
+          "NumBodies": 19
+        },
+        {
+          "SystemName": "Dryoea Flyuae MR-N d6-301",
+          "NumBodies": 2
+        },
+        {
+          "SystemName": "Granoae KI-Z d1-304",
+          "NumBodies": 47
+        },
+        {
+          "SystemName": "Dryoea Flyuae PZ-G d10-332",
+          "NumBodies": 13
+        },
+        {
+          "SystemName": "Dryio Flyuae LG-M c21-42",
+          "NumBodies": 19
+        },
+        {
+          "SystemName": "Eoch Pruae YO-A d338",
+          "NumBodies": 5
+        },
+        {
+          "SystemName": "Voqooe SQ-G c13-43",
+          "NumBodies": 21
+        },
+        {
+          "SystemName": "Granoae JR-C d348",
+          "NumBodies": 23
+        },
+        {
+          "SystemName": "Eoch Flya QZ-D d13-349",
+          "NumBodies": 2
+        },
+        {
+          "SystemName": "Voqooe AB-N c23-47",
+          "NumBodies": 38
+        },
+        {
+          "SystemName": "Voqooe QP-M d8-381",
+          "NumBodies": 12
+        },
+        {
+          "SystemName": "Dryoea Flyuae CI-R c18-51",
+          "NumBodies": 1
+        },
+        {
+          "SystemName": "Dryio Flyuae CQ-P e5-3348",
+          "NumBodies": 1
+        },
+        {
+          "SystemName": "Eoch Flya VZ-M d8-443",
+          "NumBodies": 1
+        },
+        {
+          "SystemName": "Dryoea Flyuae IF-R d4-487",
+          "NumBodies": 2
+        },
+        {
+          "SystemName": "Voqooe QN-W c4-65",
+          "NumBodies": 31
+        },
+        {
+          "SystemName": "Eoch Flya OW-C c29-66",
+          "NumBodies": 2
+        },
+        {
+          "SystemName": "Voqooe XP-V d3-557",
+          "NumBodies": 1
+        },
+        {
+          "SystemName": "Eoch Pruae XO-A d575",
+          "NumBodies": 4
+        },
+        {
+          "SystemName": "Dryoea Flyuae LC-M d7-575",
+          "NumBodies": 6
+        },
+        {
+          "SystemName": "Eoch Flya LQ-E c28-72",
+          "NumBodies": 27
+        },
+        {
+          "SystemName": "Granoae LO-X d2-618",
+          "NumBodies": 9
+        }
+      ],
+      "BaseValue": 41299045,
+      "Bonus": 443000,
+      "TotalEarnings": 37567861
+    },
+    {
+      "timestamp": "2026-08-23T15:15:42Z",
+      "event": "StartJump",
+      "JumpType": "Hyperspace",
+      "Taxi": false,
+      "StarSystem": "Eol Prou YI-W b17-57",
+      "SystemAddress": 125887770281113,
+      "StarClass": "M"
+    },
+    {
+      "timestamp": "2026-08-23T15:16:02Z",
+      "event": "FSDJump",
+      "Taxi": false,
+      "Multicrew": false,
+      "StarSystem": "Eol Prou YI-W b17-57",
+      "SystemAddress": 125887770281113,
+      "StarPos": [
+        -9496.40625,
+        -895.21875,
+        19807.53125
+      ],
+      "SystemAllegiance": "",
+      "SystemEconomy": "$economy_None;",
+      "SystemEconomy_Localised": "None",
+      "SystemSecondEconomy": "$economy_None;",
+      "SystemSecondEconomy_Localised": "None",
+      "SystemGovernment": "$government_None;",
+      "SystemGovernment_Localised": "None",
+      "SystemSecurity": "$GAlAXY_MAP_INFO_state_anarchy;",
+      "SystemSecurity_Localised": "Anarchy",
+      "Population": 0,
+      "Body": "Eol Prou YI-W b17-57 A",
+      "BodyID": 1,
+      "BodyType": "Star",
+      "JumpDist": 20.59,
+      "FuelUsed": 0.257819,
+      "FuelLevel": 127.74218
+    },
+    {
+      "timestamp": "2026-08-23T15:16:08Z",
+      "event": "Scan",
+      "ScanType": "AutoScan",
+      "BodyName": "Eol Prou YI-W b17-57 A",
+      "BodyID": 1,
+      "Parents": [
+        {
+          "Null": 0
+        }
+      ],
+      "StarSystem": "Eol Prou YI-W b17-57",
+      "SystemAddress": 125887770281113,
+      "DistanceFromArrivalLS": 0.0,
+      "StarType": "M",
+      "Subclass": 3,
+      "StellarMass": 0.367188,
+      "Radius": 394084096.0,
+      "AbsoluteMagnitude": 8.813766,
+      "Age_MY": 1798,
+      "SurfaceTemperature": 3068.0,
+      "Luminosity": "Va",
+      "SemiMajorAxis": 274103826284.40857,
+      "Eccentricity": 0.357801,
+      "OrbitalInclination": -18.346661,
+      "Periapsis": 34.869243,
+      "OrbitalPeriod": 683773523.569107,
+      "AscendingNode": -49.891465,
+      "MeanAnomaly": 82.483749,
+      "RotationPeriod": 177407.724476,
+      "AxialTilt": 0.0,
+      "WasDiscovered": true,
+      "WasMapped": false,
+      "WasFootfalled": false
+    },
+    {
+      "timestamp": "2026-08-23T15:16:10Z",
+      "event": "FSSDiscoveryScan",
+      "Progress": 0.307777,
+      "BodyCount": 14,
+      "NonBodyCount": 11,
+      "SystemName": "Eol Prou YI-W b17-57",
+      "SystemAddress": 125887770281113
+    },
+    {
+      "timestamp": "2026-08-23T15:16:11Z",
+      "event": "Scan",
+      "ScanType": "Detailed",
+      "BodyName": "Eol Prou YI-W b17-57 B",
+      "BodyID": 2,
+      "Parents": [
+        {
+          "Null": 0
+        }
+      ],
+      "StarSystem": "Eol Prou YI-W b17-57",
+      "SystemAddress": 125887770281113,
+      "DistanceFromArrivalLS": 3359.412847,
+      "StarType": "L",
+      "Subclass": 5,
+      "StellarMass": 0.152344,
+      "Radius": 209278256.0,
+      "AbsoluteMagnitude": 12.903931,
+      "Age_MY": 1798,
+      "SurfaceTemperature": 1642.0,
+      "Luminosity": "V",
+      "SemiMajorAxis": 660642975568.7714,
+      "Eccentricity": 0.357801,
+      "OrbitalInclination": -18.346661,
+      "Periapsis": 214.869224,
+      "OrbitalPeriod": 683773523.569107,
+      "AscendingNode": -49.891465,
+      "MeanAnomaly": 82.48375,
+      "RotationPeriod": 86971.796319,
+      "AxialTilt": 0.0,
+      "Rings": [
+        {
+          "Name": "Eol Prou YI-W b17-57 B A Belt",
+          "RingClass": "eRingClass_MetalRich",
+          "MassMT": 47389000000000.0,
+          "InnerRad": 389620000.0,
+          "OuterRad": 1288800000.0
+        }
+      ],
+      "WasDiscovered": true,
+      "WasMapped": false,
+      "WasFootfalled": false
+    },
+    {
+      "timestamp": "2026-08-23T15:17:31Z",
+      "event": "Scan",
+      "ScanType": "Detailed",
+      "BodyName": "Eol Prou YI-W b17-57 B 8",
+      "BodyID": 25,
+      "Parents": [
+        {
+          "Star": 2
+        },
+        {
+          "Null": 0
+        }
+      ],
+      "StarSystem": "Eol Prou YI-W b17-57",
+      "SystemAddress": 125887770281113,
+      "DistanceFromArrivalLS": 3430.763749,
+      "TidalLock": false,
+      "TerraformState": "",
+      "PlanetClass": "Icy body",
+      "Atmosphere": "argon rich atmosphere",
+      "AtmosphereType": "ArgonRich",
+      "AtmosphereComposition": [
+        {
+          "Name": "Nitrogen",
+          "Percent": 99.008102
+        },
+        {
+          "Name": "Argon",
+          "Percent": 0.990081
+        }
+      ],
+      "Volcanism": "",
+      "MassEM": 0.148796,
+      "Radius": 4309225.5,
+      "SurfaceGravity": 3.193753,
+      "SurfaceTemperature": 92.926308,
+      "SurfacePressure": 430360.375,
+      "Landable": false,
+      "Composition": {
+        "Ice": 0.684895,
+        "Rock": 0.211437,
+        "Metal": 0.103668
+      },
+      "SemiMajorAxis": 62731916904.44946,
+      "Eccentricity": 0.024506,
+      "OrbitalInclination": -0.283558,
+      "Periapsis": 58.155943,
+      "OrbitalPeriod": 21952975.392342,
+      "AscendingNode": 120.017694,
+      "MeanAnomaly": 10.999819,
+      "RotationPeriod": 175334.654074,
+      "AxialTilt": -0.289927,
+      "WasDiscovered": true,
+      "WasMapped": true,
+      "WasFootfalled": false
+    },
+    {
+      "timestamp": "2026-08-23T15:17:39Z",
+      "event": "Scan",
+      "ScanType": "Detailed",
+      "BodyName": "Eol Prou YI-W b17-57 B 1",
+      "BodyID": 15,
+      "Parents": [
+        {
+          "Star": 2
+        },
+        {
+          "Null": 0
+        }
+      ],
+      "StarSystem": "Eol Prou YI-W b17-57",
+      "SystemAddress": 125887770281113,
+      "DistanceFromArrivalLS": 3374.903885,
+      "TidalLock": true,
+      "TerraformState": "",
+      "PlanetClass": "High metal content body",
+      "Atmosphere": "",
+      "AtmosphereType": "None",
+      "Volcanism": "",
+      "MassEM": 0.023744,
+      "Radius": 1872795.5,
+      "SurfaceGravity": 2.698308,
+      "SurfaceTemperature": 237.804138,
+      "SurfacePressure": 0.0,
+      "Landable": true,
+      "Materials": [
+        {
+          "Name": "iron",
+          "Percent": 23.45966
+        },
+        {
+          "Name": "nickel",
+          "Percent": 17.743904
+        },
+        {
+          "Name": "sulphur",
+          "Percent": 16.681093
+        },
+        {
+          "Name": "carbon",
+          "Percent": 14.027073
+        },
+        {
+          "Name": "phosphorus",
+          "Percent": 8.980371
+        },
+        {
+          "Name": "zinc",
+          "Percent": 6.375457
+        },
+        {
+          "Name": "vanadium",
+          "Percent": 5.760875
+        },
+        {
+          "Name": "zirconium",
+          "Percent": 2.72415
+        },
+        {
+          "Name": "cadmium",
+          "Percent": 1.821749
+        },
+        {
+          "Name": "yttrium",
+          "Percent": 1.401217
+        },
+        {
+          "Name": "mercury",
+          "Percent": 1.024445
+        }
+      ],
+      "Composition": {
+        "Ice": 0.0,
+        "Rock": 0.671005,
+        "Metal": 0.328995
+      },
+      "SemiMajorAxis": 5804719328.88031,
+      "Eccentricity": 6.1e-05,
+      "OrbitalInclination": 0.115207,
+      "Periapsis": 32.64407,
+      "OrbitalPeriod": 617920.398712,
+      "AscendingNode": -154.236419,
+      "MeanAnomaly": 37.57209,
+      "RotationPeriod": 617928.645683,
+      "AxialTilt": 0.248023,
+      "WasDiscovered": true,
+      "WasMapped": true,
+      "WasFootfalled": false
+    },
+    {
+      "timestamp": "2026-08-23T15:17:47Z",
+      "event": "FSSBodySignals",
+      "BodyName": "Eol Prou YI-W b17-57 B 2 a",
+      "BodyID": 17,
+      "SystemAddress": 125887770281113,
+      "Signals": [
+        {
+          "Type": "$SAA_SignalType_Geological;",
+          "Type_Localised": "Geological",
+          "Count": 3
+        }
+      ]
+    },
+    {
+      "timestamp": "2026-08-23T15:17:48Z",
+      "event": "Scan",
+      "ScanType": "Detailed",
+      "BodyName": "Eol Prou YI-W b17-57 B 2 a",
+      "BodyID": 17,
+      "Parents": [
+        {
+          "Planet": 16
+        },
+        {
+          "Star": 2
+        },
+        {
+          "Null": 0
+        }
+      ],
+      "StarSystem": "Eol Prou YI-W b17-57",
+      "SystemAddress": 125887770281113,
+      "DistanceFromArrivalLS": 3379.706179,
+      "TidalLock": true,
+      "TerraformState": "",
+      "PlanetClass": "Rocky body",
+      "Atmosphere": "",
+      "AtmosphereType": "None",
+      "Volcanism": "major silicate vapour geysers volcanism",
+      "MassEM": 0.002345,
+      "Radius": 921114.625,
+      "SurfaceGravity": 1.101394,
+      "SurfaceTemperature": 199.251419,
+      "SurfacePressure": 0.0,
+      "Landable": true,
+      "Materials": [
+        {
+          "Name": "iron",
+          "Percent": 20.580944
+        },
+        {
+          "Name": "sulphur",
+          "Percent": 18.457932
+        },
+        {
+          "Name": "nickel",
+          "Percent": 15.566564
+        },
+        {
+          "Name": "carbon",
+          "Percent": 15.521209
+        },
+        {
+          "Name": "phosphorus",
+          "Percent": 9.936945
+        },
+        {
+          "Name": "manganese",
+          "Percent": 8.49972
+        },
+        {
+          "Name": "germanium",
+          "Percent": 5.445703
+        },
+        {
+          "Name": "arsenic",
+          "Percent": 2.435392
+        },
+        {
+          "Name": "tin",
+          "Percent": 1.273864
+        },
+        {
+          "Name": "antimony",
+          "Percent": 1.151626
+        },
+        {
+          "Name": "tungsten",
+          "Percent": 1.1301
+        }
+      ],
+      "Composition": {
+        "Ice": 0.0,
+        "Rock": 0.860661,
+        "Metal": 0.139339
+      },
+      "SemiMajorAxis": 12259754.538536,
+      "Eccentricity": 0.0,
+      "OrbitalInclination": 85.650996,
+      "Periapsis": 120.350395,
+      "OrbitalPeriod": 52784.741521,
+      "AscendingNode": -10.356766,
+      "MeanAnomaly": 339.764602,
+      "RotationPeriod": 53755.529623,
+      "AxialTilt": 0.130098,
+      "WasDiscovered": true,
+      "WasMapped": true,
+      "WasFootfalled": true
+    },
+    {
+      "timestamp": "2026-08-23T15:17:51Z",
+      "event": "FSSBodySignals",
+      "BodyName": "Eol Prou YI-W b17-57 B 2",
+      "BodyID": 16,
+      "SystemAddress": 125887770281113,
+      "Signals": [
+        {
+          "Type": "$SAA_SignalType_Biological;",
+          "Type_Localised": "Biological",
+          "Count": 2
+        }
+      ]
+    },
+    {
+      "timestamp": "2026-08-23T15:17:51Z",
+      "event": "Scan",
+      "ScanType": "Detailed",
+      "BodyName": "Eol Prou YI-W b17-57 B 2",
+      "BodyID": 16,
+      "Parents": [
+        {
+          "Star": 2
+        },
+        {
+          "Null": 0
+        }
+      ],
+      "StarSystem": "Eol Prou YI-W b17-57",
+      "SystemAddress": 125887770281113,
+      "DistanceFromArrivalLS": 3379.67898,
+      "TidalLock": false,
+      "TerraformState": "",
+      "PlanetClass": "High metal content body",
+      "Atmosphere": "thin sulfur dioxide atmosphere",
+      "AtmosphereType": "SulphurDioxide",
+      "AtmosphereComposition": [
+        {
+          "Name": "SulphurDioxide",
+          "Percent": 100.0
+        }
+      ],
+      "Volcanism": "",
+      "MassEM": 0.06316,
+      "Radius": 2565035.75,
+      "SurfaceGravity": 3.826157,
+      "SurfaceTemperature": 199.787399,
+      "SurfacePressure": 207.49852,
+      "Landable": true,
+      "Materials": [
+        {
+          "Name": "iron",
+          "Percent": 21.120272
+        },
+        {
+          "Name": "nickel",
+          "Percent": 15.974489
+        },
+        {
+          "Name": "sulphur",
+          "Percent": 14.910335
+        },
+        {
+          "Name": "carbon",
+          "Percent": 12.538047
+        },
+        {
+          "Name": "chromium",
+          "Percent": 9.498487
+        },
+        {
+          "Name": "manganese",
+          "Percent": 8.722457
+        },
+        {
+          "Name": "phosphorus",
+          "Percent": 8.027074
+        },
+        {
+          "Name": "zinc",
+          "Percent": 5.739699
+        },
+        {
+          "Name": "molybdenum",
+          "Percent": 1.379141
+        },
+        {
+          "Name": "tungsten",
+          "Percent": 1.159715
+        },
+        {
+          "Name": "antimony",
+          "Percent": 0.930285
+        }
+      ],
+      "Composition": {
+        "Ice": 0.0,
+        "Rock": 0.663965,
+        "Metal": 0.336035
+      },
+      "SemiMajorAxis": 8954969704.151154,
+      "Eccentricity": 0.000724,
+      "OrbitalInclination": 0.000184,
+      "Periapsis": 301.945776,
+      "OrbitalPeriod": 1184014.14156,
+      "AscendingNode": 107.285688,
+      "MeanAnomaly": 218.983819,
+      "RotationPeriod": -1184029.858228,
+      "AxialTilt": -1.643705,
+      "WasDiscovered": true,
+      "WasMapped": true,
+      "WasFootfalled": true
+    },
+    {
+      "timestamp": "2026-08-23T15:17:59Z",
+      "event": "FSSBodySignals",
+      "BodyName": "Eol Prou YI-W b17-57 B 3 a",
+      "BodyID": 19,
+      "SystemAddress": 125887770281113,
+      "Signals": [
+        {
+          "Type": "$SAA_SignalType_Geological;",
+          "Type_Localised": "Geological",
+          "Count": 3
+        }
+      ]
+    },
+    {
+      "timestamp": "2026-08-23T15:18:00Z",
+      "event": "Scan",
+      "ScanType": "Detailed",
+      "BodyName": "Eol Prou YI-W b17-57 B 3 a",
+      "BodyID": 19,
+      "Parents": [
+        {
+          "Planet": 18
+        },
+        {
+          "Star": 2
+        },
+        {
+          "Null": 0
+        }
+      ],
+      "StarSystem": "Eol Prou YI-W b17-57",
+      "SystemAddress": 125887770281113,
+      "DistanceFromArrivalLS": 3349.295314,
+      "TidalLock": true,
+      "TerraformState": "",
+      "PlanetClass": "Rocky body",
+      "Atmosphere": "",
+      "AtmosphereType": "None",
+      "Volcanism": "minor metallic magma volcanism",
+      "MassEM": 0.002577,
+      "Radius": 950304.4375,
+      "SurfaceGravity": 1.137324,
+      "SurfaceTemperature": 172.143204,
+      "SurfacePressure": 0.0,
+      "Landable": true,
+      "Materials": [
+        {
+          "Name": "iron",
+          "Percent": 21.236616
+        },
+        {
+          "Name": "sulphur",
+          "Percent": 19.045969
+        },
+        {
+          "Name": "nickel",
+          "Percent": 16.062487
+        },
+        {
+          "Name": "carbon",
+          "Percent": 16.015686
+        },
+        {
+          "Name": "phosphorus",
+          "Percent": 10.253519
+        },
+        {
+          "Name": "manganese",
+          "Percent": 8.770505
+        },
+        {
+          "Name": "selenium",
+          "Percent": 2.980855
+        },
+        {
+          "Name": "arsenic",
+          "Percent": 2.51298
+        },
+        {
+          "Name": "molybdenum",
+          "Percent": 1.386739
+        },
+        {
+          "Name": "tungsten",
+          "Percent": 1.166103
+        },
+        {
+          "Name": "polonium",
+          "Percent": 0.568539
+        }
+      ],
+      "Composition": {
+        "Ice": 0.0,
+        "Rock": 0.860661,
+        "Metal": 0.139339
+      },
+      "SemiMajorAxis": 21242139.935493,
+      "Eccentricity": 0.0,
+      "OrbitalInclination": 4.413849,
+      "Periapsis": 100.716508,
+      "OrbitalPeriod": 110749.363899,
+      "AscendingNode": -161.798517,
+      "MeanAnomaly": 57.761073,
+      "RotationPeriod": 112640.27702,
+      "AxialTilt": 0.150474,
+      "WasDiscovered": true,
+      "WasMapped": true,
+      "WasFootfalled": false
+    },
+    {
+      "timestamp": "2026-08-23T15:18:03Z",
+      "event": "FSSBodySignals",
+      "BodyName": "Eol Prou YI-W b17-57 B 3",
+      "BodyID": 18,
+      "SystemAddress": 125887770281113,
+      "Signals": [
+        {
+          "Type": "$SAA_SignalType_Biological;",
+          "Type_Localised": "Biological",
+          "Count": 2
+        }
+      ]
+    },
+    {
+      "timestamp": "2026-08-23T15:18:04Z",
+      "event": "Scan",
+      "ScanType": "Detailed",
+      "BodyName": "Eol Prou YI-W b17-57 B 3",
+      "BodyID": 18,
+      "Parents": [
+        {
+          "Star": 2
+        },
+        {
+          "Null": 0
+        }
+      ],
+      "StarSystem": "Eol Prou YI-W b17-57",
+      "SystemAddress": 125887770281113,
+      "DistanceFromArrivalLS": 3349.351728,
+      "TidalLock": false,
+      "TerraformState": "",
+      "PlanetClass": "High metal content body",
+      "Atmosphere": "thin carbon dioxide atmosphere",
+      "AtmosphereType": "CarbonDioxide",
+      "AtmosphereComposition": [
+        {
+          "Name": "CarbonDioxide",
+          "Percent": 81.178894
+        },
+        {
+          "Name": "SulphurDioxide",
+          "Percent": 18.821096
+        }
+      ],
+      "Volcanism": "",
+      "MassEM": 0.074825,
+      "Radius": 2708873.75,
+      "SurfaceGravity": 4.06425,
+      "SurfaceTemperature": 196.647232,
+      "SurfacePressure": 1244.90918,
+      "Landable": true,
+      "Materials": [
+        {
+          "Name": "iron",
+          "Percent": 23.801765
+        },
+        {
+          "Name": "nickel",
+          "Percent": 18.002661
+        },
+        {
+          "Name": "sulphur",
+          "Percent": 16.812077
+        },
+        {
+          "Name": "carbon",
+          "Percent": 14.137216
+        },
+        {
+          "Name": "phosphorus",
+          "Percent": 9.050888
+        },
+        {
+          "Name": "zinc",
+          "Percent": 6.46843
+        },
+        {
+          "Name": "germanium",
+          "Percent": 4.960122
+        },
+        {
+          "Name": "zirconium",
+          "Percent": 2.763876
+        },
+        {
+          "Name": "tin",
+          "Percent": 1.541926
+        },
+        {
+          "Name": "yttrium",
+          "Percent": 1.421651
+        },
+        {
+          "Name": "mercury",
+          "Percent": 1.039384
+        }
+      ],
+      "Composition": {
+        "Ice": 0.0,
+        "Rock": 0.664473,
+        "Metal": 0.335527
+      },
+      "SemiMajorAxis": 13005247712.135315,
+      "Eccentricity": 0.002453,
+      "OrbitalInclination": -0.527872,
+      "Periapsis": 258.105202,
+      "OrbitalPeriod": 2072233.080864,
+      "AscendingNode": 59.488103,
+      "MeanAnomaly": 183.554934,
+      "RotationPeriod": -2072260.111829,
+      "AxialTilt": -2.503447,
+      "WasDiscovered": true,
+      "WasMapped": true,
+      "WasFootfalled": true
+    },
+    {
+      "timestamp": "2026-08-23T15:18:11Z",
+      "event": "Scan",
+      "ScanType": "Detailed",
+      "BodyName": "Eol Prou YI-W b17-57 B 7",
+      "BodyID": 24,
+      "Parents": [
+        {
+          "Star": 2
+        },
+        {
+          "Null": 0
+        }
+      ],
+      "StarSystem": "Eol Prou YI-W b17-57",
+      "SystemAddress": 125887770281113,
+      "DistanceFromArrivalLS": 3490.697785,
+      "TidalLock": true,
+      "TerraformState": "",
+      "PlanetClass": "Icy body",
+      "Atmosphere": "thick nitrogen atmosphere",
+      "AtmosphereType": "Nitrogen",
+      "AtmosphereComposition": [
+        {
+          "Name": "Nitrogen",
+          "Percent": 99.959984
+        }
+      ],
+      "Volcanism": "",
+      "MassEM": 0.378268,
+      "Radius": 5720528.0,
+      "SurfaceGravity": 4.607193,
+      "SurfaceTemperature": 135.610611,
+      "SurfacePressure": 82724032.0,
+      "Landable": false,
+      "Composition": {
+        "Ice": 0.651456,
+        "Rock": 0.233875,
+        "Metal": 0.114669
+      },
+      "SemiMajorAxis": 45141267180.44281,
+      "Eccentricity": 0.002844,
+      "OrbitalInclination": -1.457424,
+      "Periapsis": 161.236147,
+      "OrbitalPeriod": 13400509.953499,
+      "AscendingNode": -23.870077,
+      "MeanAnomaly": 289.693913,
+      "RotationPeriod": 13400687.96761,
+      "AxialTilt": 0.463549,
+      "WasDiscovered": true,
+      "WasMapped": true,
+      "WasFootfalled": false
+    },
+    {
+      "timestamp": "2026-08-23T15:18:27Z",
+      "event": "Scan",
+      "ScanType": "Detailed",
+      "BodyName": "Eol Prou YI-W b17-57 B 6",
+      "BodyID": 23,
+      "Parents": [
+        {
+          "Star": 2
+        },
+        {
+          "Null": 0
+        }
+      ],
+      "StarSystem": "Eol Prou YI-W b17-57",
+      "SystemAddress": 125887770281113,
+      "DistanceFromArrivalLS": 3477.637965,
+      "TidalLock": true,
+      "TerraformState": "",
+      "PlanetClass": "Icy body",
+      "Atmosphere": "thick argon rich atmosphere",
+      "AtmosphereType": "ArgonRich",
+      "AtmosphereComposition": [
+        {
+          "Name": "Nitrogen",
+          "Percent": 99.813332
+        },
+        {
+          "Name": "Argon",
+          "Percent": 0.184898
+        }
+      ],
+      "Volcanism": "",
+      "MassEM": 0.447612,
+      "Radius": 6027092.5,
+      "SurfaceGravity": 4.911284,
+      "SurfaceTemperature": 130.610733,
+      "SurfacePressure": 18392610.0,
+      "Landable": false,
+      "Composition": {
+        "Ice": 0.651456,
+        "Rock": 0.233875,
+        "Metal": 0.114669
+      },
+      "SemiMajorAxis": 35647516250.61035,
+      "Eccentricity": 0.009751,
+      "OrbitalInclination": -0.164614,
+      "Periapsis": 301.117875,
+      "OrbitalPeriod": 9403826.594353,
+      "AscendingNode": 140.157251,
+      "MeanAnomaly": 193.599666,
+      "RotationPeriod": 9403952.428778,
+      "AxialTilt": -0.010845,
+      "WasDiscovered": true,
+      "WasMapped": true,
+      "WasFootfalled": false
+    },
+    {
+      "timestamp": "2026-08-23T15:18:35Z",
+      "event": "Scan",
+      "ScanType": "Detailed",
+      "BodyName": "Eol Prou YI-W b17-57 B 5 a",
+      "BodyID": 22,
+      "Parents": [
+        {
+          "Planet": 21
+        },
+        {
+          "Star": 2
+        },
+        {
+          "Null": 0
+        }
+      ],
+      "StarSystem": "Eol Prou YI-W b17-57",
+      "SystemAddress": 125887770281113,
+      "DistanceFromArrivalLS": 3281.956122,
+      "TidalLock": true,
+      "TerraformState": "",
+      "PlanetClass": "Rocky body",
+      "Atmosphere": "carbon dioxide atmosphere",
+      "AtmosphereType": "CarbonDioxide",
+      "AtmosphereComposition": [
+        {
+          "Name": "CarbonDioxide",
+          "Percent": 98.96833
+        },
+        {
+          "Name": "SulphurDioxide",
+          "Percent": 0.996528
+        }
+      ],
+      "Volcanism": "",
+      "MassEM": 0.00311,
+      "Radius": 1011078.9375,
+      "SurfaceGravity": 1.212357,
+      "SurfaceTemperature": 254.84906,
+      "SurfacePressure": 251652.6875,
+      "Landable": false,
+      "Composition": {
+        "Ice": 0.0,
+        "Rock": 0.860661,
+        "Metal": 0.139339
+      },
+      "SemiMajorAxis": 40348738.431931,
+      "Eccentricity": 0.0,
+      "OrbitalInclination": -40.723466,
+      "Periapsis": 211.131177,
+      "OrbitalPeriod": 270925.712585,
+      "AscendingNode": -88.02227,
+      "MeanAnomaly": 302.131789,
+      "RotationPeriod": 275806.597124,
+      "AxialTilt": 0.289257,
+      "WasDiscovered": true,
+      "WasMapped": true,
+      "WasFootfalled": false
+    },
+    {
+      "timestamp": "2026-08-23T15:18:38Z",
+      "event": "Scan",
+      "ScanType": "Detailed",
+      "BodyName": "Eol Prou YI-W b17-57 B 5",
+      "BodyID": 21,
+      "Parents": [
+        {
+          "Star": 2
+        },
+        {
+          "Null": 0
+        }
+      ],
+      "StarSystem": "Eol Prou YI-W b17-57",
+      "SystemAddress": 125887770281113,
+      "DistanceFromArrivalLS": 3282.053231,
+      "TidalLock": false,
+      "TerraformState": "",
+      "PlanetClass": "High metal content body",
+      "Atmosphere": "carbon dioxide atmosphere",
+      "AtmosphereType": "CarbonDioxide",
+      "AtmosphereComposition": [
+        {
+          "Name": "CarbonDioxide",
+          "Percent": 98.951767
+        },
+        {
+          "Name": "SulphurDioxide",
+          "Percent": 0.989518
+        }
+      ],
+      "Volcanism": "",
+      "MassEM": 0.085531,
+      "Radius": 2827137.75,
+      "SurfaceGravity": 4.265178,
+      "SurfaceTemperature": 199.86969,
+      "SurfacePressure": 26063.646484,
+      "Landable": false,
+      "Composition": {
+        "Ice": 0.0,
+        "Rock": 0.66411,
+        "Metal": 0.33589
+      },
+      "SemiMajorAxis": 24046283364.29596,
+      "Eccentricity": 0.00079,
+      "OrbitalInclination": -0.003044,
+      "Periapsis": 154.963363,
+      "OrbitalPeriod": 5209939.002991,
+      "AscendingNode": 96.949945,
+      "MeanAnomaly": 209.438452,
+      "RotationPeriod": -5210008.232401,
+      "AxialTilt": 3.028348,
+      "WasDiscovered": true,
+      "WasMapped": true,
+      "WasFootfalled": false
+    },
+    {
+      "timestamp": "2026-08-23T15:18:40Z",
+      "event": "FSSBodySignals",
+      "BodyName": "Eol Prou YI-W b17-57 B 4",
+      "BodyID": 20,
+      "SystemAddress": 125887770281113,
+      "Signals": [
+        {
+          "Type": "$SAA_SignalType_Biological;",
+          "Type_Localised": "Biological",
+          "Count": 1
+        }
+      ]
+    },
+    {
+      "timestamp": "2026-08-23T15:18:41Z",
+      "event": "Scan",
+      "ScanType": "Detailed",
+      "BodyName": "Eol Prou YI-W b17-57 B 4",
+      "BodyID": 20,
+      "Parents": [
+        {
+          "Star": 2
+        },
+        {
+          "Null": 0
+        }
+      ],
+      "StarSystem": "Eol Prou YI-W b17-57",
+      "SystemAddress": 125887770281113,
+      "DistanceFromArrivalLS": 3347.967044,
+      "TidalLock": true,
+      "TerraformState": "",
+      "PlanetClass": "High metal content body",
+      "Atmosphere": "thin sulfur dioxide atmosphere",
+      "AtmosphereType": "SulphurDioxide",
+      "AtmosphereComposition": [
+        {
+          "Name": "SulphurDioxide",
+          "Percent": 100.0
+        }
+      ],
+      "Volcanism": "",
+      "MassEM": 0.04698,
+      "Radius": 2336338.5,
+      "SurfaceGravity": 3.43044,
+      "SurfaceTemperature": 151.697357,
+      "SurfacePressure": 168.565979,
+      "Landable": true,
+      "Materials": [
+        {
+          "Name": "iron",
+          "Percent": 21.164955
+        },
+        {
+          "Name": "nickel",
+          "Percent": 16.008286
+        },
+        {
+          "Name": "sulphur",
+          "Percent": 15.049436
+        },
+        {
+          "Name": "carbon",
+          "Percent": 12.655017
+        },
+        {
+          "Name": "chromium",
+          "Percent": 9.518582
+        },
+        {
+          "Name": "manganese",
+          "Percent": 8.740911
+        },
+        {
+          "Name": "phosphorus",
+          "Percent": 8.101958
+        },
+        {
+          "Name": "germanium",
+          "Percent": 4.440084
+        },
+        {
+          "Name": "cadmium",
+          "Percent": 1.643555
+        },
+        {
+          "Name": "tin",
+          "Percent": 1.370143
+        },
+        {
+          "Name": "ruthenium",
+          "Percent": 1.307071
+        }
+      ],
+      "Composition": {
+        "Ice": 0.0,
+        "Rock": 0.671005,
+        "Metal": 0.328995
+      },
+      "SemiMajorAxis": 18321315050.125122,
+      "Eccentricity": 7.5e-05,
+      "OrbitalInclination": -1.570725,
+      "Periapsis": 0.883509,
+      "OrbitalPeriod": 3464939.296246,
+      "AscendingNode": -56.039158,
+      "MeanAnomaly": 325.733467,
+      "RotationPeriod": 3464985.520752,
+      "AxialTilt": 0.162093,
+      "WasDiscovered": true,
+      "WasMapped": true,
+      "WasFootfalled": true
+    },
+    {
+      "timestamp": "2026-08-23T15:18:50Z",
+      "event": "Scan",
+      "ScanType": "AutoScan",
+      "BodyName": "Eol Prou YI-W b17-57 B A Belt Cluster 9",
+      "BodyID": 12,
+      "Parents": [
+        {
+          "Ring": 3
+        },
+        {
+          "Star": 2
+        },
+        {
+          "Null": 0
+        }
+      ],
+      "StarSystem": "Eol Prou YI-W b17-57",
+      "SystemAddress": 125887770281113,
+      "DistanceFromArrivalLS": 3358.587006,
+      "WasDiscovered": true,
+      "WasMapped": false,
+      "WasFootfalled": false
+    },
+    {
+      "timestamp": "2026-08-23T15:18:50Z",
+      "event": "Scan",
+      "ScanType": "AutoScan",
+      "BodyName": "Eol Prou YI-W b17-57 B A Belt Cluster 1",
+      "BodyID": 4,
+      "Parents": [
+        {
+          "Ring": 3
+        },
+        {
+          "Star": 2
+        },
+        {
+          "Null": 0
+        }
+      ],
+      "StarSystem": "Eol Prou YI-W b17-57",
+      "SystemAddress": 125887770281113,
+      "DistanceFromArrivalLS": 3359.490015,
+      "WasDiscovered": true,
+      "WasMapped": false,
+      "WasFootfalled": false
+    },
+    {
+      "timestamp": "2026-08-23T15:18:50Z",
+      "event": "Scan",
+      "ScanType": "AutoScan",
+      "BodyName": "Eol Prou YI-W b17-57 B A Belt Cluster 2",
+      "BodyID": 5,
+      "Parents": [
+        {
+          "Ring": 3
+        },
+        {
+          "Star": 2
+        },
+        {
+          "Null": 0
+        }
+      ],
+      "StarSystem": "Eol Prou YI-W b17-57",
+      "SystemAddress": 125887770281113,
+      "DistanceFromArrivalLS": 3358.813746,
+      "WasDiscovered": true,
+      "WasMapped": false,
+      "WasFootfalled": false
+    },
+    {
+      "timestamp": "2026-08-23T15:18:50Z",
+      "event": "Scan",
+      "ScanType": "AutoScan",
+      "BodyName": "Eol Prou YI-W b17-57 B A Belt Cluster 3",
+      "BodyID": 6,
+      "Parents": [
+        {
+          "Ring": 3
+        },
+        {
+          "Star": 2
+        },
+        {
+          "Null": 0
+        }
+      ],
+      "StarSystem": "Eol Prou YI-W b17-57",
+      "SystemAddress": 125887770281113,
+      "DistanceFromArrivalLS": 3357.154659,
+      "WasDiscovered": true,
+      "WasMapped": false,
+      "WasFootfalled": false
+    },
+    {
+      "timestamp": "2026-08-23T15:18:50Z",
+      "event": "Scan",
+      "ScanType": "AutoScan",
+      "BodyName": "Eol Prou YI-W b17-57 B A Belt Cluster 4",
+      "BodyID": 7,
+      "Parents": [
+        {
+          "Ring": 3
+        },
+        {
+          "Star": 2
+        },
+        {
+          "Null": 0
+        }
+      ],
+      "StarSystem": "Eol Prou YI-W b17-57",
+      "SystemAddress": 125887770281113,
+      "DistanceFromArrivalLS": 3356.376966,
+      "WasDiscovered": true,
+      "WasMapped": false,
+      "WasFootfalled": false
+    },
+    {
+      "timestamp": "2026-08-23T15:18:50Z",
+      "event": "Scan",
+      "ScanType": "AutoScan",
+      "BodyName": "Eol Prou YI-W b17-57 B A Belt Cluster 5",
+      "BodyID": 8,
+      "Parents": [
+        {
+          "Ring": 3
+        },
+        {
+          "Star": 2
+        },
+        {
+          "Null": 0
+        }
+      ],
+      "StarSystem": "Eol Prou YI-W b17-57",
+      "SystemAddress": 125887770281113,
+      "DistanceFromArrivalLS": 3358.327377,
+      "WasDiscovered": true,
+      "WasMapped": false,
+      "WasFootfalled": false
+    },
+    {
+      "timestamp": "2026-08-23T15:18:50Z",
+      "event": "Scan",
+      "ScanType": "AutoScan",
+      "BodyName": "Eol Prou YI-W b17-57 B A Belt Cluster 6",
+      "BodyID": 9,
+      "Parents": [
+        {
+          "Ring": 3
+        },
+        {
+          "Star": 2
+        },
+        {
+          "Null": 0
+        }
+      ],
+      "StarSystem": "Eol Prou YI-W b17-57",
+      "SystemAddress": 125887770281113,
+      "DistanceFromArrivalLS": 3358.249892,
+      "WasDiscovered": true,
+      "WasMapped": false,
+      "WasFootfalled": false
+    },
+    {
+      "timestamp": "2026-08-23T15:18:50Z",
+      "event": "Scan",
+      "ScanType": "AutoScan",
+      "BodyName": "Eol Prou YI-W b17-57 B A Belt Cluster 7",
+      "BodyID": 10,
+      "Parents": [
+        {
+          "Ring": 3
+        },
+        {
+          "Star": 2
+        },
+        {
+          "Null": 0
+        }
+      ],
+      "StarSystem": "Eol Prou YI-W b17-57",
+      "SystemAddress": 125887770281113,
+      "DistanceFromArrivalLS": 3360.81798,
+      "WasDiscovered": true,
+      "WasMapped": false,
+      "WasFootfalled": false
+    },
+    {
+      "timestamp": "2026-08-23T15:18:50Z",
+      "event": "Scan",
+      "ScanType": "AutoScan",
+      "BodyName": "Eol Prou YI-W b17-57 B A Belt Cluster 8",
+      "BodyID": 11,
+      "Parents": [
+        {
+          "Ring": 3
+        },
+        {
+          "Star": 2
+        },
+        {
+          "Null": 0
+        }
+      ],
+      "StarSystem": "Eol Prou YI-W b17-57",
+      "SystemAddress": 125887770281113,
+      "DistanceFromArrivalLS": 3360.927803,
+      "WasDiscovered": true,
+      "WasMapped": false,
+      "WasFootfalled": false
+    },
+    {
+      "timestamp": "2026-08-23T15:18:50Z",
+      "event": "Scan",
+      "ScanType": "AutoScan",
+      "BodyName": "Eol Prou YI-W b17-57 B A Belt Cluster 10",
+      "BodyID": 13,
+      "Parents": [
+        {
+          "Ring": 3
+        },
+        {
+          "Star": 2
+        },
+        {
+          "Null": 0
+        }
+      ],
+      "StarSystem": "Eol Prou YI-W b17-57",
+      "SystemAddress": 125887770281113,
+      "DistanceFromArrivalLS": 3360.873178,
+      "WasDiscovered": true,
+      "WasMapped": false,
+      "WasFootfalled": false
+    },
+    {
+      "timestamp": "2026-08-23T15:18:50Z",
+      "event": "Scan",
+      "ScanType": "AutoScan",
+      "BodyName": "Eol Prou YI-W b17-57 B A Belt Cluster 11",
+      "BodyID": 14,
+      "Parents": [
+        {
+          "Ring": 3
+        },
+        {
+          "Star": 2
+        },
+        {
+          "Null": 0
+        }
+      ],
+      "StarSystem": "Eol Prou YI-W b17-57",
+      "SystemAddress": 125887770281113,
+      "DistanceFromArrivalLS": 3362.004695,
+      "WasDiscovered": true,
+      "WasMapped": false,
+      "WasFootfalled": false
+    },
+    {
+      "timestamp": "2026-08-23T15:26:11Z",
+      "event": "SAAScanComplete",
+      "BodyName": "Eol Prou YI-W b17-57 B 2",
+      "SystemAddress": 125887770281113,
+      "BodyID": 16,
+      "ProbesUsed": 6,
+      "EfficiencyTarget": 6
+    },
+    {
+      "timestamp": "2026-08-23T15:26:11Z",
+      "event": "SAASignalsFound",
+      "BodyName": "Eol Prou YI-W b17-57 B 2",
+      "SystemAddress": 125887770281113,
+      "BodyID": 16,
+      "Signals": [
+        {
+          "Type": "$SAA_SignalType_Biological;",
+          "Type_Localised": "Biological",
+          "Count": 2
+        }
+      ],
+      "Genuses": [
+        {
+          "Genus": "$Codex_Ent_Bacterial_Genus_Name;",
+          "Genus_Localised": "Bacterium"
+        },
+        {
+          "Genus": "$Codex_Ent_Stratum_Genus_Name;",
+          "Genus_Localised": "Stratum"
+        }
+      ]
+    },
+    {
+      "timestamp": "2026-08-23T15:26:12Z",
+      "event": "Scan",
+      "ScanType": "Detailed",
+      "BodyName": "Eol Prou YI-W b17-57 B 2",
+      "BodyID": 16,
+      "Parents": [
+        {
+          "Star": 2
+        },
+        {
+          "Null": 0
+        }
+      ],
+      "StarSystem": "Eol Prou YI-W b17-57",
+      "SystemAddress": 125887770281113,
+      "DistanceFromArrivalLS": 3379.625529,
+      "TidalLock": false,
+      "TerraformState": "",
+      "PlanetClass": "High metal content body",
+      "Atmosphere": "thin sulfur dioxide atmosphere",
+      "AtmosphereType": "SulphurDioxide",
+      "AtmosphereComposition": [
+        {
+          "Name": "SulphurDioxide",
+          "Percent": 100.0
+        }
+      ],
+      "Volcanism": "",
+      "MassEM": 0.06316,
+      "Radius": 2565035.75,
+      "SurfaceGravity": 3.826157,
+      "SurfaceTemperature": 199.787399,
+      "SurfacePressure": 207.49852,
+      "Landable": true,
+      "Materials": [
+        {
+          "Name": "iron",
+          "Percent": 21.120272
+        },
+        {
+          "Name": "nickel",
+          "Percent": 15.974489
+        },
+        {
+          "Name": "sulphur",
+          "Percent": 14.910335
+        },
+        {
+          "Name": "carbon",
+          "Percent": 12.538047
+        },
+        {
+          "Name": "chromium",
+          "Percent": 9.498487
+        },
+        {
+          "Name": "manganese",
+          "Percent": 8.722457
+        },
+        {
+          "Name": "phosphorus",
+          "Percent": 8.027074
+        },
+        {
+          "Name": "zinc",
+          "Percent": 5.739699
+        },
+        {
+          "Name": "molybdenum",
+          "Percent": 1.379141
+        },
+        {
+          "Name": "tungsten",
+          "Percent": 1.159715
+        },
+        {
+          "Name": "antimony",
+          "Percent": 0.930285
+        }
+      ],
+      "Composition": {
+        "Ice": 0.0,
+        "Rock": 0.663965,
+        "Metal": 0.336035
+      },
+      "SemiMajorAxis": 8954969704.151154,
+      "Eccentricity": 0.000724,
+      "OrbitalInclination": 0.000184,
+      "Periapsis": 301.945776,
+      "OrbitalPeriod": 1184014.14156,
+      "AscendingNode": 107.285688,
+      "MeanAnomaly": 219.135943,
+      "RotationPeriod": -1184029.858228,
+      "AxialTilt": -1.643705,
+      "WasDiscovered": true,
+      "WasMapped": true,
+      "WasFootfalled": true
+    },
+    {
+      "timestamp": "2026-08-23T15:26:56Z",
+      "event": "ApproachBody",
+      "StarSystem": "Eol Prou YI-W b17-57",
+      "SystemAddress": 125887770281113,
+      "Body": "Eol Prou YI-W b17-57 B 2",
+      "BodyID": 16
+    },
+    {
+      "timestamp": "2026-08-23T15:27:24Z",
+      "event": "SupercruiseExit",
+      "Taxi": false,
+      "Multicrew": false,
+      "StarSystem": "Eol Prou YI-W b17-57",
+      "SystemAddress": 125887770281113,
+      "Body": "Eol Prou YI-W b17-57 B 2",
+      "BodyID": 16,
+      "BodyType": "Planet"
+    },
+    {
+      "timestamp": "2026-08-23T15:28:28Z",
+      "event": "Touchdown",
+      "PlayerControlled": true,
+      "Taxi": false,
+      "Multicrew": false,
+      "StarSystem": "Eol Prou YI-W b17-57",
+      "SystemAddress": 125887770281113,
+      "Body": "Eol Prou YI-W b17-57 B 2",
+      "BodyID": 16,
+      "OnStation": false,
+      "OnPlanet": true,
+      "Latitude": 14.226625,
+      "Longitude": 107.564026
+    },
+    {
+      "timestamp": "2026-08-23T15:29:18Z",
+      "event": "CodexEntry",
+      "EntryID": 2420704,
+      "Name": "$Codex_Ent_Stratum_07_L_Name;",
+      "Name_Localised": "Stratum Tectonicas - Turquoise",
+      "SubCategory": "$Codex_SubCategory_Organic_Structures;",
+      "SubCategory_Localised": "Organic structures",
+      "Category": "$Codex_Category_Biology;",
+      "Category_Localised": "Biological and Geological",
+      "Region": "$Codex_RegionName_9;",
+      "Region_Localised": "Inner Scutum-Centaurus Arm",
+      "System": "Eol Prou YI-W b17-57",
+      "SystemAddress": 125887770281113,
+      "BodyID": 16,
+      "NearestDestination": "",
+      "Latitude": 14.226589,
+      "Longitude": 107.564003,
+      "IsNewEntry": true
+    },
+    {
+      "timestamp": "2026-08-23T15:29:18Z",
+      "event": "ScanOrganic",
+      "ScanType": "Log",
+      "Genus": "$Codex_Ent_Stratum_Genus_Name;",
+      "Genus_Localised": "Stratum",
+      "Species": "$Codex_Ent_Stratum_07_Name;",
+      "Species_Localised": "Stratum Tectonicas",
+      "Variant": "$Codex_Ent_Stratum_07_L_Name;",
+      "Variant_Localised": "Stratum Tectonicas - Turquoise",
+      "WasLogged": false,
+      "SystemAddress": 125887770281113,
+      "Body": 16
+    },
+    {
+      "timestamp": "2026-08-23T15:29:32Z",
+      "event": "Liftoff",
+      "PlayerControlled": true,
+      "Taxi": false,
+      "Multicrew": false,
+      "StarSystem": "Eol Prou YI-W b17-57",
+      "SystemAddress": 125887770281113,
+      "Body": "Eol Prou YI-W b17-57 B 2",
+      "BodyID": 16,
+      "OnStation": false,
+      "OnPlanet": true,
+      "Latitude": 14.226626,
+      "Longitude": 107.564026
+    },
+    {
+      "timestamp": "2026-08-23T15:29:49Z",
+      "event": "Touchdown",
+      "PlayerControlled": true,
+      "Taxi": false,
+      "Multicrew": false,
+      "StarSystem": "Eol Prou YI-W b17-57",
+      "SystemAddress": 125887770281113,
+      "Body": "Eol Prou YI-W b17-57 B 2",
+      "BodyID": 16,
+      "OnStation": false,
+      "OnPlanet": true,
+      "Latitude": 14.233829,
+      "Longitude": 107.552246
+    },
+    {
+      "timestamp": "2026-08-23T15:30:14Z",
+      "event": "ScanOrganic",
+      "ScanType": "Sample",
+      "Genus": "$Codex_Ent_Stratum_Genus_Name;",
+      "Genus_Localised": "Stratum",
+      "Species": "$Codex_Ent_Stratum_07_Name;",
+      "Species_Localised": "Stratum Tectonicas",
+      "Variant": "$Codex_Ent_Stratum_07_L_Name;",
+      "Variant_Localised": "Stratum Tectonicas - Turquoise",
+      "WasLogged": false,
+      "SystemAddress": 125887770281113,
+      "Body": 16
+    },
+    {
+      "timestamp": "2026-08-23T15:30:27Z",
+      "event": "Liftoff",
+      "PlayerControlled": true,
+      "Taxi": false,
+      "Multicrew": false,
+      "StarSystem": "Eol Prou YI-W b17-57",
+      "SystemAddress": 125887770281113,
+      "Body": "Eol Prou YI-W b17-57 B 2",
+      "BodyID": 16,
+      "OnStation": false,
+      "OnPlanet": true,
+      "Latitude": 14.233829,
+      "Longitude": 107.552246
+    },
+    {
+      "timestamp": "2026-08-23T15:30:32Z",
+      "event": "Touchdown",
+      "PlayerControlled": true,
+      "Taxi": false,
+      "Multicrew": false,
+      "StarSystem": "Eol Prou YI-W b17-57",
+      "SystemAddress": 125887770281113,
+      "Body": "Eol Prou YI-W b17-57 B 2",
+      "BodyID": 16,
+      "OnStation": false,
+      "OnPlanet": true,
+      "Latitude": 14.233829,
+      "Longitude": 107.552246
+    },
+    {
+      "timestamp": "2026-08-23T15:30:37Z",
+      "event": "Liftoff",
+      "PlayerControlled": true,
+      "Taxi": false,
+      "Multicrew": false,
+      "StarSystem": "Eol Prou YI-W b17-57",
+      "SystemAddress": 125887770281113,
+      "Body": "Eol Prou YI-W b17-57 B 2",
+      "BodyID": 16,
+      "OnStation": false,
+      "OnPlanet": true,
+      "Latitude": 14.233827,
+      "Longitude": 107.552246
+    },
+    {
+      "timestamp": "2026-08-23T15:30:53Z",
+      "event": "Touchdown",
+      "PlayerControlled": true,
+      "Taxi": false,
+      "Multicrew": false,
+      "StarSystem": "Eol Prou YI-W b17-57",
+      "SystemAddress": 125887770281113,
+      "Body": "Eol Prou YI-W b17-57 B 2",
+      "BodyID": 16,
+      "OnStation": false,
+      "OnPlanet": true,
+      "Latitude": 14.23819,
+      "Longitude": 107.540573
+    },
+    {
+      "timestamp": "2026-08-23T15:31:18Z",
+      "event": "ScanOrganic",
+      "ScanType": "Sample",
+      "Genus": "$Codex_Ent_Stratum_Genus_Name;",
+      "Genus_Localised": "Stratum",
+      "Species": "$Codex_Ent_Stratum_07_Name;",
+      "Species_Localised": "Stratum Tectonicas",
+      "Variant": "$Codex_Ent_Stratum_07_L_Name;",
+      "Variant_Localised": "Stratum Tectonicas - Turquoise",
+      "WasLogged": false,
+      "SystemAddress": 125887770281113,
+      "Body": 16
+    },
+    {
+      "timestamp": "2026-08-23T15:31:23Z",
+      "event": "ScanOrganic",
+      "ScanType": "Analyse",
+      "Genus": "$Codex_Ent_Stratum_Genus_Name;",
+      "Genus_Localised": "Stratum",
+      "Species": "$Codex_Ent_Stratum_07_Name;",
+      "Species_Localised": "Stratum Tectonicas",
+      "Variant": "$Codex_Ent_Stratum_07_L_Name;",
+      "Variant_Localised": "Stratum Tectonicas - Turquoise",
+      "WasLogged": false,
+      "SystemAddress": 125887770281113,
+      "Body": 16
+    },
+    {
+      "timestamp": "2026-08-23T15:31:34Z",
+      "event": "Liftoff",
+      "PlayerControlled": true,
+      "Taxi": false,
+      "Multicrew": false,
+      "StarSystem": "Eol Prou YI-W b17-57",
+      "SystemAddress": 125887770281113,
+      "Body": "Eol Prou YI-W b17-57 B 2",
+      "BodyID": 16,
+      "OnStation": false,
+      "OnPlanet": true,
+      "Latitude": 14.238191,
+      "Longitude": 107.540573
+    },
+    {
+      "timestamp": "2026-08-23T15:32:35Z",
+      "event": "Loadout",
+      "Ship": "explorer_nx",
+      "ShipID": 115,
+      "ShipName": "Test Ship",
+      "ShipIdent": "TS-01",
+      "ModulesValue": 250776841,
+      "HullHealth": 1.0,
+      "UnladenMass": 1367.900024,
+      "CargoCapacity": 64,
+      "MaxJumpRange": 81.917572,
+      "FuelCapacity": {
+        "Main": 128.0,
+        "Reserve": 1.14
+      },
+      "Rebuy": 12538844,
+      "Modules": [
+        {
+          "Slot": "TinyHardpoint3",
+          "Item": "hpt_heatsinklauncher_turret_tiny",
+          "On": true,
+          "Priority": 0,
+          "AmmoInClip": 1,
+          "AmmoInHopper": 3,
+          "Health": 1.0,
+          "Value": 3072,
+          "Engineering": {
+            "Engineer": "Ram Tah",
+            "EngineerID": 300110,
+            "BlueprintID": 128731666,
+            "BlueprintName": "Misc_HeatSinkCapacity",
+            "Level": 1,
+            "Quality": 1.0,
+            "Modifiers": [
+              {
+                "Label": "Mass",
+                "Value": 2.6,
+                "OriginalValue": 1.3,
+                "LessIsGood": 1
+              },
+              {
+                "Label": "AmmoMaximum",
+                "Value": 3.0,
+                "OriginalValue": 2.0,
+                "LessIsGood": 0
+              },
+              {
+                "Label": "ReloadTime",
+                "Value": 15.0,
+                "OriginalValue": 10.0,
+                "LessIsGood": 1
+              }
+            ]
+          }
+        },
+        {
+          "Slot": "Armour",
+          "Item": "explorer_nx_armour_grade1_default",
+          "On": true,
+          "Priority": 1,
+          "Health": 1.0,
+          "Engineering": {
+            "Engineer": "Selene Jean",
+            "EngineerID": 300210,
+            "BlueprintID": 128673643,
+            "BlueprintName": "Armour_HeavyDuty",
+            "Level": 4,
+            "Quality": 1.0,
+            "Modifiers": [
+              {
+                "Label": "DefenceModifierHealthMultiplier",
+                "Value": 128.600006,
+                "OriginalValue": 79.999992,
+                "LessIsGood": 0
+              },
+              {
+                "Label": "KineticResistance",
+                "Value": -15.200006,
+                "OriginalValue": -20.000004,
+                "LessIsGood": 0
+              },
+              {
+                "Label": "ThermicResistance",
+                "Value": 4.000002,
+                "OriginalValue": 0.0,
+                "LessIsGood": 0
+              },
+              {
+                "Label": "ExplosiveResistance",
+                "Value": -34.399998,
+                "OriginalValue": -39.999996,
+                "LessIsGood": 0
+              }
+            ]
+          }
+        },
+        {
+          "Slot": "Decal1",
+          "Item": "decal_caspianownersclub_01",
+          "On": true,
+          "Priority": 1,
+          "Health": 1.0
+        },
+        {
+          "Slot": "Decal2",
+          "Item": "decal_explorer_elite05",
+          "On": true,
+          "Priority": 1,
+          "Health": 1.0
+        },
+        {
+          "Slot": "Decal3",
+          "Item": "decal_exobio_elite01",
+          "On": true,
+          "Priority": 1,
+          "Health": 1.0
+        },
+        {
+          "Slot": "ShipName0",
+          "Item": "nameplate_explorer01_white",
+          "On": true,
+          "Priority": 1,
+          "Health": 1.0
+        },
+        {
+          "Slot": "ShipName1",
+          "Item": "nameplate_explorer01_white",
+          "On": true,
+          "Priority": 1,
+          "Health": 1.0
+        },
+        {
+          "Slot": "ShipID0",
+          "Item": "nameplate_shipid_doubleline_white",
+          "On": true,
+          "Priority": 1,
+          "Health": 1.0
+        },
+        {
+          "Slot": "ShipID1",
+          "Item": "nameplate_shipid_doubleline_white",
+          "On": true,
+          "Priority": 1,
+          "Health": 1.0
+        },
+        {
+          "Slot": "PowerPlant",
+          "Item": "int_powerplant_size5_class5",
+          "On": true,
+          "Priority": 1,
+          "Health": 1.0,
+          "Value": 3794047,
+          "Engineering": {
+            "Engineer": "Hera Tani",
+            "EngineerID": 300090,
+            "BlueprintID": 128673764,
+            "BlueprintName": "PowerPlant_Armoured",
+            "Level": 5,
+            "Quality": 1.0,
+            "ExperimentalEffect": "special_powerplant_cooled",
+            "ExperimentalEffect_Localised": "Thermal Spread",
+            "Modifiers": [
+              {
+                "Label": "Mass",
+                "Value": 12.0,
+                "OriginalValue": 10.0,
+                "LessIsGood": 1
+              },
+              {
+                "Label": "Integrity",
+                "Value": 233.200012,
+                "OriginalValue": 106.0,
+                "LessIsGood": 0
+              },
+              {
+                "Label": "PowerCapacity",
+                "Value": 22.848,
+                "OriginalValue": 20.4,
+                "LessIsGood": 0
+              },
+              {
+                "Label": "HeatEfficiency",
+                "Value": 0.3168,
+                "OriginalValue": 0.4,
+                "LessIsGood": 1
+              }
+            ]
+          }
+        },
+        {
+          "Slot": "MainEngines",
+          "Item": "int_engine_size7_class5_gravityoptimised_mkii",
+          "On": true,
+          "Priority": 0,
+          "Health": 1.0,
+          "Value": 59993261,
+          "Engineering": {
+            "Engineer": "Professor Palin",
+            "EngineerID": 300220,
+            "BlueprintID": 128673659,
+            "BlueprintName": "Engine_Dirty",
+            "Level": 5,
+            "Quality": 1.0,
+            "ExperimentalEffect": "special_engine_overloaded",
+            "ExperimentalEffect_Localised": "Drag Drives",
+            "Modifiers": [
+              {
+                "Label": "Integrity",
+                "Value": 122.400002,
+                "OriginalValue": 144.0,
+                "LessIsGood": 0
+              },
+              {
+                "Label": "PowerDraw",
+                "Value": 10.2144,
+                "OriginalValue": 9.12,
+                "LessIsGood": 1
+              },
+              {
+                "Label": "EngineOptimalMass",
+                "Value": 1890.0,
+                "OriginalValue": 2160.0,
+                "LessIsGood": 0
+              },
+              {
+                "Label": "EngineOptPerformance",
+                "Value": 145.599991,
+                "OriginalValue": 100.0,
+                "LessIsGood": 0
+              },
+              {
+                "Label": "EngineHeatRate",
+                "Value": 2.288,
+                "OriginalValue": 1.3,
+                "LessIsGood": 1
+              }
+            ]
+          }
+        },
+        {
+          "Slot": "FrameShiftDrive",
+          "Item": "int_hyperdrive_overcharge_size8_class5_overchargebooster_mkii",
+          "On": true,
+          "Priority": 0,
+          "Health": 1.0,
+          "Value": 71991912,
+          "Engineering": {
+            "Engineer": "Elvira Martuuk",
+            "EngineerID": 300160,
+            "BlueprintID": 128673694,
+            "BlueprintName": "FSD_LongRange",
+            "Level": 5,
+            "Quality": 1.0,
+            "ExperimentalEffect": "special_fsd_heavy",
+            "ExperimentalEffect_Localised": "Mass Manager",
+            "Modifiers": [
+              {
+                "Label": "Mass",
+                "Value": 208.0,
+                "OriginalValue": 160.0,
+                "LessIsGood": 1
+              },
+              {
+                "Label": "Integrity",
+                "Value": 147.016006,
+                "OriginalValue": 188.0,
+                "LessIsGood": 0
+              },
+              {
+                "Label": "PowerDraw",
+                "Value": 1.2075,
+                "OriginalValue": 1.05,
+                "LessIsGood": 1
+              },
+              {
+                "Label": "FSDOptimalMass",
+                "Value": 7528.039551,
+                "OriginalValue": 4670.0,
+                "LessIsGood": 0
+              }
+            ]
+          }
+        },
+        {
+          "Slot": "LifeSupport",
+          "Item": "int_lifesupport_size5_class2",
+          "On": true,
+          "Priority": 0,
+          "Health": 1.0,
+          "Value": 69713
+        },
+        {
+          "Slot": "PowerDistributor",
+          "Item": "int_powerdistributor_size5_class2",
+          "On": true,
+          "Priority": 0,
+          "Health": 1.0,
+          "Value": 69713,
+          "Engineering": {
+            "Engineer": "Marco Qwent",
+            "EngineerID": 300200,
+            "BlueprintID": 128673742,
+            "BlueprintName": "PowerDistributor_PriorityEngines",
+            "Level": 3,
+            "Quality": 1.0,
+            "ExperimentalEffect": "special_powerdistributor_fast",
+            "ExperimentalEffect_Localised": "Super Conduits",
+            "Modifiers": [
+              {
+                "Label": "WeaponsCapacity",
+                "Value": 27.081598,
+                "OriginalValue": 31.0,
+                "LessIsGood": 0
+              },
+              {
+                "Label": "WeaponsRecharge",
+                "Value": 3.22816,
+                "OriginalValue": 3.2,
+                "LessIsGood": 0
+              },
+              {
+                "Label": "EnginesCapacity",
+                "Value": 29.567999,
+                "OriginalValue": 22.0,
+                "LessIsGood": 0
+              },
+              {
+                "Label": "EnginesRecharge",
+                "Value": 2.5688,
+                "OriginalValue": 1.9,
+                "LessIsGood": 0
+              },
+              {
+                "Label": "SystemsCapacity",
+                "Value": 19.219198,
+                "OriginalValue": 22.0,
+                "LessIsGood": 0
+              },
+              {
+                "Label": "SystemsRecharge",
+                "Value": 1.79816,
+                "OriginalValue": 1.9,
+                "LessIsGood": 0
+              }
+            ]
+          }
+        },
+        {
+          "Slot": "Radar",
+          "Item": "int_sensors_size8_class2",
+          "On": true,
+          "Priority": 0,
+          "Health": 1.0,
+          "Value": 1530326
+        },
+        {
+          "Slot": "FuelTank",
+          "Item": "int_fueltank_size7_class3",
+          "On": true,
+          "Priority": 1,
+          "Health": 1.0
+        },
+        {
+          "Slot": "Slot01_Size7",
+          "Item": "int_fuelscoop_size7_class5",
+          "On": true,
+          "Priority": 0,
+          "Health": 1.0,
+          "Value": 80011016
+        },
+        {
+          "Slot": "Slot02_Size6",
+          "Item": "int_repairer_size6_class5",
+          "On": false,
+          "Priority": 2,
+          "Health": 1.0,
+          "Value": 13430578
+        },
+        {
+          "Slot": "Slot03_Size6",
+          "Item": "int_repairer_size6_class5",
+          "On": false,
+          "Priority": 2,
+          "Health": 1.0,
+          "Value": 13430578
+        },
+        {
+          "Slot": "Slot04_Size5",
+          "Item": "int_guardianfsdbooster_size5",
+          "On": true,
+          "Priority": 3,
+          "Health": 1.0,
+          "Value": 5688921
+        },
+        {
+          "Slot": "Slot05_Size5",
+          "Item": "int_shieldgenerator_size5_class2",
+          "On": true,
+          "Priority": 3,
+          "Health": 1.0,
+          "Value": 165879
+        },
+        {
+          "Slot": "Slot06_Size5",
+          "Item": "int_fighterbaymk2_size5_class1_free",
+          "On": true,
+          "Priority": 0,
+          "Health": 1.0
+        },
+        {
+          "Slot": "Slot07_Size5",
+          "Item": "int_cargorack_size5_class1",
+          "On": true,
+          "Priority": 1,
+          "Health": 1.0,
+          "Value": 108777
+        },
+        {
+          "Slot": "Slot08_Size4",
+          "Item": "int_corrosionproofcargorack_size4_class1",
+          "On": true,
+          "Priority": 1,
+          "Health": 1.0,
+          "Value": 91970
+        },
+        {
+          "Slot": "Slot09_Size4",
+          "Item": "int_corrosionproofcargorack_size4_class1",
+          "On": true,
+          "Priority": 1,
+          "Health": 1.0,
+          "Value": 82774
+        },
+        {
+          "Slot": "Slot10_Size3",
+          "Item": "int_multidronecontrol_operations_size3_class3",
+          "On": false,
+          "Priority": 0,
+          "Health": 1.0,
+          "Value": 43875
+        },
+        {
+          "Slot": "Slot11_Size2",
+          "Item": "int_buggybay_size2_class2",
+          "On": false,
+          "Priority": 1,
+          "Health": 1.0,
+          "Value": 20429
+        },
+        {
+          "Slot": "Slot12_Size1",
+          "Item": "int_detailedsurfacescanner_tiny",
+          "On": true,
+          "Priority": 0,
+          "Health": 1.0,
+          "Value": 250000
+        },
+        {
+          "Slot": "Slot13_Size1",
+          "Item": "int_supercruiseassist",
+          "On": true,
+          "Priority": 2,
+          "Health": 1.0
+        },
+        {
+          "Slot": "Slot14_Size1",
+          "Item": "int_dockingcomputer_advanced",
+          "On": true,
+          "Priority": 2,
+          "Health": 1.0
+        },
+        {
+          "Slot": "PlanetaryApproachSuite",
+          "Item": "int_planetapproachsuite_advanced",
+          "On": true,
+          "Priority": 1,
+          "Health": 1.0
+        },
+        {
+          "Slot": "Bobble01",
+          "Item": "bobble_trophy_exploration",
+          "On": true,
+          "Priority": 1,
+          "Health": 1.0
+        },
+        {
+          "Slot": "Bobble10",
+          "Item": "bobble_trophy_exploration",
+          "On": true,
+          "Priority": 1,
+          "Health": 1.0
+        },
+        {
+          "Slot": "VesselVoice",
+          "Item": "voicepack_verity",
+          "On": true,
+          "Priority": 1,
+          "Health": 1.0
+        },
+        {
+          "Slot": "ShipCockpit",
+          "Item": "explorer_nx_cockpit",
+          "On": true,
+          "Priority": 1,
+          "Health": 1.0
+        },
+        {
+          "Slot": "CargoHatch",
+          "Item": "modularcargobaydoor",
+          "On": true,
+          "Priority": 2,
+          "Health": 1.0
+        }
+      ]
+    },
+    {
+      "timestamp": "2026-08-23T15:33:57Z",
+      "event": "StartJump",
+      "JumpType": "Supercruise",
+      "Taxi": false
+    },
+    {
+      "timestamp": "2026-08-23T15:34:19Z",
+      "event": "LeaveBody",
+      "StarSystem": "Eol Prou YI-W b17-57",
+      "SystemAddress": 125887770281113,
+      "Body": "Eol Prou YI-W b17-57 B 2",
+      "BodyID": 16
+    },
+    {
+      "timestamp": "2026-08-23T15:35:44Z",
+      "event": "SAAScanComplete",
+      "BodyName": "Eol Prou YI-W b17-57 B 3",
+      "SystemAddress": 125887770281113,
+      "BodyID": 18,
+      "ProbesUsed": 6,
+      "EfficiencyTarget": 6
+    },
+    {
+      "timestamp": "2026-08-23T15:35:44Z",
+      "event": "SAASignalsFound",
+      "BodyName": "Eol Prou YI-W b17-57 B 3",
+      "SystemAddress": 125887770281113,
+      "BodyID": 18,
+      "Signals": [
+        {
+          "Type": "$SAA_SignalType_Biological;",
+          "Type_Localised": "Biological",
+          "Count": 2
+        }
+      ],
+      "Genuses": [
+        {
+          "Genus": "$Codex_Ent_Bacterial_Genus_Name;",
+          "Genus_Localised": "Bacterium"
+        },
+        {
+          "Genus": "$Codex_Ent_Stratum_Genus_Name;",
+          "Genus_Localised": "Stratum"
+        }
+      ]
+    },
+    {
+      "timestamp": "2026-08-23T15:35:45Z",
+      "event": "Scan",
+      "ScanType": "Detailed",
+      "BodyName": "Eol Prou YI-W b17-57 B 3",
+      "BodyID": 18,
+      "Parents": [
+        {
+          "Star": 2
+        },
+        {
+          "Null": 0
+        }
+      ],
+      "StarSystem": "Eol Prou YI-W b17-57",
+      "SystemAddress": 125887770281113,
+      "DistanceFromArrivalLS": 3349.226312,
+      "TidalLock": false,
+      "TerraformState": "",
+      "PlanetClass": "High metal content body",
+      "Atmosphere": "thin carbon dioxide atmosphere",
+      "AtmosphereType": "CarbonDioxide",
+      "AtmosphereComposition": [
+        {
+          "Name": "CarbonDioxide",
+          "Percent": 81.178894
+        },
+        {
+          "Name": "SulphurDioxide",
+          "Percent": 18.821096
+        }
+      ],
+      "Volcanism": "",
+      "MassEM": 0.074825,
+      "Radius": 2708873.75,
+      "SurfaceGravity": 4.06425,
+      "SurfaceTemperature": 196.647232,
+      "SurfacePressure": 1244.90918,
+      "Landable": true,
+      "Materials": [
+        {
+          "Name": "iron",
+          "Percent": 23.801765
+        },
+        {
+          "Name": "nickel",
+          "Percent": 18.002661
+        },
+        {
+          "Name": "sulphur",
+          "Percent": 16.812077
+        },
+        {
+          "Name": "carbon",
+          "Percent": 14.137216
+        },
+        {
+          "Name": "phosphorus",
+          "Percent": 9.050888
+        },
+        {
+          "Name": "zinc",
+          "Percent": 6.46843
+        },
+        {
+          "Name": "germanium",
+          "Percent": 4.960122
+        },
+        {
+          "Name": "zirconium",
+          "Percent": 2.763876
+        },
+        {
+          "Name": "tin",
+          "Percent": 1.541926
+        },
+        {
+          "Name": "yttrium",
+          "Percent": 1.421651
+        },
+        {
+          "Name": "mercury",
+          "Percent": 1.039384
+        }
+      ],
+      "Composition": {
+        "Ice": 0.0,
+        "Rock": 0.664473,
+        "Metal": 0.335527
+      },
+      "SemiMajorAxis": 13005247712.135315,
+      "Eccentricity": 0.002453,
+      "OrbitalInclination": -0.527872,
+      "Periapsis": 258.105202,
+      "OrbitalPeriod": 2072233.080864,
+      "AscendingNode": 59.488103,
+      "MeanAnomaly": 183.739285,
+      "RotationPeriod": -2072260.111829,
+      "AxialTilt": -2.503447,
+      "WasDiscovered": true,
+      "WasMapped": true,
+      "WasFootfalled": true
+    },
+    {
+      "timestamp": "2026-08-23T15:36:32Z",
+      "event": "ApproachBody",
+      "StarSystem": "Eol Prou YI-W b17-57",
+      "SystemAddress": 125887770281113,
+      "Body": "Eol Prou YI-W b17-57 B 3",
+      "BodyID": 18
+    },
+    {
+      "timestamp": "2026-08-23T15:37:00Z",
+      "event": "SupercruiseExit",
+      "Taxi": false,
+      "Multicrew": false,
+      "StarSystem": "Eol Prou YI-W b17-57",
+      "SystemAddress": 125887770281113,
+      "Body": "Eol Prou YI-W b17-57 B 3",
+      "BodyID": 18,
+      "BodyType": "Planet"
+    },
+    {
+      "timestamp": "2026-08-23T15:38:09Z",
+      "event": "Touchdown",
+      "PlayerControlled": true,
+      "Taxi": false,
+      "Multicrew": false,
+      "StarSystem": "Eol Prou YI-W b17-57",
+      "SystemAddress": 125887770281113,
+      "Body": "Eol Prou YI-W b17-57 B 3",
+      "BodyID": 18,
+      "OnStation": false,
+      "OnPlanet": true,
+      "Latitude": -36.356609,
+      "Longitude": -7.053334
+    },
+    {
+      "timestamp": "2026-08-23T15:38:56Z",
+      "event": "ScanOrganic",
+      "ScanType": "Log",
+      "Genus": "$Codex_Ent_Stratum_Genus_Name;",
+      "Genus_Localised": "Stratum",
+      "Species": "$Codex_Ent_Stratum_07_Name;",
+      "Species_Localised": "Stratum Tectonicas",
+      "Variant": "$Codex_Ent_Stratum_07_L_Name;",
+      "Variant_Localised": "Stratum Tectonicas - Turquoise",
+      "WasLogged": false,
+      "SystemAddress": 125887770281113,
+      "Body": 18
+    },
+    {
+      "timestamp": "2026-08-23T15:45:16Z",
+      "event": "Liftoff",
+      "PlayerControlled": true,
+      "Taxi": false,
+      "Multicrew": false,
+      "StarSystem": "Eol Prou YI-W b17-57",
+      "SystemAddress": 125887770281113,
+      "Body": "Eol Prou YI-W b17-57 B 3",
+      "BodyID": 18,
+      "OnStation": false,
+      "OnPlanet": true,
+      "Latitude": -36.356609,
+      "Longitude": -7.053335
+    },
+    {
+      "timestamp": "2026-08-23T15:45:26Z",
+      "event": "Touchdown",
+      "PlayerControlled": true,
+      "Taxi": false,
+      "Multicrew": false,
+      "StarSystem": "Eol Prou YI-W b17-57",
+      "SystemAddress": 125887770281113,
+      "Body": "Eol Prou YI-W b17-57 B 3",
+      "BodyID": 18,
+      "OnStation": false,
+      "OnPlanet": true,
+      "Latitude": -36.357838,
+      "Longitude": -7.067749
+    },
+    {
+      "timestamp": "2026-08-23T15:45:45Z",
+      "event": "ScanOrganic",
+      "ScanType": "Sample",
+      "Genus": "$Codex_Ent_Stratum_Genus_Name;",
+      "Genus_Localised": "Stratum",
+      "Species": "$Codex_Ent_Stratum_07_Name;",
+      "Species_Localised": "Stratum Tectonicas",
+      "Variant": "$Codex_Ent_Stratum_07_L_Name;",
+      "Variant_Localised": "Stratum Tectonicas - Turquoise",
+      "WasLogged": false,
+      "SystemAddress": 125887770281113,
+      "Body": 18
+    },
+    {
+      "timestamp": "2026-08-23T15:45:56Z",
+      "event": "Liftoff",
+      "PlayerControlled": true,
+      "Taxi": false,
+      "Multicrew": false,
+      "StarSystem": "Eol Prou YI-W b17-57",
+      "SystemAddress": 125887770281113,
+      "Body": "Eol Prou YI-W b17-57 B 3",
+      "BodyID": 18,
+      "OnStation": false,
+      "OnPlanet": true,
+      "Latitude": -36.357838,
+      "Longitude": -7.06775
+    },
+    {
+      "timestamp": "2026-08-23T15:46:10Z",
+      "event": "Touchdown",
+      "PlayerControlled": true,
+      "Taxi": false,
+      "Multicrew": false,
+      "StarSystem": "Eol Prou YI-W b17-57",
+      "SystemAddress": 125887770281113,
+      "Body": "Eol Prou YI-W b17-57 B 3",
+      "BodyID": 18,
+      "OnStation": false,
+      "OnPlanet": true,
+      "Latitude": -36.363861,
+      "Longitude": -7.079721
+    },
+    {
+      "timestamp": "2026-08-23T15:46:37Z",
+      "event": "ScanOrganic",
+      "ScanType": "Sample",
+      "Genus": "$Codex_Ent_Stratum_Genus_Name;",
+      "Genus_Localised": "Stratum",
+      "Species": "$Codex_Ent_Stratum_07_Name;",
+      "Species_Localised": "Stratum Tectonicas",
+      "Variant": "$Codex_Ent_Stratum_07_L_Name;",
+      "Variant_Localised": "Stratum Tectonicas - Turquoise",
+      "WasLogged": false,
+      "SystemAddress": 125887770281113,
+      "Body": 18
+    },
+    {
+      "timestamp": "2026-08-23T15:46:42Z",
+      "event": "ScanOrganic",
+      "ScanType": "Analyse",
+      "Genus": "$Codex_Ent_Stratum_Genus_Name;",
+      "Genus_Localised": "Stratum",
+      "Species": "$Codex_Ent_Stratum_07_Name;",
+      "Species_Localised": "Stratum Tectonicas",
+      "Variant": "$Codex_Ent_Stratum_07_L_Name;",
+      "Variant_Localised": "Stratum Tectonicas - Turquoise",
+      "WasLogged": false,
+      "SystemAddress": 125887770281113,
+      "Body": 18
+    },
+    {
+      "timestamp": "2026-08-23T15:48:54Z",
+      "event": "Liftoff",
+      "PlayerControlled": true,
+      "Taxi": false,
+      "Multicrew": false,
+      "StarSystem": "Eol Prou YI-W b17-57",
+      "SystemAddress": 125887770281113,
+      "Body": "Eol Prou YI-W b17-57 B 3",
+      "BodyID": 18,
+      "OnStation": false,
+      "OnPlanet": true,
+      "Latitude": -36.363865,
+      "Longitude": -7.079721
+    },
+    {
+      "timestamp": "2026-08-23T15:50:02Z",
+      "event": "Loadout",
+      "Ship": "explorer_nx",
+      "ShipID": 115,
+      "ShipName": "Test Ship",
+      "ShipIdent": "TS-01",
+      "ModulesValue": 250776841,
+      "HullHealth": 1.0,
+      "UnladenMass": 1367.900024,
+      "CargoCapacity": 64,
+      "MaxJumpRange": 81.91758,
+      "FuelCapacity": {
+        "Main": 128.0,
+        "Reserve": 1.14
+      },
+      "Rebuy": 12538844,
+      "Modules": [
+        {
+          "Slot": "TinyHardpoint3",
+          "Item": "hpt_heatsinklauncher_turret_tiny",
+          "On": true,
+          "Priority": 0,
+          "AmmoInClip": 1,
+          "AmmoInHopper": 3,
+          "Health": 1.0,
+          "Value": 3072,
+          "Engineering": {
+            "Engineer": "Ram Tah",
+            "EngineerID": 300110,
+            "BlueprintID": 128731666,
+            "BlueprintName": "Misc_HeatSinkCapacity",
+            "Level": 1,
+            "Quality": 1.0,
+            "Modifiers": [
+              {
+                "Label": "Mass",
+                "Value": 2.6,
+                "OriginalValue": 1.3,
+                "LessIsGood": 1
+              },
+              {
+                "Label": "AmmoMaximum",
+                "Value": 3.0,
+                "OriginalValue": 2.0,
+                "LessIsGood": 0
+              },
+              {
+                "Label": "ReloadTime",
+                "Value": 15.0,
+                "OriginalValue": 10.0,
+                "LessIsGood": 1
+              }
+            ]
+          }
+        },
+        {
+          "Slot": "Armour",
+          "Item": "explorer_nx_armour_grade1_default",
+          "On": true,
+          "Priority": 1,
+          "Health": 1.0,
+          "Engineering": {
+            "Engineer": "Selene Jean",
+            "EngineerID": 300210,
+            "BlueprintID": 128673643,
+            "BlueprintName": "Armour_HeavyDuty",
+            "Level": 4,
+            "Quality": 1.0,
+            "Modifiers": [
+              {
+                "Label": "DefenceModifierHealthMultiplier",
+                "Value": 128.600006,
+                "OriginalValue": 79.999992,
+                "LessIsGood": 0
+              },
+              {
+                "Label": "KineticResistance",
+                "Value": -15.200006,
+                "OriginalValue": -20.000004,
+                "LessIsGood": 0
+              },
+              {
+                "Label": "ThermicResistance",
+                "Value": 4.000002,
+                "OriginalValue": 0.0,
+                "LessIsGood": 0
+              },
+              {
+                "Label": "ExplosiveResistance",
+                "Value": -34.399998,
+                "OriginalValue": -39.999996,
+                "LessIsGood": 0
+              }
+            ]
+          }
+        },
+        {
+          "Slot": "Decal1",
+          "Item": "decal_caspianownersclub_01",
+          "On": true,
+          "Priority": 1,
+          "Health": 1.0
+        },
+        {
+          "Slot": "Decal2",
+          "Item": "decal_explorer_elite05",
+          "On": true,
+          "Priority": 1,
+          "Health": 1.0
+        },
+        {
+          "Slot": "Decal3",
+          "Item": "decal_exobio_elite01",
+          "On": true,
+          "Priority": 1,
+          "Health": 1.0
+        },
+        {
+          "Slot": "ShipName0",
+          "Item": "nameplate_explorer01_white",
+          "On": true,
+          "Priority": 1,
+          "Health": 1.0
+        },
+        {
+          "Slot": "ShipName1",
+          "Item": "nameplate_explorer01_white",
+          "On": true,
+          "Priority": 1,
+          "Health": 1.0
+        },
+        {
+          "Slot": "ShipID0",
+          "Item": "nameplate_shipid_doubleline_white",
+          "On": true,
+          "Priority": 1,
+          "Health": 1.0
+        },
+        {
+          "Slot": "ShipID1",
+          "Item": "nameplate_shipid_doubleline_white",
+          "On": true,
+          "Priority": 1,
+          "Health": 1.0
+        },
+        {
+          "Slot": "PowerPlant",
+          "Item": "int_powerplant_size5_class5",
+          "On": true,
+          "Priority": 1,
+          "Health": 1.0,
+          "Value": 3794047,
+          "Engineering": {
+            "Engineer": "Hera Tani",
+            "EngineerID": 300090,
+            "BlueprintID": 128673764,
+            "BlueprintName": "PowerPlant_Armoured",
+            "Level": 5,
+            "Quality": 1.0,
+            "ExperimentalEffect": "special_powerplant_cooled",
+            "ExperimentalEffect_Localised": "Thermal Spread",
+            "Modifiers": [
+              {
+                "Label": "Mass",
+                "Value": 12.0,
+                "OriginalValue": 10.0,
+                "LessIsGood": 1
+              },
+              {
+                "Label": "Integrity",
+                "Value": 233.200012,
+                "OriginalValue": 106.0,
+                "LessIsGood": 0
+              },
+              {
+                "Label": "PowerCapacity",
+                "Value": 22.848,
+                "OriginalValue": 20.4,
+                "LessIsGood": 0
+              },
+              {
+                "Label": "HeatEfficiency",
+                "Value": 0.3168,
+                "OriginalValue": 0.4,
+                "LessIsGood": 1
+              }
+            ]
+          }
+        },
+        {
+          "Slot": "MainEngines",
+          "Item": "int_engine_size7_class5_gravityoptimised_mkii",
+          "On": true,
+          "Priority": 0,
+          "Health": 1.0,
+          "Value": 59993261,
+          "Engineering": {
+            "Engineer": "Professor Palin",
+            "EngineerID": 300220,
+            "BlueprintID": 128673659,
+            "BlueprintName": "Engine_Dirty",
+            "Level": 5,
+            "Quality": 1.0,
+            "ExperimentalEffect": "special_engine_overloaded",
+            "ExperimentalEffect_Localised": "Drag Drives",
+            "Modifiers": [
+              {
+                "Label": "Integrity",
+                "Value": 122.400002,
+                "OriginalValue": 144.0,
+                "LessIsGood": 0
+              },
+              {
+                "Label": "PowerDraw",
+                "Value": 10.2144,
+                "OriginalValue": 9.12,
+                "LessIsGood": 1
+              },
+              {
+                "Label": "EngineOptimalMass",
+                "Value": 1890.0,
+                "OriginalValue": 2160.0,
+                "LessIsGood": 0
+              },
+              {
+                "Label": "EngineOptPerformance",
+                "Value": 145.599991,
+                "OriginalValue": 100.0,
+                "LessIsGood": 0
+              },
+              {
+                "Label": "EngineHeatRate",
+                "Value": 2.288,
+                "OriginalValue": 1.3,
+                "LessIsGood": 1
+              }
+            ]
+          }
+        },
+        {
+          "Slot": "FrameShiftDrive",
+          "Item": "int_hyperdrive_overcharge_size8_class5_overchargebooster_mkii",
+          "On": true,
+          "Priority": 0,
+          "Health": 1.0,
+          "Value": 71991912,
+          "Engineering": {
+            "Engineer": "Elvira Martuuk",
+            "EngineerID": 300160,
+            "BlueprintID": 128673694,
+            "BlueprintName": "FSD_LongRange",
+            "Level": 5,
+            "Quality": 1.0,
+            "ExperimentalEffect": "special_fsd_heavy",
+            "ExperimentalEffect_Localised": "Mass Manager",
+            "Modifiers": [
+              {
+                "Label": "Mass",
+                "Value": 208.0,
+                "OriginalValue": 160.0,
+                "LessIsGood": 1
+              },
+              {
+                "Label": "Integrity",
+                "Value": 147.016006,
+                "OriginalValue": 188.0,
+                "LessIsGood": 0
+              },
+              {
+                "Label": "PowerDraw",
+                "Value": 1.2075,
+                "OriginalValue": 1.05,
+                "LessIsGood": 1
+              },
+              {
+                "Label": "FSDOptimalMass",
+                "Value": 7528.039551,
+                "OriginalValue": 4670.0,
+                "LessIsGood": 0
+              }
+            ]
+          }
+        },
+        {
+          "Slot": "LifeSupport",
+          "Item": "int_lifesupport_size5_class2",
+          "On": true,
+          "Priority": 0,
+          "Health": 1.0,
+          "Value": 69713
+        },
+        {
+          "Slot": "PowerDistributor",
+          "Item": "int_powerdistributor_size5_class2",
+          "On": true,
+          "Priority": 0,
+          "Health": 1.0,
+          "Value": 69713,
+          "Engineering": {
+            "Engineer": "Marco Qwent",
+            "EngineerID": 300200,
+            "BlueprintID": 128673742,
+            "BlueprintName": "PowerDistributor_PriorityEngines",
+            "Level": 3,
+            "Quality": 1.0,
+            "ExperimentalEffect": "special_powerdistributor_fast",
+            "ExperimentalEffect_Localised": "Super Conduits",
+            "Modifiers": [
+              {
+                "Label": "WeaponsCapacity",
+                "Value": 27.081598,
+                "OriginalValue": 31.0,
+                "LessIsGood": 0
+              },
+              {
+                "Label": "WeaponsRecharge",
+                "Value": 3.22816,
+                "OriginalValue": 3.2,
+                "LessIsGood": 0
+              },
+              {
+                "Label": "EnginesCapacity",
+                "Value": 29.567999,
+                "OriginalValue": 22.0,
+                "LessIsGood": 0
+              },
+              {
+                "Label": "EnginesRecharge",
+                "Value": 2.5688,
+                "OriginalValue": 1.9,
+                "LessIsGood": 0
+              },
+              {
+                "Label": "SystemsCapacity",
+                "Value": 19.219198,
+                "OriginalValue": 22.0,
+                "LessIsGood": 0
+              },
+              {
+                "Label": "SystemsRecharge",
+                "Value": 1.79816,
+                "OriginalValue": 1.9,
+                "LessIsGood": 0
+              }
+            ]
+          }
+        },
+        {
+          "Slot": "Radar",
+          "Item": "int_sensors_size8_class2",
+          "On": true,
+          "Priority": 0,
+          "Health": 1.0,
+          "Value": 1530326
+        },
+        {
+          "Slot": "FuelTank",
+          "Item": "int_fueltank_size7_class3",
+          "On": true,
+          "Priority": 1,
+          "Health": 1.0
+        },
+        {
+          "Slot": "Slot01_Size7",
+          "Item": "int_fuelscoop_size7_class5",
+          "On": true,
+          "Priority": 0,
+          "Health": 1.0,
+          "Value": 80011016
+        },
+        {
+          "Slot": "Slot02_Size6",
+          "Item": "int_repairer_size6_class5",
+          "On": false,
+          "Priority": 2,
+          "Health": 1.0,
+          "Value": 13430578
+        },
+        {
+          "Slot": "Slot03_Size6",
+          "Item": "int_repairer_size6_class5",
+          "On": false,
+          "Priority": 2,
+          "Health": 1.0,
+          "Value": 13430578
+        },
+        {
+          "Slot": "Slot04_Size5",
+          "Item": "int_guardianfsdbooster_size5",
+          "On": true,
+          "Priority": 3,
+          "Health": 1.0,
+          "Value": 5688921
+        },
+        {
+          "Slot": "Slot05_Size5",
+          "Item": "int_shieldgenerator_size5_class2",
+          "On": true,
+          "Priority": 3,
+          "Health": 1.0,
+          "Value": 165879
+        },
+        {
+          "Slot": "Slot06_Size5",
+          "Item": "int_fighterbaymk2_size5_class1_free",
+          "On": true,
+          "Priority": 0,
+          "Health": 1.0
+        },
+        {
+          "Slot": "Slot07_Size5",
+          "Item": "int_cargorack_size5_class1",
+          "On": true,
+          "Priority": 1,
+          "Health": 1.0,
+          "Value": 108777
+        },
+        {
+          "Slot": "Slot08_Size4",
+          "Item": "int_corrosionproofcargorack_size4_class1",
+          "On": true,
+          "Priority": 1,
+          "Health": 1.0,
+          "Value": 91970
+        },
+        {
+          "Slot": "Slot09_Size4",
+          "Item": "int_corrosionproofcargorack_size4_class1",
+          "On": true,
+          "Priority": 1,
+          "Health": 1.0,
+          "Value": 82774
+        },
+        {
+          "Slot": "Slot10_Size3",
+          "Item": "int_multidronecontrol_operations_size3_class3",
+          "On": false,
+          "Priority": 0,
+          "Health": 1.0,
+          "Value": 43875
+        },
+        {
+          "Slot": "Slot11_Size2",
+          "Item": "int_buggybay_size2_class2",
+          "On": false,
+          "Priority": 1,
+          "Health": 1.0,
+          "Value": 20429
+        },
+        {
+          "Slot": "Slot12_Size1",
+          "Item": "int_detailedsurfacescanner_tiny",
+          "On": true,
+          "Priority": 0,
+          "Health": 1.0,
+          "Value": 250000
+        },
+        {
+          "Slot": "Slot13_Size1",
+          "Item": "int_supercruiseassist",
+          "On": true,
+          "Priority": 2,
+          "Health": 1.0
+        },
+        {
+          "Slot": "Slot14_Size1",
+          "Item": "int_dockingcomputer_advanced",
+          "On": true,
+          "Priority": 2,
+          "Health": 1.0
+        },
+        {
+          "Slot": "PlanetaryApproachSuite",
+          "Item": "int_planetapproachsuite_advanced",
+          "On": true,
+          "Priority": 1,
+          "Health": 1.0
+        },
+        {
+          "Slot": "Bobble01",
+          "Item": "bobble_trophy_exploration",
+          "On": true,
+          "Priority": 1,
+          "Health": 1.0
+        },
+        {
+          "Slot": "Bobble10",
+          "Item": "bobble_trophy_exploration",
+          "On": true,
+          "Priority": 1,
+          "Health": 1.0
+        },
+        {
+          "Slot": "VesselVoice",
+          "Item": "voicepack_verity",
+          "On": true,
+          "Priority": 1,
+          "Health": 1.0
+        },
+        {
+          "Slot": "ShipCockpit",
+          "Item": "explorer_nx_cockpit",
+          "On": true,
+          "Priority": 1,
+          "Health": 1.0
+        },
+        {
+          "Slot": "CargoHatch",
+          "Item": "modularcargobaydoor",
+          "On": true,
+          "Priority": 2,
+          "Health": 1.0
+        }
+      ]
+    },
+    {
+      "timestamp": "2026-08-23T15:50:36Z",
+      "event": "StartJump",
+      "JumpType": "Hyperspace",
+      "Taxi": false,
+      "StarSystem": "Eol Prou YI-W b17-69",
+      "SystemAddress": 152276049347737,
+      "StarClass": "M"
+    },
+    {
+      "timestamp": "2026-08-23T15:50:57Z",
+      "event": "FSDJump",
+      "Taxi": false,
+      "Multicrew": false,
+      "StarSystem": "Eol Prou YI-W b17-69",
+      "SystemAddress": 152276049347737,
+      "StarPos": [
+        -9491.5625,
+        -898.25,
+        19804.0
+      ],
+      "SystemAllegiance": "",
+      "SystemEconomy": "$economy_None;",
+      "SystemEconomy_Localised": "None",
+      "SystemSecondEconomy": "$economy_None;",
+      "SystemSecondEconomy_Localised": "None",
+      "SystemGovernment": "$government_None;",
+      "SystemGovernment_Localised": "None",
+      "SystemSecurity": "$GAlAXY_MAP_INFO_state_anarchy;",
+      "SystemSecurity_Localised": "Anarchy",
+      "Population": 0,
+      "Body": "Eol Prou YI-W b17-69 A",
+      "BodyID": 1,
+      "BodyType": "Star",
+      "JumpDist": 6.717,
+      "FuelUsed": 0.015603,
+      "FuelLevel": 126.844398
+    },
+    {
+      "timestamp": "2026-08-23T15:51:03Z",
+      "event": "Scan",
+      "ScanType": "AutoScan",
+      "BodyName": "Eol Prou YI-W b17-69 A A Belt Cluster 4",
+      "BodyID": 11,
+      "Parents": [
+        {
+          "Ring": 7
+        },
+        {
+          "Star": 1
+        },
+        {
+          "Null": 0
+        }
+      ],
+      "StarSystem": "Eol Prou YI-W b17-69",
+      "SystemAddress": 152276049347737,
+      "DistanceFromArrivalLS": 3.525305,
+      "WasDiscovered": true,
+      "WasMapped": false,
+      "WasFootfalled": false
+    },
+    {
+      "timestamp": "2026-08-23T15:51:03Z",
+      "event": "Scan",
+      "ScanType": "AutoScan",
+      "BodyName": "Eol Prou YI-W b17-69 A",
+      "BodyID": 1,
+      "Parents": [
+        {
+          "Null": 0
+        }
+      ],
+      "StarSystem": "Eol Prou YI-W b17-69",
+      "SystemAddress": 152276049347737,
+      "DistanceFromArrivalLS": 0.0,
+      "StarType": "M",
+      "Subclass": 4,
+      "StellarMass": 0.3125,
+      "Radius": 316634176.0,
+      "AbsoluteMagnitude": 9.595505,
+      "Age_MY": 2448,
+      "SurfaceTemperature": 2859.0,
+      "Luminosity": "Va",
+      "SemiMajorAxis": 12152497768402.1,
+      "Eccentricity": 0.225277,
+      "OrbitalInclination": 17.496861,
+      "Periapsis": 303.68675,
+      "OrbitalPeriod": 35927892327.308655,
+      "AscendingNode": -12.548359,
+      "MeanAnomaly": 189.140589,
+      "RotationPeriod": 165938.210141,
+      "AxialTilt": 0.0,
+      "Rings": [
+        {
+          "Name": "Eol Prou YI-W b17-69 A A Belt",
+          "RingClass": "eRingClass_Rocky",
+          "MassMT": 76594000000000.0,
+          "InnerRad": 493380000.0,
+          "OuterRad": 1637500000.0
+        },
+        {
+          "Name": "Eol Prou YI-W b17-69 A B Belt",
+          "RingClass": "eRingClass_Icy",
+          "MassMT": 215830000000000.0,
+          "InnerRad": 96427000000.0,
+          "OuterRad": 153070000000.0
+        }
+      ],
+      "WasDiscovered": true,
+      "WasMapped": false,
+      "WasFootfalled": false
+    },
+    {
+      "timestamp": "2026-08-23T15:51:03Z",
+      "event": "Scan",
+      "ScanType": "AutoScan",
+      "BodyName": "Eol Prou YI-W b17-69 A A Belt Cluster 1",
+      "BodyID": 8,
+      "Parents": [
+        {
+          "Ring": 7
+        },
+        {
+          "Star": 1
+        },
+        {
+          "Null": 0
+        }
+      ],
+      "StarSystem": "Eol Prou YI-W b17-69",
+      "SystemAddress": 152276049347737,
+      "DistanceFromArrivalLS": 2.606447,
+      "WasDiscovered": true,
+      "WasMapped": false,
+      "WasFootfalled": false
+    },
+    {
+      "timestamp": "2026-08-23T15:51:03Z",
+      "event": "Scan",
+      "ScanType": "AutoScan",
+      "BodyName": "Eol Prou YI-W b17-69 A A Belt Cluster 2",
+      "BodyID": 9,
+      "Parents": [
+        {
+          "Ring": 7
+        },
+        {
+          "Star": 1
+        },
+        {
+          "Null": 0
+        }
+      ],
+      "StarSystem": "Eol Prou YI-W b17-69",
+      "SystemAddress": 152276049347737,
+      "DistanceFromArrivalLS": 5.1566,
+      "WasDiscovered": true,
+      "WasMapped": false,
+      "WasFootfalled": false
+    },
+    {
+      "timestamp": "2026-08-23T15:51:03Z",
+      "event": "Scan",
+      "ScanType": "AutoScan",
+      "BodyName": "Eol Prou YI-W b17-69 A A Belt Cluster 3",
+      "BodyID": 10,
+      "Parents": [
+        {
+          "Ring": 7
+        },
+        {
+          "Star": 1
+        },
+        {
+          "Null": 0
+        }
+      ],
+      "StarSystem": "Eol Prou YI-W b17-69",
+      "SystemAddress": 152276049347737,
+      "DistanceFromArrivalLS": 4.662513,
+      "WasDiscovered": true,
+      "WasMapped": false,
+      "WasFootfalled": false
+    },
+    {
+      "timestamp": "2026-08-23T15:51:05Z",
+      "event": "FSSDiscoveryScan",
+      "Progress": 0.188186,
+      "BodyCount": 55,
+      "NonBodyCount": 8,
+      "SystemName": "Eol Prou YI-W b17-69",
+      "SystemAddress": 152276049347737
+    },
+    {
+      "timestamp": "2026-08-23T15:51:06Z",
+      "event": "Scan",
+      "ScanType": "AutoScan",
+      "BodyName": "Eol Prou YI-W b17-69 C",
+      "BodyID": 5,
+      "Parents": [
+        {
+          "Null": 3
+        },
+        {
+          "Null": 2
+        },
+        {
+          "Null": 0
+        }
+      ],
+      "StarSystem": "Eol Prou YI-W b17-69",
+      "SystemAddress": 152276049347737,
+      "DistanceFromArrivalLS": 69253.18482,
+      "StarType": "M",
+      "Subclass": 8,
+      "StellarMass": 0.25,
+      "Radius": 312643872.0,
+      "AbsoluteMagnitude": 10.692673,
+      "Age_MY": 2448,
+      "SurfaceTemperature": 2235.0,
+      "Luminosity": "Va",
+      "SemiMajorAxis": 6835222840.309143,
+      "Eccentricity": 0.100419,
+      "OrbitalInclination": 68.086256,
+      "Periapsis": 82.432511,
+      "OrbitalPeriod": 1004206.478596,
+      "AscendingNode": -177.799625,
+      "MeanAnomaly": 132.929675,
+      "RotationPeriod": 102593.652319,
+      "AxialTilt": 0.0,
+      "WasDiscovered": true,
+      "WasMapped": false,
+      "WasFootfalled": false
+    },
+    {
+      "timestamp": "2026-08-23T15:51:06Z",
+      "event": "Scan",
+      "ScanType": "AutoScan",
+      "BodyName": "Eol Prou YI-W b17-69 B",
+      "BodyID": 4,
+      "Parents": [
+        {
+          "Null": 3
+        },
+        {
+          "Null": 2
+        },
+        {
+          "Null": 0
+        }
+      ],
+      "StarSystem": "Eol Prou YI-W b17-69",
+      "SystemAddress": 152276049347737,
+      "DistanceFromArrivalLS": 69238.584137,
+      "StarType": "M",
+      "Subclass": 5,
+      "StellarMass": 0.308594,
+      "Radius": 300800320.0,
+      "AbsoluteMagnitude": 9.871063,
+      "Age_MY": 2448,
+      "SurfaceTemperature": 2753.0,
+      "Luminosity": "Va",
+      "SemiMajorAxis": 5537394165.992737,
+      "Eccentricity": 0.100419,
+      "OrbitalInclination": 68.086256,
+      "Periapsis": 262.432506,
+      "OrbitalPeriod": 1004206.478596,
+      "AscendingNode": -177.799625,
+      "MeanAnomaly": 132.929675,
+      "RotationPeriod": 171699.917023,
+      "AxialTilt": 0.0,
+      "WasDiscovered": true,
+      "WasMapped": false,
+      "WasFootfalled": false
+    },
+    {
+      "timestamp": "2026-08-23T15:51:06Z",
+      "event": "Scan",
+      "ScanType": "AutoScan",
+      "BodyName": "Eol Prou YI-W b17-69 D",
+      "BodyID": 6,
+      "Parents": [
+        {
+          "Null": 2
+        },
+        {
+          "Null": 0
+        }
+      ],
+      "StarSystem": "Eol Prou YI-W b17-69",
+      "SystemAddress": 152276049347737,
+      "DistanceFromArrivalLS": 68714.147334,
+      "StarType": "M",
+      "Subclass": 7,
+      "StellarMass": 0.242188,
+      "Radius": 308271520.0,
+      "AbsoluteMagnitude": 10.419281,
+      "Age_MY": 2448,
+      "SurfaceTemperature": 2397.0,
+      "Luminosity": "Va",
+      "SemiMajorAxis": 155427086353.302,
+      "Eccentricity": 0.143573,
+      "OrbitalInclination": 49.081406,
+      "Periapsis": 60.759628,
+      "OrbitalPeriod": 64097194.075584,
+      "AscendingNode": -173.150978,
+      "MeanAnomaly": 303.510191,
+      "RotationPeriod": 165683.817217,
+      "AxialTilt": 0.0,
+      "WasDiscovered": true,
+      "WasMapped": false,
+      "WasFootfalled": false
+    },
+    {
+      "timestamp": "2026-08-23T15:53:48Z",
+      "event": "FSSBodySignals",
+      "BodyName": "Eol Prou YI-W b17-69 D 1",
+      "BodyID": 54,
+      "SystemAddress": 152276049347737,
+      "Signals": [
+        {
+          "Type": "$SAA_SignalType_Geological;",
+          "Type_Localised": "Geological",
+          "Count": 3
+        }
+      ]
+    },
+    {
+      "timestamp": "2026-08-23T15:53:49Z",
+      "event": "Scan",
+      "ScanType": "Detailed",
+      "BodyName": "Eol Prou YI-W b17-69 D 1",
+      "BodyID": 54,
+      "Parents": [
+        {
+          "Star": 6
+        },
+        {
+          "Null": 2
+        },
+        {
+          "Null": 0
+        }
+      ],
+      "StarSystem": "Eol Prou YI-W b17-69",
+      "SystemAddress": 152276049347737,
+      "DistanceFromArrivalLS": 68714.231265,
+      "TidalLock": true,
+      "TerraformState": "",
+      "PlanetClass": "High metal content body",
+      "Atmosphere": "",
+      "AtmosphereType": "None",
+      "Volcanism": "major rocky magma volcanism",
+      "MassEM": 0.046169,
+      "Radius": 2322495.75,
+      "SurfaceGravity": 3.411529,
+      "SurfaceTemperature": 589.497559,
+      "SurfacePressure": 0.0,
+      "Landable": true,
+      "Materials": [
+        {
+          "Name": "iron",
+          "Percent": 22.827175
+        },
+        {
+          "Name": "nickel",
+          "Percent": 17.265516
+        },
+        {
+          "Name": "sulphur",
+          "Percent": 16.178234
+        },
+        {
+          "Name": "carbon",
+          "Percent": 13.604219
+        },
+        {
+          "Name": "manganese",
+          "Percent": 9.427389
+        },
+        {
+          "Name": "phosphorus",
+          "Percent": 8.709654
+        },
+        {
+          "Name": "vanadium",
+          "Percent": 5.605559
+        },
+        {
+          "Name": "arsenic",
+          "Percent": 2.117645
+        },
+        {
+          "Name": "cadmium",
+          "Percent": 1.772634
+        },
+        {
+          "Name": "molybdenum",
+          "Percent": 1.490601
+        },
+        {
+          "Name": "antimony",
+          "Percent": 1.001373
+        }
+      ],
+      "Composition": {
+        "Ice": 0.0,
+        "Rock": 0.669843,
+        "Metal": 0.330157
+      },
+      "SemiMajorAxis": 2731975793.838501,
+      "Eccentricity": 0.000662,
+      "OrbitalInclination": -0.006801,
+      "Periapsis": 76.1735,
+      "OrbitalPeriod": 158240.294456,
+      "AscendingNode": 2.603323,
+      "MeanAnomaly": 58.159222,
+      "RotationPeriod": 158240.69955,
+      "AxialTilt": 0.196083,
+      "WasDiscovered": true,
+      "WasMapped": false,
+      "WasFootfalled": false
+    },
+    {
+      "timestamp": "2026-08-23T15:53:53Z",
+      "event": "Scan",
+      "ScanType": "Detailed",
+      "BodyName": "Eol Prou YI-W b17-69 D 5",
+      "BodyID": 58,
+      "Parents": [
+        {
+          "Star": 6
+        },
+        {
+          "Null": 2
+        },
+        {
+          "Null": 0
+        }
+      ],
+      "StarSystem": "Eol Prou YI-W b17-69",
+      "SystemAddress": 152276049347737,
+      "DistanceFromArrivalLS": 68648.227623,
+      "TidalLock": true,
+      "TerraformState": "",
+      "PlanetClass": "High metal content body",
+      "Atmosphere": "hot water atmosphere",
+      "AtmosphereType": "Water",
+      "AtmosphereComposition": [
+        {
+          "Name": "Water",
+          "Percent": 99.997566
+        }
+      ],
+      "Volcanism": "",
+      "MassEM": 0.060019,
+      "Radius": 2527431.5,
+      "SurfaceGravity": 3.744918,
+      "SurfaceTemperature": 670.033264,
+      "SurfacePressure": 373014.71875,
+      "Landable": false,
+      "Composition": {
+        "Ice": 0.0,
+        "Rock": 0.669843,
+        "Metal": 0.330157
+      },
+      "SemiMajorAxis": 20506507754.325867,
+      "Eccentricity": 0.178615,
+      "OrbitalInclination": 153.795072,
+      "Periapsis": 217.21703,
+      "OrbitalPeriod": 3254163.324833,
+      "AscendingNode": 104.225627,
+      "MeanAnomaly": 198.802019,
+      "RotationPeriod": 3254171.333994,
+      "AxialTilt": -0.16662,
+      "WasDiscovered": true,
+      "WasMapped": false,
+      "WasFootfalled": false
+    },
+    {
+      "timestamp": "2026-08-23T15:53:57Z",
+      "event": "Scan",
+      "ScanType": "Detailed",
+      "BodyName": "Eol Prou YI-W b17-69 D 2",
+      "BodyID": 55,
+      "Parents": [
+        {
+          "Star": 6
+        },
+        {
+          "Null": 2
+        },
+        {
+          "Null": 0
+        }
+      ],
+      "StarSystem": "Eol Prou YI-W b17-69",
+      "SystemAddress": 152276049347737,
+      "DistanceFromArrivalLS": 68715.298316,
+      "TidalLock": true,
+      "TerraformState": "",
+      "PlanetClass": "High metal content body",
+      "Atmosphere": "",
+      "AtmosphereType": "None",
+      "Volcanism": "",
+      "MassEM": 0.029363,
+      "Radius": 2005954.625,
+      "SurfaceGravity": 2.908467,
+      "SurfaceTemperature": 471.262207,
+      "SurfacePressure": 0.0,
+      "Landable": true,
+      "Materials": [
+        {
+          "Name": "iron",
+          "Percent": 22.04517
+        },
+        {
+          "Name": "nickel",
+          "Percent": 16.674042
+        },
+        {
+          "Name": "sulphur",
+          "Percent": 15.624006
+        },
+        {
+          "Name": "carbon",
+          "Percent": 13.13817
+        },
+        {
+          "Name": "chromium",
+          "Percent": 9.914445
+        },
+        {
+          "Name": "phosphorus",
+          "Percent": 8.411283
+        },
+        {
+          "Name": "zinc",
+          "Percent": 5.991052
+        },
+        {
+          "Name": "vanadium",
+          "Percent": 5.413527
+        },
+        {
+          "Name": "tungsten",
+          "Percent": 1.210501
+        },
+        {
+          "Name": "mercury",
+          "Percent": 0.962676
+        },
+        {
+          "Name": "polonium",
+          "Percent": 0.61513
+        }
+      ],
+      "Composition": {
+        "Ice": 0.0,
+        "Rock": 0.669843,
+        "Metal": 0.330157
+      },
+      "SemiMajorAxis": 4624509811.401367,
+      "Eccentricity": 0.000842,
+      "OrbitalInclination": 0.00628,
+      "Periapsis": 179.326186,
+      "OrbitalPeriod": 348498.06428,
+      "AscendingNode": 23.214249,
+      "MeanAnomaly": 357.187079,
+      "RotationPeriod": 348498.941344,
+      "AxialTilt": 0.272657,
+      "WasDiscovered": true,
+      "WasMapped": false,
+      "WasFootfalled": false
+    },
+    {
+      "timestamp": "2026-08-23T15:53:59Z",
+      "event": "FSSBodySignals",
+      "BodyName": "Eol Prou YI-W b17-69 D 4",
+      "BodyID": 57,
+      "SystemAddress": 152276049347737,
+      "Signals": [
+        {
+          "Type": "$SAA_SignalType_Biological;",
+          "Type_Localised": "Biological",
+          "Count": 2
+        }
+      ]
+    },
+    {
+      "timestamp": "2026-08-23T15:54:00Z",
+      "event": "Scan",
+      "ScanType": "Detailed",
+      "BodyName": "Eol Prou YI-W b17-69 D 4",
+      "BodyID": 57,
+      "Parents": [
+        {
+          "Star": 6
+        },
+        {
+          "Null": 2
+        },
+        {
+          "Null": 0
+        }
+      ],
+      "StarSystem": "Eol Prou YI-W b17-69",
+      "SystemAddress": 152276049347737,
+      "DistanceFromArrivalLS": 68688.331065,
+      "TidalLock": false,
+      "TerraformState": "",
+      "PlanetClass": "High metal content body",
+      "Atmosphere": "thin sulfur dioxide atmosphere",
+      "AtmosphereType": "SulphurDioxide",
+      "AtmosphereComposition": [
+        {
+          "Name": "SulphurDioxide",
+          "Percent": 100.0
+        }
+      ],
+      "Volcanism": "",
+      "MassEM": 0.085811,
+      "Radius": 2834620.75,
+      "SurfaceGravity": 4.256591,
+      "SurfaceTemperature": 296.155334,
+      "SurfacePressure": 228.312744,
+      "Landable": true,
+      "Materials": [
+        {
+          "Name": "iron",
+          "Percent": 22.733099
+        },
+        {
+          "Name": "nickel",
+          "Percent": 17.194363
+        },
+        {
+          "Name": "sulphur",
+          "Percent": 16.111555
+        },
+        {
+          "Name": "carbon",
+          "Percent": 13.548151
+        },
+        {
+          "Name": "chromium",
+          "Percent": 10.223829
+        },
+        {
+          "Name": "phosphorus",
+          "Percent": 8.673759
+        },
+        {
+          "Name": "germanium",
+          "Percent": 4.715683
+        },
+        {
+          "Name": "zirconium",
+          "Percent": 2.639781
+        },
+        {
+          "Name": "niobium",
+          "Percent": 1.553686
+        },
+        {
+          "Name": "yttrium",
+          "Percent": 1.357821
+        },
+        {
+          "Name": "tungsten",
+          "Percent": 1.248276
+        }
+      ],
+      "Composition": {
+        "Ice": 0.0,
+        "Rock": 0.669843,
+        "Metal": 0.330157
+      },
+      "SemiMajorAxis": 15175893902.778625,
+      "Eccentricity": 0.184979,
+      "OrbitalInclination": -116.708405,
+      "Periapsis": 151.955054,
+      "OrbitalPeriod": 2071729.719639,
+      "AscendingNode": -69.310236,
+      "MeanAnomaly": 22.7332,
+      "RotationPeriod": 1381156.790645,
+      "AxialTilt": -0.296731,
+      "WasDiscovered": true,
+      "WasMapped": true,
+      "WasFootfalled": true
+    },
+    {
+      "timestamp": "2026-08-23T15:54:03Z",
+      "event": "Scan",
+      "ScanType": "Detailed",
+      "BodyName": "Eol Prou YI-W b17-69 D 3",
+      "BodyID": 56,
+      "Parents": [
+        {
+          "Star": 6
+        },
+        {
+          "Null": 2
+        },
+        {
+          "Null": 0
+        }
+      ],
+      "StarSystem": "Eol Prou YI-W b17-69",
+      "SystemAddress": 152276049347737,
+      "DistanceFromArrivalLS": 68734.462982,
+      "TidalLock": true,
+      "TerraformState": "",
+      "PlanetClass": "High metal content body",
+      "Atmosphere": "",
+      "AtmosphereType": "None",
+      "Volcanism": "",
+      "MassEM": 0.031838,
+      "Radius": 2059334.5,
+      "SurfaceGravity": 2.992318,
+      "SurfaceTemperature": 331.41864,
+      "SurfacePressure": 0.0,
+      "Landable": true,
+      "Materials": [
+        {
+          "Name": "iron",
+          "Percent": 21.964247
+        },
+        {
+          "Name": "nickel",
+          "Percent": 16.612835
+        },
+        {
+          "Name": "sulphur",
+          "Percent": 15.566648
+        },
+        {
+          "Name": "carbon",
+          "Percent": 13.089938
+        },
+        {
+          "Name": "manganese",
+          "Percent": 9.07101
+        },
+        {
+          "Name": "phosphorus",
+          "Percent": 8.380404
+        },
+        {
+          "Name": "zinc",
+          "Percent": 5.96906
+        },
+        {
+          "Name": "vanadium",
+          "Percent": 5.393654
+        },
+        {
+          "Name": "molybdenum",
+          "Percent": 1.434253
+        },
+        {
+          "Name": "yttrium",
+          "Percent": 1.311898
+        },
+        {
+          "Name": "tungsten",
+          "Percent": 1.206058
+        }
+      ],
+      "Composition": {
+        "Ice": 0.0,
+        "Rock": 0.669843,
+        "Metal": 0.330157
+      },
+      "SemiMajorAxis": 11152917146.68274,
+      "Eccentricity": 1.8e-05,
+      "OrbitalInclination": 0.527388,
+      "Periapsis": 144.880142,
+      "OrbitalPeriod": 1305222.451687,
+      "AscendingNode": -73.697403,
+      "MeanAnomaly": 196.440504,
+      "RotationPeriod": 1305225.717411,
+      "AxialTilt": -0.166239,
+      "WasDiscovered": true,
+      "WasMapped": false,
+      "WasFootfalled": false
+    },
+    {
+      "timestamp": "2026-08-23T15:54:15Z",
+      "event": "Scan",
+      "ScanType": "Detailed",
+      "BodyName": "Eol Prou YI-W b17-69 BCD 3",
+      "BodyID": 73,
+      "Parents": [
+        {
+          "Null": 66
+        },
+        {
+          "Null": 2
+        },
+        {
+          "Null": 0
+        }
+      ],
+      "StarSystem": "Eol Prou YI-W b17-69",
+      "SystemAddress": 152276049347737,
+      "DistanceFromArrivalLS": 68253.372927,
+      "TidalLock": false,
+      "TerraformState": "",
+      "PlanetClass": "Sudarsky class I gas giant",
+      "Atmosphere": "",
+      "AtmosphereComposition": [
+        {
+          "Name": "Hydrogen",
+          "Percent": 70.900848
+        },
+        {
+          "Name": "Helium",
+          "Percent": 29.099157
+        }
+      ],
+      "Volcanism": "",
+      "MassEM": 128.300842,
+      "Radius": 63108560.0,
+      "SurfaceGravity": 12.839921,
+      "SurfaceTemperature": 65.444443,
+      "SurfacePressure": 0.0,
+      "Landable": false,
+      "SemiMajorAxis": 7025275230.407715,
+      "Eccentricity": 0.085457,
+      "OrbitalInclination": 0.373859,
+      "Periapsis": 138.611777,
+      "OrbitalPeriod": 23861643.075943,
+      "AscendingNode": 19.760099,
+      "MeanAnomaly": 232.951359,
+      "RotationPeriod": 2411365.938916,
+      "AxialTilt": 0.056606,
+      "Rings": [
+        {
+          "Name": "Eol Prou YI-W b17-69 BCD 3 A Ring",
+          "RingClass": "eRingClass_Rocky",
+          "MassMT": 77449000000.0,
+          "InnerRad": 104130000.0,
+          "OuterRad": 116350000.0
+        },
+        {
+          "Name": "Eol Prou YI-W b17-69 BCD 3 B Ring",
+          "RingClass": "eRingClass_Icy",
+          "MassMT": 610450000000.0,
+          "InnerRad": 116450000.0,
+          "OuterRad": 185050000.0
+        }
+      ],
+      "ReserveLevel": "PristineResources",
+      "WasDiscovered": true,
+      "WasMapped": false,
+      "WasFootfalled": false
+    },
+    {
+      "timestamp": "2026-08-23T15:54:37Z",
+      "event": "Scan",
+      "ScanType": "Detailed",
+      "BodyName": "Eol Prou YI-W b17-69 BCD 4",
+      "BodyID": 76,
+      "Parents": [
+        {
+          "Null": 2
+        },
+        {
+          "Null": 0
+        }
+      ],
+      "StarSystem": "Eol Prou YI-W b17-69",
+      "SystemAddress": 152276049347737,
+      "DistanceFromArrivalLS": 71407.891318,
+      "TidalLock": false,
+      "TerraformState": "",
+      "PlanetClass": "Sudarsky class I gas giant",
+      "Atmosphere": "",
+      "AtmosphereComposition": [
+        {
+          "Name": "Hydrogen",
+          "Percent": 70.900848
+        },
+        {
+          "Name": "Helium",
+          "Percent": 29.099152
+        }
+      ],
+      "Volcanism": "",
+      "MassEM": 52.999107,
+      "Radius": 42656584.0,
+      "SurfaceGravity": 11.609294,
+      "SurfaceTemperature": 49.422165,
+      "SurfacePressure": 0.0,
+      "Landable": false,
+      "SemiMajorAxis": 902841186523.4375,
+      "Eccentricity": 0.001952,
+      "OrbitalInclination": 2.335411,
+      "Periapsis": 94.662129,
+      "OrbitalPeriod": 522244375.944138,
+      "AscendingNode": -138.813759,
+      "MeanAnomaly": 244.288866,
+      "RotationPeriod": 87496.831943,
+      "AxialTilt": 1.750884,
+      "Rings": [
+        {
+          "Name": "Eol Prou YI-W b17-69 BCD 4 A Ring",
+          "RingClass": "eRingClass_Icy",
+          "MassMT": 291950000000.0,
+          "InnerRad": 69289000.0,
+          "OuterRad": 130770000.0
+        }
+      ],
+      "ReserveLevel": "PristineResources",
+      "WasDiscovered": true,
+      "WasMapped": false,
+      "WasFootfalled": false
+    },
+    {
+      "timestamp": "2026-08-23T15:54:44Z",
+      "event": "FSSBodySignals",
+      "BodyName": "Eol Prou YI-W b17-69 BCD 4 a",
+      "BodyID": 79,
+      "SystemAddress": 152276049347737,
+      "Signals": [
+        {
+          "Type": "$SAA_SignalType_Geological;",
+          "Type_Localised": "Geological",
+          "Count": 2
+        }
+      ]
+    },
+    {
+      "timestamp": "2026-08-23T15:54:46Z",
+      "event": "Scan",
+      "ScanType": "Detailed",
+      "BodyName": "Eol Prou YI-W b17-69 BCD 4 a",
+      "BodyID": 79,
+      "Parents": [
+        {
+          "Null": 78
+        },
+        {
+          "Planet": 76
+        },
+        {
+          "Null": 2
+        },
+        {
+          "Null": 0
+        }
+      ],
+      "StarSystem": "Eol Prou YI-W b17-69",
+      "SystemAddress": 152276049347737,
+      "DistanceFromArrivalLS": 71408.309521,
+      "TidalLock": true,
+      "TerraformState": "",
+      "PlanetClass": "Icy body",
+      "Atmosphere": "",
+      "AtmosphereType": "None",
+      "Volcanism": "major water geysers volcanism",
+      "MassEM": 0.000288,
+      "Radius": 584000.125,
+      "SurfaceGravity": 0.336077,
+      "SurfaceTemperature": 41.626133,
+      "SurfacePressure": 0.0,
+      "Landable": true,
+      "Materials": [
+        {
+          "Name": "sulphur",
+          "Percent": 27.098728
+        },
+        {
+          "Name": "carbon",
+          "Percent": 22.787224
+        },
+        {
+          "Name": "phosphorus",
+          "Percent": 14.588774
+        },
+        {
+          "Name": "iron",
+          "Percent": 12.154193
+        },
+        {
+          "Name": "nickel",
+          "Percent": 9.192922
+        },
+        {
+          "Name": "manganese",
+          "Percent": 5.019558
+        },
+        {
+          "Name": "selenium",
+          "Percent": 4.24118
+        },
+        {
+          "Name": "vanadium",
+          "Percent": 2.984647
+        },
+        {
+          "Name": "niobium",
+          "Percent": 0.830674
+        },
+        {
+          "Name": "tungsten",
+          "Percent": 0.667387
+        },
+        {
+          "Name": "technetium",
+          "Percent": 0.434706
+        }
+      ],
+      "Composition": {
+        "Ice": 0.826436,
+        "Rock": 0.157984,
+        "Metal": 0.01558
+      },
+      "SemiMajorAxis": 1113589.525223,
+      "Eccentricity": 0.036718,
+      "OrbitalInclination": -8.035966,
+      "Periapsis": 130.102611,
+      "OrbitalPeriod": 48351.222277,
+      "AscendingNode": -112.531577,
+      "MeanAnomaly": 289.200422,
+      "RotationPeriod": 70185.857376,
+      "AxialTilt": 0.484556,
+      "WasDiscovered": true,
+      "WasMapped": false,
+      "WasFootfalled": false
+    },
+    {
+      "timestamp": "2026-08-23T15:54:48Z",
+      "event": "FSSBodySignals",
+      "BodyName": "Eol Prou YI-W b17-69 BCD 4 b",
+      "BodyID": 80,
+      "SystemAddress": 152276049347737,
+      "Signals": [
+        {
+          "Type": "$SAA_SignalType_Geological;",
+          "Type_Localised": "Geological",
+          "Count": 2
+        }
+      ]
+    },
+    {
+      "timestamp": "2026-08-23T15:54:49Z",
+      "event": "Scan",
+      "ScanType": "Detailed",
+      "BodyName": "Eol Prou YI-W b17-69 BCD 4 b",
+      "BodyID": 80,
+      "Parents": [
+        {
+          "Null": 78
+        },
+        {
+          "Planet": 76
+        },
+        {
+          "Null": 2
+        },
+        {
+          "Null": 0
+        }
+      ],
+      "StarSystem": "Eol Prou YI-W b17-69",
+      "SystemAddress": 152276049347737,
+      "DistanceFromArrivalLS": 71408.312782,
+      "TidalLock": true,
+      "TerraformState": "",
+      "PlanetClass": "Icy body",
+      "Atmosphere": "",
+      "AtmosphereType": "None",
+      "Volcanism": "major water geysers volcanism",
+      "MassEM": 0.00026,
+      "Radius": 564599.6875,
+      "SurfaceGravity": 0.324787,
+      "SurfaceTemperature": 41.626133,
+      "SurfacePressure": 0.0,
+      "Landable": true,
+      "Materials": [
+        {
+          "Name": "sulphur",
+          "Percent": 26.978212
+        },
+        {
+          "Name": "carbon",
+          "Percent": 22.685883
+        },
+        {
+          "Name": "phosphorus",
+          "Percent": 14.523892
+        },
+        {
+          "Name": "iron",
+          "Percent": 12.10014
+        },
+        {
+          "Name": "nickel",
+          "Percent": 9.152039
+        },
+        {
+          "Name": "chromium",
+          "Percent": 5.441835
+        },
+        {
+          "Name": "selenium",
+          "Percent": 4.222319
+        },
+        {
+          "Name": "vanadium",
+          "Percent": 2.971373
+        },
+        {
+          "Name": "antimony",
+          "Percent": 0.731497
+        },
+        {
+          "Name": "tungsten",
+          "Percent": 0.664419
+        },
+        {
+          "Name": "mercury",
+          "Percent": 0.528393
+        }
+      ],
+      "Composition": {
+        "Ice": 0.826436,
+        "Rock": 0.157984,
+        "Metal": 0.01558
+      },
+      "SemiMajorAxis": 1232850.432396,
+      "Eccentricity": 0.036718,
+      "OrbitalInclination": -8.035966,
+      "Periapsis": 310.102606,
+      "OrbitalPeriod": 48351.222277,
+      "AscendingNode": -112.531577,
+      "MeanAnomaly": 289.225078,
+      "RotationPeriod": 66704.78387,
+      "AxialTilt": 0.093338,
+      "WasDiscovered": true,
+      "WasMapped": false,
+      "WasFootfalled": false
+    },
+    {
+      "timestamp": "2026-08-23T15:59:23Z",
+      "event": "SAAScanComplete",
+      "BodyName": "Eol Prou YI-W b17-69 D 4",
+      "SystemAddress": 152276049347737,
+      "BodyID": 57,
+      "ProbesUsed": 6,
+      "EfficiencyTarget": 6
+    },
+    {
+      "timestamp": "2026-08-23T15:59:23Z",
+      "event": "SAASignalsFound",
+      "BodyName": "Eol Prou YI-W b17-69 D 4",
+      "SystemAddress": 152276049347737,
+      "BodyID": 57,
+      "Signals": [
+        {
+          "Type": "$SAA_SignalType_Biological;",
+          "Type_Localised": "Biological",
+          "Count": 2
+        }
+      ],
+      "Genuses": [
+        {
+          "Genus": "$Codex_Ent_Bacterial_Genus_Name;",
+          "Genus_Localised": "Bacterium"
+        },
+        {
+          "Genus": "$Codex_Ent_Stratum_Genus_Name;",
+          "Genus_Localised": "Stratum"
+        }
+      ]
+    },
+    {
+      "timestamp": "2026-08-23T15:59:24Z",
+      "event": "Scan",
+      "ScanType": "Detailed",
+      "BodyName": "Eol Prou YI-W b17-69 D 4",
+      "BodyID": 57,
+      "Parents": [
+        {
+          "Star": 6
+        },
+        {
+          "Null": 2
+        },
+        {
+          "Null": 0
+        }
+      ],
+      "StarSystem": "Eol Prou YI-W b17-69",
+      "SystemAddress": 152276049347737,
+      "DistanceFromArrivalLS": 68688.386711,
+      "TidalLock": false,
+      "TerraformState": "",
+      "PlanetClass": "High metal content body",
+      "Atmosphere": "thin sulfur dioxide atmosphere",
+      "AtmosphereType": "SulphurDioxide",
+      "AtmosphereComposition": [
+        {
+          "Name": "SulphurDioxide",
+          "Percent": 100.0
+        }
+      ],
+      "Volcanism": "",
+      "MassEM": 0.085811,
+      "Radius": 2834620.75,
+      "SurfaceGravity": 4.256591,
+      "SurfaceTemperature": 296.155334,
+      "SurfacePressure": 228.312744,
+      "Landable": true,
+      "Materials": [
+        {
+          "Name": "iron",
+          "Percent": 22.733099
+        },
+        {
+          "Name": "nickel",
+          "Percent": 17.194363
+        },
+        {
+          "Name": "sulphur",
+          "Percent": 16.111555
+        },
+        {
+          "Name": "carbon",
+          "Percent": 13.548151
+        },
+        {
+          "Name": "chromium",
+          "Percent": 10.223829
+        },
+        {
+          "Name": "phosphorus",
+          "Percent": 8.673759
+        },
+        {
+          "Name": "germanium",
+          "Percent": 4.715683
+        },
+        {
+          "Name": "zirconium",
+          "Percent": 2.639781
+        },
+        {
+          "Name": "niobium",
+          "Percent": 1.553686
+        },
+        {
+          "Name": "yttrium",
+          "Percent": 1.357821
+        },
+        {
+          "Name": "tungsten",
+          "Percent": 1.248276
+        }
+      ],
+      "Composition": {
+        "Ice": 0.0,
+        "Rock": 0.669843,
+        "Metal": 0.330157
+      },
+      "SemiMajorAxis": 15175893902.778625,
+      "Eccentricity": 0.184979,
+      "OrbitalInclination": -116.708405,
+      "Periapsis": 151.955054,
+      "OrbitalPeriod": 2071729.719639,
+      "AscendingNode": -69.310236,
+      "MeanAnomaly": 22.789542,
+      "RotationPeriod": 1381156.790645,
+      "AxialTilt": -0.296731,
+      "WasDiscovered": true,
+      "WasMapped": true,
+      "WasFootfalled": true
+    },
+    {
+      "timestamp": "2026-08-23T16:00:01Z",
+      "event": "ApproachBody",
+      "StarSystem": "Eol Prou YI-W b17-69",
+      "SystemAddress": 152276049347737,
+      "Body": "Eol Prou YI-W b17-69 D 4",
+      "BodyID": 57
+    },
+    {
+      "timestamp": "2026-08-23T16:00:36Z",
+      "event": "SupercruiseExit",
+      "Taxi": false,
+      "Multicrew": false,
+      "StarSystem": "Eol Prou YI-W b17-69",
+      "SystemAddress": 152276049347737,
+      "Body": "Eol Prou YI-W b17-69 D 4",
+      "BodyID": 57,
+      "BodyType": "Planet"
+    },
+    {
+      "timestamp": "2026-08-23T16:02:11Z",
+      "event": "Touchdown",
+      "PlayerControlled": true,
+      "Taxi": false,
+      "Multicrew": false,
+      "StarSystem": "Eol Prou YI-W b17-69",
+      "SystemAddress": 152276049347737,
+      "Body": "Eol Prou YI-W b17-69 D 4",
+      "BodyID": 57,
+      "OnStation": false,
+      "OnPlanet": true,
+      "Latitude": 23.981773,
+      "Longitude": -107.22377
+    },
+    {
+      "timestamp": "2026-08-23T16:02:49Z",
+      "event": "CodexEntry",
+      "EntryID": 2420703,
+      "Name": "$Codex_Ent_Stratum_07_M_Name;",
+      "Name_Localised": "Stratum Tectonicas - Green",
+      "SubCategory": "$Codex_SubCategory_Organic_Structures;",
+      "SubCategory_Localised": "Organic structures",
+      "Category": "$Codex_Category_Biology;",
+      "Category_Localised": "Biological and Geological",
+      "Region": "$Codex_RegionName_9;",
+      "Region_Localised": "Inner Scutum-Centaurus Arm",
+      "System": "Eol Prou YI-W b17-69",
+      "SystemAddress": 152276049347737,
+      "BodyID": 57,
+      "NearestDestination": "",
+      "Latitude": 23.981762,
+      "Longitude": -107.223793,
+      "IsNewEntry": true
+    },
+    {
+      "timestamp": "2026-08-23T16:02:49Z",
+      "event": "ScanOrganic",
+      "ScanType": "Log",
+      "Genus": "$Codex_Ent_Stratum_Genus_Name;",
+      "Genus_Localised": "Stratum",
+      "Species": "$Codex_Ent_Stratum_07_Name;",
+      "Species_Localised": "Stratum Tectonicas",
+      "Variant": "$Codex_Ent_Stratum_07_M_Name;",
+      "Variant_Localised": "Stratum Tectonicas - Green",
+      "WasLogged": false,
+      "SystemAddress": 152276049347737,
+      "Body": 57
+    },
+    {
+      "timestamp": "2026-08-23T16:03:06Z",
+      "event": "Liftoff",
+      "PlayerControlled": true,
+      "Taxi": false,
+      "Multicrew": false,
+      "StarSystem": "Eol Prou YI-W b17-69",
+      "SystemAddress": 152276049347737,
+      "Body": "Eol Prou YI-W b17-69 D 4",
+      "BodyID": 57,
+      "OnStation": false,
+      "OnPlanet": true,
+      "Latitude": 23.981773,
+      "Longitude": -107.22377
+    },
+    {
+      "timestamp": "2026-08-23T16:03:21Z",
+      "event": "Touchdown",
+      "PlayerControlled": true,
+      "Taxi": false,
+      "Multicrew": false,
+      "StarSystem": "Eol Prou YI-W b17-69",
+      "SystemAddress": 152276049347737,
+      "Body": "Eol Prou YI-W b17-69 D 4",
+      "BodyID": 57,
+      "OnStation": false,
+      "OnPlanet": true,
+      "Latitude": 23.988556,
+      "Longitude": -107.233803
+    },
+    {
+      "timestamp": "2026-08-23T16:03:42Z",
+      "event": "ScanOrganic",
+      "ScanType": "Sample",
+      "Genus": "$Codex_Ent_Stratum_Genus_Name;",
+      "Genus_Localised": "Stratum",
+      "Species": "$Codex_Ent_Stratum_07_Name;",
+      "Species_Localised": "Stratum Tectonicas",
+      "Variant": "$Codex_Ent_Stratum_07_M_Name;",
+      "Variant_Localised": "Stratum Tectonicas - Green",
+      "WasLogged": false,
+      "SystemAddress": 152276049347737,
+      "Body": 57
+    },
+    {
+      "timestamp": "2026-08-23T16:03:51Z",
+      "event": "Liftoff",
+      "PlayerControlled": true,
+      "Taxi": false,
+      "Multicrew": false,
+      "StarSystem": "Eol Prou YI-W b17-69",
+      "SystemAddress": 152276049347737,
+      "Body": "Eol Prou YI-W b17-69 D 4",
+      "BodyID": 57,
+      "OnStation": false,
+      "OnPlanet": true,
+      "Latitude": 23.98856,
+      "Longitude": -107.233803
+    },
+    {
+      "timestamp": "2026-08-23T16:04:09Z",
+      "event": "Touchdown",
+      "PlayerControlled": true,
+      "Taxi": false,
+      "Multicrew": false,
+      "StarSystem": "Eol Prou YI-W b17-69",
+      "SystemAddress": 152276049347737,
+      "Body": "Eol Prou YI-W b17-69 D 4",
+      "BodyID": 57,
+      "OnStation": false,
+      "OnPlanet": true,
+      "Latitude": 23.997282,
+      "Longitude": -107.243546
+    },
+    {
+      "timestamp": "2026-08-23T16:04:28Z",
+      "event": "ScanOrganic",
+      "ScanType": "Sample",
+      "Genus": "$Codex_Ent_Stratum_Genus_Name;",
+      "Genus_Localised": "Stratum",
+      "Species": "$Codex_Ent_Stratum_07_Name;",
+      "Species_Localised": "Stratum Tectonicas",
+      "Variant": "$Codex_Ent_Stratum_07_M_Name;",
+      "Variant_Localised": "Stratum Tectonicas - Green",
+      "WasLogged": false,
+      "SystemAddress": 152276049347737,
+      "Body": 57
+    },
+    {
+      "timestamp": "2026-08-23T16:04:34Z",
+      "event": "ScanOrganic",
+      "ScanType": "Analyse",
+      "Genus": "$Codex_Ent_Stratum_Genus_Name;",
+      "Genus_Localised": "Stratum",
+      "Species": "$Codex_Ent_Stratum_07_Name;",
+      "Species_Localised": "Stratum Tectonicas",
+      "Variant": "$Codex_Ent_Stratum_07_M_Name;",
+      "Variant_Localised": "Stratum Tectonicas - Green",
+      "WasLogged": false,
+      "SystemAddress": 152276049347737,
+      "Body": 57
+    },
+    {
+      "timestamp": "2026-08-23T16:04:44Z",
+      "event": "Liftoff",
+      "PlayerControlled": true,
+      "Taxi": false,
+      "Multicrew": false,
+      "StarSystem": "Eol Prou YI-W b17-69",
+      "SystemAddress": 152276049347737,
+      "Body": "Eol Prou YI-W b17-69 D 4",
+      "BodyID": 57,
+      "OnStation": false,
+      "OnPlanet": true,
+      "Latitude": 23.997278,
+      "Longitude": -107.243546
+    },
+    {
+      "timestamp": "2026-08-23T16:05:41Z",
+      "event": "Loadout",
+      "Ship": "explorer_nx",
+      "ShipID": 115,
+      "ShipName": "Test Ship",
+      "ShipIdent": "TS-01",
+      "ModulesValue": 250776841,
+      "HullHealth": 1.0,
+      "UnladenMass": 1367.900024,
+      "CargoCapacity": 64,
+      "MaxJumpRange": 81.917572,
+      "FuelCapacity": {
+        "Main": 128.0,
+        "Reserve": 1.14
+      },
+      "Rebuy": 12538844,
+      "Modules": [
+        {
+          "Slot": "TinyHardpoint3",
+          "Item": "hpt_heatsinklauncher_turret_tiny",
+          "On": true,
+          "Priority": 0,
+          "AmmoInClip": 1,
+          "AmmoInHopper": 3,
+          "Health": 1.0,
+          "Value": 3072,
+          "Engineering": {
+            "Engineer": "Ram Tah",
+            "EngineerID": 300110,
+            "BlueprintID": 128731666,
+            "BlueprintName": "Misc_HeatSinkCapacity",
+            "Level": 1,
+            "Quality": 1.0,
+            "Modifiers": [
+              {
+                "Label": "Mass",
+                "Value": 2.6,
+                "OriginalValue": 1.3,
+                "LessIsGood": 1
+              },
+              {
+                "Label": "AmmoMaximum",
+                "Value": 3.0,
+                "OriginalValue": 2.0,
+                "LessIsGood": 0
+              },
+              {
+                "Label": "ReloadTime",
+                "Value": 15.0,
+                "OriginalValue": 10.0,
+                "LessIsGood": 1
+              }
+            ]
+          }
+        },
+        {
+          "Slot": "Armour",
+          "Item": "explorer_nx_armour_grade1_default",
+          "On": true,
+          "Priority": 1,
+          "Health": 1.0,
+          "Engineering": {
+            "Engineer": "Selene Jean",
+            "EngineerID": 300210,
+            "BlueprintID": 128673643,
+            "BlueprintName": "Armour_HeavyDuty",
+            "Level": 4,
+            "Quality": 1.0,
+            "Modifiers": [
+              {
+                "Label": "DefenceModifierHealthMultiplier",
+                "Value": 128.600006,
+                "OriginalValue": 79.999992,
+                "LessIsGood": 0
+              },
+              {
+                "Label": "KineticResistance",
+                "Value": -15.200006,
+                "OriginalValue": -20.000004,
+                "LessIsGood": 0
+              },
+              {
+                "Label": "ThermicResistance",
+                "Value": 4.000002,
+                "OriginalValue": 0.0,
+                "LessIsGood": 0
+              },
+              {
+                "Label": "ExplosiveResistance",
+                "Value": -34.399998,
+                "OriginalValue": -39.999996,
+                "LessIsGood": 0
+              }
+            ]
+          }
+        },
+        {
+          "Slot": "Decal1",
+          "Item": "decal_caspianownersclub_01",
+          "On": true,
+          "Priority": 1,
+          "Health": 1.0
+        },
+        {
+          "Slot": "Decal2",
+          "Item": "decal_explorer_elite05",
+          "On": true,
+          "Priority": 1,
+          "Health": 1.0
+        },
+        {
+          "Slot": "Decal3",
+          "Item": "decal_exobio_elite01",
+          "On": true,
+          "Priority": 1,
+          "Health": 1.0
+        },
+        {
+          "Slot": "ShipName0",
+          "Item": "nameplate_explorer01_white",
+          "On": true,
+          "Priority": 1,
+          "Health": 1.0
+        },
+        {
+          "Slot": "ShipName1",
+          "Item": "nameplate_explorer01_white",
+          "On": true,
+          "Priority": 1,
+          "Health": 1.0
+        },
+        {
+          "Slot": "ShipID0",
+          "Item": "nameplate_shipid_doubleline_white",
+          "On": true,
+          "Priority": 1,
+          "Health": 1.0
+        },
+        {
+          "Slot": "ShipID1",
+          "Item": "nameplate_shipid_doubleline_white",
+          "On": true,
+          "Priority": 1,
+          "Health": 1.0
+        },
+        {
+          "Slot": "PowerPlant",
+          "Item": "int_powerplant_size5_class5",
+          "On": true,
+          "Priority": 1,
+          "Health": 1.0,
+          "Value": 3794047,
+          "Engineering": {
+            "Engineer": "Hera Tani",
+            "EngineerID": 300090,
+            "BlueprintID": 128673764,
+            "BlueprintName": "PowerPlant_Armoured",
+            "Level": 5,
+            "Quality": 1.0,
+            "ExperimentalEffect": "special_powerplant_cooled",
+            "ExperimentalEffect_Localised": "Thermal Spread",
+            "Modifiers": [
+              {
+                "Label": "Mass",
+                "Value": 12.0,
+                "OriginalValue": 10.0,
+                "LessIsGood": 1
+              },
+              {
+                "Label": "Integrity",
+                "Value": 233.200012,
+                "OriginalValue": 106.0,
+                "LessIsGood": 0
+              },
+              {
+                "Label": "PowerCapacity",
+                "Value": 22.848,
+                "OriginalValue": 20.4,
+                "LessIsGood": 0
+              },
+              {
+                "Label": "HeatEfficiency",
+                "Value": 0.3168,
+                "OriginalValue": 0.4,
+                "LessIsGood": 1
+              }
+            ]
+          }
+        },
+        {
+          "Slot": "MainEngines",
+          "Item": "int_engine_size7_class5_gravityoptimised_mkii",
+          "On": true,
+          "Priority": 0,
+          "Health": 1.0,
+          "Value": 59993261,
+          "Engineering": {
+            "Engineer": "Professor Palin",
+            "EngineerID": 300220,
+            "BlueprintID": 128673659,
+            "BlueprintName": "Engine_Dirty",
+            "Level": 5,
+            "Quality": 1.0,
+            "ExperimentalEffect": "special_engine_overloaded",
+            "ExperimentalEffect_Localised": "Drag Drives",
+            "Modifiers": [
+              {
+                "Label": "Integrity",
+                "Value": 122.400002,
+                "OriginalValue": 144.0,
+                "LessIsGood": 0
+              },
+              {
+                "Label": "PowerDraw",
+                "Value": 10.2144,
+                "OriginalValue": 9.12,
+                "LessIsGood": 1
+              },
+              {
+                "Label": "EngineOptimalMass",
+                "Value": 1890.0,
+                "OriginalValue": 2160.0,
+                "LessIsGood": 0
+              },
+              {
+                "Label": "EngineOptPerformance",
+                "Value": 145.599991,
+                "OriginalValue": 100.0,
+                "LessIsGood": 0
+              },
+              {
+                "Label": "EngineHeatRate",
+                "Value": 2.288,
+                "OriginalValue": 1.3,
+                "LessIsGood": 1
+              }
+            ]
+          }
+        },
+        {
+          "Slot": "FrameShiftDrive",
+          "Item": "int_hyperdrive_overcharge_size8_class5_overchargebooster_mkii",
+          "On": true,
+          "Priority": 0,
+          "Health": 1.0,
+          "Value": 71991912,
+          "Engineering": {
+            "Engineer": "Elvira Martuuk",
+            "EngineerID": 300160,
+            "BlueprintID": 128673694,
+            "BlueprintName": "FSD_LongRange",
+            "Level": 5,
+            "Quality": 1.0,
+            "ExperimentalEffect": "special_fsd_heavy",
+            "ExperimentalEffect_Localised": "Mass Manager",
+            "Modifiers": [
+              {
+                "Label": "Mass",
+                "Value": 208.0,
+                "OriginalValue": 160.0,
+                "LessIsGood": 1
+              },
+              {
+                "Label": "Integrity",
+                "Value": 147.016006,
+                "OriginalValue": 188.0,
+                "LessIsGood": 0
+              },
+              {
+                "Label": "PowerDraw",
+                "Value": 1.2075,
+                "OriginalValue": 1.05,
+                "LessIsGood": 1
+              },
+              {
+                "Label": "FSDOptimalMass",
+                "Value": 7528.039551,
+                "OriginalValue": 4670.0,
+                "LessIsGood": 0
+              }
+            ]
+          }
+        },
+        {
+          "Slot": "LifeSupport",
+          "Item": "int_lifesupport_size5_class2",
+          "On": true,
+          "Priority": 0,
+          "Health": 1.0,
+          "Value": 69713
+        },
+        {
+          "Slot": "PowerDistributor",
+          "Item": "int_powerdistributor_size5_class2",
+          "On": true,
+          "Priority": 0,
+          "Health": 1.0,
+          "Value": 69713,
+          "Engineering": {
+            "Engineer": "Marco Qwent",
+            "EngineerID": 300200,
+            "BlueprintID": 128673742,
+            "BlueprintName": "PowerDistributor_PriorityEngines",
+            "Level": 3,
+            "Quality": 1.0,
+            "ExperimentalEffect": "special_powerdistributor_fast",
+            "ExperimentalEffect_Localised": "Super Conduits",
+            "Modifiers": [
+              {
+                "Label": "WeaponsCapacity",
+                "Value": 27.081598,
+                "OriginalValue": 31.0,
+                "LessIsGood": 0
+              },
+              {
+                "Label": "WeaponsRecharge",
+                "Value": 3.22816,
+                "OriginalValue": 3.2,
+                "LessIsGood": 0
+              },
+              {
+                "Label": "EnginesCapacity",
+                "Value": 29.567999,
+                "OriginalValue": 22.0,
+                "LessIsGood": 0
+              },
+              {
+                "Label": "EnginesRecharge",
+                "Value": 2.5688,
+                "OriginalValue": 1.9,
+                "LessIsGood": 0
+              },
+              {
+                "Label": "SystemsCapacity",
+                "Value": 19.219198,
+                "OriginalValue": 22.0,
+                "LessIsGood": 0
+              },
+              {
+                "Label": "SystemsRecharge",
+                "Value": 1.79816,
+                "OriginalValue": 1.9,
+                "LessIsGood": 0
+              }
+            ]
+          }
+        },
+        {
+          "Slot": "Radar",
+          "Item": "int_sensors_size8_class2",
+          "On": true,
+          "Priority": 0,
+          "Health": 1.0,
+          "Value": 1530326
+        },
+        {
+          "Slot": "FuelTank",
+          "Item": "int_fueltank_size7_class3",
+          "On": true,
+          "Priority": 1,
+          "Health": 1.0
+        },
+        {
+          "Slot": "Slot01_Size7",
+          "Item": "int_fuelscoop_size7_class5",
+          "On": true,
+          "Priority": 0,
+          "Health": 1.0,
+          "Value": 80011016
+        },
+        {
+          "Slot": "Slot02_Size6",
+          "Item": "int_repairer_size6_class5",
+          "On": false,
+          "Priority": 2,
+          "Health": 1.0,
+          "Value": 13430578
+        },
+        {
+          "Slot": "Slot03_Size6",
+          "Item": "int_repairer_size6_class5",
+          "On": false,
+          "Priority": 2,
+          "Health": 1.0,
+          "Value": 13430578
+        },
+        {
+          "Slot": "Slot04_Size5",
+          "Item": "int_guardianfsdbooster_size5",
+          "On": true,
+          "Priority": 3,
+          "Health": 1.0,
+          "Value": 5688921
+        },
+        {
+          "Slot": "Slot05_Size5",
+          "Item": "int_shieldgenerator_size5_class2",
+          "On": true,
+          "Priority": 3,
+          "Health": 1.0,
+          "Value": 165879
+        },
+        {
+          "Slot": "Slot06_Size5",
+          "Item": "int_fighterbaymk2_size5_class1_free",
+          "On": true,
+          "Priority": 0,
+          "Health": 1.0
+        },
+        {
+          "Slot": "Slot07_Size5",
+          "Item": "int_cargorack_size5_class1",
+          "On": true,
+          "Priority": 1,
+          "Health": 1.0,
+          "Value": 108777
+        },
+        {
+          "Slot": "Slot08_Size4",
+          "Item": "int_corrosionproofcargorack_size4_class1",
+          "On": true,
+          "Priority": 1,
+          "Health": 1.0,
+          "Value": 91970
+        },
+        {
+          "Slot": "Slot09_Size4",
+          "Item": "int_corrosionproofcargorack_size4_class1",
+          "On": true,
+          "Priority": 1,
+          "Health": 1.0,
+          "Value": 82774
+        },
+        {
+          "Slot": "Slot10_Size3",
+          "Item": "int_multidronecontrol_operations_size3_class3",
+          "On": false,
+          "Priority": 0,
+          "Health": 1.0,
+          "Value": 43875
+        },
+        {
+          "Slot": "Slot11_Size2",
+          "Item": "int_buggybay_size2_class2",
+          "On": false,
+          "Priority": 1,
+          "Health": 1.0,
+          "Value": 20429
+        },
+        {
+          "Slot": "Slot12_Size1",
+          "Item": "int_detailedsurfacescanner_tiny",
+          "On": true,
+          "Priority": 0,
+          "Health": 1.0,
+          "Value": 250000
+        },
+        {
+          "Slot": "Slot13_Size1",
+          "Item": "int_supercruiseassist",
+          "On": true,
+          "Priority": 2,
+          "Health": 1.0
+        },
+        {
+          "Slot": "Slot14_Size1",
+          "Item": "int_dockingcomputer_advanced",
+          "On": true,
+          "Priority": 2,
+          "Health": 1.0
+        },
+        {
+          "Slot": "PlanetaryApproachSuite",
+          "Item": "int_planetapproachsuite_advanced",
+          "On": true,
+          "Priority": 1,
+          "Health": 1.0
+        },
+        {
+          "Slot": "Bobble01",
+          "Item": "bobble_trophy_exploration",
+          "On": true,
+          "Priority": 1,
+          "Health": 1.0
+        },
+        {
+          "Slot": "Bobble10",
+          "Item": "bobble_trophy_exploration",
+          "On": true,
+          "Priority": 1,
+          "Health": 1.0
+        },
+        {
+          "Slot": "VesselVoice",
+          "Item": "voicepack_verity",
+          "On": true,
+          "Priority": 1,
+          "Health": 1.0
+        },
+        {
+          "Slot": "ShipCockpit",
+          "Item": "explorer_nx_cockpit",
+          "On": true,
+          "Priority": 1,
+          "Health": 1.0
+        },
+        {
+          "Slot": "CargoHatch",
+          "Item": "modularcargobaydoor",
+          "On": true,
+          "Priority": 2,
+          "Health": 1.0
+        }
+      ]
+    },
+    {
+      "timestamp": "2026-08-23T16:07:08Z",
+      "event": "StartJump",
+      "JumpType": "Hyperspace",
+      "Taxi": false,
+      "StarSystem": "Lux Caeli",
+      "SystemAddress": 17935010931282,
+      "StarClass": "G"
+    },
+    {
+      "timestamp": "2026-08-23T16:07:26Z",
+      "event": "FSDJump",
+      "Taxi": false,
+      "Multicrew": false,
+      "StarSystem": "Lux Caeli",
+      "SystemAddress": 17935010931282,
+      "StarPos": [
+        -9489.96875,
+        -911.71875,
+        19818.03125
+      ],
+      "SystemAllegiance": "Independent",
+      "SystemEconomy": "$economy_Extraction;",
+      "SystemEconomy_Localised": "Extraction",
+      "SystemSecondEconomy": "$economy_None;",
+      "SystemSecondEconomy_Localised": "None",
+      "SystemGovernment": "$government_Democracy;",
+      "SystemGovernment_Localised": "Democracy",
+      "SystemSecurity": "$SYSTEM_SECURITY_medium;",
+      "SystemSecurity_Localised": "Medium Security",
+      "Population": 1642600,
+      "Body": "Lux Caeli",
+      "BodyID": 0,
+      "BodyType": "Star",
+      "JumpDist": 19.515,
+      "FuelUsed": 0.222115,
+      "FuelLevel": 117.517891,
+      "Factions": [
+        {
+          "Name": "Ukraine Colonist Alliance",
+          "FactionState": "War",
+          "Government": "Corporate",
+          "Influence": 0.166,
+          "Allegiance": "Independent",
+          "Happiness": "$Faction_HappinessBand2;",
+          "Happiness_Localised": "Happy",
+          "MyReputation": 0.0,
+          "ActiveStates": [
+            {
+              "State": "Expansion"
+            },
+            {
+              "State": "War"
+            }
+          ]
+        },
+        {
+          "Name": "ICU Colonial Corps",
+          "FactionState": "War",
+          "Government": "Communism",
+          "Influence": 0.166,
+          "Allegiance": "Independent",
+          "Happiness": "$Faction_HappinessBand2;",
+          "Happiness_Localised": "Happy",
+          "MyReputation": 30.0,
+          "RecoveringStates": [
+            {
+              "State": "PirateAttack",
+              "Trend": 0
+            }
+          ],
+          "ActiveStates": [
+            {
+              "State": "War"
+            }
+          ]
+        },
+        {
+          "Name": "Infinity's End Deep Space Company",
+          "FactionState": "Boom",
+          "Government": "Democracy",
+          "Influence": 0.402,
+          "Allegiance": "Independent",
+          "Happiness": "$Faction_HappinessBand2;",
+          "Happiness_Localised": "Happy",
+          "MyReputation": 100.0,
+          "ActiveStates": [
+            {
+              "State": "Boom"
+            }
+          ]
+        },
+        {
+          "Name": "Likedeeler of Colonia",
+          "FactionState": "Boom",
+          "Government": "Democracy",
+          "Influence": 0.266,
+          "Allegiance": "Independent",
+          "Happiness": "$Faction_HappinessBand2;",
+          "Happiness_Localised": "Happy",
+          "MyReputation": 57.0,
+          "ActiveStates": [
+            {
+              "State": "Boom"
+            }
+          ]
+        }
+      ],
+      "SystemFaction": {
+        "Name": "Infinity's End Deep Space Company",
+        "FactionState": "Boom"
+      },
+      "Conflicts": [
+        {
+          "WarType": "war",
+          "Status": "active",
+          "Faction1": {
+            "Name": "Ukraine Colonist Alliance",
+            "Stake": "Simelane Excavation Complex",
+            "WonDays": 0
+          },
+          "Faction2": {
+            "Name": "ICU Colonial Corps",
+            "Stake": "Hammond Metallurgic Exchange",
+            "WonDays": 0
+          }
+        }
+      ]
+    },
+    {
+      "timestamp": "2026-08-23T16:07:33Z",
+      "event": "FSSDiscoveryScan",
+      "Progress": 1.0,
+      "BodyCount": 23,
+      "NonBodyCount": 24,
+      "SystemName": "Lux Caeli",
+      "SystemAddress": 17935010931282
+    },
+    {
+      "timestamp": "2026-08-23T16:08:17Z",
+      "event": "SAASignalsFound",
+      "BodyName": "Lux Caeli 3 a",
+      "SystemAddress": 17935010931282,
+      "BodyID": 18,
+      "Signals": [
+        {
+          "Type": "$SAA_SignalType_Human;",
+          "Type_Localised": "Human",
+          "Count": 5
+        }
+      ],
+      "Genuses": []
+    },
+    {
+      "timestamp": "2026-08-23T16:08:18Z",
+      "event": "SAASignalsFound",
+      "BodyName": "Lux Caeli 3 b",
+      "SystemAddress": 17935010931282,
+      "BodyID": 19,
+      "Signals": [
+        {
+          "Type": "$SAA_SignalType_Biological;",
+          "Type_Localised": "Biological",
+          "Count": 4
+        },
+        {
+          "Type": "$SAA_SignalType_Human;",
+          "Type_Localised": "Human",
+          "Count": 2
+        }
+      ],
+      "Genuses": [
+        {
+          "Genus": "$Codex_Ent_Bacterial_Genus_Name;",
+          "Genus_Localised": "Bacterium"
+        },
+        {
+          "Genus": "$Codex_Ent_Recepta_Genus_Name;",
+          "Genus_Localised": "Recepta"
+        },
+        {
+          "Genus": "$Codex_Ent_Shrubs_Genus_Name;",
+          "Genus_Localised": "Frutexa"
+        },
+        {
+          "Genus": "$Codex_Ent_Tussocks_Genus_Name;",
+          "Genus_Localised": "Tussock"
+        }
+      ]
+    },
+    {
+      "timestamp": "2026-08-23T16:09:00Z",
+      "event": "ApproachBody",
+      "StarSystem": "Lux Caeli",
+      "SystemAddress": 17935010931282,
+      "Body": "Lux Caeli 3 a",
+      "BodyID": 18
+    },
+    {
+      "timestamp": "2026-08-23T16:09:23Z",
+      "event": "SupercruiseExit",
+      "Taxi": false,
+      "Multicrew": false,
+      "StarSystem": "Lux Caeli",
+      "SystemAddress": 17935010931282,
+      "Body": "Lux Caeli 3 a",
+      "BodyID": 18,
+      "BodyType": "Planet"
+    }
+  ],
+  "sell_cartography": [
+    {
+      "timestamp": "2026-08-23T16:24:33Z",
+      "event": "MultiSellExplorationData",
+      "Discovered": [
+        {
+          "SystemName": "Eol Prou YI-W b17-57",
+          "NumBodies": 24
+        }
+      ],
+      "BaseValue": 212292,
+      "Bonus": 0,
+      "TotalEarnings": 191063
+    }
+  ],
+  "sell_organic": [
+    {
+      "timestamp": "2026-08-23T16:29:16Z",
+      "event": "SellOrganicData",
+      "MarketID": 128823700,
+      "BioData": [
+        {
+          "Genus": "$Codex_Ent_Stratum_Genus_Name;",
+          "Genus_Localised": "Stratum",
+          "Species": "$Codex_Ent_Stratum_07_Name;",
+          "Species_Localised": "Stratum Tectonicas",
+          "Variant": "$Codex_Ent_Stratum_07_M_Name;",
+          "Variant_Localised": "Stratum Tectonicas - Green",
+          "Value": 19010800,
+          "Bonus": 0
+        },
+        {
+          "Genus": "$Codex_Ent_Stratum_Genus_Name;",
+          "Genus_Localised": "Stratum",
+          "Species": "$Codex_Ent_Stratum_07_Name;",
+          "Species_Localised": "Stratum Tectonicas",
+          "Variant": "$Codex_Ent_Stratum_07_L_Name;",
+          "Variant_Localised": "Stratum Tectonicas - Turquoise",
+          "Value": 19010800,
+          "Bonus": 0
+        },
+        {
+          "Genus": "$Codex_Ent_Stratum_Genus_Name;",
+          "Genus_Localised": "Stratum",
+          "Species": "$Codex_Ent_Stratum_07_Name;",
+          "Species_Localised": "Stratum Tectonicas",
+          "Variant": "$Codex_Ent_Stratum_07_L_Name;",
+          "Variant_Localised": "Stratum Tectonicas - Turquoise",
+          "Value": 19010800,
+          "Bonus": 0
+        }
+      ]
+    }
+  ]
+}

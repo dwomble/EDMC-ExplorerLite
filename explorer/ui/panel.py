@@ -127,7 +127,7 @@ def _body_designator(system_name:str, body_name:str) -> str:
     prefix:str = system_name + " "
     if body_name.startswith(prefix):
         designator:str = body_name[len(prefix):]
-        return designator if designator else body_name
+        return designator or body_name
 
     return body_name
 
@@ -144,8 +144,9 @@ class ExplorerPanel:
         self.frame:th.Frame = th.Frame(parent)
         self.frame.columnconfigure(0, weight=1)
 
+        # CFG_PANEL_ENABLED seeds Collapsible's own saved state and stays in step for the overlays that read it
         self.view:th.Collapsible = th.Collapsible(self.frame, hidden=not config.get_bool(CFG_PANEL_ENABLED, default=True),
-                                                  on_toggle=self._on_toggle)
+                                                  movable=True, on_toggle=self._on_toggle)
         self.view.expanded.columnconfigure(0, weight=1)
         self.view.collapsed.columnconfigure(0, weight=1)
 
@@ -153,9 +154,13 @@ class ExplorerPanel:
         self._icon:tk.PhotoImage|None = None
         try: self._icon = tk.PhotoImage(master=parent, file=ICON_PATH)
         except tk.TclError: pass # missing/unreadable icon just leaves the plain title
-        self.title_label, self.cart_value_label, self.exo_value_label, self.history_button, self.hide_button = \
-            self._build_header(self.view.expanded, True)
-        _, self._cart_collapsed, self._exo_collapsed, _, self.show_button = self._build_header(self.view.collapsed, False)
+        self.title_label, self.cart_value_label, self.exo_value_label, self.history_button, top = \
+            self._build_header(self.view.expanded)
+        _, self._cart_collapsed, self._exo_collapsed, _, bottom = self._build_header(self.view.collapsed)
+        self.hide_button:th.Button = self.view.button("hide", in_=top, row=0, column=4, sticky=tk.E)
+        self.view.button("up", in_=bottom, row=0, column=4, sticky=tk.E)
+        self.view.button("down", in_=bottom, row=0, column=5, sticky=tk.E)
+        self.show_button:th.Button = self.view.button("show", in_=bottom, row=0, column=6, sticky=tk.E)
 
         self.scroll:th.ScrollableFrame = th.ScrollableFrame(self.view.expanded, maxheight=_visible_lines_px())
         self.scroll.grid(row=2, column=0, sticky=tk.EW) # row 1 is the notice bar, shown/hidden lazily
@@ -190,7 +195,7 @@ class ExplorerPanel:
         if self.on_history_open:
             self.on_history_open()
 
-    def _build_header(self, master:th.Frame, expanded:bool) -> tuple[th.Label, th.Label, th.Label, th.Button, th.Button]:
+    def _build_header(self, master:th.Frame) -> tuple[th.Label, th.Label, th.Label, th.Button, th.Frame]:
         """ One header row; grid, not pack -- th.Base's pack() renders light/dark widget pairs twice """
         header:th.Frame = th.Frame(master)
         header.grid(row=0, column=0, sticky=tk.EW)
@@ -216,9 +221,7 @@ class ExplorerPanel:
         history.grid(row=0, column=3, sticky=tk.E)
         th.Tooltip(history, "Open history")
 
-        toggle:th.Button = self.view.hide_button(header, "Hide panel") if expanded else self.view.show_button(header, "Show panel")
-        toggle.grid(row=0, column=4, sticky=tk.E)
-        return title, cart, exo, history, toggle
+        return title, cart, exo, history, header
 
     def _on_toggle(self, hidden:bool) -> None:
         """ Persist the state; catch up on whatever changed while hidden """
@@ -416,6 +419,9 @@ class ExplorerPanel:
             prefix:str = "" if body["has_biological_signals"] else "?"
             signal_count:int|None = body["biological_signal_count"] # ground truth count, vs. the guessed kinds below
             collapsed:str = self._collapse_prediction_names(predictions, joiner="+")
+            if len(collapsed) > MAX_FULL_NAME_CHARS: # a run of genus codes reads as "all present"; a bare count doesn't
+                genera:int = len({g for p in predictions for g in p["genera"]})
+                collapsed = f"{genera} possibilities"
             sep:str = "of" if collapsed.endswith("possibilities") else "–" # "N of M possibilities" reads clearer than "N – M"
             count_prefix:str = f"{signal_count} {sep} " if signal_count else ""
             species_desc = f"{count_prefix}{prefix}{collapsed}"
@@ -531,7 +537,7 @@ class ExplorerPanel:
 
         for genus, slot in genus_slots.items():
             if genus not in claimed:
-                units.append({**slot, "chain_tier": None})
+                units.append(slot | {"chain_tier": None})
 
         by_confidence:list[dict] = sorted(units, key=lambda u: -u["confidence"])
         groups:list[list[dict]] = []
@@ -550,7 +556,7 @@ class ExplorerPanel:
 
         groups.sort(key=group_key)
 
-        limit:int = signal_count if signal_count else MAX_PREDICTED_SHOWN
+        limit:int = signal_count or MAX_PREDICTED_SHOWN
         slots:list[dict] = []
         remaining:int = limit
         for group in groups:
@@ -611,7 +617,7 @@ class ExplorerPanel:
             value:int = exobiology.estimate_confirmed_value(row["genus"], row["species"]) or 0
             return (value, value)
         value_range:tuple[int, int]|None = exobiology.estimate_genus_range(row["genus"])
-        return value_range if value_range else (0, 0)
+        return value_range or (0, 0)
 
     def _predicted_genus_row(self, slot:dict, confirmed_signal:bool, was_footfalled:bool) -> tuple[str, str, str]:
         """ Full (bonus-included) value. """
@@ -636,12 +642,12 @@ class ExplorerPanel:
             return (min(values), max(values))
         value_range:tuple[int, int]|None = exobiology.estimate_genus_range(genus)
 
-        return value_range if value_range else (0, 0)
+        return value_range or (0, 0)
 
     def _join_species_names(self, genus:str, names:list[str]) -> str:
         """ first name kept in full, genus prefix stripped from the rest, then joined with slashes. """
         prefix:str = f"{genus} "
-        joined:list[str] = [names[0]] + [n[len(prefix):] if n.startswith(prefix) else n for n in names[1:]]
+        joined:list[str] = [names[0]] + [n.removeprefix(prefix) for n in names[1:]]
 
         return str_truncate("/".join(joined), MAX_SPECIES_LABEL_CHARS)
 

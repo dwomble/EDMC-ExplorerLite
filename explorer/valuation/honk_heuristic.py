@@ -7,7 +7,7 @@ DWARF_BODY_COUNT:int = 6
 OTHER_BODY_COUNT:int = 3
 
 def _star_tier(star_type:str) -> str:
-    star_type = (star_type or "").upper()
+    star_type = star_type.upper()
     if star_type in ALWAYS_WORTH_IT_TYPES:
         return "always"
     if star_type in DWARF_TYPES:

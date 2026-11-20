@@ -3,6 +3,8 @@ fields alone, pre-DSS. Categorical fields are hard gates; temperature/gravity/pr
 confidence toward a ruleset's edge rather than hard-failing. Confidence is the best (max) score
 across a genus/species's matching rulesets. predict_species() returns [] for a genus outside
 SPECIES_RULESETS -- callers fall back to predict_genera()'s genus-only guess. """
+from operator import itemgetter
+
 from explorer.valuation import regions
 from explorer.valuation.genus_conditions import GENUS_RULESETS, Ruleset
 from explorer.valuation.species_conditions import SPECIES_RULESETS
@@ -103,7 +105,7 @@ def predict_genera(entry:dict, nearest_star_type:str|None, region:str|None = Non
         if best is not None:
             results.append((genus, best))
 
-    results.sort(key=lambda pair: pair[1], reverse=True)
+    results.sort(key=itemgetter(1), reverse=True)
     return results
 
 def predict_species(genus:str, entry:dict, nearest_star_type:str|None, region:str|None = None, has_biological_signals:int|None = None) -> list[tuple[str, float]]:
@@ -124,5 +126,5 @@ def predict_species(genus:str, entry:dict, nearest_star_type:str|None, region:st
         if best is not None:
             results.append((species, best))
 
-    results.sort(key=lambda pair: pair[1], reverse=True)
+    results.sort(key=itemgetter(1), reverse=True)
     return results
