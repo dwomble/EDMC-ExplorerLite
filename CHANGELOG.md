@@ -4,7 +4,7 @@
 
 ### New Features
 
-* Added plugin reordering from th library
+* Added plugin reordering from `th` library
 
 ### Changes
 
@@ -46,7 +46,7 @@
 
 ### New Features
 
-* Radar overlay uses a proper circle which looks so so much better (thanks to SweetJonnySauce)
+* Radar overlay uses a proper circle which looks so so much better (thanks to [SweetJonnySauce](https://github.com/SweetJonnySauce))
 * Added notices feature from PluginLib
 
 ### Changes
