@@ -14,6 +14,7 @@ class ExplorerState:
 
     system_address:int|None = None
     system_name:str = ""
+    region_name:str|None = None # name of the current galactic region
     system_id:int|None = None # DB PK for the current system, refreshed on system-change events
     nearest_star_type:str|None = None # most recently Scan'd star this system -- a proxy for genus_prediction.py
 

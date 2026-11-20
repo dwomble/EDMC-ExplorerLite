@@ -600,7 +600,7 @@ class TestPanelStates:
         body = next(b for b in flagged if b["body_name"] == "Speciesia A 1")
         best = Context.panel._best_predictions(body["id"])
         assert len(best) == 1, best # only 1 real signal -- everything tied collapses to 1 slot
-        assert best[0]["name"] == "8 possibilities", best
+        assert best[0]["name"] == "7 possibilities", best
 
     def test_predicted_value_does_not_double_count_same_genus_species_guesses(self, plugin:TestHarness) -> None:
         """

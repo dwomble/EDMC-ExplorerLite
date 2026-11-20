@@ -11,7 +11,9 @@ from explorer.db.store import ExplorerStore
 from explorer.state import ExplorerState
 from explorer.journal import handlers_context, handlers_discovery, handlers_bodies, handlers_exobiology, handlers_sales
 
-SYSTEM_ENTRY_EVENTS:frozenset[str] = frozenset({"Location", "FSDJump", "CarrierJump"})
+# StartUp isn't a real E:D journal event, it's generated when EDMC starts while
+# the game is already running and the player is loaded in
+SYSTEM_ENTRY_EVENTS:frozenset[str] = frozenset({"Location", "FSDJump", "CarrierJump", "StartUp"})
 
 EVENT_HANDLERS:dict[str, Callable] = {
     "LoadGame": handlers_context.on_load_game,

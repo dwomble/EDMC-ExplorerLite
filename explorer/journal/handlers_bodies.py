@@ -11,6 +11,7 @@ from explorer.db.store import ExplorerStore
 from explorer.state import ExplorerState
 from explorer.journal.handlers_context import persist
 from explorer.util import now_iso
+from explorer.utils.debug import Debug
 from explorer.valuation import cartography, exobiology, exobiology_data, genus_prediction
 from explorer.constants import (
     CFG_SCAN_VALUE_THRESHOLD, DEFAULT_SCAN_VALUE_THRESHOLD,
@@ -127,18 +128,19 @@ def on_scan(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict:
         existing:sqlite3.Row|None = store.get_body(body_pk)
         has_bio:int|None = existing["has_biological_signals"] if existing else None
         store.replace_genus_predictions(
-            body_pk, _worthwhile_predictions(entry, state.nearest_star_type, bypass_threshold=has_bio == 1, has_bio=has_bio)
+            body_pk, _worthwhile_predictions(entry, state.nearest_star_type, state.region_name, bypass_threshold=has_bio == 1, has_bio=has_bio)
         )
 
     return {"panel": True, "overlay": "radar"}
 
-def _worthwhile_predictions(entry:dict, nearest_star_type:str|None, bypass_threshold:bool = False, has_bio:int|None = None) -> list:
+def _worthwhile_predictions(entry:dict, nearest_star_type:str|None, region:str|None,
+                            bypass_threshold:bool = False, has_bio:int|None = None) -> list:
     """ Predicted (genus, species, confidence) rows whose value clears the exobio threshold """
     threshold:int = _exobio_threshold()
     was_footfalled:bool = bool(entry.get("WasFootfalled"))
     worthwhile:list[tuple[str, str|None, float]] = []
-    for genus, confidence in genus_prediction.predict_genera(entry, nearest_star_type, has_bio):
-        candidates:list[tuple[str, float]] = genus_prediction.predict_species(genus, entry, nearest_star_type, has_bio)
+    for genus, confidence in genus_prediction.predict_genera(entry, nearest_star_type, region, has_bio):
+        candidates:list[tuple[str, float]] = genus_prediction.predict_species(genus, entry, nearest_star_type, region, has_bio)
         if not candidates:
             range:tuple[int, int]|None = exobiology.estimate_genus_range(genus)
             max:int|None = exobiology.with_first_logged_bonus(range[1], was_footfalled) if range else None
@@ -152,6 +154,7 @@ def _worthwhile_predictions(entry:dict, nearest_star_type:str|None, bypass_thres
             if bypass_threshold or exobiology.exceeds_threshold(value, threshold):
                 worthwhile.append((genus, species, confidence))
 
+    Debug.logger.debug(f"Predicted bios for {entry.get('BodyName')} ({nearest_star_type}, {region}, {has_bio=}): {worthwhile}")
     return worthwhile
 
 def on_saa_scan_complete(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict:

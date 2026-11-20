@@ -42,8 +42,7 @@
       "max_gravity_g": 0.276,
       "min_temp_k": 170.0,
       "max_temp_k": 177.0,
-      "max_pressure_atm": 0.0135,
-      "unmodeled": "regions"
+      "max_pressure_atm": 0.0135
     },
     {
       "atmosphere": [
@@ -57,8 +56,7 @@
       "max_gravity_g": 0.276,
       "min_temp_k": 152.0,
       "max_temp_k": 177.0,
-      "max_pressure_atm": 0.0135,
-      "unmodeled": "regions"
+      "max_pressure_atm": 0.0135
     },
     {
       "atmosphere": [
@@ -94,7 +92,7 @@
         "rocky",
         "silicate"
       ],
-      "unmodeled": "bodies, regions"
+      "unmodeled": "bodies"
     }
   ],
   "Anemone": [
@@ -114,8 +112,7 @@
         "rocky",
         "silicate",
         "water"
-      ],
-      "unmodeled": "regions"
+      ]
     },
     {
       "body_types": [
@@ -133,8 +130,7 @@
         "metallic",
         "rocky",
         "silicate"
-      ],
-      "unmodeled": "regions"
+      ]
     },
     {
       "body_types": [
@@ -148,8 +144,7 @@
       "max_gravity_g": 2.52,
       "min_temp_k": 65.0,
       "max_temp_k": 800.0,
-      "volcanism": "none",
-      "unmodeled": "regions"
+      "volcanism": "none"
     },
     {
       "body_types": [
@@ -165,8 +160,7 @@
       "max_temp_k": 800.0,
       "volcanism": [
         "carbon dioxide geysers"
-      ],
-      "unmodeled": "regions"
+      ]
     },
     {
       "body_types": [
@@ -183,8 +177,7 @@
         "metallic",
         "rocky",
         "silicate"
-      ],
-      "unmodeled": "regions"
+      ]
     },
     {
       "body_types": [
@@ -237,8 +230,7 @@
         "B"
       ],
       "min_temp_k": 220.0,
-      "volcanism": "any",
-      "unmodeled": "regions"
+      "volcanism": "any"
     }
   ],
   "Bacterium": [
@@ -1054,7 +1046,7 @@
   "Bark Mound": [
     {
       "volcanism": "any",
-      "unmodeled": "nebula, regions"
+      "unmodeled": "nebula"
     }
   ],
   "Brain Tree": [
@@ -1170,8 +1162,7 @@
       "min_temp_k": 180.0,
       "max_temp_k": 197.0,
       "min_pressure_atm": 0.025,
-      "volcanism": "none",
-      "unmodeled": "regions"
+      "volcanism": "none"
     },
     {
       "atmosphere": [
@@ -1185,8 +1176,7 @@
       "max_gravity_g": 0.276,
       "min_temp_k": 160.0,
       "max_temp_k": 177.0,
-      "max_pressure_atm": 0.0135,
-      "unmodeled": "regions"
+      "max_pressure_atm": 0.0135
     },
     {
       "atmosphere": [
@@ -1241,8 +1231,7 @@
       "min_temp_k": 180.0,
       "max_temp_k": 197.0,
       "min_pressure_atm": 0.025,
-      "volcanism": "none",
-      "unmodeled": "regions"
+      "volcanism": "none"
     },
     {
       "atmosphere": [
@@ -1256,8 +1245,7 @@
       "max_gravity_g": 0.276,
       "min_temp_k": 160.0,
       "max_temp_k": 177.0,
-      "max_pressure_atm": 0.0135,
-      "unmodeled": "regions"
+      "max_pressure_atm": 0.0135
     }
   ],
   "Clypeus": [
@@ -1509,7 +1497,7 @@
       ],
       "max_gravity_g": 2.0,
       "max_temp_k": 273.0,
-      "unmodeled": "bodies, distance, regions"
+      "unmodeled": "bodies, distance"
     }
   ],
   "Electricae": [
@@ -1680,8 +1668,7 @@
       "max_gravity_g": 0.276,
       "min_temp_k": 152.0,
       "max_temp_k": 177.0,
-      "max_pressure_atm": 0.0135,
-      "unmodeled": "regions"
+      "max_pressure_atm": 0.0135
     },
     {
       "atmosphere": [
@@ -1695,8 +1682,7 @@
       "min_temp_k": 146.0,
       "max_temp_k": 197.0,
       "min_pressure_atm": 0.0029,
-      "volcanism": "none",
-      "unmodeled": "regions"
+      "volcanism": "none"
     },
     {
       "atmosphere": [
@@ -1762,8 +1748,7 @@
       "max_gravity_g": 0.276,
       "min_temp_k": 152.0,
       "max_temp_k": 177.0,
-      "max_pressure_atm": 0.0135,
-      "unmodeled": "regions"
+      "max_pressure_atm": 0.0135
     },
     {
       "atmosphere": [
@@ -1777,8 +1762,7 @@
       "min_temp_k": 146.0,
       "max_temp_k": 197.0,
       "min_pressure_atm": 0.003,
-      "volcanism": "none",
-      "unmodeled": "regions"
+      "volcanism": "none"
     },
     {
       "atmosphere": [
@@ -2334,8 +2318,7 @@
       "max_temp_k": 177.0,
       "volcanism": [
         "silicate"
-      ],
-      "unmodeled": "regions"
+      ]
     },
     {
       "atmosphere": [
@@ -2351,8 +2334,7 @@
       "volcanism": [
         "rocky",
         "silicate"
-      ],
-      "unmodeled": "regions"
+      ]
     },
     {
       "atmosphere": [
@@ -2364,8 +2346,7 @@
       "min_gravity_g": 0.3,
       "max_gravity_g": 0.5,
       "min_temp_k": 60.0,
-      "max_temp_k": 90.0,
-      "unmodeled": "regions"
+      "max_temp_k": 90.0
     },
     {
       "atmosphere": [
@@ -2379,8 +2360,7 @@
       "max_gravity_g": 0.27,
       "min_temp_k": 180.0,
       "min_pressure_atm": 0.025,
-      "volcanism": "none",
-      "unmodeled": "regions"
+      "volcanism": "none"
     },
     {
       "atmosphere": [
@@ -2396,8 +2376,7 @@
       "min_pressure_atm": 0.012,
       "volcanism": [
         "major silicate"
-      ],
-      "unmodeled": "regions"
+      ]
     },
     {
       "atmosphere": [
@@ -2409,8 +2388,7 @@
       ],
       "min_gravity_g": 0.039,
       "max_gravity_g": 0.064,
-      "volcanism": "none",
-      "unmodeled": "regions"
+      "volcanism": "none"
     },
     {
       "atmosphere": [
@@ -2457,8 +2435,7 @@
       "max_pressure_atm": 0.0135,
       "volcanism": [
         "major silicate"
-      ],
-      "unmodeled": "regions"
+      ]
     },
     {
       "atmosphere": [
@@ -2475,8 +2452,7 @@
       "max_pressure_atm": 0.0135,
       "volcanism": [
         "major silicate"
-      ],
-      "unmodeled": "regions"
+      ]
     },
     {
       "atmosphere": [
@@ -2492,8 +2468,7 @@
       "max_pressure_atm": 0.0135,
       "volcanism": [
         "major rocky"
-      ],
-      "unmodeled": "regions"
+      ]
     },
     {
       "atmosphere": [
@@ -2507,8 +2482,7 @@
       "max_gravity_g": 0.276,
       "min_temp_k": 180.0,
       "min_pressure_atm": 0.025,
-      "volcanism": "none",
-      "unmodeled": "regions"
+      "volcanism": "none"
     },
     {
       "atmosphere": [
@@ -2526,8 +2500,7 @@
       "volcanism": [
         "major metallic",
         "major silicate"
-      ],
-      "unmodeled": "regions"
+      ]
     },
     {
       "atmosphere": [
@@ -2539,8 +2512,7 @@
       ],
       "min_gravity_g": 0.039,
       "max_gravity_g": 0.063,
-      "volcanism": "none",
-      "unmodeled": "regions"
+      "volcanism": "none"
     }
   ],
   "Osseus": [
@@ -2556,8 +2528,7 @@
       "max_gravity_g": 0.276,
       "min_temp_k": 180.0,
       "min_pressure_atm": 0.025,
-      "volcanism": "none",
-      "unmodeled": "regions"
+      "volcanism": "none"
     },
     {
       "atmosphere": [
@@ -2726,8 +2697,7 @@
       "max_gravity_g": 0.276,
       "min_temp_k": 180.0,
       "min_pressure_atm": 0.025,
-      "volcanism": "none",
-      "unmodeled": "regions"
+      "volcanism": "none"
     },
     {
       "atmosphere": [
@@ -2741,8 +2711,7 @@
       "max_gravity_g": 0.276,
       "min_temp_k": 191.0,
       "min_pressure_atm": 0.057,
-      "volcanism": "none",
-      "unmodeled": "regions"
+      "volcanism": "none"
     }
   ],
   "Recepta": [
@@ -2942,8 +2911,7 @@
       "volcanism": [
         "major rocky magma",
         "major silicate vapour"
-      ],
-      "unmodeled": "regions"
+      ]
     },
     {
       "body_types": [
@@ -2976,8 +2944,7 @@
       "max_temp_k": 500.0,
       "volcanism": [
         "major silicate vapour"
-      ],
-      "unmodeled": "regions"
+      ]
     },
     {
       "body_types": [
@@ -3055,8 +3022,7 @@
       "min_temp_k": 165.0,
       "max_temp_k": 190.0,
       "min_pressure_atm": 0.0035,
-      "volcanism": "none",
-      "unmodeled": "regions"
+      "volcanism": "none"
     },
     {
       "atmosphere": [
@@ -3068,8 +3034,7 @@
       "min_gravity_g": 0.27,
       "max_gravity_g": 0.4,
       "min_temp_k": 165.0,
-      "max_temp_k": 190.0,
-      "unmodeled": "regions"
+      "max_temp_k": 190.0
     },
     {
       "atmosphere": [
@@ -3160,8 +3125,7 @@
       "max_gravity_g": 0.34,
       "min_temp_k": 165.0,
       "max_temp_k": 177.0,
-      "max_pressure_atm": 0.0135,
-      "unmodeled": "regions"
+      "max_pressure_atm": 0.0135
     },
     {
       "atmosphere": [
@@ -3187,8 +3151,7 @@
       "min_temp_k": 165.0,
       "max_temp_k": 190.0,
       "min_pressure_atm": 0.05,
-      "volcanism": "none",
-      "unmodeled": "regions"
+      "volcanism": "none"
     },
     {
       "atmosphere": [
@@ -3200,8 +3163,7 @@
       "min_gravity_g": 0.27,
       "max_gravity_g": 0.4,
       "min_temp_k": 165.0,
-      "max_temp_k": 190.0,
-      "unmodeled": "regions"
+      "max_temp_k": 190.0
     },
     {
       "atmosphere": [
@@ -3214,8 +3176,7 @@
       "max_gravity_g": 0.6,
       "min_temp_k": 191.0,
       "max_temp_k": 371.0,
-      "volcanism": "none",
-      "unmodeled": "regions"
+      "volcanism": "none"
     },
     {
       "atmosphere": [
@@ -3229,8 +3190,7 @@
       "min_temp_k": 210.0,
       "max_temp_k": 246.0,
       "min_pressure_atm": 0.01,
-      "volcanism": "none",
-      "unmodeled": "regions"
+      "volcanism": "none"
     },
     {
       "atmosphere": [
@@ -3243,8 +3203,7 @@
       "max_gravity_g": 0.6,
       "min_temp_k": 200.0,
       "max_temp_k": 250.0,
-      "min_pressure_atm": 0.01,
-      "unmodeled": "regions"
+      "min_pressure_atm": 0.01
     },
     {
       "atmosphere": [
@@ -3256,8 +3215,7 @@
       "min_gravity_g": 0.26,
       "max_gravity_g": 0.55,
       "min_temp_k": 191.0,
-      "max_temp_k": 373.0,
-      "unmodeled": "regions"
+      "max_temp_k": 373.0
     },
     {
       "atmosphere": [
@@ -3356,8 +3314,7 @@
       "min_temp_k": 191.0,
       "max_temp_k": 365.0,
       "min_pressure_atm": 0.001,
-      "volcanism": "none",
-      "unmodeled": "regions"
+      "volcanism": "none"
     },
     {
       "atmosphere": [
@@ -3371,8 +3328,7 @@
       "min_temp_k": 200.0,
       "max_temp_k": 250.0,
       "min_pressure_atm": 0.01,
-      "volcanism": "none",
-      "unmodeled": "regions"
+      "volcanism": "none"
     },
     {
       "atmosphere": [
@@ -3384,8 +3340,7 @@
       "min_gravity_g": 0.29,
       "max_gravity_g": 0.52,
       "min_temp_k": 191.0,
-      "max_temp_k": 369.0,
-      "unmodeled": "regions"
+      "max_temp_k": 369.0
     }
   ],
   "Tubus": [
@@ -3401,8 +3356,7 @@
       "min_temp_k": 160.0,
       "max_temp_k": 197.0,
       "min_pressure_atm": 0.003,
-      "volcanism": "none",
-      "unmodeled": "regions"
+      "volcanism": "none"
     },
     {
       "atmosphere": [
@@ -3442,8 +3396,7 @@
       "min_temp_k": 160.0,
       "max_temp_k": 197.0,
       "min_pressure_atm": 0.003,
-      "volcanism": "none",
-      "unmodeled": "regions"
+      "volcanism": "none"
     },
     {
       "atmosphere": [
@@ -3470,8 +3423,7 @@
       "min_temp_k": 160.0,
       "max_temp_k": 197.0,
       "min_pressure_atm": 0.003,
-      "volcanism": "none",
-      "unmodeled": "regions"
+      "volcanism": "none"
     }
   ],
   "Tussock": [
@@ -3488,8 +3440,7 @@
       "min_temp_k": 146.0,
       "max_temp_k": 154.0,
       "min_pressure_atm": 0.00289,
-      "volcanism": "none",
-      "unmodeled": "regions"
+      "volcanism": "none"
     },
     {
       "atmosphere": [
@@ -3504,8 +3455,7 @@
       "min_temp_k": 155.0,
       "max_temp_k": 160.0,
       "min_pressure_atm": 0.00289,
-      "volcanism": "none",
-      "unmodeled": "regions"
+      "volcanism": "none"
     },
     {
       "atmosphere": [
@@ -3520,8 +3470,7 @@
       "min_temp_k": 161.0,
       "max_temp_k": 170.0,
       "min_pressure_atm": 0.00289,
-      "volcanism": "none",
-      "unmodeled": "regions"
+      "volcanism": "none"
     },
     {
       "atmosphere": [
@@ -3535,8 +3484,7 @@
       "max_gravity_g": 0.276,
       "min_temp_k": 152.0,
       "max_temp_k": 177.0,
-      "max_pressure_atm": 0.0135,
-      "unmodeled": "regions"
+      "max_pressure_atm": 0.0135
     },
     {
       "atmosphere": [
@@ -3550,8 +3498,7 @@
       "max_gravity_g": 0.276,
       "min_temp_k": 152.0,
       "max_temp_k": 177.0,
-      "max_pressure_atm": 0.0135,
-      "unmodeled": "regions"
+      "max_pressure_atm": 0.0135
     },
     {
       "atmosphere": [
@@ -3566,8 +3513,7 @@
       "min_temp_k": 147.0,
       "max_temp_k": 197.0,
       "min_pressure_atm": 0.00289,
-      "volcanism": "none",
-      "unmodeled": "regions"
+      "volcanism": "none"
     },
     {
       "atmosphere": [
@@ -3583,8 +3529,7 @@
       "max_temp_k": 174.0,
       "min_pressure_atm": 0.01,
       "max_pressure_atm": 0.071,
-      "volcanism": "none",
-      "unmodeled": "regions"
+      "volcanism": "none"
     },
     {
       "atmosphere": [
@@ -3599,8 +3544,7 @@
       "min_temp_k": 175.0,
       "max_temp_k": 180.0,
       "min_pressure_atm": 0.016,
-      "volcanism": "none",
-      "unmodeled": "regions"
+      "volcanism": "none"
     },
     {
       "atmosphere": [
@@ -3615,8 +3559,7 @@
       "min_temp_k": 145.0,
       "max_temp_k": 197.0,
       "min_pressure_atm": 0.00289,
-      "volcanism": "none",
-      "unmodeled": "regions"
+      "volcanism": "none"
     },
     {
       "atmosphere": [
@@ -3630,8 +3573,7 @@
       "max_gravity_g": 0.276,
       "min_temp_k": 152.0,
       "max_temp_k": 177.0,
-      "max_pressure_atm": 0.0135,
-      "unmodeled": "regions"
+      "max_pressure_atm": 0.0135
     },
     {
       "atmosphere": [
@@ -3646,8 +3588,7 @@
       "min_temp_k": 181.0,
       "max_temp_k": 190.0,
       "min_pressure_atm": 0.0275,
-      "volcanism": "none",
-      "unmodeled": "regions"
+      "volcanism": "none"
     },
     {
       "atmosphere": [
@@ -3662,8 +3603,7 @@
       "min_temp_k": 191.0,
       "max_temp_k": 197.0,
       "min_pressure_atm": 0.058,
-      "volcanism": "none",
-      "unmodeled": "regions"
+      "volcanism": "none"
     },
     {
       "atmosphere": [

@@ -6,7 +6,8 @@ from explorer.db.store import ExplorerStore
 from explorer.state import ExplorerState
 from explorer import session_persist
 from explorer.util import split_localised_color
-from explorer.valuation import exobiology_data
+from explorer.utils.debug import Debug
+from explorer.valuation import exobiology_data, regions
 
 def persist(state:ExplorerState) -> None:
     session_persist.save(state.cmdr, state.system_address, state.system_name, state.body_id, state.body_name,
@@ -67,6 +68,9 @@ def enter_system(store:ExplorerStore, state:ExplorerState, edmc_state:dict) -> d
 
     state.system_address = system_address
     state.system_name = edmc_state.get("SystemName") or ""
+    star_pos:tuple|None = edmc_state.get("StarPos") # EDMC keeps the key but sets it to None at times
+    state.region_name = regions.find_region(*star_pos) if star_pos else None
+    Debug.logger.debug(f"Region {state.region_name} at {star_pos} for {state.system_name}")
     state.nearest_star_type = None
     state.last_bio_body_id = None
     state.last_bio_body_name = ""

@@ -5,6 +5,7 @@ across a genus/species's matching rulesets. predict_species() returns [] for a g
 SPECIES_RULESETS -- callers fall back to predict_genera()'s genus-only guess. """
 from operator import itemgetter
 
+from explorer.valuation import regions
 from explorer.valuation.genus_conditions import GENUS_RULESETS, Ruleset
 from explorer.valuation.species_conditions import SPECIES_RULESETS
 
@@ -90,12 +91,14 @@ def _best_ruleset_score(
             best = score
     return best
 
-def predict_genera(entry:dict, nearest_star_type:str|None, has_biological_signals:int|None = None) -> list[tuple[str, float]]:
+def predict_genera(entry:dict, nearest_star_type:str|None, region:str|None = None, has_biological_signals:int|None = None) -> list[tuple[str, float]]:
     """ (genus, confidence 0.0-1.0) for every genus with at least one matching ruleset, sorted by confidence desc. """
     planet_class, atmosphere_type, volcanism, temp_k, gravity_g, pressure_atm = _parse_entry_conditions(entry)
 
     results:list[tuple[str, float]] = []
     for genus, rulesets in GENUS_RULESETS.items():
+        if not any(regions.allowed(name, region) for name in SPECIES_RULESETS.get(genus) or [genus]):
+            continue
         best:float|None = _best_ruleset_score(
             rulesets, nearest_star_type, planet_class, atmosphere_type, volcanism, temp_k, gravity_g, pressure_atm, has_biological_signals
         )
@@ -105,7 +108,7 @@ def predict_genera(entry:dict, nearest_star_type:str|None, has_biological_signal
     results.sort(key=itemgetter(1), reverse=True)
     return results
 
-def predict_species(genus:str, entry:dict, nearest_star_type:str|None, has_biological_signals:int|None = None) -> list[tuple[str, float]]:
+def predict_species(genus:str, entry:dict, nearest_star_type:str|None, region:str|None = None, has_biological_signals:int|None = None) -> list[tuple[str, float]]:
     """ (species, confidence) for every matching species of `genus`; [] if outside SPECIES_RULESETS. """
     rulesets_by_species:dict[str, list[Ruleset]]|None = SPECIES_RULESETS.get(genus)
     if not rulesets_by_species:
@@ -115,6 +118,8 @@ def predict_species(genus:str, entry:dict, nearest_star_type:str|None, has_biolo
 
     results:list[tuple[str, float]] = []
     for species, rulesets in rulesets_by_species.items():
+        if not regions.allowed(species, region):
+            continue
         best:float|None = _best_ruleset_score(
             rulesets, nearest_star_type, planet_class, atmosphere_type, volcanism, temp_k, gravity_g, pressure_atm, has_biological_signals
         )
