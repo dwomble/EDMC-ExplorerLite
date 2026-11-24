@@ -7,6 +7,7 @@
 * Added plugin reordering from `th` library
 * Added option to auto-install pre-releases
 * Added prediction filtering based on galactic region using data from [Canonn Bioforge](https://bioforge.canonn.tech/). (Thanks [dmarcuse](https://github.com/dmarcuse))
+* Added configurable prediction filtering based on probability. It will filter out some predictions based on your preference setting, their value, and their probability.
 
 ## v2.0.1 2026-10-19
 

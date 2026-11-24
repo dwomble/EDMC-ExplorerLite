@@ -46,15 +46,18 @@ class TestRegions:
 
 SAMPLES:dict = {"regions": ["Galactic Centre", "The Formidine Rift", "Inner Orion Spur"],
                 "species": [{"s": "Bark Mounds", "regions": [0, 0.5, 0]}, {"s": "Stratum Excutitus", "regions": [1, 1, 0]},
-                            {"s": "Bacterium Aurasus", "regions": [1, 1, 1]}]}
+                            {"s": "Bacterium Aurasus", "regions": [1, 1, 1]}],
+                "axes": {"temperature": [20, 600, False], "gravity": [0.03, 1.1, False], "pressure": [0.0002, 50000, True]},
+                "genera": {"Bark Mounds": {"count": 7, "ridge": {"temperature": [1, 0], "gravity": [0.5, 0.5], "pressure": [0, 1]}}}}
 
 @pytest.fixture
 def refresh_env(tmp_path, monkeypatch) -> Generator[None, None, None]:
     """ Mock requests, a private refreshed-file path, a stale timestamp, and the live table restored afterwards. """
     previous:bool = mock_requests.live_requests()
     mock_requests.live_requests(False)
-    monkeypatch.setattr(regions, "_local_path", lambda: tmp_path / "species_regions.json")
+    monkeypatch.setattr(regions, "_local_path", lambda name: tmp_path / name)
     monkeypatch.setattr(regions, "SPECIES_REGIONS", regions.SPECIES_REGIONS)
+    monkeypatch.setattr(regions, "GENUS_STATS", regions.GENUS_STATS)
     regions.config.set(f"{regions.GH_PROJECT}_regions_refreshed", 0)
     yield
     mock_requests.live_requests(previous)
@@ -69,6 +72,8 @@ class TestRefresh:
         expected:dict = {"Bark Mound": {"allowed": ["Formidine Rift"]}, "Stratum Excutitus": {"excluded": ["Inner Orion Spur"]}}
         assert regions.SPECIES_REGIONS == expected
         assert json.loads((tmp_path / "species_regions.json").read_text()) == expected
+        assert regions.GENUS_STATS["Bark Mound"] == {"count": 7, "temperature": [1, 0], "gravity": [0.5, 0.5], "pressure": [0, 1]}
+        assert json.loads((tmp_path / "genus_stats.json").read_text()) == regions.GENUS_STATS
 
     def test_failed_fetch_keeps_limits(self, refresh_env, tmp_path) -> None:
         before:dict = regions.SPECIES_REGIONS

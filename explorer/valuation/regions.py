@@ -42,15 +42,26 @@ TIMEOUT:int = 30
 NAMES:dict[str, str] = {"Bark Mounds": "Bark Mound", "Crystalline Shards": "Crystalline Shard", "Sinuous Tubers": "Sinuous Tuber",
                         "The Formidine Rift": "Formidine Rift"}
 
-def _local_path() -> Path:
+AXES:tuple[str, ...] = ("temperature", "gravity", "pressure")
+
+def _local_path(name:str) -> Path:
     """ Refreshed copy, kept out of plugin_dir so a reinstall doesn't lose it. """
-    return Path(config.app_dir_path) / GH_PROJECT / "data" / "species_regions.json"
+    return Path(config.app_dir_path) / GH_PROJECT / "data" / name
+
+def _load(name:str) -> dict:
+    return json.loads(_local_path(name).read_text()) if _local_path(name).exists() else load_json(name)
+
+def _save(name:str, rows:list[str]) -> None:
+    path:Path = _local_path(name)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.with_suffix(".tmp").write_text("{\n" + ",\n".join(rows) + "\n}\n")
+    path.with_suffix(".tmp").replace(path)
 
 _MAP:dict = load_json('RegionMapData.json')
 REGIONS:list[str|None] = _MAP['regions']
 REGION_MAP:list[list[list[int]]] = _MAP['regionmap']
-SPECIES_REGIONS:dict[str, dict[str, list[str]]] = \
-    json.loads(_local_path().read_text()) if _local_path().exists() else load_json('species_regions.json')
+SPECIES_REGIONS:dict[str, dict[str, list[str]]] = _load('species_regions.json')
+GENUS_STATS:dict = _load('genus_stats.json')
 
 x0 = -49985
 y0 = -40985
@@ -89,8 +100,8 @@ def allowed(name:str, region:str|None) -> bool:
     return region not in limits["excluded"]
 
 def refresh() -> None:
-    """ Rebuild the species region limits from Canonn Bioforge's samples, at most once per REFRESH_INTERVAL. """
-    global SPECIES_REGIONS
+    """ Rebuild region limits and genus stats from Canonn Bioforge samples, at most once per REFRESH_INTERVAL. """
+    global SPECIES_REGIONS, GENUS_STATS
     key:str = f"{GH_PROJECT}_regions_refreshed"
     if config.get_int(key, 0) >= int(time.time()) - REFRESH_INTERVAL: return
 
@@ -108,16 +119,17 @@ def refresh() -> None:
             excluded:list[str] = [r for r in names if r not in seen]
             limits[NAMES.get(species["s"]) or species["s"]] = {"allowed": seen} if len(seen) <= len(excluded) else {"excluded": excluded}
         if not limits: raise ValueError("no region-limited species in Canonn samples")
+
+        stats:dict = {"_axes": {a: samples["axes"][a] for a in AXES}}
+        for genus, d in samples["genera"].items():
+            stats[NAMES.get(genus) or genus] = {"count": d["count"], **{a: [round(v, 4) for v in d["ridge"][a]] for a in AXES}}
     except Exception as e:
         Debug.logger.error("Failed to refresh Canonn region data, exception info:", exc_info=e)
         return
 
-    path:Path = _local_path()
-    path.parent.mkdir(parents=True, exist_ok=True)
-    rows:list[str] = [f'  {json.dumps(name)}: {json.dumps(limits[name])}' for name in sorted(limits)]
-    path.with_suffix(".tmp").write_text("{\n" + ",\n".join(rows) + "\n}\n")
-    path.with_suffix(".tmp").replace(path)
+    _save("species_regions.json", [f'  {json.dumps(name)}: {json.dumps(limits[name])}' for name in sorted(limits)])
+    _save("genus_stats.json", [f'  {json.dumps(k)}: {json.dumps(v)}' for k, v in stats.items()])
 
-    SPECIES_REGIONS = limits
+    SPECIES_REGIONS, GENUS_STATS = limits, stats
     config.set(key, int(time.time()))
-    Debug.logger.info(f"Refreshed region limits for {len(limits)} species")
+    Debug.logger.info(f"Refreshed region limits for {len(limits)} species and stats for {len(stats) - 1} genera")

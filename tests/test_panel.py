@@ -591,6 +591,7 @@ class TestPanelStates:
         """
 
         plugin.config.set("EDMCExplorerLite_ScanValueThreshold", 50000)
+        plugin.config.set("EDMCExplorerLite_ExobioFilter", "None")
         plugin.load_events("explorer_events.json")
         plugin.play_sequence("confirmed_biology_below_threshold", 0.02)
 

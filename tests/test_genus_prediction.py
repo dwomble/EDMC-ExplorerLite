@@ -1,13 +1,17 @@
 """
-Unit tests for the pre-DSS genus predictor (explorer/valuation/genus_prediction.py). Pure
-function, no DB/journal/Tk involved -- doesn't need the harness.
+Unit tests for the pre-DSS genus predictor (explorer/valuation/genus_prediction.py) and the exobiology filter.
 
 Run with:
     .venv/bin/python -m pytest tests/test_genus_prediction.py -v --tb=short
 """
 import pytest
 
-from explorer.valuation.genus_prediction import predict_genera, predict_species
+from explorer.constants import CFG_EXOBIO_FILTER, DEFAULT_EXOBIO_FILTER
+from explorer.db.store import ExplorerStore
+from explorer.journal import handlers_bodies
+from explorer.journal.handlers_bodies import BIO_SIGNAL_TYPE
+from explorer.state import ExplorerState
+from explorer.valuation.genus_prediction import predict_genera, predict_species, presence
 
 def _entry(planet_class:str, atmosphere:str, volcanism:str, temp_k:float, gravity_g:float) -> dict:
     return {
@@ -137,3 +141,31 @@ class TestPredictSpecies:
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v', '--tb=short'])
+
+ARGON_BODY:dict = {"event": "Scan", "BodyName": "Argon 1", "BodyID": 3, "Landable": True, "PlanetClass": "Icy body",
+                   "AtmosphereType": "Argon", "Volcanism": "carbon dioxide geysers volcanism", "SurfaceTemperature": 85.86,
+                   "SurfaceGravity": 2.0857, "SurfacePressure": 9780.55}
+
+class TestExobioFilter:
+
+    def test_presence_ranks_rare_genus_low(self) -> None:
+        odds:dict = presence(ARGON_BODY, ["Bacterium", "Bark Mound", "Electricae", "Fonticulua", "Fumerola"], 2)
+        assert odds["Bark Mound"] < 0.01 < odds["Electricae"] < 0.05 < odds["Fumerola"] < odds["Bacterium"]
+
+    @pytest.mark.parametrize("level, hidden", [("None", set()), ("Medium", {"Bark Mound", "Electricae"})])
+    def test_filter_hides_unlikely_genera(self, tmp_path, level:str, hidden:set) -> None:
+        store = ExplorerStore(tmp_path / "explorer.sqlite")
+        state = ExplorerState()
+        state.cmdr_id = store.get_or_create_cmdr("Testy")
+        state.system_id = store.get_or_create_system(state.cmdr_id, 1, "Deltius")
+        handlers_bodies.config.set(CFG_EXOBIO_FILTER, level)
+
+        signals:dict = {"BodyID": 3, "BodyName": "Argon 1", "Signals": [{"Type": BIO_SIGNAL_TYPE, "Count": 2}]}
+        handlers_bodies.on_fss_body_signals(store, state, signals)
+        handlers_bodies.on_scan(store, state, ARGON_BODY)
+        handlers_bodies.config.set(CFG_EXOBIO_FILTER, DEFAULT_EXOBIO_FILTER)
+        shown:set = {r["genus"] for r in store.get_genus_predictions(store.get_bodies(state.system_id)[0]["id"])}
+        store.close()
+
+        assert {"Bacterium", "Fumerola"} <= shown
+        assert not shown & hidden

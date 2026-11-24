@@ -9,6 +9,7 @@ CONFIG_PREFIX:str = "EDMCExplorerLite_"
 CFG_PANEL_ENABLED:str = f"{CONFIG_PREFIX}PanelEnabled" # master show/hide -- data collection is unaffected
 CFG_SCAN_VALUE_THRESHOLD:str = f"{CONFIG_PREFIX}ScanValueThreshold"
 CFG_EXOBIO_VALUE_THRESHOLD:str = f"{CONFIG_PREFIX}ExobioValueThreshold"
+CFG_EXOBIO_FILTER:str = f"{CONFIG_PREFIX}ExobioFilter"
 CFG_OVERLAY_RADAR_ENABLED:str = f"{CONFIG_PREFIX}OverlayRadarEnabled"
 CFG_OVERLAY_SUMMARY_ENABLED:str = f"{CONFIG_PREFIX}OverlaySummaryEnabled"
 CFG_OVERLAY_SUMMARY_TEXT_COLOR:str = f"{CONFIG_PREFIX}OverlaySummaryTextColor"
@@ -31,6 +32,9 @@ CFG_PRE_RELEASE:str = f"{CONFIG_PREFIX}InstallPreReleases"
 # Defaults agreed during requirements gathering (REQUIREMENTS.md), excluding first-discovery bonus
 DEFAULT_SCAN_VALUE_THRESHOLD:int = 750_000
 DEFAULT_EXOBIO_VALUE_THRESHOLD:int = 5_000_000
+# Minimum likelihood x value; backtested to keep ~100%, 99%, 98% and 90% of real genera
+EXOBIO_FILTERS:dict[str, int] = {"None": 0, "Low": 250_000, "Medium": 750_000, "High": 1_500_000}
+DEFAULT_EXOBIO_FILTER:str = "Low"
 DEFAULT_VISIBLE_LINES:int = 5
 DEFAULT_OVERLAY_RADAR_SIZE:int = 150 # on-screen pixel radius, matches overlay_frames.py's original hardcoded RADIUS_PX
 DEFAULT_OVERLAY_SUMMARY_TEXT_COLOR:str = "#ffffff"

@@ -15,7 +15,7 @@ from explorer.utils.debug import Debug
 from explorer.valuation import cartography, exobiology, exobiology_data, genus_prediction
 from explorer.constants import (
     CFG_SCAN_VALUE_THRESHOLD, DEFAULT_SCAN_VALUE_THRESHOLD,
-    CFG_EXOBIO_VALUE_THRESHOLD, DEFAULT_EXOBIO_VALUE_THRESHOLD,
+    CFG_EXOBIO_VALUE_THRESHOLD, DEFAULT_EXOBIO_VALUE_THRESHOLD, CFG_EXOBIO_FILTER, DEFAULT_EXOBIO_FILTER, EXOBIO_FILTERS,
 )
 
 BIO_SIGNAL_TYPE = "$SAA_SignalType_Biological;"
@@ -127,31 +127,41 @@ def on_scan(store:ExplorerStore, state:ExplorerState, entry:dict) -> dict:
         # FSSBodySignals often arrives before Scan (Detailed)
         existing:sqlite3.Row|None = store.get_body(body_pk)
         has_bio:int|None = existing["has_biological_signals"] if existing else None
+        signals:int = existing["biological_signal_count"] or 0 if existing else 0
         store.replace_genus_predictions(
-            body_pk, _worthwhile_predictions(entry, state.nearest_star_type, state.region_name, bypass_threshold=has_bio == 1, has_bio=has_bio)
+            body_pk, _worthwhile_predictions(entry, state.nearest_star_type, state.region_name, has_bio == 1, has_bio, signals)
         )
 
     return {"panel": True, "overlay": "radar"}
 
 def _worthwhile_predictions(entry:dict, nearest_star_type:str|None, region:str|None,
-                            bypass_threshold:bool = False, has_bio:int|None = None) -> list:
+                            bypass_threshold:bool = False, has_bio:int|None = None, signals:int = 0) -> list:
     """ Predicted (genus, species, confidence) rows whose value clears the exobio threshold """
     threshold:int = _exobio_threshold()
     was_footfalled:bool = bool(entry.get("WasFootfalled"))
+    genera:list[tuple[str, float]] = genus_prediction.predict_genera(entry, nearest_star_type, region, has_bio)
+
+    cutoff:int = EXOBIO_FILTERS.get(config.get_str(CFG_EXOBIO_FILTER, default=DEFAULT_EXOBIO_FILTER), 0)
+    odds:dict[str, float] = genus_prediction.presence(entry, [g for g, _ in genera], signals) if cutoff and signals else {}
+
+    def shown(genus:str, value:int|None) -> bool:
+        if not bypass_threshold: return exobiology.exceeds_threshold(value, threshold)
+        return value is None or odds.get(genus, 1.0) * value >= cutoff
+
     worthwhile:list[tuple[str, str|None, float]] = []
-    for genus, confidence in genus_prediction.predict_genera(entry, nearest_star_type, region, has_bio):
+    for genus, confidence in genera:
         candidates:list[tuple[str, float]] = genus_prediction.predict_species(genus, entry, nearest_star_type, region, has_bio)
         if not candidates:
             range:tuple[int, int]|None = exobiology.estimate_genus_range(genus)
             max:int|None = exobiology.with_first_logged_bonus(range[1], was_footfalled) if range else None
-            if bypass_threshold or exobiology.exceeds_threshold(max, threshold):
+            if shown(genus, max):
                 worthwhile.append((genus, None, confidence))
             continue
 
         for species, confidence in candidates:
             base_value:int|None = exobiology.estimate_confirmed_value(genus, species)
             value:int|None = exobiology.with_first_logged_bonus(base_value, was_footfalled) if base_value is not None else None
-            if bypass_threshold or exobiology.exceeds_threshold(value, threshold):
+            if shown(genus, value):
                 worthwhile.append((genus, species, confidence))
 
     Debug.logger.debug(f"Predicted bios for {entry.get('BodyName')} ({nearest_star_type}, {region}, {has_bio=}): {worthwhile}")

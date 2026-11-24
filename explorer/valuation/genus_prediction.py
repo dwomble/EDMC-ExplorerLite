@@ -3,6 +3,7 @@ fields alone, pre-DSS. Categorical fields are hard gates; temperature/gravity/pr
 confidence toward a ruleset's edge rather than hard-failing. Confidence is the best (max) score
 across a genus/species's matching rulesets. predict_species() returns [] for a genus outside
 SPECIES_RULESETS -- callers fall back to predict_genera()'s genus-only guess. """
+import math
 from operator import itemgetter
 
 from explorer.valuation import regions
@@ -13,6 +14,7 @@ RANGE_BUFFER_FRAC:float = 0.15 # how far outside a documented temp/gravity/press
 
 GRAVITY_MS2_PER_G:float = 9.797759 # matches the reference source's own constant, not the textbook 9.80665
 PRESSURE_PA_PER_ATM:float = 101231.656250 # ditto, for SurfacePressure -> the reference's pressure unit
+EMPTY_BIN:float = 1e-3 # rulesets already gate these conditions, so an empty bin is sparse data rather than impossible
 
 def _range_confidence(value:float, low:float|None, high:float|None, buffer_frac:float = RANGE_BUFFER_FRAC) -> float:
     """ 1.0 inside [low, high], tapering linearly to 0.0 past whichever edge is exceeded. """
@@ -128,3 +130,23 @@ def predict_species(genus:str, entry:dict, nearest_star_type:str|None, region:st
 
     results.sort(key=itemgetter(1), reverse=True)
     return results
+
+def presence(entry:dict, genera:list[str], signals:int) -> dict[str, float]:
+    """ Chance each candidate genus is among the body's signals, from Canonn sample counts and condition histograms. """
+    _, _, _, temp_k, gravity_g, pressure_atm = _parse_entry_conditions(entry)
+    values:dict[str, float|None] = {"temperature": temp_k, "gravity": gravity_g, "pressure": pressure_atm}
+    stats:dict = regions.GENUS_STATS
+
+    scores:dict[str, float] = {}
+    for genus in [g for g in genera if g in stats]:
+        score:float = stats[genus]["count"]
+        for axis, value in values.items():
+            if not value: continue
+            hist:list[float] = stats[genus][axis]
+            lo, hi, log = stats["_axes"][axis]
+            if log: value, lo, hi = math.log10(value), math.log10(lo), math.log10(hi)
+            score *= hist[min(len(hist) - 1, max(0, int((value - lo) / (hi - lo) * len(hist))))] + EMPTY_BIN
+        scores[genus] = score
+
+    total:float = sum(scores.values())
+    return {g: 1 - (1 - scores[g] / total) ** signals if g in scores else 1.0 for g in genera}

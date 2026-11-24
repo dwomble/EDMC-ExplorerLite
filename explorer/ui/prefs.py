@@ -14,7 +14,7 @@ from explorer.valuation import mining
 from explorer.constants import (
     PLUGIN_NAME, GH_OWNER, GH_PROJECT,
     CFG_SCAN_VALUE_THRESHOLD, DEFAULT_SCAN_VALUE_THRESHOLD,
-    CFG_EXOBIO_VALUE_THRESHOLD, DEFAULT_EXOBIO_VALUE_THRESHOLD,
+    CFG_EXOBIO_VALUE_THRESHOLD, DEFAULT_EXOBIO_VALUE_THRESHOLD, CFG_EXOBIO_FILTER, DEFAULT_EXOBIO_FILTER, EXOBIO_FILTERS,
     CFG_OVERLAY_RADAR_ENABLED, CFG_OVERLAY_SUMMARY_ENABLED, CFG_DEV_MODE, CFG_PRE_RELEASE,
     CFG_VISIBLE_LINES, DEFAULT_VISIBLE_LINES,
     CFG_OVERLAY_RADAR_SIZE, DEFAULT_OVERLAY_RADAR_SIZE, CFG_OVERLAY_RADAR_CIRCLES, CFG_OVERLAY_RADAR_SWEEP,
@@ -29,7 +29,7 @@ GH_URL:str = f"https://github.com/{GH_OWNER}/{GH_PROJECT}"
 
 @dataclass
 class Pref:
-    kind:str # 'threshold', 'bool', 'color', 'choice', 'text' or 'spin'
+    kind:str # 'threshold', 'bool', 'color', 'choice', 'text' or 'spin' (numeric, or stepping through options)
     key:str
     desc:str
     default:int|float|bool|str
@@ -44,6 +44,11 @@ SECTIONS:list[tuple[str, list[Pref]]] = [
     ("Thresholds", [
         Pref('threshold', CFG_SCAN_VALUE_THRESHOLD, "Minimum DSS value", DEFAULT_SCAN_VALUE_THRESHOLD, "Minimum value of a body scan to be shown. Bodies below this value will be ignored."),
         Pref('threshold', CFG_EXOBIO_VALUE_THRESHOLD, "Minimum exobiology value", DEFAULT_EXOBIO_VALUE_THRESHOLD, "Minimum value of exobiology scans to be shown. Bodies below this value will be ignored."),
+        Pref('spin', CFG_EXOBIO_FILTER, "Exobiology filter", DEFAULT_EXOBIO_FILTER,
+             "How strongly to filter predicted genera and species on bodies with biological signals.\n"
+             "What is hidden depends on how likely each one is on that body and how much it is worth.\n"
+             "None shows every possibility; High hides the most, but occasionally a genus that is actually there.",
+             tuple(EXOBIO_FILTERS)),
     ]),
     ("Display", [
         Pref('threshold', CFG_VISIBLE_LINES, "Maximum visible lines", DEFAULT_VISIBLE_LINES, "Number of lines to display before enabling scrolling."),
@@ -135,12 +140,14 @@ def _place_pref(frame:nb.Frame, p:Pref, row:int, col:int, enabled:bool) -> None:
                 th.Tooltip(ent, p.tooltip)
 
         case 'spin':
-            raw:str = str(config.get_int(p.key, default=int(p.default))) if p.step == 1 else config.get_str(p.key, default=str(p.default))
+            numeric:bool = p.step == 1 and not p.options
+            raw:str = str(config.get_int(p.key, default=int(p.default))) if numeric else config.get_str(p.key, default=str(p.default))
             _pref_vars[p.key] = tk.StringVar(value=raw)
             lbl:nb.Label = nb.Label(frame, text=p.desc)
             lbl.grid(row=row, column=col, sticky=tk.W, padx=(left_pad, LABEL_GAP_PX), pady=pady)
-            spin:ttk.Spinbox = ttk.Spinbox(frame, from_=p.lo, to=p.hi, increment=p.step, textvariable=_pref_vars[p.key], width=7,
-                                           format="%.0f" if p.step == 1 else "%.1f", state=state)
+            steps:dict = {"values": p.options} if p.options else \
+                {"from_": p.lo, "to": p.hi, "increment": p.step, "format": "%.0f" if p.step == 1 else "%.1f"}
+            spin:ttk.Spinbox = ttk.Spinbox(frame, textvariable=_pref_vars[p.key], width=7, state=state, **steps)
             spin.grid(row=row, column=col + 1, sticky=tk.W, pady=pady)
             if p.tooltip:
                 th.Tooltip(lbl, p.tooltip)
@@ -241,6 +248,8 @@ def save_prefs(cmdr:str, is_beta:bool) -> None:
         match p.kind:
             case 'threshold':
                 config.set(p.key, int(var.get()) if var.get().isdigit() else p.default)
+            case 'spin' if p.options:
+                config.set(p.key, var.get() if var.get() in p.options else p.default)
             case 'spin':
                 try: val:float = min(max(float(var.get()), p.lo), p.hi)
                 except ValueError: val = float(p.default)
