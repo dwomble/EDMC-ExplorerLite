@@ -42,8 +42,8 @@ TTL:int = 8 # generous vs. the ~1/sec dashboard-tick refresh cadence, so a misse
 TAG_TRIANGLE_SIZE_PX:int = 5 # vertex-to-center radius for a codex-tagged waypoint's triangle marker
 INVISIBLE:str = "#00000000" # fully transparent ARGB -- see _pin_bounds
 CIRCLE_FILL_ALPHA:int = 0x20 # ~12% opaque
-CIRCLE_BORDER_ALPHA:int = 0x80 # ~50% opaque
-ACTIVE_FILL_ALPHA:int = 0x70 # real samples, stronger than waypoints to stand out
+CIRCLE_BORDER_ALPHA:int = 0x70 # ~50% opaque
+ACTIVE_FILL_ALPHA:int = 0x50 # real samples, stronger than waypoints to stand out
 ACTIVE_BORDER_ALPHA:int = 0xFF
 
 SWEEP_PERIOD_S:float = 6.0 # one full turn
@@ -79,8 +79,8 @@ LABEL_COLOR:str = "#ffffff"
 # Odyssey exobiology variant color names
 CODEX_TAG_COLORS:dict[str, str] = {
     "Amethyst": "#b67fed", "Aquamarine": "#7fffd4", "Blue": "#658cff", "Cobalt": "#3354a7",
-    "Cyan": "#00e5e5", "Emerald": "#2ecc71", "Gold": "#ffd700", "Green": "#14ac14",
-    "Grey": "#aaaaaa", "Indigo": "#793cf4", "Lime": "#bfff00", "Magenta": "#ff33ff",
+    "Cyan": "#00e5e5ce", "Emerald": "#2ecc71", "Gold": "#ffd900da", "Green": "#14ac14",
+    "Grey": "#aaaaaa", "Indigo": "#793cf4", "Lime": "#7faf00", "Magenta": "#ff33ff",
     "Maroon": "#aa3344", "Mauve": "#be53be", "Mulberry": "#B93175", "Ocher": "#cfa528",
     "Orange": "#ff8822", "Peach": "#ffaa88", "Red": "#ee3333", "Rose": "#ff7799", "Sage": "#889977",
     "Teal": "#0C9D87", "Turquoise": "#33cccc", "White": "#eeeeee", "Yellow": "#eedd22",
