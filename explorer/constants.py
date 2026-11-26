@@ -32,8 +32,9 @@ CFG_PRE_RELEASE:str = f"{CONFIG_PREFIX}InstallPreReleases"
 # Defaults agreed during requirements gathering (REQUIREMENTS.md), excluding first-discovery bonus
 DEFAULT_SCAN_VALUE_THRESHOLD:int = 750_000
 DEFAULT_EXOBIO_VALUE_THRESHOLD:int = 5_000_000
-# Minimum likelihood x value; backtested to keep ~100%, 99%, 98% and 90% of real genera
-EXOBIO_FILTERS:dict[str, int] = {"None": 0, "Low": 250_000, "Medium": 750_000, "High": 1_500_000}
+# Minimum likelihood x value unless likely; backtested to keep ~100%, 99.5%, 97.5% and 90% of real genera
+EXOBIO_FILTERS:dict[str, int] = {"None": 0, "Low": 400_000, "Medium": 1_000_000, "High": 4_000_000}
+EXOBIO_LIKELY:float = 0.3
 DEFAULT_EXOBIO_FILTER:str = "Low"
 DEFAULT_VISIBLE_LINES:int = 5
 DEFAULT_OVERLAY_RADAR_SIZE:int = 150 # on-screen pixel radius, matches overlay_frames.py's original hardcoded RADIUS_PX

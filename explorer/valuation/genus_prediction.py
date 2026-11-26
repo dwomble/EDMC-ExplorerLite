@@ -149,4 +149,5 @@ def presence(entry:dict, genera:list[str], signals:int) -> dict[str, float]:
         scores[genus] = score
 
     total:float = sum(scores.values())
-    return {g: 1 - (1 - scores[g] / total) ** signals if g in scores else 1.0 for g in genera}
+    # Bacterium is on nearly every multi-signal body, which its broad histograms badly understate
+    return {g: 1 - (1 - scores[g] / total) ** signals if g in scores and g != "Bacterium" else 1.0 for g in genera}

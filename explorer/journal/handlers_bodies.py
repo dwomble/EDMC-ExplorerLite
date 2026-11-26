@@ -15,7 +15,7 @@ from explorer.utils.debug import Debug
 from explorer.valuation import cartography, exobiology, exobiology_data, genus_prediction
 from explorer.constants import (
     CFG_SCAN_VALUE_THRESHOLD, DEFAULT_SCAN_VALUE_THRESHOLD,
-    CFG_EXOBIO_VALUE_THRESHOLD, DEFAULT_EXOBIO_VALUE_THRESHOLD, CFG_EXOBIO_FILTER, DEFAULT_EXOBIO_FILTER, EXOBIO_FILTERS,
+    CFG_EXOBIO_VALUE_THRESHOLD, DEFAULT_EXOBIO_VALUE_THRESHOLD, CFG_EXOBIO_FILTER, DEFAULT_EXOBIO_FILTER, EXOBIO_FILTERS, EXOBIO_LIKELY,
 )
 
 BIO_SIGNAL_TYPE = "$SAA_SignalType_Biological;"
@@ -146,7 +146,8 @@ def _worthwhile_predictions(entry:dict, nearest_star_type:str|None, region:str|N
 
     def shown(genus:str, value:int|None) -> bool:
         if not bypass_threshold: return exobiology.exceeds_threshold(value, threshold)
-        return value is None or odds.get(genus, 1.0) * value >= cutoff
+        odd:float = odds.get(genus, 1.0)
+        return value is None or odd >= EXOBIO_LIKELY or odd * value >= cutoff
 
     worthwhile:list[tuple[str, str|None, float]] = []
     for genus, confidence in genera:

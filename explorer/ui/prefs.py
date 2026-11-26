@@ -46,7 +46,7 @@ SECTIONS:list[tuple[str, list[Pref]]] = [
         Pref('threshold', CFG_EXOBIO_VALUE_THRESHOLD, "Minimum exobiology value", DEFAULT_EXOBIO_VALUE_THRESHOLD, "Minimum value of exobiology scans to be shown. Bodies below this value will be ignored."),
         Pref('spin', CFG_EXOBIO_FILTER, "Exobiology filter", DEFAULT_EXOBIO_FILTER,
              "How strongly to filter predicted genera and species on bodies with biological signals.\n"
-             "What is hidden depends on how likely each one is on that body and how much it is worth.\n"
+             "Likely ones are always shown; unlikely ones only if they are valuable enough.\n"
              "None shows every possibility; High hides the most, but occasionally a genus that is actually there.",
              tuple(EXOBIO_FILTERS)),
     ]),

@@ -145,27 +145,34 @@ if __name__ == '__main__':
 ARGON_BODY:dict = {"event": "Scan", "BodyName": "Argon 1", "BodyID": 3, "Landable": True, "PlanetClass": "Icy body",
                    "AtmosphereType": "Argon", "Volcanism": "carbon dioxide geysers volcanism", "SurfaceTemperature": 85.86,
                    "SurfaceGravity": 2.0857, "SurfacePressure": 9780.55}
+CO2_BODY:dict = {"event": "Scan", "BodyName": "CO2 1", "BodyID": 3, "Landable": True, "PlanetClass": "Rocky body",
+                 "AtmosphereType": "CarbonDioxide", "Volcanism": "", "SurfaceTemperature": 162.40,
+                 "SurfaceGravity": 0.889, "SurfacePressure": 1552.76}
 
 class TestExobioFilter:
 
     def test_presence_ranks_rare_genus_low(self) -> None:
         odds:dict = presence(ARGON_BODY, ["Bacterium", "Bark Mound", "Electricae", "Fonticulua", "Fumerola"], 2)
-        assert odds["Bark Mound"] < 0.01 < odds["Electricae"] < 0.05 < odds["Fumerola"] < odds["Bacterium"]
+        assert odds["Bark Mound"] < 0.01 < odds["Electricae"] < 0.05 < odds["Fumerola"] < odds["Bacterium"] == 1.0
 
-    @pytest.mark.parametrize("level, hidden", [("None", set()), ("Medium", {"Bark Mound", "Electricae"})])
-    def test_filter_hides_unlikely_genera(self, tmp_path, level:str, hidden:set) -> None:
+    @pytest.mark.parametrize("body, level, kept, hidden", [
+        (ARGON_BODY, "None", {"Bacterium", "Fumerola"}, set()),
+        (ARGON_BODY, "Medium", {"Bacterium", "Fumerola"}, {"Bark Mound", "Electricae"}),
+        (CO2_BODY, "High", {"Bacterium", "Tussock"}, {"Stratum", "Osseus"}),
+    ])
+    def test_filter_hides_unlikely_genera(self, tmp_path, body:dict, level:str, kept:set, hidden:set) -> None:
         store = ExplorerStore(tmp_path / "explorer.sqlite")
         state = ExplorerState()
         state.cmdr_id = store.get_or_create_cmdr("Testy")
         state.system_id = store.get_or_create_system(state.cmdr_id, 1, "Deltius")
         handlers_bodies.config.set(CFG_EXOBIO_FILTER, level)
 
-        signals:dict = {"BodyID": 3, "BodyName": "Argon 1", "Signals": [{"Type": BIO_SIGNAL_TYPE, "Count": 2}]}
+        signals:dict = {"BodyID": 3, "BodyName": body["BodyName"], "Signals": [{"Type": BIO_SIGNAL_TYPE, "Count": 2}]}
         handlers_bodies.on_fss_body_signals(store, state, signals)
-        handlers_bodies.on_scan(store, state, ARGON_BODY)
+        handlers_bodies.on_scan(store, state, body)
         handlers_bodies.config.set(CFG_EXOBIO_FILTER, DEFAULT_EXOBIO_FILTER)
         shown:set = {r["genus"] for r in store.get_genus_predictions(store.get_bodies(state.system_id)[0]["id"])}
         store.close()
 
-        assert {"Bacterium", "Fumerola"} <= shown
+        assert kept <= shown
         assert not shown & hidden
