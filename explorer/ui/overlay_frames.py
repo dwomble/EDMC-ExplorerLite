@@ -41,8 +41,8 @@ DOT_GLYPH_OFFSET_Y:int = -6
 TTL:int = 8 # generous vs. the ~1/sec dashboard-tick refresh cadence, so a missed/delayed tick doesn't visibly blank the radar
 TAG_TRIANGLE_SIZE_PX:int = 5 # vertex-to-center radius for a codex-tagged waypoint's triangle marker
 INVISIBLE:str = "#00000000" # fully transparent ARGB -- see _pin_bounds
-CIRCLE_FILL_ALPHA:int = 0x40 # ~25% opaque
-CIRCLE_BORDER_ALPHA:int = 0xB3 # ~70% opaque
+CIRCLE_FILL_ALPHA:int = 0x20 # ~12% opaque
+CIRCLE_BORDER_ALPHA:int = 0x80 # ~50% opaque
 ACTIVE_FILL_ALPHA:int = 0x70 # real samples, stronger than waypoints to stand out
 ACTIVE_BORDER_ALPHA:int = 0xFF
 
